@@ -45,7 +45,12 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
   return (
     <View className="w-full gap-four">
       <DiaSemanaPicker value={diaSemana} onChange={setDiaSemana} />
-      <FormField label="Hora de início" value={horaInicio} onChangeText={setHoraInicio} placeholder="HH:mm" />
+      <FormField
+        label="Hora de início"
+        value={horaInicio}
+        onChangeText={setHoraInicio}
+        placeholder="HH:mm"
+      />
       <FormField
         label="Duração (minutos)"
         value={duracaoMinutos}
@@ -53,7 +58,7 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
         placeholder="60"
         keyboardType="numeric"
       />
-      {erroCliente ?? erro ? <ErrorMessage>{erroCliente ?? erro}</ErrorMessage> : null}
+      {(erroCliente ?? erro) ? <ErrorMessage>{erroCliente ?? erro}</ErrorMessage> : null}
       <Button
         label={enviando ? 'Salvando...' : 'Adicionar horário'}
         onPress={handleSubmit}
@@ -64,8 +69,7 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
 }
 
 type ResultadoValidacao =
-  | { valido: true; input: CriarHorarioInput }
-  | { valido: false; mensagem: string };
+  { valido: true; input: CriarHorarioInput } | { valido: false; mensagem: string };
 
 function validar(
   diaSemana: number,
@@ -82,7 +86,11 @@ function validar(
     return { valido: false, mensagem: MensagemDuracaoInvalida };
   }
 
-  const input: CriarHorarioInput = { diaSemana, horaInicio: `${horaInicio}:00`, duracaoMinutos: duracao };
+  const input: CriarHorarioInput = {
+    diaSemana,
+    horaInicio: `${horaInicio}:00`,
+    duracaoMinutos: duracao,
+  };
   const conflita = horariosExistentes.some((existente) => horariosSeSobrepoe(input, existente));
   return conflita ? { valido: false, mensagem: MensagemConflito } : { valido: true, input };
 }
@@ -93,7 +101,12 @@ function DiaSemanaPicker({ value, onChange }: { value: number; onChange: (dia: n
       <Text className="text-sm font-medium text-text dark:text-dark-text">Dia da semana</Text>
       <View className="flex-row flex-wrap gap-one">
         {NomesDiaSemana.map((nome, dia) => (
-          <DiaSemanaChip key={nome} nome={nome} selecionado={dia === value} onPress={() => onChange(dia)} />
+          <DiaSemanaChip
+            key={nome}
+            nome={nome}
+            selecionado={dia === value}
+            onPress={() => onChange(dia)}
+          />
         ))}
       </View>
     </View>
