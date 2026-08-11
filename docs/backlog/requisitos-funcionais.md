@@ -9,6 +9,10 @@
 ## Contas e convites
 
 1. Um usuário pode se cadastrar como **Professor**.
+1.1. Um usuário com identidade plena (item 1 ou item 2) pode se autenticar
+     (login) na plataforma usando um código de uso único enviado ao seu
+     contato de cadastro. Aluno provisório (item 3) não se autentica, pois
+     não tem contato de autenticação.
 2. Um Professor pode convidar um Aluno via WhatsApp; o Aluno pode baixar o app
    e completar o cadastro para se tornar usuário pleno.
 3. Um Professor pode cadastrar um Aluno "provisório" (sem cadastro completo),
@@ -33,6 +37,11 @@
     valor de X é configurado pelo Professor.
 10.1. Um Professor pode limitar a quantidade de Alunos por horário, com no
     mínimo 1 e no máximo N (permitindo aulas individuais ou em grupo).
+10.2. **(Backlog futuro, fora do MVP — sem issue ainda.)** Um Aluno pode ser
+    notificado quando o Professor altera um horário ao qual ele está
+    vinculado. Por decisão explícita, o item 6 mantém horários imutáveis
+    após criação (remover e recriar, sem edição), então esta notificação só
+    volta a fazer sentido se essa regra mudar no futuro.
 
 ## Cobrança
 
@@ -64,3 +73,11 @@
 - Alunos "provisórios" (item 3) precisam de um identificador estável que não
   dependa de cadastro completo — considerar isso no desenho da entidade
   `Aluno`/`Vinculo` desde já para não exigir migration destrutiva depois.
+- Um "horário" (item 6) é um template recorrente (dia da semana + hora +
+  duração), não uma ocorrência datada. Os itens 10, 14, 15 e 16 operam sobre
+  uma "aula" — a ocorrência de um horário numa data específica (ex: terça
+  19/08). Essa ocorrência não precisa ser pré-gerada: é instanciada sob
+  demanda na primeira vez que algo a referencia (cancelamento, confirmação
+  de presença ou registro de frequência), identificada pelo par
+  (horário, data). Evita job de geração e problema de aulas obsoletas caso
+  o horário seja removido e recriado.
