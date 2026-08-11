@@ -17,6 +17,11 @@ builder.Services.AddDbContext<SynclassDbContext>(options =>
 
 var app = builder.Build();
 
+if (app.Configuration.GetValue<bool>("RunMigrationsOnStartup"))
+{
+    app.Services.ApplyPendingMigrations();
+}
+
 app.UseSerilogRequestLogging();
 app.UseTrackId();
 
@@ -26,7 +31,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

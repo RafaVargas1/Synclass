@@ -16,7 +16,10 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
     public HealthEndpointTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        // Desliga a migration automática de startup: este teste de fumaça
+        // não depende de um Postgres real, só do pipeline HTTP.
+        _factory = factory.WithWebHostBuilder(builder =>
+            builder.UseSetting("RunMigrationsOnStartup", "false"));
     }
 
     [Fact]
