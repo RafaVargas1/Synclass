@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import { FormField } from '@/components/molecules/FormField';
@@ -17,6 +17,11 @@ export type CadastroProfessorFormProps = {
  * Organismo: formulário de cadastro de Professor (nome + contato). Não
  * conhece a Api — apenas emite os callbacks recebidos por prop, para que a
  * tela (que conhece a Api) controle o fluxo de envio.
+ *
+ * `erro` é exibido como mensagem geral do formulário (não anexada a um
+ * campo específico): a Api devolve só uma mensagem de texto, sem indicar a
+ * qual campo ela se refere (pode ser sobre o nome, o contato, ou a conexão),
+ * então anexá-la a um campo fixo induziria o usuário a erro.
  */
 export function CadastroProfessorForm({
   nome,
@@ -40,8 +45,12 @@ export function CadastroProfessorForm({
         value={contato}
         onChangeText={onChangeContato}
         placeholder="E-mail ou telefone"
-        errorMessage={erro}
       />
+      {erro ? (
+        <Text accessibilityRole="alert" className="text-sm text-error dark:text-dark-error">
+          {erro}
+        </Text>
+      ) : null}
       <Button
         label={enviando ? 'Enviando...' : 'Cadastrar'}
         onPress={onSubmit}

@@ -16,8 +16,8 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.ToTable("Usuarios");
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.Nome).IsRequired().HasMaxLength(200);
-        builder.Property(u => u.Contato).IsRequired().HasMaxLength(320);
+        builder.Property(u => u.Nome).IsRequired().HasMaxLength(NomeUsuario.TamanhoMaximo);
+        builder.Property(u => u.Contato).IsRequired().HasMaxLength(Contato.TamanhoMaximo);
         builder.Property(u => u.CreatedAt).IsRequired();
 
         builder.HasIndex(u => u.Contato).IsUnique();

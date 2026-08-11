@@ -46,4 +46,15 @@ public sealed class ContatoTests
 
         acao.Should().Throw<ContatoInvalidoException>();
     }
+
+    [Fact]
+    public void Normalizar_EmailMaiorQueTamanhoMaximo_LancaContatoInvalidoException()
+    {
+        var localMuitoLongo = new string('a', Contato.TamanhoMaximo);
+        var emailMuitoLongo = $"{localMuitoLongo}@exemplo.com";
+
+        var acao = () => Contato.Normalizar(emailMuitoLongo);
+
+        acao.Should().Throw<ContatoInvalidoException>();
+    }
 }

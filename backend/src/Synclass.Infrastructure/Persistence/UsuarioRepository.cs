@@ -27,8 +27,18 @@ public sealed class UsuarioRepository : IUsuarioRepository
         await _dbContext.Usuarios.AddAsync(usuario, cancellationToken);
     }
 
-    public Task SalvarAsync(CancellationToken cancellationToken)
+    public async Task SalvarAsync(CancellationToken cancellationToken)
     {
-        return _dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Índice único (Contato, ou UsuarioId+Papel) violado: duas
+            // requisições concorrentes passaram pela checagem de duplicidade
+            // da aplicação antes de qualquer uma confirmar a escrita.
+            throw new CadastroConcorrenteException();
+        }
     }
 }

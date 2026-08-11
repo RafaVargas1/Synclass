@@ -11,6 +11,13 @@ namespace Synclass.Domain.Usuarios;
 /// </summary>
 public static class Contato
 {
+    /// <summary>
+    /// Tamanho máximo aceito para o contato normalizado, usado também pelo
+    /// mapeamento EF Core em Synclass.Infrastructure (coluna `Contato`).
+    /// Limita apenas o e-mail: telefone já é limitado a 10-11 dígitos.
+    /// </summary>
+    public const int TamanhoMaximo = 320;
+
     private static readonly Regex EmailRegex = new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
     private const string FormatoEmailEsperado = "e-mail no formato nome@dominio.com";
     private const string FormatoTelefoneEsperado = "telefone BR com DDD (10 ou 11 dígitos, ex: 11987654321)";
@@ -39,6 +46,11 @@ public static class Contato
         if (!EmailRegex.IsMatch(normalizado))
         {
             throw new ContatoInvalidoException(email, FormatoEmailEsperado);
+        }
+
+        if (normalizado.Length > TamanhoMaximo)
+        {
+            throw new ContatoInvalidoException(email, $"e-mail de até {TamanhoMaximo} caracteres");
         }
 
         return normalizado;

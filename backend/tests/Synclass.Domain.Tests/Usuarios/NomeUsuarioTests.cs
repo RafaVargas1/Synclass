@@ -22,4 +22,24 @@ public sealed class NomeUsuarioTests
 
         acao.Should().Throw<NomeInvalidoException>();
     }
+
+    [Fact]
+    public void Validar_NomeMaiorQueTamanhoMaximo_LancaNomeInvalidoException()
+    {
+        var nomeMuitoLongo = new string('a', NomeUsuario.TamanhoMaximo + 1);
+
+        var acao = () => NomeUsuario.Validar(nomeMuitoLongo);
+
+        acao.Should().Throw<NomeInvalidoException>();
+    }
+
+    [Fact]
+    public void Validar_NomeNoLimiteDoTamanhoMaximo_NaoLanca()
+    {
+        var nomeNoLimite = new string('a', NomeUsuario.TamanhoMaximo);
+
+        var validado = NomeUsuario.Validar(nomeNoLimite);
+
+        validado.Should().HaveLength(NomeUsuario.TamanhoMaximo);
+    }
 }
