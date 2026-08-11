@@ -49,16 +49,16 @@ Card: https://github.com/RafaVargas1/Synclass/issues/18
 
 ### Api
 
-- [ ] Teste de fumaça (Api): `POST /auth/codigo` — 200 quando contato tem
+- [x] Teste de fumaça (Api): `POST /auth/codigo` — 200 quando contato tem
       identidade plena; rejeita (mesma mensagem genérica) para contato sem
       identidade plena ou nunca cadastrado.
-- [ ] Teste de fumaça (Api): `POST /auth/confirmacao` — 200 + token quando
+- [x] Teste de fumaça (Api): `POST /auth/confirmacao` — 200 + token quando
       código correto; rejeita código incorreto/expirado/reutilizado.
-- [ ] Implementação: `AutenticacaoController` + DTOs de request/response.
-- [ ] Log estruturado: `CodigoOtpSolicitado` (Information, nunca o código),
+- [x] Implementação: `AutenticacaoController` + DTOs de request/response.
+- [x] Log estruturado: `CodigoOtpSolicitado` (Information, nunca o código),
       `LoginConfirmado` (Information, papéis), `LoginRejeitado` (Warning,
       motivo) — ver `architecture.md#logs-estruturados-e-track-id`.
-- [ ] Wiring de DI (`Program.cs`) + configuração `Jwt:SigningKey`/
+- [x] Wiring de DI (`Program.cs`) + configuração `Jwt:SigningKey`/
       `Jwt:ExpiracaoDias` em `appsettings*.json`.
 
 ### Frontend

@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
+using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Common;
 using Synclass.Domain.Usuarios;
+using Synclass.Infrastructure.Autenticacao;
 using Synclass.Infrastructure.Common;
 using Synclass.Infrastructure.Persistence;
 
@@ -34,6 +36,16 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroProfessorService>();
+
+// Login por OTP (issue #18) — ver docs/specs/18-login-otp/implementation.md.
+builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();
+builder.Services.AddSingleton<IGeradorDeCodigoOtp, GeradorDeCodigoOtp>();
+builder.Services.AddScoped<INotificador, NotificadorDeLog>();
+builder.Services.AddSingleton<IGeradorDeTokenSessao>(sp => new GeradorDeTokenSessaoJwt(
+    builder.Configuration["Jwt:SigningKey"] ?? throw new InvalidOperationException("Configuração ausente: Jwt:SigningKey."),
+    builder.Configuration.GetValue<int>("Jwt:ExpiracaoDias"),
+    sp.GetRequiredService<IClock>()));
+builder.Services.AddScoped<LoginService>();
 
 var app = builder.Build();
 
