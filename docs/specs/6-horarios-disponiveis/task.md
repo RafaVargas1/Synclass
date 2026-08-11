@@ -24,8 +24,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/6
 - [x] Teste de fumaça (Api): `GET /professores/{professorId}/horarios` — lista horários cadastrados.
 - [x] Teste de fumaça (Api): `DELETE /professores/{professorId}/horarios/{horarioId}` — 204 quando remove, 404 quando não existe/não pertence ao Professor.
 - [x] Implementação: `HorariosController` (criar/listar/remover) + logs estruturados (`HorarioCriado`, `HorarioRejeitadoPorConflito`, `HorarioRejeitadoPorAlunosAlocados`) + registro DI em `Program.cs`.
-- [ ] Teste frontend: `lib/api/horarios.ts` — `criarHorario`/`listarHorarios`/`removerHorario` interpretam sucesso, erro de negócio e erro de conexão.
-- [ ] Implementação: `lib/api/horarios.ts`.
+- [x] Teste frontend: `lib/api/horarios.ts` — `criarHorario`/`listarHorarios`/`removerHorario` interpretam sucesso, erro de negócio e erro de conexão.
+- [x] Implementação: `lib/api/horarios.ts`.
 - [ ] Teste frontend: `HorarioForm` — valida conflito no cliente antes de submeter (feedback imediato) e emite `onSubmit` com dados válidos.
 - [ ] Teste frontend: `HorarioCard` — exibe dia, hora de início e duração; botão remover dispara callback.
 - [ ] Implementação: organism `HorarioForm`, organism `HorarioCard`.
