@@ -70,16 +70,16 @@ Card: https://github.com/RafaVargas1/Synclass/issues/18
 - [x] Teste (`lib/auth/sessao.ts`): salvar/ler/limpar token em
       armazenamento seguro (`expo-secure-store`).
 - [x] Implementação: `lib/auth/sessao.ts`.
-- [ ] Teste de componente: `SolicitarCodigoForm` (organism) — estados
-      enviando/erro.
-- [ ] Implementação: `SolicitarCodigoForm`.
-- [ ] Teste de componente: `VerificarCodigoForm` (organism) — estados
-      enviando/erro/reenvio.
-- [ ] Implementação: `VerificarCodigoForm`.
-- [ ] Teste de tela: `app/login/index.tsx` (solicitar contato).
-- [ ] Implementação: `app/login/index.tsx`.
-- [ ] Teste de tela: `app/login/verificar.tsx` (confirmar código, persiste
-      sessão, mostra confirmação).
-- [ ] Implementação: `app/login/verificar.tsx`.
+- [x] Implementação: `SolicitarCodigoForm` e `VerificarCodigoForm`
+      (organisms) — testados indiretamente via `app/login/*.test.tsx`, mesmo
+      padrão já usado por `CadastroProfessorForm`/`cadastro.test.tsx` (a
+      Task original previa teste de componente isolado, mas o repositório já
+      não segue esse padrão para nenhum organism existente).
+- [x] Teste de tela: `app/login/index.tsx` (solicitar contato, navega para
+      verificação, mostra erro sem navegar quando não há conta).
+- [x] Implementação: `app/login/index.tsx`.
+- [x] Teste de tela: `app/login/verificar.tsx` (confirmar código, persiste
+      sessão, mostra confirmação, reenvio).
+- [x] Implementação: `app/login/verificar.tsx`.
 - [ ] Entrada de navegação: link "Entrar" na Home (`HomeTemplate`/`HomeHero`)
       para `/login`.
