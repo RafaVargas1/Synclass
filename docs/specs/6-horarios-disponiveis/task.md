@@ -26,9 +26,9 @@ Card: https://github.com/RafaVargas1/Synclass/issues/6
 - [x] Implementação: `HorariosController` (criar/listar/remover) + logs estruturados (`HorarioCriado`, `HorarioRejeitadoPorConflito`, `HorarioRejeitadoPorAlunosAlocados`) + registro DI em `Program.cs`.
 - [x] Teste frontend: `lib/api/horarios.ts` — `criarHorario`/`listarHorarios`/`removerHorario` interpretam sucesso, erro de negócio e erro de conexão.
 - [x] Implementação: `lib/api/horarios.ts`.
-- [ ] Teste frontend: `HorarioForm` — valida conflito no cliente antes de submeter (feedback imediato) e emite `onSubmit` com dados válidos.
-- [ ] Teste frontend: `HorarioCard` — exibe dia, hora de início e duração; botão remover dispara callback.
-- [ ] Implementação: organism `HorarioForm`, organism `HorarioCard`.
+- [x] Teste frontend: `HorarioForm` — valida conflito no cliente antes de submeter (feedback imediato) e emite `onSubmit` com dados válidos.
+- [x] Teste frontend: `HorarioCard` — exibe dia, hora de início e duração; botão remover dispara callback.
+- [x] Implementação: organism `HorarioForm`, organism `HorarioCard`.
 - [ ] Teste frontend: tela `professor/[professorId]/horarios` — lista, cria, mostra erro de conflito, remove.
 - [ ] Implementação: tela `professor/[professorId]/horarios.tsx`.
 - [ ] Checks finais: `dotnet format && dotnet test` / `npm run lint && npm run typecheck && npm test`.
