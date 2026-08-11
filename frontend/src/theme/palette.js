@@ -13,6 +13,7 @@ module.exports = {
       backgroundSelected: '#E0E1E6',
       textSecondary: '#60646C',
       primary: '#208AEF',
+      error: '#DC2626',
     },
     dark: {
       text: '#ffffff',
@@ -21,6 +22,7 @@ module.exports = {
       backgroundSelected: '#2E3135',
       textSecondary: '#B0B4BA',
       primary: '#4DA3F5',
+      error: '#F87171',
     },
   },
   Spacing: {

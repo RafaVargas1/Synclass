@@ -13,6 +13,7 @@ module.exports = {
         'background-selected': Colors.light.backgroundSelected,
         'text-secondary': Colors.light.textSecondary,
         primary: Colors.light.primary,
+        error: Colors.light.error,
         dark: {
           text: Colors.dark.text,
           background: Colors.dark.background,
@@ -20,6 +21,7 @@ module.exports = {
           'background-selected': Colors.dark.backgroundSelected,
           'text-secondary': Colors.dark.textSecondary,
           primary: Colors.dark.primary,
+          error: Colors.dark.error,
         },
       },
       spacing: {

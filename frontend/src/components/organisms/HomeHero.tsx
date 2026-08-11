@@ -18,7 +18,7 @@ export function HomeHero({ onGetStarted }: HomeHeroProps) {
         title="Synclass"
         description="Fundação do projeto pronta: Docker, PostgreSQL, .NET e Expo conectados. Os requisitos funcionais ainda serão implementados."
       />
-      <Button label="Ver documentação" onPress={onGetStarted} />
+      <Button label="Cadastrar como Professor" onPress={onGetStarted} />
     </View>
   );
 }
