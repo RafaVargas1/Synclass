@@ -19,6 +19,7 @@ public static class SerilogSetup
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", "Synclass.Api")
+                .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
                 .WriteTo.Console(new CompactJsonFormatter());
         });
     }

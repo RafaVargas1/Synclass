@@ -15,12 +15,16 @@ services:
       timeout: 5s
       retries: 10
 
+  # Simula o build de produção: mesma imagem (dotnet publish -c Release) que
+  # rodaria em produção, em ASPNETCORE_ENVIRONMENT=Production. Para
+  # desenvolvimento com hot reload, rode a API via `dotnet watch run` local
+  # (ver backend/README.md) — os dois podem ficar de pé ao mesmo tempo.
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB:-synclass};Username=${POSTGRES_USER:-synclass};Password=${POSTGRES_PASSWORD:-synclass}"
     ports:
       - '${API_PORT:-8080}:8080'
