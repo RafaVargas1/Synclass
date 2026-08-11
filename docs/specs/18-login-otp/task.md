@@ -81,5 +81,5 @@ Card: https://github.com/RafaVargas1/Synclass/issues/18
 - [x] Teste de tela: `app/login/verificar.tsx` (confirmar código, persiste
       sessão, mostra confirmação, reenvio).
 - [x] Implementação: `app/login/verificar.tsx`.
-- [ ] Entrada de navegação: link "Entrar" na Home (`HomeTemplate`/`HomeHero`)
+- [x] Entrada de navegação: link "Entrar" na Home (`HomeTemplate`/`HomeHero`)
       para `/login`.
