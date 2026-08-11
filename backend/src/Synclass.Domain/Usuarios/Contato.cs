@@ -1,0 +1,57 @@
+using System.Text.RegularExpressions;
+
+namespace Synclass.Domain.Usuarios;
+
+/// <summary>
+/// Normaliza e valida um contato (e-mail ou telefone) antes de qualquer
+/// comparação de duplicidade, conforme a Regra de Negócio da issue #1:
+/// e-mail em minúsculas e sem espaços nas pontas; telefone assumindo formato
+/// brasileiro (DDD + número, apenas dígitos após remover máscara). Formato
+/// internacional de telefone está fora de escopo.
+/// </summary>
+public static class Contato
+{
+    private static readonly Regex EmailRegex = new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
+    private const string FormatoEmailEsperado = "e-mail no formato nome@dominio.com";
+    private const string FormatoTelefoneEsperado = "telefone BR com DDD (10 ou 11 dígitos, ex: 11987654321)";
+
+    /// <summary>
+    /// Normaliza um contato bruto (como digitado pelo usuário) para a forma
+    /// canônica usada na comparação de duplicidade e persistida no banco.
+    /// Ex: <c>Normalizar(" Maria@Exemplo.com ")</c> retorna
+    /// <c>"maria@exemplo.com"</c>; <c>Normalizar("(11) 98765-4321")</c>
+    /// retorna <c>"11987654321"</c>.
+    /// </summary>
+    public static string Normalizar(string contatoBruto)
+    {
+        if (string.IsNullOrWhiteSpace(contatoBruto))
+        {
+            throw new ContatoInvalidoException(contatoBruto, FormatoEmailEsperado);
+        }
+
+        var contato = contatoBruto.Trim();
+        return contato.Contains('@') ? NormalizarEmail(contato) : NormalizarTelefone(contato);
+    }
+
+    private static string NormalizarEmail(string email)
+    {
+        var normalizado = email.ToLowerInvariant();
+        if (!EmailRegex.IsMatch(normalizado))
+        {
+            throw new ContatoInvalidoException(email, FormatoEmailEsperado);
+        }
+
+        return normalizado;
+    }
+
+    private static string NormalizarTelefone(string telefone)
+    {
+        var apenasDigitos = new string(telefone.Where(char.IsDigit).ToArray());
+        if (apenasDigitos.Length is not (10 or 11))
+        {
+            throw new ContatoInvalidoException(telefone, FormatoTelefoneEsperado);
+        }
+
+        return apenasDigitos;
+    }
+}
