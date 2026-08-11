@@ -7,6 +7,7 @@ COPY src/Synclass.Api/Synclass.Api.csproj src/Synclass.Api/
 COPY src/Synclass.Domain/Synclass.Domain.csproj src/Synclass.Domain/
 COPY src/Synclass.Infrastructure/Synclass.Infrastructure.csproj src/Synclass.Infrastructure/
 COPY tests/Synclass.Api.Tests/Synclass.Api.Tests.csproj tests/Synclass.Api.Tests/
+COPY tests/Synclass.Domain.Tests/Synclass.Domain.Tests.csproj tests/Synclass.Domain.Tests/
 RUN dotnet restore Synclass.sln
 
 COPY . .
