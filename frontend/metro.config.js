@@ -1,5 +1,8 @@
 const { getDefaultConfig } = require('expo/metro-config');
-const exclusionList = require('metro-config/src/defaults/exclusionList');
+// Mesmo módulo usado internamente por @expo/metro-config para os bloqueios
+// padrão (ver ExpoMetroConfig.js) — caminho estável via subpath exports do
+// pacote @expo/metro, ao contrário de metro-config/src/... (não exportado).
+const exclusionList = require('@expo/metro/metro-config/defaults/exclusionList').default;
 const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
