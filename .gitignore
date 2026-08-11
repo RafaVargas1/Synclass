@@ -16,6 +16,9 @@ frontend/*.p8
 frontend/*.p12
 frontend/*.key
 frontend/*.mobileprovision
+frontend/test-results/
+frontend/playwright-report/
+frontend/e2e/.qa-review/
 
 # ---- Docker ----
 .env
@@ -31,7 +34,8 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
-/.claude/
+/.claude/*
+!/.claude/skills/
 
 # ---- Logs ----
 *.log
