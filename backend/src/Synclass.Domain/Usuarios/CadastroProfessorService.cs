@@ -25,16 +25,25 @@ public sealed class CadastroProfessorService
         var contatoNormalizado = Contato.Normalizar(contatoBruto);
         var usuarioExistente = await _usuarios.BuscarPorContatoAsync(contatoNormalizado, cancellationToken);
 
+        var usuario = await ObterOuCriarUsuarioAsync(usuarioExistente, nomeValidado, contatoNormalizado, cancellationToken);
+        await _usuarios.SalvarAsync(cancellationToken);
+        return usuario;
+    }
+
+    private async Task<Usuario> ObterOuCriarUsuarioAsync(
+        Usuario? usuarioExistente,
+        string nomeValidado,
+        string contatoNormalizado,
+        CancellationToken cancellationToken)
+    {
         if (usuarioExistente is not null)
         {
             usuarioExistente.AdicionarPapel(PapelUsuario.Professor, _clock);
-            await _usuarios.SalvarAsync(cancellationToken);
             return usuarioExistente;
         }
 
         var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, PapelUsuario.Professor, _clock);
         await _usuarios.AdicionarAsync(novoUsuario, cancellationToken);
-        await _usuarios.SalvarAsync(cancellationToken);
         return novoUsuario;
     }
 }
