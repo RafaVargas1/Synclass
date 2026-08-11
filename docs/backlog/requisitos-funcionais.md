@@ -31,6 +31,8 @@
 9. Um Aluno pode marcar uma aula em um horário vago, caso o Professor permita.
 10. Um Aluno pode desmarcar uma aula com até X minutos de antecedência — esse
     valor de X é configurado pelo Professor.
+10.1. Um Professor pode limitar a quantidade de Alunos por horário, com no
+    mínimo 1 e no máximo N (permitindo aulas individuais ou em grupo).
 
 ## Cobrança
 

@@ -60,6 +60,12 @@ de reversão. Se o histórico mostrar um caminho abandonado, entenda o porquê
 
 ## Pull Requests e Issues
 
+- Toda issue (`feature` ou `fix`) segue o padrão descrito em
+  [`docs/backlog/padrao-de-issue.md`](docs/backlog/padrao-de-issue.md):
+  título direto, história de usuário, Regra de Negócio, critérios de aceite
+  testáveis e contexto/protótipo. Prioridade vai na label `priority:P0`..`P3`.
+- O board segue as colunas Backlog → Em Desenvolvimento → Em Teste →
+  Concluído, ordenadas por prioridade dentro de cada coluna.
 - Todo PR referencia uma issue (`Closes #123`) usando os cards criados no
   GitHub a partir de [`docs/backlog/requisitos-funcionais.md`](docs/backlog/requisitos-funcionais.md)
   ou de bugs/débitos técnicos abertos durante o desenvolvimento.

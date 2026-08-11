@@ -7,6 +7,7 @@ Plataforma de gerenciamento de horários e cobranças para professores particula
 > como especificação em [`docs/backlog/requisitos-funcionais.md`](docs/backlog/requisitos-funcionais.md)
 > para dimensionar a complexidade do sistema. Esta etapa entrega apenas a base
 > não-funcional: infraestrutura, arquitetura, convenções e esqueleto de código.
+> o projeto atualmente está hospedado em https://github.com/RafaVargas1/Synclass
 
 ## Visão geral
 
@@ -26,6 +27,8 @@ Plataforma de gerenciamento de horários e cobranças para professores particula
 | [`docs/spec/code-style.md`](docs/spec/code-style.md) | Guia central de estilo de código (norteador de todo o projeto) |
 | [`docs/spec/architecture.md`](docs/spec/architecture.md) | Decisões de arquitetura e stack |
 | [`docs/backlog/requisitos-funcionais.md`](docs/backlog/requisitos-funcionais.md) | Requisitos funcionais (ainda não implementados) |
+| [`docs/backlog/padrao-de-issue.md`](docs/backlog/padrao-de-issue.md) | Padrão de escrita de issues/cards (as 6 seções obrigatórias) |
+| [`docs/spec/fluxo-de-feature.md`](docs/spec/fluxo-de-feature.md) | Pipeline autônomo: ideia → issue → implementação → revisão → merge → relatório |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Fluxo de git, commits, worktrees |
 
 ## Estrutura do repositório
