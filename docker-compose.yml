@@ -26,6 +26,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB:-synclass};Username=${POSTGRES_USER:-synclass};Password=${POSTGRES_PASSWORD:-synclass}"
+      # Sem isso, o navegador bloqueia o fetch do frontend web (Expo, porta
+      # 8081) por CORS — appsettings.json (Production) não libera nenhuma
+      # origem por padrão, então essa liberação é só para uso local/QA deste
+      # container, não para um deploy real futuro (ver appsettings.json).
+      Cors__AllowedOrigins__0: "http://localhost:8081"
     ports:
       - '${API_PORT:-8080}:8080'
     depends_on:

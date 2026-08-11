@@ -1,5 +1,9 @@
+import { useRouter } from 'expo-router';
+
 import { HomeTemplate } from '@/components/templates/HomeTemplate';
 
 export default function HomeScreen() {
-  return <HomeTemplate onGetStarted={() => console.log('Synclass: fundação pronta')} />;
+  const router = useRouter();
+
+  return <HomeTemplate onGetStarted={() => router.push('/professor/cadastro')} />;
 }

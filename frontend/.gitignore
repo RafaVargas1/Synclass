@@ -36,6 +36,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# artefatos temporários da skill qa-review (specs Playwright avulsos +
+# screenshots) — nunca commitados, ver .claude/skills/qa-review/SKILL.md
+e2e/.qa-review/
+
 example
 
 # generated native folders
