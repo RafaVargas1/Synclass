@@ -1,0 +1,36 @@
+# ---- .NET / Backend ----
+backend/**/bin/
+backend/**/obj/
+backend/**/*.user
+backend/**/.vs/
+*.sln.docstates
+
+# ---- Node / Expo / Frontend ----
+frontend/node_modules/
+frontend/.expo/
+frontend/dist/
+frontend/web-build/
+frontend/npm-debug.*
+frontend/*.jks
+frontend/*.p8
+frontend/*.p12
+frontend/*.key
+frontend/*.mobileprovision
+
+# ---- Docker ----
+.env
+!.env.example
+
+# ---- Ferramentas locais (instaladas por scripts/, não versionadas) ----
+.dotnet/
+.tools/
+
+# ---- OS / Editores ----
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# ---- Logs ----
+*.log
