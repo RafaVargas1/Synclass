@@ -19,7 +19,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/6
 - [x] Teste unidade (Domain): `HorarioService.RemoverAsync` — rejeita com `HorarioComAlunosAlocadosException` quando existem Alunos alocados (stub, ver `implementation.md#dependência-da-issue-8`).
 - [x] Teste unidade (Domain): `HorarioService.RemoverAsync` — rejeita com `HorarioNaoEncontradoException` quando o horário não existe ou não pertence ao Professor.
 - [x] Implementação mínima: `HorarioService.RemoverAsync`.
-- [ ] Migration `CriaHorario`: tabela `Horarios` (`Id`, `ProfessorId` FK → `Usuarios`, `DiaSemana`, `HoraInicio`, `DuracaoMinutos`, `CreatedAt`) + `HorarioConfiguration` + `HorarioRepository` (EF Core).
+- [x] Migration `CriaHorario`: tabela `Horarios` (`Id`, `ProfessorId` FK → `Usuarios`, `DiaSemana`, `HoraInicio`, `DuracaoMinutos`, `CreatedAt`) + `HorarioConfiguration` + `HorarioRepository` (EF Core).
 - [ ] Teste de fumaça (Api): `POST /professores/{professorId}/horarios` — 200 com dados válidos, 400 com duração inválida, 400 com conflito.
 - [ ] Teste de fumaça (Api): `GET /professores/{professorId}/horarios` — lista horários cadastrados.
 - [ ] Teste de fumaça (Api): `DELETE /professores/{professorId}/horarios/{horarioId}` — 204 quando remove, 404 quando não existe/não pertence ao Professor.
