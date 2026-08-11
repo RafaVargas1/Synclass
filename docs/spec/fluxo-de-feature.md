@@ -27,6 +27,28 @@ confirmação normalmente.
 A única interação humana esperada é responder às perguntas geradas na Fase 2
 — isso é reflexão de produto, não uma aprovação de ação arriscada.
 
+Essa autonomia depende de `.claude/settings.json` (versionado, na raiz do
+repo) liberar `Skill(feature-flow)`, `Skill(dev-review)`, `Skill(qa-review)`,
+`Skill(artifact-design)`, `Agent`, `Artifact` e `PushNotification` — sem
+essas entradas o fluxo para pedindo permissão no meio de uma rodada, mesmo
+com tudo documentado aqui. Gaps de comando (`Bash`, ex: um subcomando novo de
+`dotnet`/`npm`/`gh`) ainda podem aparecer; corrija-os na allowlist do mesmo
+arquivo (não em `settings.local.json`, que é pessoal e não versionado) já
+que são gaps do processo, não preferência de quem está rodando.
+
+### Execução longa/autônoma (várias horas ou durante a noite)
+
+Não deixe uma sessão só, em primeiro plano, rodando o fluxo por horas sem
+nenhum ponto de checagem — se ela travar (permissão faltando, prompt
+esperando resposta), ninguém percebe até voltar. Padrão correto: uma sessão
+supervisora roda em `/loop` de auto-ritmo (`ScheduleWakeup`, ~30min),
+delega a implementação a um agente em background (`Agent`, um por issue,
+sequencial se tocarem `Domain`/`Infrastructure` em comum) e a cada
+despertar confere o progresso (`ListAgents`, `TaskList`/`TaskGet` se o
+agente reportar tarefas) antes de decidir se dorme de novo ou intervém. Isso
+dá visibilidade incremental (não só no final) e um ponto natural de
+recuperação se algo travar no meio.
+
 ## Fase 1 — Issue semente
 
 Se o usuário referenciar uma issue já existente (número, URL, ou "roda o
@@ -88,22 +110,47 @@ Cada card segue a estrutura de
 [`padrao-de-issue.md`](../backlog/padrao-de-issue.md#estrutura-do-card)
 (título, história de usuário, Regra de Negócio, critérios de aceite Gherkin,
 **critérios técnicos**, contexto/protótipo — ver a seção nova
-"Critérios técnicos" adicionada lá). Se a reflexão revelar que o pedido
-original cobre mais de uma funcionalidade, quebre em issues-irmãs
-(`gh issue create` para cada uma, todas linkadas de volta à issue semente por
-menção `#N`), em vez de forçar tudo em um card só. Reescreva a issue semente
-(`gh issue edit`) com o card final; aplique label de prioridade
-(`priority:P0`..`P3`, default `P2` se o usuário não opinar) e mova o(s)
-card(s) para a coluna certa do board.
+"Critérios técnicos" adicionada lá).
+
+Se a reflexão revelar que o pedido original cobre mais de uma
+funcionalidade — ou que uma única funcionalidade é grande/fullstack demais
+para um card só (ver heurística de tamanho em
+[`padrao-de-issue.md#épico-e-task-features-grandes-ou-fullstack`](../backlog/padrao-de-issue.md#épico-e-task-features-grandes-ou-fullstack))
+— quebre em **Épico + Tasks** usando sub-issues nativas do GitHub em vez de
+forçar tudo em um card só: a issue semente vira o épico
+(`gh issue edit <n> --title "Épico: ..." --add-label epic`) e cada fatia
+entregável vira uma Task filha (`gh issue create --parent <n> ...`). Se o
+pedido já cabe num card só, a issue semente simplesmente vira esse card
+(comportamento anterior, sem mudança).
+
+Reescreva a issue semente (`gh issue edit`) com o resultado final (card
+único, ou corpo curto de épico se houve quebra); aplique label de prioridade
+(`priority:P0`..`P3`, default `P2` se o usuário não opinar) em cada Task e
+mova o(s) card(s) para a coluna certa do board.
+
+## Fase 2.5 — Spec técnica
+
+Só depois do(s) card(s) finalizados no GitHub: para cada Task (ou para o
+card único, se não houve quebra em épico), gere a pasta
+`docs/specs/<n>-<slug>/{task.md,implementation.md}` descrita em
+[`especificacao-tecnica.md`](especificacao-tecnica.md). Não é trabalho novo
+de reflexão — é formalizar em arquivo o que a Fase 2 já concluiu (que
+entidade muda, contrato de API, ordem de implementação) para virar o roteiro
+objetivo da Fase 3, especialmente quando ela é delegada a um agente de
+swarm. Commit desses dois arquivos é o primeiro commit da branch da Task
+(antes de qualquer teste), `docs(specs): adiciona spec técnica da Task #<n>`.
 
 ## Fase 3 — Implementação
 
 - Branch por card: `feature/<escopo-curto>` (ou `fix/...`), conforme
-  [`CONTRIBUTING.md`](../../CONTRIBUTING.md#branches-e-worktrees).
-- **TDD estrito**: para cada critério de aceite e cada teste listado nos
-  critérios técnicos do card, escreva o teste primeiro (vendo-o falhar),
-  implemente o mínimo para passar, then refatore. Não escreva produção sem um
-  teste vermelho guiando.
+  [`CONTRIBUTING.md`](../../CONTRIBUTING.md#branches-e-worktrees). Primeiro
+  commit da branch é a pasta `docs/specs/<n>-<slug>/` gerada na Fase 2.5.
+- **TDD estrito**: siga a ordem do `task.md` da spec técnica — para cada item
+  da checklist, escreva o teste primeiro (vendo-o falhar), implemente o
+  mínimo para passar, then refatore. Não escreva produção sem um
+  teste vermelho guiando. Marque o item como concluído no `task.md` a cada
+  commit (é o rastro de progresso da Task, mais granular que a coluna do
+  board).
 - **Logs de dev como guardrail**: rode `backend/scripts/watch.sh` durante o
   desenvolvimento de qualquer mudança de backend e acompanhe o log
   estruturado (JSON com `TrackId`, decodificado por `pretty-log.sh`) enquanto
@@ -120,7 +167,11 @@ card(s) para a coluna certa do board.
     cada um em sua própria `git worktree`
     (`CONTRIBUTING.md#branches-e-worktrees). Não paralelize cards que tocam
     a mesma tabela/migration ou o mesmo componente — o custo de resolver
-    conflito supera o ganho.
+    conflito supera o ganho. Tasks de um mesmo Épico (ver
+    [`padrao-de-issue.md#épico-e-task-features-grandes-ou-fullstack`](../backlog/padrao-de-issue.md#épico-e-task-features-grandes-ou-fullstack))
+    seguem essa mesma regra — não ganham swarm automático só por
+    pertencerem ao mesmo épico; o padrão para elas é rodar espaçadas, uma
+    execução do fluxo por Task.
   - Dentro de um card que toca backend e frontend: implemente o backend
     primeiro até o contrato da API (rotas, DTOs) estabilizar; só então vale
     paralelizar — um agente fecha os testes/edge cases restantes do backend
@@ -131,6 +182,9 @@ card(s) para a coluna certa do board.
     sequencial) e genuinamente isolada. Um CRUD pequeno de um card só roda
     sequencial, num único agente — swarm nesse caso custa mais em tokens e
     coordenação do que economiza em tempo.
+  - Ao delegar, passe o caminho de `docs/specs/<n>-<slug>/` no prompt do
+    agente em vez de reexplicar o desenho técnico inline — o agente lê
+    `task.md`/`implementation.md` como fonte única de verdade.
 - Antes de abrir o PR, rode os checks mecânicos de
   `CONTRIBUTING.md#antes-de-abrir-um-pr` (`dotnet format && dotnet test` /
   `npm run lint && npm run typecheck && npm test`) e só abra o PR
@@ -176,8 +230,8 @@ Mova o(s) card(s) para a coluna "Concluído" no board
 
 ## Fase 6 — Relatório final
 
-Compile um relatório único cobrindo: link da issue original (e das
-issues-irmãs, se houver), link do PR mergeado, resumo do que foi
+Compile um relatório único cobrindo: link da issue original (e do épico e
+das Tasks-irmãs, se houve quebra), link do PR mergeado, resumo do que foi
 implementado, veredito da rodada final de `dev-review`, tabela de critérios
 Gherkin x resultado da rodada final de `qa-review`, e os screenshots dessa
 rodada (embutidos como `data:` URI, já que o relatório é publicado como
@@ -197,6 +251,7 @@ se ainda não tiverem sido removidos pela `qa-review`.
 | 1 (issue semente) | Chamada direta de `gh`, sem modelo | Não há raciocínio nenhum aqui — é mecânico. |
 | 2, rodada 1 de cada card (rascunho de RN a partir da história) | Subagente leve (Haiku), few-shot com o exemplo de `padrao-de-issue.md` | Segue um padrão já estabelecido — não precisa do modelo principal (mesma lógica já documentada em [`padrao-de-issue.md`](../backlog/padrao-de-issue.md#divisão-de-esforço-por-modeloagente)). |
 | 2, reflexão de código/RN anteriores, polimento final, perguntas ao usuário | Modelo principal da sessão | É onde aparecem ligações não óbvias entre cards e julgamento sobre o que perguntar — não delega bem. |
+| 2.5 (spec técnica: `task.md`/`implementation.md`) | Modelo principal | É a formalização em arquivo da mesma reflexão da fase 2 — mesmo julgamento, não delega a modelo leve. |
 | 3 (implementação, thread sequencial principal) | Modelo principal | Correção de código tem custo de erro mais alto que rascunho de issue; não usar modelo leve aqui. |
 | 3 (agentes de swarm, quando compensa) | Mesmo tier do modelo principal (não Haiku) | Swarm aqui é sobre paralelizar, não sobre baratear — a fatia de código de cada agente precisa do mesmo nível de julgamento do restante da implementação. |
 | 3 (buscas pontuais de arquivo/padrão antes de implementar) | Agente `Explore` | Busca é mais barata como agente somente-leitura dedicado. |
@@ -206,6 +261,7 @@ se ainda não tiverem sido removidos pela `qa-review`.
 ## Board e labels usados
 
 Board `Synclass` (projeto GitHub, `gh project list`), colunas Backlog → Em
-Desenvolvimento → Em Teste → Concluído. Labels: `feature`/`fix` (tipo),
-`priority:P0`..`priority:P3` (prioridade) — ambas já existem no repositório,
-não recrie.
+Desenvolvimento → Em Teste → Concluído. Labels: `feature`/`fix`/`epic`
+(tipo), `priority:P0`..`priority:P3` (prioridade) — todas já existem no
+repositório, não recrie. Progresso de um épico é lido direto do campo nativo
+"Sub-issues progress" do Project, não de uma checklist manual.

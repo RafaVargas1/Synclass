@@ -60,11 +60,61 @@ negrito, como cabeçalho `##` no corpo da issue):
 Nada além dessas 6 seções. Se uma frase não muda como alguém lê ou implementa
 o card, ela não entra.
 
+## Épico e Task (features grandes ou fullstack)
+
+Nem todo pedido cabe em um card só. Quando a reflexão (loop de 3 iterações
+abaixo, ou a Fase 2 do [fluxo de feature](../spec/fluxo-de-feature.md))
+revela que o pedido original se decompõe em mais de uma fatia
+independentemente entregável — por camada (contrato de backend primeiro,
+frontend depois) ou por sub-funcionalidade (login e recuperação de senha) —
+use a relação nativa de **sub-issues** do GitHub em vez de forçar tudo em um
+card único ou linkar cards soltos por menção `#N`:
+
+```bash
+# a issue semente vira o épico
+gh issue edit <épico> --title "Épico: <resultado amplo>" --add-label epic
+
+# cada fatia entregável vira uma Task, filha do épico
+gh issue create --repo RafaVargas1/Synclass --parent <épico> \
+  --title "<título direto da Task>" --body "<card completo, 6 seções>" \
+  --label feature
+```
+
+- O **épico** não segue a estrutura de 6 seções do card — é só um título
+  (resultado amplo, ex: "Épico: Professor e Aluno se autenticam") e um corpo
+  curto listando o objetivo geral; o detalhe de produto (RN, Gherkin) mora
+  nas Tasks filhas. Label `epic`, sem `feature`/`fix`.
+- Cada **Task** filha é um card completo (as 6 seções desta página),
+  pequena o bastante para caber num ciclo de TDD + PR só seu — o mesmo
+  princípio de "se não cabe em uma frase, quebra" da história de usuário se
+  aplica ao card inteiro: se os Critérios técnicos de uma Task tocam mais de
+  ~2 camadas de backend *e* frontend, ou os critérios de aceite passam de
+  ~4-5 cenários Gherkin, é sinal de que ainda cabe mais uma quebra.
+- O board mostra o progresso do épico automaticamente pelo campo nativo
+  "Sub-issues progress" do Project — não é preciso manter uma checklist
+  manual em lugar nenhum.
+- **Tasks do mesmo épico rodam espaçadas por padrão**: cada uma é uma
+  execução própria do [fluxo de feature](../spec/fluxo-de-feature.md) (issue
+  → PR → merge), não um lote fechado de uma vez só — isso evita um PR gigante
+  e deixa o board refletir progresso incremental real. Paralelizar Tasks do
+  mesmo épico num swarm só vale quando elas já satisfazem o critério de
+  independência descrito em
+  [`fluxo-de-feature.md#fase-3--implementação`](../spec/fluxo-de-feature.md#fase-3--implementação)
+  (sem migration/módulo compartilhado) — a regra geral daquela seção, não uma
+  exceção para épicos.
+- Cada Task ganha sua pasta de spec técnica
+  (`docs/specs/<n>-<slug>/{task.md,implementation.md}`, ver
+  [`especificacao-tecnica.md`](../spec/especificacao-tecnica.md)) — o épico
+  em si não tem spec técnica própria, é só o agregador de produto.
+
 ## Tipo e prioridade
 
-- **Tipo**: label `feature` ou `fix`. (GitHub Issue Types nativo não está
-  disponível em repositórios pessoais, só em organizações — por isso o tipo
-  continua sendo label, mas só essa, sem sub-taxonomia de área.)
+- **Tipo**: label `feature`, `fix` ou `epic` (agregador, ver seção acima).
+  (GitHub Issue Types nativo — a taxonomia com ícone/cor própria — não está
+  disponível em repositórios pessoais, só em organizações; mas a relação de
+  **sub-issues** (pai/filho, `gh issue create --parent`) é nativa e está
+  disponível em qualquer repositório, inclusive este, e é o que usamos para
+  Épico/Task acima.)
 - **Prioridade**: label `priority:P0`..`priority:P3` (P0 = bloqueia o
   próximo incremento entregável, P3 = desejável, sem prazo). É o que ordena
   os cards dentro de cada coluna do board — ordenação subjetiva ("mais

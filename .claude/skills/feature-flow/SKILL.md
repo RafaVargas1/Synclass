@@ -1,6 +1,6 @@
 ---
 name: feature-flow
-description: Pipeline autônomo ponta a ponta do projeto Synclass — da ideia (ou de uma issue já existente) ao merge e relatório final — que dispara quando o usuário expressa a intenção de implementar algo novo ("quero implementar login", "quero criar cadastro de horário", "quero adicionar recuperação de senha", "implementa X pra mim", "bota isso pra rodar do jeito que a gente combinou") ou pede para retomar o fluxo numa issue que já existe ("roda o fluxo completo pra issue #12", "continua esse fluxo na issue https://github.com/.../issues/12", "roda o feature-flow nessa issue"). Se uma issue for referenciada, reaproveita ela em vez de criar uma nova. Cria a issue no GitHub (quando ainda não existe), reflete em até 3 rodadas (conhecimento geral + código + regras de negócio anteriores) perguntando ao usuário o que for ambíguo, gera 1+ cards seguindo `docs/backlog/padrao-de-issue.md`, implementa com TDD e commits precisos usando os logs de dev como guardrail, revisa em até 3 rodadas com `dev-review` + `qa-review` em paralelo, faz squash-merge em `main` e publica um relatório final (Artifact + notificação) com o card, o PR e os prints da última rodada de QA. Roda sem pausas de confirmação (autonomia total, decisão explícita do mantenedor) — não usar para tarefas pontuais que não envolvem uma feature/fix nova.
+description: Pipeline autônomo ponta a ponta do projeto Synclass — da ideia (ou de uma issue já existente) ao merge e relatório final — que dispara quando o usuário expressa a intenção de implementar algo novo ("quero implementar login", "quero criar cadastro de horário", "quero adicionar recuperação de senha", "implementa X pra mim", "bota isso pra rodar do jeito que a gente combinou") ou pede para retomar o fluxo numa issue que já existe ("roda o fluxo completo pra issue #12", "continua esse fluxo na issue https://github.com/.../issues/12", "roda o feature-flow nessa issue"). Se uma issue for referenciada, reaproveita ela em vez de criar uma nova. Cria a issue no GitHub (quando ainda não existe), reflete em até 3 rodadas (conhecimento geral + código + regras de negócio anteriores) perguntando ao usuário o que for ambíguo, gera 1+ cards seguindo `docs/backlog/padrao-de-issue.md` — quebrando em Épico + Tasks (sub-issues nativas do GitHub) quando o pedido é grande/fullstack demais para um card só —, formaliza a reflexão técnica de cada Task em `docs/specs/<n>-<slug>/{task.md,implementation.md}` (`docs/spec/especificacao-tecnica.md`), implementa com TDD e commits precisos usando os logs de dev como guardrail, revisa em até 3 rodadas com `dev-review` + `qa-review` em paralelo, faz squash-merge em `main` e publica um relatório final (Artifact + notificação) com o card, o PR e os prints da última rodada de QA. Roda sem pausas de confirmação (autonomia total, decisão explícita do mantenedor) — não usar para tarefas pontuais que não envolvem uma feature/fix nova.
 ---
 
 # feature-flow
@@ -17,6 +17,17 @@ perguntas da Fase 2, que são o próprio mecanismo de alinhamento com o
 usuário, não uma aprovação de ação arriscada. Ao invocar `dev-review` e
 `qa-review` a partir daqui, pule o passo de confirmação delas antes de
 `gh pr comment`/`gh issue comment` — essa exceção só vale dentro deste fluxo.
+
+Isso só funciona sem interrupção se `.claude/settings.json` já liberar as
+skills/tools que o pipeline usa (ver
+[`fluxo-de-feature.md#autonomia-sem-pausas`](../../../docs/spec/fluxo-de-feature.md#autonomia-sem-pausas))
+— se um prompt de permissão aparecer no meio de uma rodada, é sinal de gap
+na allowlist, não de uma ação que devesse pedir confirmação; corrija o
+`settings.json` em vez de aprovar item a item. Para rodar isso por várias
+horas ou durante a noite, siga o padrão de
+["Execução longa/autônoma"](../../../docs/spec/fluxo-de-feature.md#execução-longaautônoma-várias-horas-ou-durante-a-noite)
+do mesmo documento — supervisor em `/loop`, não uma sessão solta sem
+checkpoint.
 
 ## Passo 1 — Issue semente
 
@@ -74,34 +85,58 @@ Para cada rodada (pare mais cedo se nada mudar da rodada anterior):
 
 Ao final: escreva o card completo (as 6 seções de
 `docs/backlog/padrao-de-issue.md`, incluindo **Critérios técnicos**). Se o
-escopo se partir em mais de uma funcionalidade, crie issues-irmãs
-(`gh issue create`, cada uma citando `#<issue-semente>` no corpo). Atualize a
-issue semente com o card final:
+escopo se partir em mais de uma funcionalidade — ou uma única funcionalidade
+for grande/fullstack demais para um card só (heurística em
+`docs/backlog/padrao-de-issue.md#épico-e-task-features-grandes-ou-fullstack`)
+— transforme a issue semente em **Épico** e crie uma **Task** filha por
+fatia entregável, usando sub-issue nativa (não menção `#N`):
 
 ```bash
+# só se houve quebra em mais de uma Task:
+gh issue edit <n> --title "Épico: <resultado amplo>" --add-label epic
+gh issue create --repo RafaVargas1/Synclass --parent <n> \
+  --title "<título da Task>" --body "<corpo com as 6 seções>" --label feature
+gh issue edit <task-n> --add-label "priority:P2"   # ajuste conforme a Task
+
+# se não houve quebra, a issue semente vira o card único:
 gh issue edit <n> --title "<título final>" --body "<corpo com as 6 seções>"
-gh issue edit <n> --add-label "priority:P2"   # ajuste a prioridade conforme o card
+gh issue edit <n> --add-label "priority:P2"
 ```
 
 Mova o(s) card(s) no board para "Backlog" (já devem estar lá) ou
 "Em Desenvolvimento" ao iniciar a Fase 3 (`gh project item-edit`).
 
+## Passo 2.5 — Spec técnica
+
+Para cada Task (ou o card único, se não houve quebra em épico), gere
+`docs/specs/<n>-<slug>/{task.md,implementation.md}` seguindo
+`docs/spec/especificacao-tecnica.md` — formaliza em arquivo a reflexão de
+código já feita no Passo 2 (entidades afetadas, contrato de API, ordem de
+implementação), servindo de roteiro objetivo para o Passo 3 e para qualquer
+agente de swarm delegado. Commit inicial da branch, antes de qualquer teste.
+
 ## Passo 3 — Implementação
 
 1. Branch: `git worktree add ../synclass-<escopo> feature/<escopo-curto>`
-   (ou `fix/<escopo-curto>`), seguindo `CONTRIBUTING.md`.
-2. TDD por critério: escreva o teste do critério de aceite ou do critério
-   técnico, veja falhar, implemente o mínimo, refatore, commit
-   (`tipo(escopo): descrição no imperativo`).
+   (ou `fix/<escopo-curto>`), seguindo `CONTRIBUTING.md`. Primeiro commit é a
+   pasta de spec técnica do Passo 2.5.
+2. TDD seguindo a ordem do `task.md`: escreva o teste do item, veja falhar,
+   implemente o mínimo, refatore, commit (`tipo(escopo): descrição no
+   imperativo`), marque o item como concluído no `task.md`.
 3. Durante mudanças de backend, mantenha `backend/scripts/watch.sh` rodando
    em background e observe o log estruturado (`pretty-log.sh`) para
    confirmar que o comportamento e os eventos logados batem com os
    Critérios técnicos do card antes de considerar o teste suficiente.
 4. Avalie swarm (ver `fluxo-de-feature.md#fase-3--implementação` para os
-   critérios exatos de quando compensa): cards independentes → um `Agent`
-   por card, cada um em sua worktree; dentro de um card back+front → backend
-   primeiro até o contrato estabilizar, depois paralelize frontend contra
-   esse contrato. Não abra agente extra para trabalho pequeno ou acoplado.
+   critérios exatos de quando compensa): cards/Tasks independentes → um
+   `Agent` por card, cada um em sua worktree, com o caminho de
+   `docs/specs/<n>-<slug>/` no prompt em vez do desenho técnico reexplicado
+   inline; dentro de um card back+front → backend primeiro até o contrato
+   estabilizar, depois paralelize frontend contra esse contrato. Não abra
+   agente extra para trabalho pequeno ou acoplado — e não trate "mesmo
+   épico" como sinal de independência: Tasks de um épico rodam espaçadas
+   (uma execução do fluxo por Task) por padrão, swarm só quando já
+   satisfazem o critério normal de independência.
 5. Antes do PR, rode os checks de `CONTRIBUTING.md#antes-de-abrir-um-pr`
    (`dotnet format && dotnet test`, `npm run lint && npm run typecheck &&
    npm test`). Só prossiga com tudo verde.
