@@ -42,14 +42,13 @@ Card: https://github.com/RafaVargas1/Synclass/issues/3
 - [x] Teste frontend (`lib/api`): `cadastrarAlunoProvisorio` — sucesso, erro
       de negócio (400) e erro de conexão/timeout
 - [x] Implementação mínima: `frontend/src/lib/api/alunosProvisorios.ts`
-- [ ] Teste frontend (organism): `CadastroAlunoProvisorioForm` — captura
-      nome/identificador, exibe erro, desabilita botão ao enviar
-- [ ] Implementação mínima: `CadastroAlunoProvisorioForm`
-- [ ] Teste frontend (tela): fluxo completo de cadastro com confirmação
-      inline, contra o contrato já estabilizado do backend
-- [ ] Implementação mínima: tela
-      `frontend/src/app/professor/[professorId]/alunos/cadastro.tsx` +
-      molécula de confirmação
+- [x] Teste frontend (tela): fluxo completo de cadastro (nome + identificador,
+      confirmação inline, erro exibido) contra o contrato já estabilizado do
+      backend — mesma granularidade de `professor/cadastro.test.tsx` (sem
+      teste de organism isolado, precedente do repo)
+- [x] Implementação mínima: `CadastroAlunoProvisorioForm` (organism),
+      molécula de confirmação e tela
+      `frontend/src/app/professor/[professorId]/alunos/cadastro.tsx`
 
 A ordem segue backend até o contrato da Api estabilizar, depois frontend
 (ver `fluxo-de-feature.md#fase-3--implementação`).
