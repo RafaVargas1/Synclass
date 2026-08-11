@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Usuarios;
 
 namespace Synclass.Infrastructure.Persistence;
@@ -16,6 +17,8 @@ public sealed class SynclassDbContext : DbContext
     }
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+
+    public DbSet<CodigoOtp> CodigosOtp => Set<CodigoOtp>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

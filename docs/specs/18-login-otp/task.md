@@ -36,15 +36,15 @@ Card: https://github.com/RafaVargas1/Synclass/issues/18
 
 ### Infrastructure
 
-- [ ] Migration `CriaCodigoOtp`: tabela `CodigosOtp` (`Id`, `UsuarioId` FK →
+- [x] Migration `CriaCodigoOtp`: tabela `CodigosOtp` (`Id`, `UsuarioId` FK →
       `Usuarios`, `CodigoHash`, `ExpiraEm`, `UsadoEm` nullable, `CreatedAt`)
       + `CodigoOtpConfiguration`.
-- [ ] Implementação: `CodigoOtpRepository` (EF Core).
-- [ ] Implementação: `GeradorDeCodigoOtp` (`RandomNumberGenerator`, 6 dígitos
+- [x] Implementação: `CodigoOtpRepository` (EF Core).
+- [x] Implementação: `GeradorDeCodigoOtp` (`RandomNumberGenerator`, 6 dígitos
       numéricos).
-- [ ] Implementação: `NotificadorDeLog` (`INotificador` — loga o código em
+- [x] Implementação: `NotificadorDeLog` (`INotificador` — loga o código em
       ambiente de dev, conforme autorizado explicitamente pelo card).
-- [ ] Implementação: `GeradorDeTokenSessaoJwt` (`IGeradorDeTokenSessao` —
+- [x] Implementação: `GeradorDeTokenSessaoJwt` (`IGeradorDeTokenSessao` —
       JWT HMAC-SHA256, papéis embutidos como claims, expiração de 30 dias).
 
 ### Api
