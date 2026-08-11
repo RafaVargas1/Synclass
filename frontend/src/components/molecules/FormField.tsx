@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Input, type InputProps } from '@/components/atoms/Input';
 
 export type FormFieldProps = InputProps & {
@@ -16,11 +17,7 @@ export function FormField({ label, errorMessage, ...inputProps }: FormFieldProps
     <View className="w-full gap-one">
       <Text className="text-sm font-medium text-text dark:text-dark-text">{label}</Text>
       <Input {...inputProps} />
-      {errorMessage ? (
-        <Text accessibilityRole="alert" className="text-sm text-error dark:text-dark-error">
-          {errorMessage}
-        </Text>
-      ) : null}
+      {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
     </View>
   );
 }

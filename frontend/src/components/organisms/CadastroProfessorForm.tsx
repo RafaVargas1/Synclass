@@ -1,6 +1,7 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { FormField } from '@/components/molecules/FormField';
 
 export type CadastroProfessorFormProps = {
@@ -46,11 +47,7 @@ export function CadastroProfessorForm({
         onChangeText={onChangeContato}
         placeholder="E-mail ou telefone"
       />
-      {erro ? (
-        <Text accessibilityRole="alert" className="text-sm text-error dark:text-dark-error">
-          {erro}
-        </Text>
-      ) : null}
+      {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
       <Button
         label={enviando ? 'Enviando...' : 'Cadastrar'}
         onPress={onSubmit}
