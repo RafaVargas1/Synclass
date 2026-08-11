@@ -63,10 +63,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/18
 
 ### Frontend
 
-- [ ] Teste (`lib/api/auth.ts`): `solicitarCodigo` e `confirmarCodigo`
+- [x] Teste (`lib/api/auth.ts`): `solicitarCodigo` e `confirmarCodigo`
       contra o contrato já estabilizado no backend (sucesso, erro de
       negócio, erro de conexão/timeout).
-- [ ] Implementação: `lib/api/auth.ts`.
+- [x] Implementação: `lib/api/auth.ts`.
 - [ ] Teste (`lib/auth/sessao.ts`): salvar/ler/limpar token em
       armazenamento seguro (`expo-secure-store`).
 - [ ] Implementação: `lib/auth/sessao.ts`.
