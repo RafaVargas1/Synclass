@@ -30,12 +30,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/3
       `Matriculas` + índice único parcial em
       `(ProfessorId, IdentificadorProvisorio)` onde não nulo; configuração EF
       Core (`MatriculaConfiguration`) e `MatriculaRepository`
-- [ ] Teste de fumaça (Api): `POST /professores/{professorId}/alunos-provisorios`
+- [x] Teste de fumaça (Api): `POST /professores/{professorId}/alunos-provisorios`
       com dados válidos retorna 200 com o `matriculaId`
-- [ ] Teste de fumaça (Api): nome vazio retorna 400
-- [ ] Teste de fumaça (Api): identificador duplicado no mesmo Professor
+- [x] Teste de fumaça (Api): nome vazio retorna 400
+- [x] Teste de fumaça (Api): identificador duplicado no mesmo Professor
       retorna 400
-- [ ] Implementação mínima: `AlunosProvisoriosController`, DTOs, registro de
+- [x] Implementação mínima: `AlunosProvisoriosController`, DTOs, registro de
       DI, log estruturado `AlunoProvisorioCadastrado` (Information, `TrackId`,
       `ProfessorId`, `MatriculaId`) e `CadastroAlunoProvisorioRejeitado`
       (Warning) — mesma convenção de `ProfessoresController`
