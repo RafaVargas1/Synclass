@@ -67,9 +67,9 @@ Card: https://github.com/RafaVargas1/Synclass/issues/18
       contra o contrato já estabilizado no backend (sucesso, erro de
       negócio, erro de conexão/timeout).
 - [x] Implementação: `lib/api/auth.ts`.
-- [ ] Teste (`lib/auth/sessao.ts`): salvar/ler/limpar token em
+- [x] Teste (`lib/auth/sessao.ts`): salvar/ler/limpar token em
       armazenamento seguro (`expo-secure-store`).
-- [ ] Implementação: `lib/auth/sessao.ts`.
+- [x] Implementação: `lib/auth/sessao.ts`.
 - [ ] Teste de componente: `SolicitarCodigoForm` (organism) — estados
       enviando/erro.
 - [ ] Implementação: `SolicitarCodigoForm`.
