@@ -2,6 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
+using Synclass.Domain.Common;
+using Synclass.Domain.Usuarios;
+using Synclass.Infrastructure.Common;
 using Synclass.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<SynclassDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddSingleton<IClock, SystemClock>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<CadastroProfessorService>();
 
 var app = builder.Build();
 
