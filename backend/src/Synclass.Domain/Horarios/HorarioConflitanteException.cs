@@ -7,7 +7,8 @@ namespace Synclass.Domain.Horarios;
 public sealed class HorarioConflitanteException : HorarioRejeitadoException
 {
     public HorarioConflitanteException(Horario conflitante)
-        : base($"Horário conflita com um já cadastrado: {conflitante.DiaSemana} {conflitante.HoraInicio}–{conflitante.HoraFim}.")
+        : base($"Horário conflita com um já cadastrado: {conflitante.DiaSemana} " +
+            $"{conflitante.HoraInicio:HH\\:mm}–{conflitante.HoraFim:HH\\:mm}.")
     {
         HorarioConflitanteId = conflitante.Id;
     }
