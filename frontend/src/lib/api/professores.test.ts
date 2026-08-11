@@ -44,4 +44,24 @@ describe('cadastrarProfessor', () => {
 
     expect(resultado.sucesso).toBe(false);
   });
+
+  it('returns a connection error message when the request hangs past the timeout', async () => {
+    jest.useFakeTimers();
+    globalThis.fetch = jest.fn(
+      (_url: string, options?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          options?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    ) as jest.Mock;
+
+    const resultadoPromise = cadastrarProfessor({
+      nome: 'Maria Silva',
+      contato: 'maria@exemplo.com',
+    });
+    await jest.runAllTimersAsync();
+    const resultado = await resultadoPromise;
+
+    expect(resultado.sucesso).toBe(false);
+    jest.useRealTimers();
+  });
 });
