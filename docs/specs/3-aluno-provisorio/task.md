@@ -4,29 +4,29 @@ Card: https://github.com/RafaVargas1/Synclass/issues/3
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain): cadastro de Aluno provisório com nome e
+- [x] Teste unidade (Domain): cadastro de Aluno provisório com nome e
       identificador válidos cria `Matricula` sem exigir contato/login
       (critério de aceite 1)
-- [ ] Teste unidade (Domain): nome vazio/só espaços rejeitado com
+- [x] Teste unidade (Domain): nome vazio/só espaços rejeitado com
       `NomeProvisorioInvalidoException` (edge point, igual à issue #1)
-- [ ] Teste unidade (Domain): identificador vazio/só espaços rejeitado com
+- [x] Teste unidade (Domain): identificador vazio/só espaços rejeitado com
       `IdentificadorProvisorioInvalidoException`
-- [ ] Teste unidade (Domain): identificador já usado por outro Aluno
+- [x] Teste unidade (Domain): identificador já usado por outro Aluno
       provisório do **mesmo** Professor rejeitado com
       `IdentificadorProvisorioDuplicadoException` (critério de aceite 2)
-- [ ] Teste unidade (Domain): o mesmo identificador é aceito para **dois
+- [x] Teste unidade (Domain): o mesmo identificador é aceito para **dois
       Professores diferentes** (edge point — unicidade é por
       `(ProfessorId, IdentificadorProvisorio)`, não global)
-- [ ] Teste unidade (Domain): promoção de matrícula provisória define
+- [x] Teste unidade (Domain): promoção de matrícula provisória define
       `AlunoUsuarioId` preservando o `MatriculaId` (e portanto o histórico via
       FK), sem criar uma segunda linha (critério de aceite 4)
-- [ ] Teste unidade (Domain): promover uma matrícula já promovida é rejeitado
+- [x] Teste unidade (Domain): promover uma matrícula já promovida é rejeitado
       (`MatriculaJaPromovidaException`, edge point — a promoção nunca
       sobrescreve um vínculo já existente)
-- [ ] Implementação mínima dos itens acima: `Matricula`, `IdentificadorProvisorio`,
+- [x] Implementação mínima dos itens acima: `Matricula`, `IdentificadorProvisorio`,
       `IMatriculaRepository`, `CadastroAlunoProvisorioService`, exceções
       (`MatriculaRejeitadaException` e subtipos)
-- [ ] Migration (`dotnet ef migrations add CriaMatricula`): tabela
+- [x] Migration (`dotnet ef migrations add CriaMatricula`): tabela
       `Matriculas` + índice único parcial em
       `(ProfessorId, IdentificadorProvisorio)` onde não nulo; configuração EF
       Core (`MatriculaConfiguration`) e `MatriculaRepository`
