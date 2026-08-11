@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(feature-flow)",
+      "Skill(dev-review)",
+      "Skill(qa-review)",
+      "Skill(artifact-design)",
+      "Skill(loop)",
+      "Skill(schedule)",
+      "Agent",
+      "Artifact",
+      "PushNotification"
+    ]
+  }
+}

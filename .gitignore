@@ -36,6 +36,7 @@ Thumbs.db
 .idea/
 /.claude/*
 !/.claude/skills/
+!/.claude/settings.json
 
 # ---- Logs ----
 *.log
