@@ -6,32 +6,32 @@ Card: https://github.com/RafaVargas1/Synclass/issues/18
 
 ### Domain
 
-- [ ] Teste unidade (Domain): `HashDeCodigoOtp` gera hash estável e nunca
+- [x] Teste unidade (Domain): `HashDeCodigoOtp` gera hash estável e nunca
       expõe o código em texto puro.
-- [ ] Implementação mínima: `HashDeCodigoOtp` (SHA-256).
-- [ ] Teste unidade (Domain): `CodigoOtp.Gerar` calcula `ExpiraEm` = agora +
+- [x] Implementação mínima: `HashDeCodigoOtp` (SHA-256).
+- [x] Teste unidade (Domain): `CodigoOtp.Gerar` calcula `ExpiraEm` = agora +
       10min e nasce não usado; `Corresponde`/`Expirado`/`Invalidar`.
-- [ ] Implementação mínima: entidade `CodigoOtp`.
-- [ ] Teste unidade (Domain): `LoginService.SolicitarCodigoAsync` — contato
+- [x] Implementação mínima: entidade `CodigoOtp`.
+- [x] Teste unidade (Domain): `LoginService.SolicitarCodigoAsync` — contato
       sem identidade plena (usuário inexistente ou sem papel) rejeita com
       `ContatoSemIdentidadePlenaException`, sem criar código.
-- [ ] Teste unidade (Domain): `LoginService.SolicitarCodigoAsync` — contato
+- [x] Teste unidade (Domain): `LoginService.SolicitarCodigoAsync` — contato
       com identidade plena gera código, persiste via
       `ICodigoOtpRepository`, e aciona `INotificador`.
-- [ ] Teste unidade (Domain): `LoginService.SolicitarCodigoAsync` — segunda
+- [x] Teste unidade (Domain): `LoginService.SolicitarCodigoAsync` — segunda
       solicitação antes da expiração invalida o código anterior (só um
       código válido por vez).
-- [ ] Implementação mínima: `LoginService.SolicitarCodigoAsync` +
+- [x] Implementação mínima: `LoginService.SolicitarCodigoAsync` +
       `ContatoSemIdentidadePlenaException`.
-- [ ] Teste unidade (Domain): `LoginService.ConfirmarCodigoAsync` — código
+- [x] Teste unidade (Domain): `LoginService.ConfirmarCodigoAsync` — código
       correto dentro do prazo gera sessão (token) e invalida o código
       (uso único).
-- [ ] Teste unidade (Domain): `LoginService.ConfirmarCodigoAsync` — código
+- [x] Teste unidade (Domain): `LoginService.ConfirmarCodigoAsync` — código
       incorreto, expirado, ou já usado rejeita com
       `CodigoOtpInvalidoException`, sem gerar token.
-- [ ] Teste unidade (Domain): `LoginService.ConfirmarCodigoAsync` — contato
+- [x] Teste unidade (Domain): `LoginService.ConfirmarCodigoAsync` — contato
       sem identidade plena rejeita com `ContatoSemIdentidadePlenaException`.
-- [ ] Implementação mínima: `LoginService.ConfirmarCodigoAsync` +
+- [x] Implementação mínima: `LoginService.ConfirmarCodigoAsync` +
       `CodigoOtpInvalidoException` + `IGeradorDeTokenSessao`.
 
 ### Infrastructure
