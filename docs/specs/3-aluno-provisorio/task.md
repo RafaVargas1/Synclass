@@ -39,9 +39,9 @@ Card: https://github.com/RafaVargas1/Synclass/issues/3
       DI, log estruturado `AlunoProvisorioCadastrado` (Information, `TrackId`,
       `ProfessorId`, `MatriculaId`) e `CadastroAlunoProvisorioRejeitado`
       (Warning) — mesma convenção de `ProfessoresController`
-- [ ] Teste frontend (`lib/api`): `cadastrarAlunoProvisorio` — sucesso, erro
+- [x] Teste frontend (`lib/api`): `cadastrarAlunoProvisorio` — sucesso, erro
       de negócio (400) e erro de conexão/timeout
-- [ ] Implementação mínima: `frontend/src/lib/api/alunosProvisorios.ts`
+- [x] Implementação mínima: `frontend/src/lib/api/alunosProvisorios.ts`
 - [ ] Teste frontend (organism): `CadastroAlunoProvisorioForm` — captura
       nome/identificador, exibe erro, desabilita botão ao enviar
 - [ ] Implementação mínima: `CadastroAlunoProvisorioForm`
