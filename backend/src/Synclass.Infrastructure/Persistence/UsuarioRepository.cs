@@ -33,12 +33,14 @@ public sealed class UsuarioRepository : IUsuarioRepository
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
             // Índice único (Contato, ou UsuarioId+Papel) violado: duas
             // requisições concorrentes passaram pela checagem de duplicidade
             // da aplicação antes de qualquer uma confirmar a escrita.
-            throw new CadastroConcorrenteException();
+            // Preserva a causa raiz (ex) para diagnóstico — sem isso, o erro
+            // real do Npgsql/EF Core fica invisível em log e em teste.
+            throw new CadastroConcorrenteException(ex);
         }
     }
 }

@@ -12,8 +12,10 @@ namespace Synclass.Domain.Usuarios;
 /// </summary>
 public sealed class CadastroConcorrenteException : CadastroProfessorRejeitadoException
 {
-    public CadastroConcorrenteException()
-        : base("Não foi possível concluir o cadastro devido a uma tentativa concorrente com o mesmo contato. Tente novamente.")
+    public CadastroConcorrenteException(Exception causaRaiz)
+        : base(
+            "Não foi possível concluir o cadastro devido a uma tentativa concorrente com o mesmo contato. Tente novamente.",
+            causaRaiz)
     {
     }
 }

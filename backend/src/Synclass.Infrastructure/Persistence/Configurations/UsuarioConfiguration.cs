@@ -15,6 +15,10 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
     {
         builder.ToTable("Usuarios");
         builder.HasKey(u => u.Id);
+        // Id gerado pela aplicação (Guid.NewGuid() em Usuario.Cadastrar), não
+        // pelo banco — ver o mesmo ajuste e a mesma justificativa em
+        // PapelAtribuidoConfiguration.
+        builder.Property(u => u.Id).ValueGeneratedNever();
 
         builder.Property(u => u.Nome).IsRequired().HasMaxLength(NomeUsuario.TamanhoMaximo);
         builder.Property(u => u.Contato).IsRequired().HasMaxLength(Contato.TamanhoMaximo);

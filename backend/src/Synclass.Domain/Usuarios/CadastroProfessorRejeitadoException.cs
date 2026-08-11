@@ -12,4 +12,9 @@ public abstract class CadastroProfessorRejeitadoException : Exception
         : base(message)
     {
     }
+
+    protected CadastroProfessorRejeitadoException(string message, Exception causaRaiz)
+        : base(message, causaRaiz)
+    {
+    }
 }
