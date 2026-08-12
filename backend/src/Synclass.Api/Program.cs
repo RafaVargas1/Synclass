@@ -3,6 +3,7 @@ using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Common;
+using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
 using Synclass.Infrastructure.Common;
@@ -35,6 +36,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroProfessorService>();
+builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
+builder.Services.AddScoped<HorarioService>();
 builder.Services.AddScoped<IMatriculaRepository, MatriculaRepository>();
 builder.Services.AddScoped<CadastroAlunoProvisorioService>();
 
