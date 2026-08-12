@@ -24,7 +24,10 @@
   `NomeProvisorioInvalidoException`, `IdentificadorProvisorioInvalidoException`,
   `IdentificadorProvisorioDuplicadoException`, `MatriculaJaPromovidaException`,
   `MatriculaConcorrenteException` (corrida de índice único, mesmo padrão de
-  `CadastroConcorrenteException`).
+  `CadastroConcorrenteException`), `ProfessorNaoEncontradoException`
+  (`professorId` sem `Usuario` correspondente — checado explicitamente antes
+  de salvar, ao invés de deixar a violação de FK do Postgres ser confundida
+  com `MatriculaConcorrenteException`; achado de dev-review no PR #22).
 
 **Infrastructure**: `MatriculaConfiguration` (índice único parcial em
 `(ProfessorId, IdentificadorProvisorio)` via `HasFilter`), `MatriculaRepository`
@@ -73,7 +76,13 @@ Response 200:
 { "matriculaId": "guid", "nome": "João Pedro", "identificador": "2024-013" }
 ```
 
-Response 400:
+Response 400 (nome/identificador inválido, identificador duplicado, ou
+conflito de concorrência):
+```json
+{ "mensagem": "..." }
+```
+
+Response 404 (`professorId` sem `Usuario` correspondente):
 ```json
 { "mensagem": "..." }
 ```
@@ -105,6 +114,12 @@ Nova tabela `Matriculas`:
 - Corrida de concorrência no índice único (duas requisições simultâneas com o
   mesmo identificador) tratada como `MatriculaConcorrenteException`, mesmo
   padrão de `CadastroConcorrenteException` da issue #1.
+- `professorId` inexistente é checado via `IUsuarioRepository.ExisteAsync`
+  antes de criar a `Matricula`, e rejeitado com `ProfessorNaoEncontradoException`
+  (HTTP 404) — não confundir com o 400 de `MatriculaConcorrenteException`. O
+  EF Core InMemory usado nos testes de integração não aplica a FK
+  `Matriculas.ProfessorId → Usuarios.Id` como o Postgres aplicaria, então essa
+  checagem explícita é a única rede de segurança testável em CI.
 
 ## Dependência de outras Tasks
 

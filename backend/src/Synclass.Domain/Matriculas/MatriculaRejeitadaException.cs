@@ -2,10 +2,12 @@ namespace Synclass.Domain.Matriculas;
 
 /// <summary>
 /// Base para toda rejeição de cadastro/promoção de Aluno provisório (nome
-/// inválido, identificador inválido/duplicado, ou promoção inválida).
-/// Permite à Api tratar qualquer rejeição de forma uniforme (HTTP 400 + log
-/// de <c>CadastroAlunoProvisorioRejeitado</c>) sem conhecer cada subtipo
-/// individualmente — mesmo papel de
+/// inválido, identificador inválido/duplicado, professor inexistente, ou
+/// promoção inválida). Permite à Api tratar qualquer rejeição sem conhecer
+/// cada subtipo individualmente para fins de log
+/// (<c>CadastroAlunoProvisorioRejeitado</c>); o HTTP mapeado varia por
+/// subtipo — ver <see cref="ProfessorNaoEncontradoException"/> (404) vs. as
+/// demais (400) — mesmo papel de
 /// <c>Synclass.Domain.Usuarios.CadastroProfessorRejeitadoException</c> na
 /// issue #1.
 /// </summary>

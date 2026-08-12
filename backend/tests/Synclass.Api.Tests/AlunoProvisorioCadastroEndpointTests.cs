@@ -42,7 +42,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     public async Task Post_Cadastro_ReturnsOk_QuandoDadosValidos()
     {
         var client = _factory.CreateClient();
-        var professorId = Guid.NewGuid();
+        var professorId = await CadastrarProfessorAsync(client, "professor1@exemplo.com");
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/alunos-provisorios",
@@ -59,7 +59,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     public async Task Post_Cadastro_ReturnsBadRequest_QuandoNomeVazio()
     {
         var client = _factory.CreateClient();
-        var professorId = Guid.NewGuid();
+        var professorId = await CadastrarProfessorAsync(client, "professor2@exemplo.com");
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/alunos-provisorios",
@@ -74,7 +74,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     public async Task Post_Cadastro_ReturnsBadRequest_QuandoIdentificadorJaUsadoPeloMesmoProfessor()
     {
         var client = _factory.CreateClient();
-        var professorId = Guid.NewGuid();
+        var professorId = await CadastrarProfessorAsync(client, "professor3@exemplo.com");
         var request = new CadastroAlunoProvisorioRequest("João Pedro", "2024-013");
         await client.PostAsJsonAsync($"/professores/{professorId}/alunos-provisorios", request);
 
@@ -91,13 +91,43 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     public async Task Post_Cadastro_ReturnsOk_QuandoIdentificadorRepetidoEmOutroProfessor()
     {
         var client = _factory.CreateClient();
-        var professorId1 = Guid.NewGuid();
-        var professorId2 = Guid.NewGuid();
+        var professorId1 = await CadastrarProfessorAsync(client, "professor4@exemplo.com");
+        var professorId2 = await CadastrarProfessorAsync(client, "professor5@exemplo.com");
         var request = new CadastroAlunoProvisorioRequest("João Pedro", "2024-013");
         await client.PostAsJsonAsync($"/professores/{professorId1}/alunos-provisorios", request);
 
         var response = await client.PostAsJsonAsync($"/professores/{professorId2}/alunos-provisorios", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    /// <summary>
+    /// Regressão do achado de dev-review no PR #22: um professorId que não
+    /// corresponde a nenhum Usuario cadastrado deve retornar 404 com um erro
+    /// específico, não o 400 genérico de "conflito, tente novamente" que só
+    /// apareceria antes por violação de foreign key em um Postgres real — o
+    /// EF Core InMemory usado nestes testes nunca a aplicava.
+    /// </summary>
+    [Fact]
+    public async Task Post_Cadastro_ReturnsNotFound_QuandoProfessorIdInexistente()
+    {
+        var client = _factory.CreateClient();
+        var professorIdInexistente = Guid.NewGuid();
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorIdInexistente}/alunos-provisorios",
+            new CadastroAlunoProvisorioRequest("João Pedro", "2024-013"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroAlunoProvisorioErrorResponse>();
+        corpo!.Mensagem.Should().Contain(professorIdInexistente.ToString());
+    }
+
+    private static async Task<Guid> CadastrarProfessorAsync(HttpClient client, string contato)
+    {
+        var response = await client.PostAsJsonAsync(
+            "/professores/cadastro", new CadastroProfessorRequest("Professor Teste", contato));
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
+        return corpo!.UsuarioId;
     }
 }

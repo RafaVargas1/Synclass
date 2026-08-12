@@ -39,6 +39,10 @@ public sealed class AlunosProvisoriosController : ControllerBase
             LogCadastroSucesso(trackId, matricula);
             return Ok(new CadastroAlunoProvisorioResponse(matricula.Id, matricula.NomeProvisorio!, matricula.IdentificadorProvisorio!));
         }
+        catch (ProfessorNaoEncontradoException ex)
+        {
+            return RejeitarProfessorNaoEncontrado(trackId, professorId, ex);
+        }
         catch (MatriculaRejeitadaException ex)
         {
             return RejeitarCadastro(trackId, professorId, ex);
@@ -58,6 +62,21 @@ public sealed class AlunosProvisoriosController : ControllerBase
             "CadastroAlunoProvisorioRejeitado {TrackId} {ProfessorId} {Motivo}",
             trackId, professorId, ex.GetType().Name);
         return BadRequest(new CadastroAlunoProvisorioErrorResponse(ex.Message));
+    }
+
+    /// <summary>
+    /// Mapeia <see cref="ProfessorNaoEncontradoException"/> para 404, distinto
+    /// do 400 usado pelas demais <see cref="MatriculaRejeitadaException"/> —
+    /// professorId inexistente não é um cadastro corrigível reenviando os
+    /// mesmos dados, ao contrário de nome/identificador inválidos (achado de
+    /// dev-review no PR #22).
+    /// </summary>
+    private IActionResult RejeitarProfessorNaoEncontrado(string trackId, Guid professorId, ProfessorNaoEncontradoException ex)
+    {
+        _logger.LogWarning(
+            "CadastroAlunoProvisorioRejeitado {TrackId} {ProfessorId} {Motivo}",
+            trackId, professorId, ex.GetType().Name);
+        return NotFound(new CadastroAlunoProvisorioErrorResponse(ex.Message));
     }
 }
 

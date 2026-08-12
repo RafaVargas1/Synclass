@@ -13,11 +13,13 @@ namespace Synclass.Domain.Matriculas;
 public sealed class CadastroAlunoProvisorioService
 {
     private readonly IMatriculaRepository _matriculas;
+    private readonly IUsuarioRepository _usuarios;
     private readonly IClock _clock;
 
-    public CadastroAlunoProvisorioService(IMatriculaRepository matriculas, IClock clock)
+    public CadastroAlunoProvisorioService(IMatriculaRepository matriculas, IUsuarioRepository usuarios, IClock clock)
     {
         _matriculas = matriculas;
+        _usuarios = usuarios;
         _clock = clock;
     }
 
@@ -27,6 +29,7 @@ public sealed class CadastroAlunoProvisorioService
         var nomeValidado = ValidarNome(nome);
         var identificadorValidado = IdentificadorProvisorio.Validar(identificador);
 
+        await GarantirProfessorExisteAsync(professorId, cancellationToken);
         await GarantirIdentificadorDisponivelAsync(professorId, identificadorValidado, cancellationToken);
 
         var matricula = Matricula.CriarProvisoria(professorId, nomeValidado, identificadorValidado, _clock);
@@ -50,6 +53,24 @@ public sealed class CadastroAlunoProvisorioService
         catch (NomeInvalidoException ex)
         {
             throw new NomeProvisorioInvalidoException(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Confirma que <paramref name="professorId"/> corresponde a um Usuario
+    /// existente antes de criar a Matricula. Sem essa checagem, um
+    /// professorId inexistente só falhava no Postgres por violação de
+    /// foreign key — capturada, por engano, junto com o conflito de índice
+    /// único em <c>MatriculaRepository.SalvarAsync</c> e relançada como
+    /// <see cref="MatriculaConcorrenteException"/> (achado de dev-review no
+    /// PR #22).
+    /// </summary>
+    private async Task GarantirProfessorExisteAsync(Guid professorId, CancellationToken cancellationToken)
+    {
+        var professorExiste = await _usuarios.ExisteAsync(professorId, cancellationToken);
+        if (!professorExiste)
+        {
+            throw new ProfessorNaoEncontradoException(professorId);
         }
     }
 
