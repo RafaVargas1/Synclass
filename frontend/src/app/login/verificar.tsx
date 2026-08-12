@@ -26,12 +26,20 @@ export default function VerificarCodigoScreen() {
 
     const resultado = await confirmarCodigo({ contato, codigo });
 
-    setEnviando(false);
     if (!resultado.sucesso) {
+      setEnviando(false);
       setErro(resultado.mensagem);
       return;
     }
-    await salvarToken(resultado.token);
+
+    try {
+      await salvarToken(resultado.token);
+    } catch {
+      setEnviando(false);
+      setErro('Não foi possível concluir o login neste dispositivo. Tente novamente.');
+      return;
+    }
+    setEnviando(false);
     setNomeConfirmado(resultado.nome);
   }
 

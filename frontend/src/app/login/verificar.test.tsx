@@ -67,6 +67,27 @@ describe('VerificarCodigoScreen', () => {
     expect(salvarTokenMock).not.toHaveBeenCalled();
   });
 
+  it('shows an error and stops loading when the device cannot store the session token', async () => {
+    confirmarCodigoMock.mockResolvedValue({
+      sucesso: true,
+      token: 'token-jwt',
+      nome: 'Maria Silva',
+      papeis: ['Professor'],
+    });
+    salvarTokenMock.mockRejectedValue(new Error('setValueWithKeyAsync is not a function'));
+    await render(<VerificarCodigoScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('000000'), '123456');
+    await fireEvent.press(screen.getByText('Confirmar'));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Não foi possível concluir o login neste dispositivo. Tente novamente.'),
+      ).toBeTruthy(),
+    );
+    expect(screen.getByText('Confirmar')).toBeTruthy();
+  });
+
   it('requests a new code when the resend action is pressed', async () => {
     solicitarCodigoMock.mockResolvedValue({ sucesso: true });
     await render(<VerificarCodigoScreen />);
