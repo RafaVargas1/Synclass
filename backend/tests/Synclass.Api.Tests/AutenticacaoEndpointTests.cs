@@ -124,4 +124,25 @@ public sealed class AutenticacaoEndpointTests : IClassFixture<WebApplicationFact
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task Post_Confirmacao_ReturnsBadRequest_QuandoExcedeuLimiteDeTentativasErradas()
+    {
+        var client = await CriarClienteComProfessorCadastradoAsync("maria@exemplo.com");
+        await client.PostAsJsonAsync("/auth/codigo", new SolicitarCodigoRequest("maria@exemplo.com"));
+        var requestErrado = new ConfirmarCodigoRequest("maria@exemplo.com", "000000");
+
+        for (var tentativa = 0; tentativa < CodigoOtp.MaxTentativasFalhas; tentativa++)
+        {
+            await client.PostAsJsonAsync("/auth/confirmacao", requestErrado);
+        }
+
+        var response = await client.PostAsJsonAsync(
+            "/auth/confirmacao",
+            new ConfirmarCodigoRequest("maria@exemplo.com", CodigoFixoGeradorDeCodigoOtp.Codigo));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var corpo = await response.Content.ReadFromJsonAsync<AutenticacaoErrorResponse>();
+        corpo!.Mensagem.Should().Contain("máximo de tentativas");
+    }
 }

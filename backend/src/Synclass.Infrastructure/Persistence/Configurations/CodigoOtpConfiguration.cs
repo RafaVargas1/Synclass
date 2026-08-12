@@ -22,6 +22,7 @@ public sealed class CodigoOtpConfiguration : IEntityTypeConfiguration<CodigoOtp>
         builder.Property(c => c.CodigoHash).IsRequired().HasMaxLength(64);
         builder.Property(c => c.ExpiraEm).IsRequired();
         builder.Property(c => c.CreatedAt).IsRequired();
+        builder.Property(c => c.TentativasFalhas).IsRequired();
 
         builder.HasIndex(c => c.UsuarioId);
 

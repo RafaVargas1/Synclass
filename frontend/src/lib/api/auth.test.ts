@@ -74,4 +74,16 @@ describe('confirmarCodigo', () => {
 
     expect(resultado.sucesso).toBe(false);
   });
+
+  it('returns sucesso: false when the Api responds 200 with an unparseable body', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new Error('invalid json')),
+    }) as jest.Mock;
+
+    const resultado = await confirmarCodigo({ contato: 'maria@exemplo.com', codigo: '123456' });
+
+    expect(resultado.sucesso).toBe(false);
+  });
 });

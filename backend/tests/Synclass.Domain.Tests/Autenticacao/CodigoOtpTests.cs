@@ -68,4 +68,41 @@ public sealed class CodigoOtpTests
 
         codigo.UsadoEm.Should().Be(relogioDepois.UtcNow);
     }
+
+    [Fact]
+    public void RegistrarTentativaFalha_IncrementaContadorDeTentativas()
+    {
+        var codigo = CodigoOtp.Gerar(UsuarioId, "123456", Clock);
+
+        codigo.RegistrarTentativaFalha();
+        codigo.RegistrarTentativaFalha();
+
+        codigo.TentativasFalhas.Should().Be(2);
+    }
+
+    [Fact]
+    public void Bloqueado_AbaixoDoLimiteDeTentativasFalhas_RetornaFalse()
+    {
+        var codigo = CodigoOtp.Gerar(UsuarioId, "123456", Clock);
+
+        for (var tentativa = 0; tentativa < CodigoOtp.MaxTentativasFalhas - 1; tentativa++)
+        {
+            codigo.RegistrarTentativaFalha();
+        }
+
+        codigo.Bloqueado.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Bloqueado_AoAtingirMaxTentativasFalhas_RetornaTrue()
+    {
+        var codigo = CodigoOtp.Gerar(UsuarioId, "123456", Clock);
+
+        for (var tentativa = 0; tentativa < CodigoOtp.MaxTentativasFalhas; tentativa++)
+        {
+            codigo.RegistrarTentativaFalha();
+        }
+
+        codigo.Bloqueado.Should().BeTrue();
+    }
 }

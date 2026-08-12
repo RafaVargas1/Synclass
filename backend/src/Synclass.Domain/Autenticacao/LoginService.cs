@@ -53,15 +53,38 @@ public sealed class LoginService
         var usuario = await BuscarIdentidadePlenaAsync(contatoNormalizado, cancellationToken);
 
         var codigo = await _codigosOtp.BuscarMaisRecenteNaoUsadoAsync(usuario.Id, cancellationToken);
-        if (codigo is null || codigo.Expirado(_clock) || !codigo.Corresponde(codigoBruto))
+        await ValidarCodigoOuRegistrarTentativaAsync(codigo, codigoBruto, cancellationToken);
+
+        codigo!.Invalidar(_clock);
+        await _codigosOtp.SalvarAsync(cancellationToken);
+
+        return new ResultadoLogin(usuario, _tokenSessao.Gerar(usuario));
+    }
+
+    /// <summary>
+    /// Valida o código candidato à confirmação. Cada tentativa incorreta
+    /// conta para <see cref="CodigoOtp.MaxTentativasFalhas"/> (ver Fix 1 do
+    /// dev-review do PR #25, issue #18) — sem isso, o OTP de 6 dígitos é
+    /// brute-forçável em POST /auth/confirmacao.
+    /// </summary>
+    private async Task ValidarCodigoOuRegistrarTentativaAsync(CodigoOtp? codigo, string codigoBruto, CancellationToken cancellationToken)
+    {
+        if (codigo is null || codigo.Expirado(_clock))
         {
             throw new CodigoOtpInvalidoException();
         }
 
-        codigo.Invalidar(_clock);
-        await _codigosOtp.SalvarAsync(cancellationToken);
+        if (codigo.Bloqueado)
+        {
+            throw new CodigoOtpBloqueadoException();
+        }
 
-        return new ResultadoLogin(usuario, _tokenSessao.Gerar(usuario));
+        if (!codigo.Corresponde(codigoBruto))
+        {
+            codigo.RegistrarTentativaFalha();
+            await _codigosOtp.SalvarAsync(cancellationToken);
+            throw codigo.Bloqueado ? new CodigoOtpBloqueadoException() : new CodigoOtpInvalidoException();
+        }
     }
 
     private async Task<Usuario> BuscarIdentidadePlenaAsync(string contatoNormalizado, CancellationToken cancellationToken)

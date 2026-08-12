@@ -113,6 +113,28 @@ public sealed class LoginServiceTests
     }
 
     [Fact]
+    public async Task ConfirmarCodigoAsync_AtingeLimiteDeTentativasErradas_BloqueiaOCodigo()
+    {
+        var (servico, usuarios, codigos, _) = CriarServico();
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        await usuarios.AdicionarAsync(professor, CancellationToken.None);
+        await servico.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
+
+        for (var tentativa = 1; tentativa < CodigoOtp.MaxTentativasFalhas; tentativa++)
+        {
+            var acaoTentativaErrada = () => servico.ConfirmarCodigoAsync("maria@exemplo.com", "000000", CancellationToken.None);
+            await acaoTentativaErrada.Should().ThrowAsync<CodigoOtpInvalidoException>();
+        }
+
+        var acaoQueEsgotaOLimite = () => servico.ConfirmarCodigoAsync("maria@exemplo.com", "000000", CancellationToken.None);
+        await acaoQueEsgotaOLimite.Should().ThrowAsync<CodigoOtpBloqueadoException>();
+
+        var acaoComCodigoCorretoAposBloqueio = () => servico.ConfirmarCodigoAsync("maria@exemplo.com", "123456", CancellationToken.None);
+        await acaoComCodigoCorretoAposBloqueio.Should().ThrowAsync<CodigoOtpBloqueadoException>();
+        codigos.Codigos.Single().TentativasFalhas.Should().Be(CodigoOtp.MaxTentativasFalhas);
+    }
+
+    [Fact]
     public async Task ConfirmarCodigoAsync_ContatoSemIdentidadePlena_Rejeita()
     {
         var (servico, _, _, _) = CriarServico();

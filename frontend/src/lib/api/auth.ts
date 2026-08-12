@@ -74,7 +74,17 @@ async function enviarComando(caminho: string, corpo: unknown): Promise<RespostaC
     return { ok: false, mensagem: MensagemErroConexao };
   }
 
-  const corpoResposta: CorpoResposta = await response.json().catch(() => null);
+  // Corpo corrompido/ilegível nunca é sucesso, mesmo com HTTP 200 — sem
+  // isso, um corpo malformado virava `{ sucesso: true, token: '' }`, que a
+  // tela de verificação salvava como sessão válida (dev-review do PR #25,
+  // issue #18).
+  let corpoResposta: CorpoResposta;
+  try {
+    corpoResposta = await response.json();
+  } catch {
+    return { ok: false, mensagem: MensagemErroGenerica };
+  }
+
   if (!response.ok) {
     return { ok: false, mensagem: (corpoResposta?.mensagem as string) ?? MensagemErroGenerica };
   }
