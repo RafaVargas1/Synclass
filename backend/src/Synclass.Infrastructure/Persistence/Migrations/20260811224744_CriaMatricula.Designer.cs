@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Synclass.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Synclass.Infrastructure.Persistence;
 namespace Synclass.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SynclassDbContext))]
-    partial class SynclassDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260811224744_CriaMatricula")]
+    partial class CriaMatricula
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,33 +24,6 @@ namespace Synclass.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Synclass.Domain.Horarios.Horario", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DiaSemana")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DuracaoMinutos")
-                        .HasColumnType("integer");
-
-                    b.Property<TimeOnly>("HoraInicio")
-                        .HasColumnType("time without time zone");
-
-                    b.Property<Guid>("ProfessorId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProfessorId", "DiaSemana");
-
-                    b.ToTable("Horarios", (string)null);
-                });
 
             modelBuilder.Entity("Synclass.Domain.Matriculas.Matricula", b =>
                 {
@@ -130,15 +106,6 @@ namespace Synclass.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Usuarios", (string)null);
-                });
-
-            modelBuilder.Entity("Synclass.Domain.Horarios.Horario", b =>
-                {
-                    b.HasOne("Synclass.Domain.Usuarios.Usuario", null)
-                        .WithMany()
-                        .HasForeignKey("ProfessorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Synclass.Domain.Matriculas.Matricula", b =>
