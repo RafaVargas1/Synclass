@@ -1,17 +1,19 @@
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import { IntroSection } from '@/components/molecules/IntroSection';
 
 export type HomeHeroProps = {
   onGetStarted: () => void;
+  onLogin: () => void;
 };
 
 /**
  * Organismo: seção completa de UI, compõe uma molécula e um átomo e pode
- * carregar interação própria (aqui, o callback do botão principal).
+ * carregar interação própria. `onLogin` é a entrada de navegação para o
+ * login por código (issue #18) — ação secundária, para quem já tem conta.
  */
-export function HomeHero({ onGetStarted }: HomeHeroProps) {
+export function HomeHero({ onGetStarted, onLogin }: HomeHeroProps) {
   return (
     <View className="items-center gap-four">
       <IntroSection
@@ -19,6 +21,11 @@ export function HomeHero({ onGetStarted }: HomeHeroProps) {
         description="Fundação do projeto pronta: Docker, PostgreSQL, .NET e Expo conectados. Os requisitos funcionais ainda serão implementados."
       />
       <Button label="Cadastrar como Professor" onPress={onGetStarted} />
+      <Pressable accessibilityRole="button" onPress={onLogin}>
+        <Text className="text-sm text-primary dark:text-dark-primary">
+          Já tenho conta — Entrar
+        </Text>
+      </Pressable>
     </View>
   );
 }

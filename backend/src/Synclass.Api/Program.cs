@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
+using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Common;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
+using Synclass.Infrastructure.Autenticacao;
 using Synclass.Infrastructure.Common;
 using Synclass.Infrastructure.Persistence;
 
@@ -41,7 +43,32 @@ builder.Services.AddScoped<HorarioService>();
 builder.Services.AddScoped<IMatriculaRepository, MatriculaRepository>();
 builder.Services.AddScoped<CadastroAlunoProvisorioService>();
 
+// Login por OTP (issue #18) — ver docs/specs/18-login-otp/implementation.md.
+builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();
+builder.Services.AddSingleton<IGeradorDeCodigoOtp, GeradorDeCodigoOtp>();
+builder.Services.AddScoped<INotificador, NotificadorDeLog>();
+builder.Services.AddSingleton<IGeradorDeTokenSessao>(sp => new GeradorDeTokenSessaoJwt(
+    builder.Configuration["Jwt:SigningKey"] ?? throw new InvalidOperationException("Configuração ausente: Jwt:SigningKey."),
+    LerExpiracaoDiasObrigatoria(builder.Configuration),
+    sp.GetRequiredService<IClock>()));
+builder.Services.AddScoped<LoginService>();
+
 var app = builder.Build();
+
+// Falha explícita no startup, mesmo padrão de Jwt:SigningKey acima — sem
+// isso, GetValue<int> devolvia 0 silenciosamente quando a config estava
+// ausente ou mal formatada (dev-review do PR #25, issue #18).
+static int LerExpiracaoDiasObrigatoria(IConfiguration configuration)
+{
+    var valorBruto = configuration["Jwt:ExpiracaoDias"];
+    if (!int.TryParse(valorBruto, out var dias) || dias <= 0)
+    {
+        throw new InvalidOperationException(
+            $"Configuração inválida: Jwt:ExpiracaoDias = \"{valorBruto}\". Esperado um inteiro positivo.");
+    }
+
+    return dias;
+}
 
 if (app.Configuration.GetValue<bool>("RunMigrationsOnStartup"))
 {
