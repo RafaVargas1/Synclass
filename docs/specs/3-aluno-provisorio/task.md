@@ -1,0 +1,54 @@
+# Task: Professor cadastra Aluno provisório (sem onboarding) (#3)
+
+Card: https://github.com/RafaVargas1/Synclass/issues/3
+
+## Ordem de execução
+
+- [x] Teste unidade (Domain): cadastro de Aluno provisório com nome e
+      identificador válidos cria `Matricula` sem exigir contato/login
+      (critério de aceite 1)
+- [x] Teste unidade (Domain): nome vazio/só espaços rejeitado com
+      `NomeProvisorioInvalidoException` (edge point, igual à issue #1)
+- [x] Teste unidade (Domain): identificador vazio/só espaços rejeitado com
+      `IdentificadorProvisorioInvalidoException`
+- [x] Teste unidade (Domain): identificador já usado por outro Aluno
+      provisório do **mesmo** Professor rejeitado com
+      `IdentificadorProvisorioDuplicadoException` (critério de aceite 2)
+- [x] Teste unidade (Domain): o mesmo identificador é aceito para **dois
+      Professores diferentes** (edge point — unicidade é por
+      `(ProfessorId, IdentificadorProvisorio)`, não global)
+- [x] Teste unidade (Domain): promoção de matrícula provisória define
+      `AlunoUsuarioId` preservando o `MatriculaId` (e portanto o histórico via
+      FK), sem criar uma segunda linha (critério de aceite 4)
+- [x] Teste unidade (Domain): promover uma matrícula já promovida é rejeitado
+      (`MatriculaJaPromovidaException`, edge point — a promoção nunca
+      sobrescreve um vínculo já existente)
+- [x] Implementação mínima dos itens acima: `Matricula`, `IdentificadorProvisorio`,
+      `IMatriculaRepository`, `CadastroAlunoProvisorioService`, exceções
+      (`MatriculaRejeitadaException` e subtipos)
+- [x] Migration (`dotnet ef migrations add CriaMatricula`): tabela
+      `Matriculas` + índice único parcial em
+      `(ProfessorId, IdentificadorProvisorio)` onde não nulo; configuração EF
+      Core (`MatriculaConfiguration`) e `MatriculaRepository`
+- [x] Teste de fumaça (Api): `POST /professores/{professorId}/alunos-provisorios`
+      com dados válidos retorna 200 com o `matriculaId`
+- [x] Teste de fumaça (Api): nome vazio retorna 400
+- [x] Teste de fumaça (Api): identificador duplicado no mesmo Professor
+      retorna 400
+- [x] Implementação mínima: `AlunosProvisoriosController`, DTOs, registro de
+      DI, log estruturado `AlunoProvisorioCadastrado` (Information, `TrackId`,
+      `ProfessorId`, `MatriculaId`) e `CadastroAlunoProvisorioRejeitado`
+      (Warning) — mesma convenção de `ProfessoresController`
+- [x] Teste frontend (`lib/api`): `cadastrarAlunoProvisorio` — sucesso, erro
+      de negócio (400) e erro de conexão/timeout
+- [x] Implementação mínima: `frontend/src/lib/api/alunosProvisorios.ts`
+- [x] Teste frontend (tela): fluxo completo de cadastro (nome + identificador,
+      confirmação inline, erro exibido) contra o contrato já estabilizado do
+      backend — mesma granularidade de `professor/cadastro.test.tsx` (sem
+      teste de organism isolado, precedente do repo)
+- [x] Implementação mínima: `CadastroAlunoProvisorioForm` (organism),
+      molécula de confirmação e tela
+      `frontend/src/app/professor/[professorId]/alunos/cadastro.tsx`
+
+A ordem segue backend até o contrato da Api estabilizar, depois frontend
+(ver `fluxo-de-feature.md#fase-3--implementação`).
