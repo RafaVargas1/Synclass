@@ -70,4 +70,20 @@ describe('HorariosProfessorScreen', () => {
     await waitFor(() => expect(screen.queryByText(/Terça/)).toBeNull());
     expect(removerHorarioMock).toHaveBeenCalledWith('professor-1', 'h1');
   });
+
+  it('shows the Api error message and keeps the horario when removal fails', async () => {
+    removerHorarioMock.mockResolvedValue({
+      sucesso: false,
+      mensagem: 'Não é possível remover: existem Alunos alocados.',
+    });
+    await render(<HorariosProfessorScreen />);
+    await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Remover'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Não é possível remover: existem Alunos alocados.')).toBeTruthy(),
+    );
+    expect(screen.getByText(/Terça/)).toBeTruthy();
+  });
 });

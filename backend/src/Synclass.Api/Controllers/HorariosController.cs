@@ -33,7 +33,7 @@ public sealed class HorariosController : ControllerBase
             LogRejeicaoPorConflito(trackId, professorId, ex);
             return BadRequest(new HorarioErrorResponse(ex.Message));
         }
-        catch (DuracaoInvalidaException ex)
+        catch (HorarioRejeitadoException ex)
         {
             return BadRequest(new HorarioErrorResponse(ex.Message));
         }

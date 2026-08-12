@@ -55,10 +55,15 @@ export default function HorariosProfessorScreen() {
   }
 
   async function handleRemover(horarioId: string) {
+    setErro(undefined);
+
     const resultado = await removerHorario(professorId, horarioId);
-    if (resultado.sucesso) {
-      setHorarios((atual) => atual.filter((horario) => horario.id !== horarioId));
+
+    if (!resultado.sucesso) {
+      setErro(resultado.mensagem);
+      return;
     }
+    setHorarios((atual) => atual.filter((horario) => horario.id !== horarioId));
   }
 
   return (

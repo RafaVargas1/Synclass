@@ -38,6 +38,17 @@ public sealed class HorarioTests
         acao.Should().Throw<DuracaoInvalidaException>();
     }
 
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(7)]
+    [InlineData(99)]
+    public void Criar_DiaSemanaForaDoIntervalo_RejeitaComDiaSemanaInvalidoException(int diaSemana)
+    {
+        var acao = () => Horario.Criar(ProfessorId, (DiaSemana)diaSemana, new TimeOnly(10, 0), 60, Clock);
+
+        acao.Should().Throw<DiaSemanaInvalidoException>();
+    }
+
     [Fact]
     public void Sobrepoe_MesmoDiaComIntervalosQueSeCruzam_RetornaTrue()
     {

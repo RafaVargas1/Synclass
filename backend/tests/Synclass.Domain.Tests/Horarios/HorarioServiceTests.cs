@@ -52,6 +52,18 @@ public sealed class HorarioServiceTests
     }
 
     [Fact]
+    public async Task CadastrarAsync_DiaSemanaInvalido_RejeitaSemConsultarConflito()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = new HorarioService(repositorio, Clock);
+
+        var acao = () => servico.CadastrarAsync(ProfessorId, (DiaSemana)99, new TimeOnly(10, 0), 60, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<DiaSemanaInvalidoException>();
+        repositorio.Horarios.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ListarAsync_DevolveApenasHorariosDoProfessor()
     {
         var repositorio = new FakeHorarioRepository();

@@ -75,6 +75,19 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     }
 
     [Fact]
+    public async Task Post_Horario_ReturnsBadRequest_QuandoDiaSemanaInvalido()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 99, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoConflitaComHorarioExistente()
     {
         var client = _factory.CreateClient();

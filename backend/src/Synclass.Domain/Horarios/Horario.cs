@@ -42,8 +42,23 @@ public sealed class Horario
 
     public static Horario Criar(Guid professorId, DiaSemana diaSemana, TimeOnly horaInicio, int duracaoMinutos, IClock clock)
     {
+        ValidarDiaSemana(diaSemana);
         DuracaoAula.Validar(duracaoMinutos);
         return new Horario(Guid.NewGuid(), professorId, diaSemana, horaInicio, duracaoMinutos, clock.UtcNow);
+    }
+
+    /// <summary>
+    /// Garante que <paramref name="diaSemana"/> é um dos valores nomeados do
+    /// enum. Necessário porque um cast direto de int (ex: no controller, a
+    /// partir do contrato de Api) não é validado pelo compilador — um valor
+    /// como 99 passaria incólume até aqui sem esta checagem.
+    /// </summary>
+    private static void ValidarDiaSemana(DiaSemana diaSemana)
+    {
+        if (!Enum.IsDefined(diaSemana))
+        {
+            throw new DiaSemanaInvalidoException((int)diaSemana);
+        }
     }
 
     /// <summary>
