@@ -21,8 +21,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/7
 - [x] Implementação: `ConfiguracoesController` (definir/consultar) + log estruturado `ModeloAgendamentoDefinido` + registro DI em `Program.cs`.
 - [x] Teste frontend: `lib/api/configuracao.ts` — `obterConfiguracao`/`definirModeloAgendamento` interpretam sucesso, "não definida" (404) e erro de conexão.
 - [x] Implementação: `lib/api/configuracao.ts`.
-- [ ] Teste frontend: `ModeloAgendamentoForm` — seleciona um dos 3 modelos e emite `onSubmit` com o valor escolhido.
-- [ ] Implementação: organism `ModeloAgendamentoForm`.
+- [x] Teste frontend: `ModeloAgendamentoForm` — seleciona um dos 3 modelos e emite `onSubmit` com o valor escolhido.
+- [x] Implementação: organism `ModeloAgendamentoForm`.
 - [ ] Teste frontend: tela `professor/[professorId]/horarios` — quando a configuração ainda não existe (404), mostra `ModeloAgendamentoForm` no lugar da lista/form de horários; ao definir o modelo, libera a tela normal sem precisar recarregar.
 - [ ] Implementação: gate em `professor/[professorId]/horarios.tsx`.
 - [ ] Checks finais: `dotnet format && dotnet test` / `npm run lint && npm run typecheck && npm test`.

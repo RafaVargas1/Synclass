@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
+import { ChipSelector, type ChipSelectorOption } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
 import type { CriarHorarioInput, Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { horariosSeSobrepoe } from '@/lib/horarioConflito';
+
+const OpcoesDiaSemana: readonly ChipSelectorOption<number>[] = NomesDiaSemana.map((nome, dia) => ({
+  valor: dia,
+  rotulo: nome.slice(0, 3),
+}));
 
 export type HorarioFormProps = {
   horariosExistentes: Horario[];
@@ -44,7 +50,12 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
 
   return (
     <View className="w-full gap-four">
-      <DiaSemanaPicker value={diaSemana} onChange={setDiaSemana} />
+      <ChipSelector
+        label="Dia da semana"
+        opcoes={OpcoesDiaSemana}
+        valor={diaSemana}
+        onChange={setDiaSemana}
+      />
       <FormField
         label="Hora de início"
         value={horaInicio}
@@ -93,48 +104,4 @@ function validar(
   };
   const conflita = horariosExistentes.some((existente) => horariosSeSobrepoe(input, existente));
   return conflita ? { valido: false, mensagem: MensagemConflito } : { valido: true, input };
-}
-
-function DiaSemanaPicker({ value, onChange }: { value: number; onChange: (dia: number) => void }) {
-  return (
-    <View className="w-full gap-one">
-      <Text className="text-sm font-medium text-text dark:text-dark-text">Dia da semana</Text>
-      <View className="flex-row flex-wrap gap-one">
-        {NomesDiaSemana.map((nome, dia) => (
-          <DiaSemanaChip
-            key={nome}
-            nome={nome}
-            selecionado={dia === value}
-            onPress={() => onChange(dia)}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function DiaSemanaChip({
-  nome,
-  selecionado,
-  onPress,
-}: {
-  nome: string;
-  selecionado: boolean;
-  onPress: () => void;
-}) {
-  const corDeFundo = selecionado
-    ? 'border-primary bg-primary dark:border-dark-primary dark:bg-dark-primary'
-    : 'border-background-selected bg-background-element dark:border-dark-background-selected dark:bg-dark-background-element';
-  const corDoTexto = selecionado ? 'text-white' : 'text-text dark:text-dark-text';
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: selecionado }}
-      onPress={onPress}
-      className={`rounded-small border px-two py-one ${corDeFundo}`}
-    >
-      <Text className={corDoTexto}>{nome.slice(0, 3)}</Text>
-    </Pressable>
-  );
 }
