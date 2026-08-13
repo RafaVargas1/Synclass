@@ -84,12 +84,16 @@ type EstadoCarregamento =
 function useCarregamentoConfiguracao(professorId: string): EstadoCarregamento {
   const [resultado, setResultado] = useState<ResultadoCarregamento | undefined>(undefined);
   const [tentativa, setTentativa] = useState(0);
-  const tentarNovamente = () => setTentativa((atual) => atual + 1);
   const marcarDefinida = () => setResultado({ sucesso: true, definida: true });
+  // Reset síncrono no clique (não dentro do efeito, que só deve reagir a
+  // dados externos) — mostra "carregando" de novo já no toque do botão.
+  const tentarNovamente = () => {
+    setResultado(undefined);
+    setTentativa((atual) => atual + 1);
+  };
 
   useEffect(() => {
     let cancelado = false;
-    setResultado(undefined);
 
     obterConfiguracao(professorId).then((res) => {
       if (cancelado) return;
