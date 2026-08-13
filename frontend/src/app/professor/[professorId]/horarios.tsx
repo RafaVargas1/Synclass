@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -47,7 +47,20 @@ export default function HorariosProfessorScreen() {
       />
     );
   }
+  return <TelaConfiguracaoCarregada professorId={professorId} carregamento={carregamento} />;
+}
 
+type TelaCarregadaProps = {
+  professorId: string;
+  carregamento: Extract<EstadoCarregamento, { status: 'carregada' }>;
+};
+
+/**
+ * Extraída de `HorariosProfessorScreen` (achado de tamanho de função do
+ * dev-review, rodada 3 do PR #26) — isola o dispatch entre o gate e o
+ * conteúdo normal depois que a configuração já carregou.
+ */
+function TelaConfiguracaoCarregada({ professorId, carregamento }: TelaCarregadaProps) {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <View className="flex-1 gap-four px-four py-four">
@@ -153,23 +166,7 @@ function GateModeloAgendamento({
   professorId: string;
   onDefinido: () => void;
 }) {
-  const [definindo, setDefinindo] = useState(false);
-  const [erro, setErro] = useState<string | undefined>(undefined);
-
-  async function handleSubmit(modelo: ModeloAgendamento) {
-    setDefinindo(true);
-    setErro(undefined);
-
-    const resultado = await definirModeloAgendamento(professorId, modelo);
-
-    setDefinindo(false);
-    if (!resultado.sucesso) {
-      setErro(resultado.mensagem);
-      return;
-    }
-    onDefinido();
-  }
-
+  const { definindo, erro, handleSubmit } = useDefinirModelo(professorId, onDefinido);
   return (
     <>
       <Heading level={1}>Modelo de agendamento</Heading>
@@ -178,66 +175,109 @@ function GateModeloAgendamento({
   );
 }
 
+/**
+ * Extraída de `GateModeloAgendamento` (achado de tamanho de função do
+ * dev-review, rodada 3 do PR #26) — mesma separação estado/efeito vs. JSX já
+ * usada em `useCarregamentoConfiguracao`.
+ */
+function useDefinirModelo(professorId: string, onDefinido: () => void) {
+  const [definindo, setDefinindo] = useState(false);
+  const [erro, setErro] = useState<string | undefined>(undefined);
+
+  async function handleSubmit(modelo: ModeloAgendamento) {
+    setDefinindo(true);
+    setErro(undefined);
+    const resultado = await definirModeloAgendamento(professorId, modelo);
+    setDefinindo(false);
+    if (!resultado.sucesso) {
+      setErro(resultado.mensagem);
+      return;
+    }
+    onDefinido();
+  }
+
+  return { definindo, erro, handleSubmit };
+}
+
 function HorariosConteudo({ professorId }: { professorId: string }) {
+  const estado = useGerenciamentoHorarios(professorId);
+  return (
+    <>
+      <Heading level={1}>Horários disponíveis</Heading>
+      <HorarioForm
+        horariosExistentes={estado.horarios}
+        enviando={estado.enviando}
+        erro={estado.erro}
+        onSubmit={estado.handleSubmit}
+      />
+      <FlatList
+        data={estado.horarios}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <HorarioCard horario={item} onRemover={estado.handleRemover} />}
+        contentContainerClassName="gap-two"
+      />
+    </>
+  );
+}
+
+/**
+ * Extraída de `HorariosConteudo` (issue #6, achado de tamanho de função do
+ * dev-review na rodada 3 do PR #26 — o corpo já vinha grande antes deste
+ * card, decompor era pendente). `handleSubmit`/`handleRemover` viram fábricas
+ * de closure à parte (`criarHandleSubmit`/`criarHandleRemover`) em vez de
+ * `function`s aninhadas, pra este hook também caber no orçamento de linhas.
+ */
+function useGerenciamentoHorarios(professorId: string) {
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
+  const handleSubmit = criarHandleSubmit(professorId, setHorarios, setErro, setEnviando);
+  const handleRemover = criarHandleRemover(professorId, setHorarios, setErro);
 
   useEffect(() => {
     let cancelado = false;
-
     listarHorarios(professorId).then((resultado) => {
-      if (!cancelado && resultado.sucesso) {
-        setHorarios(resultado.horarios);
-      }
+      if (!cancelado && resultado.sucesso) setHorarios(resultado.horarios);
     });
-
     return () => {
       cancelado = true;
     };
   }, [professorId]);
 
-  async function handleSubmit(input: CriarHorarioInput) {
+  return { horarios, erro, enviando, handleSubmit, handleRemover };
+}
+
+function criarHandleSubmit(
+  professorId: string,
+  setHorarios: Dispatch<SetStateAction<Horario[]>>,
+  setErro: Dispatch<SetStateAction<string | undefined>>,
+  setEnviando: Dispatch<SetStateAction<boolean>>,
+) {
+  return async (input: CriarHorarioInput) => {
     setEnviando(true);
     setErro(undefined);
-
     const resultado = await criarHorario(professorId, input);
-
     setEnviando(false);
     if (!resultado.sucesso) {
       setErro(resultado.mensagem);
       return;
     }
     setHorarios((atual) => [...atual, resultado.horario]);
-  }
+  };
+}
 
-  async function handleRemover(horarioId: string) {
+function criarHandleRemover(
+  professorId: string,
+  setHorarios: Dispatch<SetStateAction<Horario[]>>,
+  setErro: Dispatch<SetStateAction<string | undefined>>,
+) {
+  return async (horarioId: string) => {
     setErro(undefined);
-
     const resultado = await removerHorario(professorId, horarioId);
-
     if (!resultado.sucesso) {
       setErro(resultado.mensagem);
       return;
     }
     setHorarios((atual) => atual.filter((horario) => horario.id !== horarioId));
-  }
-
-  return (
-    <>
-      <Heading level={1}>Horários disponíveis</Heading>
-      <HorarioForm
-        horariosExistentes={horarios}
-        enviando={enviando}
-        erro={erro}
-        onSubmit={handleSubmit}
-      />
-      <FlatList
-        data={horarios}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <HorarioCard horario={item} onRemover={handleRemover} />}
-        contentContainerClassName="gap-two"
-      />
-    </>
-  );
+  };
 }

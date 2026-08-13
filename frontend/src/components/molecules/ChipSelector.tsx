@@ -38,15 +38,9 @@ export function ChipSelector<T>({ label, opcoes, valor, onChange }: ChipSelector
   );
 }
 
-function Chip({
-  rotulo,
-  selecionado,
-  onPress,
-}: {
-  rotulo: string;
-  selecionado: boolean;
-  onPress: () => void;
-}) {
+type ChipProps = { rotulo: string; selecionado: boolean; onPress: () => void };
+
+function Chip({ rotulo, selecionado, onPress }: ChipProps) {
   const corDeFundo = selecionado
     ? 'border-primary bg-primary dark:border-dark-primary dark:bg-dark-primary'
     : 'border-background-selected bg-background-element dark:border-dark-background-selected dark:bg-dark-background-element';

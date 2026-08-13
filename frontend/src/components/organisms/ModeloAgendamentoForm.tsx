@@ -17,6 +17,7 @@ const OpcoesModeloAgendamento: readonly ChipSelectorOption<ModeloAgendamento>[] 
   { valor: ModeloAgendamento.Fixo, rotulo: 'Fixo' },
   { valor: ModeloAgendamento.Hibrido, rotulo: 'Híbrido' },
 ];
+const ModeloInicial = ModeloAgendamento.Vago;
 
 /**
  * Organismo: formulário de escolha do modelo de agendamento do Professor
@@ -25,9 +26,7 @@ const OpcoesModeloAgendamento: readonly ChipSelectorOption<ModeloAgendamento>[] 
  * docs/specs/7-modelo-agendamento/implementation.md#edge-points.
  */
 export function ModeloAgendamentoForm({ enviando, erro, onSubmit }: ModeloAgendamentoFormProps) {
-  const [modeloAgendamento, setModeloAgendamento] = useState<ModeloAgendamento>(
-    ModeloAgendamento.Vago,
-  );
+  const [modeloAgendamento, setModeloAgendamento] = useState(ModeloInicial);
 
   return (
     <View className="w-full gap-four">
