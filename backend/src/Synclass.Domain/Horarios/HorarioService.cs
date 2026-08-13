@@ -24,11 +24,16 @@ public sealed class HorarioService
     }
 
     public async Task<Horario> CadastrarAsync(
-        Guid professorId, DiaSemana diaSemana, TimeOnly horaInicio, int duracaoMinutos, CancellationToken cancellationToken)
+        Guid professorId,
+        DiaSemana diaSemana,
+        TimeOnly horaInicio,
+        int duracaoMinutos,
+        CancellationToken cancellationToken,
+        int? limiteAlunos = null)
     {
         await GarantirConfiguracaoDefinidaAsync(professorId, cancellationToken);
 
-        var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, _clock);
+        var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, _clock, limiteAlunos);
         var horariosDoDia = await _horarios.ListarPorProfessorEDiaAsync(professorId, diaSemana, cancellationToken);
         var conflitante = horariosDoDia.FirstOrDefault(existente => horario.Sobrepoe(existente));
         if (conflitante is not null)
