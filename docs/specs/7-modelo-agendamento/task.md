@@ -4,10 +4,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/7
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain): `ConfiguracaoProfessor.Criar` cria configuração com o modelo informado.
-- [ ] Teste unidade (Domain): `ConfiguracaoProfessor.AlterarModelo` troca o modelo e atualiza `UpdatedAt`, sem versionar o anterior.
-- [ ] Teste unidade (Domain): `ConfiguracaoProfessor.PermiteMarcacaoLivre` — Vago sempre `true`; Fixo sempre `false`; Híbrido é `true` só quando o horário não tem atribuição fixa.
-- [ ] Implementação mínima: `ModeloAgendamento` (enum), `ConfiguracaoProfessor` (entidade).
+- [x] Teste unidade (Domain): `ConfiguracaoProfessor.Criar` cria configuração com o modelo informado.
+- [x] Teste unidade (Domain): `ConfiguracaoProfessor.AlterarModelo` troca o modelo e atualiza `UpdatedAt`, sem versionar o anterior.
+- [x] Teste unidade (Domain): `ConfiguracaoProfessor.PermiteMarcacaoLivre` — Vago sempre `true`; Fixo sempre `false`; Híbrido é `true` só quando o horário não tem atribuição fixa.
+- [x] Implementação mínima: `ModeloAgendamento` (enum), `ConfiguracaoProfessor` (entidade).
 - [ ] Teste unidade (Domain): `HorarioService.CadastrarAsync` rejeita com `ModeloAgendamentoNaoDefinidoException` quando o Professor não tem configuração.
 - [ ] Teste unidade (Domain): `HorarioService.CadastrarAsync` segue normalmente quando a configuração já existe (qualquer modelo).
 - [ ] Implementação mínima: `IConfiguracaoProfessorRepository`, `FakeConfiguracaoProfessorRepository`, ajuste em `HorarioService` (nova dependência).
