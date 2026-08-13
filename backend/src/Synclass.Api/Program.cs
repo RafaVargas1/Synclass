@@ -4,6 +4,7 @@ using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Common;
+using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
@@ -38,6 +39,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroProfessorService>();
+builder.Services.AddScoped<IConfiguracaoProfessorRepository, ConfiguracaoProfessorRepository>();
+builder.Services.AddScoped<ConfiguracaoProfessorService>();
 builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
 builder.Services.AddScoped<IMatriculaRepository, MatriculaRepository>();

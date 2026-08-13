@@ -37,13 +37,26 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
             options.UseInMemoryDatabase(nomeDoBanco));
     }
 
+    /// <summary>
+    /// Cria um Professor e já define o modelo de agendamento (Vago) — a
+    /// partir da issue #7, <c>HorarioService.CadastrarAsync</c> exige essa
+    /// configuração antes de aceitar o cadastro de um horário. O caso sem
+    /// configuração é coberto separadamente em
+    /// <see cref="ConfiguracaoEndpointTests.Post_Horario_ReturnsBadRequest_QuandoProfessorNaoDefiniuModelo"/>.
+    /// </summary>
     private static async Task<Guid> CriarProfessorAsync(HttpClient client)
     {
         var response = await client.PostAsJsonAsync(
             "/professores/cadastro",
             new CadastroProfessorRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
         var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
-        return corpo!.UsuarioId;
+        var professorId = corpo!.UsuarioId;
+
+        await client.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/modelo-agendamento",
+            new DefinirModeloAgendamentoRequest(ModeloAgendamento: 0));
+
+        return professorId;
     }
 
     [Fact]
