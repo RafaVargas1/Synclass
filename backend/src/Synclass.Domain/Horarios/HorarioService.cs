@@ -1,27 +1,33 @@
 using Synclass.Domain.Common;
+using Synclass.Domain.Configuracoes;
 
 namespace Synclass.Domain.Horarios;
 
 /// <summary>
 /// Orquestra os 3 casos de uso do card (issue #6): cadastrar, listar e
-/// remover horários disponíveis de um Professor. Cadastro valida duração e
-/// rejeita sobreposição com horários já existentes no mesmo dia; remoção
-/// rejeita quando existem Alunos alocados (ver implementation.md).
+/// remover horários disponíveis de um Professor. Cadastro exige que o
+/// Professor já tenha definido um modelo de agendamento (issue #7), valida
+/// duração e rejeita sobreposição com horários já existentes no mesmo dia;
+/// remoção rejeita quando existem Alunos alocados (ver implementation.md).
 /// </summary>
 public sealed class HorarioService
 {
     private readonly IHorarioRepository _horarios;
+    private readonly IConfiguracaoProfessorRepository _configuracoes;
     private readonly IClock _clock;
 
-    public HorarioService(IHorarioRepository horarios, IClock clock)
+    public HorarioService(IHorarioRepository horarios, IConfiguracaoProfessorRepository configuracoes, IClock clock)
     {
         _horarios = horarios;
+        _configuracoes = configuracoes;
         _clock = clock;
     }
 
     public async Task<Horario> CadastrarAsync(
         Guid professorId, DiaSemana diaSemana, TimeOnly horaInicio, int duracaoMinutos, CancellationToken cancellationToken)
     {
+        await GarantirConfiguracaoDefinidaAsync(professorId, cancellationToken);
+
         var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, _clock);
         var horariosDoDia = await _horarios.ListarPorProfessorEDiaAsync(professorId, diaSemana, cancellationToken);
         var conflitante = horariosDoDia.FirstOrDefault(existente => horario.Sobrepoe(existente));
@@ -63,5 +69,19 @@ public sealed class HorarioService
         }
 
         return horario;
+    }
+
+    /// <summary>
+    /// Exige configuração definida só no cadastro (issue #7) — <see cref="ListarAsync"/>
+    /// e <see cref="RemoverAsync"/> não checam, conforme Critérios técnicos do
+    /// card (ver implementation.md#edge-points).
+    /// </summary>
+    private async Task GarantirConfiguracaoDefinidaAsync(Guid professorId, CancellationToken cancellationToken)
+    {
+        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
+        if (configuracao is null)
+        {
+            throw new ModeloAgendamentoNaoDefinidoException(professorId);
+        }
     }
 }
