@@ -19,8 +19,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/7
 - [x] Teste de fumaça (Api): `GET /professores/{professorId}/configuracao` — 200 quando existe, 404 quando não definida.
 - [x] Teste de fumaça (Api): `POST /professores/{professorId}/horarios` agora retorna 400 quando o Professor não definiu modelo.
 - [x] Implementação: `ConfiguracoesController` (definir/consultar) + log estruturado `ModeloAgendamentoDefinido` + registro DI em `Program.cs`.
-- [ ] Teste frontend: `lib/api/configuracao.ts` — `obterConfiguracao`/`definirModeloAgendamento` interpretam sucesso, "não definida" (404) e erro de conexão.
-- [ ] Implementação: `lib/api/configuracao.ts`.
+- [x] Teste frontend: `lib/api/configuracao.ts` — `obterConfiguracao`/`definirModeloAgendamento` interpretam sucesso, "não definida" (404) e erro de conexão.
+- [x] Implementação: `lib/api/configuracao.ts`.
 - [ ] Teste frontend: `ModeloAgendamentoForm` — seleciona um dos 3 modelos e emite `onSubmit` com o valor escolhido.
 - [ ] Implementação: organism `ModeloAgendamentoForm`.
 - [ ] Teste frontend: tela `professor/[professorId]/horarios` — quando a configuração ainda não existe (404), mostra `ModeloAgendamentoForm` no lugar da lista/form de horários; ao definir o modelo, libera a tela normal sem precisar recarregar.
