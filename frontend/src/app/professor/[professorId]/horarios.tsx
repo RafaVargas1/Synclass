@@ -1,8 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/atoms/Button';
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
 import { HorarioCard } from '@/components/organisms/HorarioCard';
 import { HorarioForm } from '@/components/organisms/HorarioForm';
@@ -32,68 +34,113 @@ import {
  */
 export default function HorariosProfessorScreen() {
   const { professorId } = useLocalSearchParams<{ professorId: string }>();
-  const configuracao = useConfiguracaoProfessor(professorId);
+  const carregamento = useCarregamentoConfiguracao(professorId);
 
-  if (!configuracao.carregada) {
-    return null;
+  if (carregamento.status === 'carregando') {
+    return <TelaCarregando />;
+  }
+  if (carregamento.status === 'falha') {
+    return (
+      <TelaErroConfiguracao
+        mensagem={carregamento.mensagem}
+        onTentarNovamente={carregamento.tentarNovamente}
+      />
+    );
   }
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <View className="flex-1 gap-four px-four py-four">
-        {configuracao.definida ? (
+        {carregamento.definida ? (
           <HorariosConteudo professorId={professorId} />
         ) : (
-          <>
-            <Heading level={1}>Modelo de agendamento</Heading>
-            <ModeloAgendamentoForm
-              enviando={configuracao.definindo}
-              erro={configuracao.erro}
-              onSubmit={configuracao.definirModelo}
-            />
-          </>
+          <GateModeloAgendamento professorId={professorId} onDefinido={carregamento.marcarDefinida} />
         )}
       </View>
     </SafeAreaView>
   );
 }
 
-type EstadoConfiguracao =
-  | { carregada: false }
-  | {
-      carregada: true;
-      definida: boolean;
-      definindo: boolean;
-      erro?: string;
-      definirModelo: (modelo: ModeloAgendamento) => void;
-    };
+type ResultadoCarregamento =
+  { sucesso: true; definida: boolean } | { sucesso: false; mensagem: string };
+
+type EstadoCarregamento =
+  | { status: 'carregando' }
+  | { status: 'falha'; mensagem: string; tentarNovamente: () => void }
+  | { status: 'carregada'; definida: boolean; marcarDefinida: () => void };
 
 /**
- * Encapsula o gate de configuração (issue #7): consulta `GET configuracao`
- * ao montar e expõe `definirModelo`, que libera a tela normal sem precisar
- * recarregar a página — só atualiza o estado local (`definida: true`) em vez
- * de navegar ou refazer o fetch inicial.
+ * Consulta `GET configuracao` ao montar (issue #7) e expõe um jeito de
+ * tentar de novo em caso de falha — sem isso, a tela ficava em branco pra
+ * sempre numa falha de rede ou erro do servidor: o `useEffect` só atualizava
+ * o estado no caminho de sucesso, então uma resposta `sucesso: false` nunca
+ * saía do estado inicial (achado do dev-review/qa-review no PR #26,
+ * regressão do guard rail que `fetchComTimeout` foi criado pra evitar — ver
+ * issue #1 Cenário 6).
  */
-function useConfiguracaoProfessor(professorId: string): EstadoConfiguracao {
-  const [definida, setDefinida] = useState<boolean | undefined>(undefined);
-  const [definindo, setDefinindo] = useState(false);
-  const [erro, setErro] = useState<string | undefined>(undefined);
+function useCarregamentoConfiguracao(professorId: string): EstadoCarregamento {
+  const [resultado, setResultado] = useState<ResultadoCarregamento | undefined>(undefined);
+  const [tentativa, setTentativa] = useState(0);
+  const tentarNovamente = () => setTentativa((atual) => atual + 1);
+  const marcarDefinida = () => setResultado({ sucesso: true, definida: true });
 
   useEffect(() => {
     let cancelado = false;
+    setResultado(undefined);
 
-    obterConfiguracao(professorId).then((resultado) => {
-      if (!cancelado && resultado.sucesso) {
-        setDefinida(resultado.definida);
-      }
+    obterConfiguracao(professorId).then((res) => {
+      if (cancelado) return;
+      setResultado(res.sucesso ? { sucesso: true, definida: res.definida } : res);
     });
 
     return () => {
       cancelado = true;
     };
-  }, [professorId]);
+  }, [professorId, tentativa]);
 
-  async function definirModelo(modelo: ModeloAgendamento) {
+  if (resultado === undefined) {
+    return { status: 'carregando' };
+  }
+  if (!resultado.sucesso) {
+    return { status: 'falha', mensagem: resultado.mensagem, tentarNovamente };
+  }
+  return { status: 'carregada', definida: resultado.definida, marcarDefinida };
+}
+
+function TelaCarregando() {
+  return (
+    <SafeAreaView className="flex-1 items-center justify-center bg-background dark:bg-dark-background">
+      <ActivityIndicator accessibilityLabel="Carregando" />
+    </SafeAreaView>
+  );
+}
+
+function TelaErroConfiguracao({
+  mensagem,
+  onTentarNovamente,
+}: {
+  mensagem: string;
+  onTentarNovamente: () => void;
+}) {
+  return (
+    <SafeAreaView className="flex-1 items-center justify-center gap-four bg-background px-four dark:bg-dark-background">
+      <ErrorMessage>{mensagem}</ErrorMessage>
+      <Button label="Tentar novamente" onPress={onTentarNovamente} />
+    </SafeAreaView>
+  );
+}
+
+function GateModeloAgendamento({
+  professorId,
+  onDefinido,
+}: {
+  professorId: string;
+  onDefinido: () => void;
+}) {
+  const [definindo, setDefinindo] = useState(false);
+  const [erro, setErro] = useState<string | undefined>(undefined);
+
+  async function handleSubmit(modelo: ModeloAgendamento) {
     setDefinindo(true);
     setErro(undefined);
 
@@ -104,13 +151,15 @@ function useConfiguracaoProfessor(professorId: string): EstadoConfiguracao {
       setErro(resultado.mensagem);
       return;
     }
-    setDefinida(true);
+    onDefinido();
   }
 
-  if (definida === undefined) {
-    return { carregada: false };
-  }
-  return { carregada: true, definida, definindo, erro, definirModelo };
+  return (
+    <>
+      <Heading level={1}>Modelo de agendamento</Heading>
+      <ModeloAgendamentoForm enviando={definindo} erro={erro} onSubmit={handleSubmit} />
+    </>
+  );
 }
 
 function HorariosConteudo({ professorId }: { professorId: string }) {
