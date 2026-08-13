@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
-import { definirModeloAgendamento, ModeloAgendamento, obterConfiguracao } from '@/lib/api/configuracao';
+import {
+  definirModeloAgendamento,
+  ModeloAgendamento,
+  obterConfiguracao,
+} from '@/lib/api/configuracao';
 import { criarHorario, listarHorarios, removerHorario } from '@/lib/api/horarios';
 
 import HorariosProfessorScreen from './horarios';
@@ -174,7 +178,9 @@ describe('HorariosProfessorScreen', () => {
 
       await waitFor(() =>
         expect(
-          screen.getByText('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.'),
+          screen.getByText(
+            'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.',
+          ),
         ).toBeTruthy(),
       );
       expect(screen.getByText('Tentar novamente')).toBeTruthy();

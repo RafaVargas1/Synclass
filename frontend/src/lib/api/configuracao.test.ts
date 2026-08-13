@@ -1,4 +1,8 @@
-import { definirModeloAgendamento, obterConfiguracao, ModeloAgendamento } from '@/lib/api/configuracao';
+import {
+  definirModeloAgendamento,
+  obterConfiguracao,
+  ModeloAgendamento,
+} from '@/lib/api/configuracao';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({

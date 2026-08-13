@@ -54,7 +54,10 @@ export default function HorariosProfessorScreen() {
         {carregamento.definida ? (
           <HorariosConteudo professorId={professorId} />
         ) : (
-          <GateModeloAgendamento professorId={professorId} onDefinido={carregamento.marcarDefinida} />
+          <GateModeloAgendamento
+            professorId={professorId}
+            onDefinido={carregamento.marcarDefinida}
+          />
         )}
       </View>
     </SafeAreaView>

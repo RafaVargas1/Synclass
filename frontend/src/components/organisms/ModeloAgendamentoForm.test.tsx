@@ -36,7 +36,11 @@ describe('ModeloAgendamentoForm', () => {
 
   it('shows the Api error message passed via prop', async () => {
     await render(
-      <ModeloAgendamentoForm enviando={false} erro="Não foi possível concluir a operação." onSubmit={jest.fn()} />,
+      <ModeloAgendamentoForm
+        enviando={false}
+        erro="Não foi possível concluir a operação."
+        onSubmit={jest.fn()}
+      />,
     );
 
     expect(screen.getByText('Não foi possível concluir a operação.')).toBeTruthy();
