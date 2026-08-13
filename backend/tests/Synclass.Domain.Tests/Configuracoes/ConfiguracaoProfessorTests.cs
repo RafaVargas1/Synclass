@@ -27,6 +27,28 @@ public sealed class ConfiguracaoProfessorTests
     }
 
     [Fact]
+    public void Criar_ModeloInvalido_LancaModeloAgendamentoInvalidoException()
+    {
+        var modeloInvalido = (ModeloAgendamento)99;
+
+        var acao = () => ConfiguracaoProfessor.Criar(ProfessorId, modeloInvalido, Clock);
+
+        acao.Should().Throw<ModeloAgendamentoInvalidoException>()
+            .WithMessage("Modelo de agendamento inválido: 99. Esperado um valor entre 0 e 2.");
+    }
+
+    [Fact]
+    public void AlterarModelo_ModeloInvalido_LancaModeloAgendamentoInvalidoException()
+    {
+        var configuracao = ConfiguracaoProfessor.Criar(ProfessorId, ModeloAgendamento.Vago, Clock);
+        var modeloInvalido = (ModeloAgendamento)99;
+
+        var acao = () => configuracao.AlterarModelo(modeloInvalido, Clock);
+
+        acao.Should().Throw<ModeloAgendamentoInvalidoException>();
+    }
+
+    [Fact]
     public void AlterarModelo_ModeloDiferente_TrocaModeloEAtualizaUpdatedAt()
     {
         var configuracao = ConfiguracaoProfessor.Criar(ProfessorId, ModeloAgendamento.Fixo, Clock);

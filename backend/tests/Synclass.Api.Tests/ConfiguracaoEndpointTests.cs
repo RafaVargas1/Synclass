@@ -80,6 +80,19 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     }
 
     [Fact]
+    public async Task Put_ModeloAgendamento_ReturnsBadRequest_QuandoModeloInvalido()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/modelo-agendamento",
+            new DefinirModeloAgendamentoRequest(ModeloAgendamento: 99));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Get_Configuracao_ReturnsOk_QuandoDefinida()
     {
         var client = _factory.CreateClient();

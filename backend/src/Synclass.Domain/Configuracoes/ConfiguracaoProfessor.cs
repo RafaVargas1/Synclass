@@ -32,6 +32,7 @@ public sealed class ConfiguracaoProfessor
 
     public static ConfiguracaoProfessor Criar(Guid professorId, ModeloAgendamento modeloAgendamento, IClock clock)
     {
+        ValidarModeloAgendamento(modeloAgendamento);
         return new ConfiguracaoProfessor(Guid.NewGuid(), professorId, modeloAgendamento, clock.UtcNow, clock.UtcNow);
     }
 
@@ -44,8 +45,24 @@ public sealed class ConfiguracaoProfessor
     /// </summary>
     public void AlterarModelo(ModeloAgendamento novoModelo, IClock clock)
     {
+        ValidarModeloAgendamento(novoModelo);
         ModeloAgendamento = novoModelo;
         UpdatedAt = clock.UtcNow;
+    }
+
+    /// <summary>
+    /// Rejeita valores fora do enum <see cref="ModeloAgendamento"/> — o
+    /// contrato de Api trafega o modelo como inteiro (ver
+    /// implementation.md#contrato-de-api), então um valor fora do range
+    /// (ex: 99) chega até aqui sem checagem de tipo do compilador. Mesmo
+    /// padrão de <c>Horario.ValidarDiaSemana</c> (issue #6).
+    /// </summary>
+    private static void ValidarModeloAgendamento(ModeloAgendamento modeloAgendamento)
+    {
+        if (!Enum.IsDefined(modeloAgendamento))
+        {
+            throw new ModeloAgendamentoInvalidoException((int)modeloAgendamento);
+        }
     }
 
     /// <summary>
@@ -63,7 +80,8 @@ public sealed class ConfiguracaoProfessor
             ModeloAgendamento.Fixo => false,
             ModeloAgendamento.Hibrido => !horarioPossuiAtribuicaoFixa,
             _ => throw new ArgumentOutOfRangeException(
-                nameof(ModeloAgendamento), ModeloAgendamento, $"Modelo de agendamento inválido: {ModeloAgendamento}."),
+                nameof(ModeloAgendamento), ModeloAgendamento,
+                $"Modelo de agendamento inválido: {ModeloAgendamento}. Esperado um valor entre 0 e 2."),
         };
     }
 }

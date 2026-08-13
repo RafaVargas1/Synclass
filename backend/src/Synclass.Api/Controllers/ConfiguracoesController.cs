@@ -29,11 +29,18 @@ public sealed class ConfiguracoesController : ControllerBase
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
         var modeloAnterior = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
 
-        var configuracao = await _configuracaoService.DefinirModeloAsync(
-            professorId, (ModeloAgendamento)request.ModeloAgendamento, cancellationToken);
+        try
+        {
+            var configuracao = await _configuracaoService.DefinirModeloAsync(
+                professorId, (ModeloAgendamento)request.ModeloAgendamento, cancellationToken);
 
-        LogModeloAgendamentoDefinido(trackId, professorId, modeloAnterior?.ModeloAgendamento, configuracao.ModeloAgendamento);
-        return Ok(ParaResponse(configuracao));
+            LogModeloAgendamentoDefinido(trackId, professorId, modeloAnterior?.ModeloAgendamento, configuracao.ModeloAgendamento);
+            return Ok(ParaResponse(configuracao));
+        }
+        catch (ModeloAgendamentoInvalidoException ex)
+        {
+            return BadRequest(new ConfiguracaoErrorResponse(ex.Message));
+        }
     }
 
     [HttpGet]
@@ -65,3 +72,5 @@ public sealed class ConfiguracoesController : ControllerBase
 public sealed record DefinirModeloAgendamentoRequest(int ModeloAgendamento);
 
 public sealed record ConfiguracaoResponse(int ModeloAgendamento);
+
+public sealed record ConfiguracaoErrorResponse(string Mensagem);
