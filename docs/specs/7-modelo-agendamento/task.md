@@ -23,6 +23,6 @@ Card: https://github.com/RafaVargas1/Synclass/issues/7
 - [x] Implementação: `lib/api/configuracao.ts`.
 - [x] Teste frontend: `ModeloAgendamentoForm` — seleciona um dos 3 modelos e emite `onSubmit` com o valor escolhido.
 - [x] Implementação: organism `ModeloAgendamentoForm`.
-- [ ] Teste frontend: tela `professor/[professorId]/horarios` — quando a configuração ainda não existe (404), mostra `ModeloAgendamentoForm` no lugar da lista/form de horários; ao definir o modelo, libera a tela normal sem precisar recarregar.
-- [ ] Implementação: gate em `professor/[professorId]/horarios.tsx`.
+- [x] Teste frontend: tela `professor/[professorId]/horarios` — quando a configuração ainda não existe (404), mostra `ModeloAgendamentoForm` no lugar da lista/form de horários; ao definir o modelo, libera a tela normal sem precisar recarregar.
+- [x] Implementação: gate em `professor/[professorId]/horarios.tsx`.
 - [ ] Checks finais: `dotnet format && dotnet test` / `npm run lint && npm run typecheck && npm test`.
