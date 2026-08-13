@@ -41,11 +41,10 @@ export async function obterConfiguracao(professorId: string): Promise<ObterConfi
   if (response.status === 404) {
     return { sucesso: true, definida: false };
   }
-  if (!response.ok) {
+  const corpo = response.ok ? await response.json().catch(() => null) : null;
+  if (!corpo) {
     return { sucesso: false, mensagem: MensagemErroGenerica };
   }
-
-  const corpo = await response.json();
   return { sucesso: true, definida: true, modeloAgendamento: corpo.modeloAgendamento };
 }
 
@@ -64,7 +63,7 @@ export async function definirModeloAgendamento(
   }
 
   const corpo = await response.json().catch(() => null);
-  if (!response.ok) {
+  if (!response.ok || !corpo) {
     return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
   }
   return { sucesso: true, modeloAgendamento: corpo.modeloAgendamento };

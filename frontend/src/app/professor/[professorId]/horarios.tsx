@@ -79,32 +79,41 @@ type EstadoCarregamento =
  * o estado no caminho de sucesso, então uma resposta `sucesso: false` nunca
  * saía do estado inicial (achado do dev-review/qa-review no PR #26,
  * regressão do guard rail que `fetchComTimeout` foi criado pra evitar — ver
- * issue #1 Cenário 6).
+ * issue #1 Cenário 6). O reset de `tentarNovamente` roda no clique (fora do
+ * `useEffect`, que só deve reagir a dados externos, não disparar setState
+ * síncrono no próprio corpo — `react-hooks/set-state-in-effect`).
  */
 function useCarregamentoConfiguracao(professorId: string): EstadoCarregamento {
   const [resultado, setResultado] = useState<ResultadoCarregamento | undefined>(undefined);
   const [tentativa, setTentativa] = useState(0);
   const marcarDefinida = () => setResultado({ sucesso: true, definida: true });
-  // Reset síncrono no clique (não dentro do efeito, que só deve reagir a
-  // dados externos) — mostra "carregando" de novo já no toque do botão.
   const tentarNovamente = () => {
     setResultado(undefined);
     setTentativa((atual) => atual + 1);
   };
-
   useEffect(() => {
     let cancelado = false;
-
     obterConfiguracao(professorId).then((res) => {
-      if (cancelado) return;
-      setResultado(res.sucesso ? { sucesso: true, definida: res.definida } : res);
+      if (!cancelado) setResultado(res.sucesso ? { sucesso: true, definida: res.definida } : res);
     });
-
     return () => {
       cancelado = true;
     };
   }, [professorId, tentativa]);
+  return paraEstadoCarregamento(resultado, tentarNovamente, marcarDefinida);
+}
 
+/**
+ * Deriva o estado de renderização a partir do resultado bruto da última
+ * chamada — extraído de `useCarregamentoConfiguracao` pra manter o hook
+ * dentro do orçamento de linhas do code-style (achado do dev-review,
+ * rodada 2 do PR #26).
+ */
+function paraEstadoCarregamento(
+  resultado: ResultadoCarregamento | undefined,
+  tentarNovamente: () => void,
+  marcarDefinida: () => void,
+): EstadoCarregamento {
   if (resultado === undefined) {
     return { status: 'carregando' };
   }

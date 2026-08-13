@@ -40,6 +40,18 @@ describe('obterConfiguracao', () => {
 
     expect(resultado.sucesso).toBe(false);
   });
+
+  it('returns sucesso false instead of hanging forever when the 200 body is malformed JSON', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new Error('invalid json')),
+    }) as jest.Mock;
+
+    const resultado = await obterConfiguracao('professor-1');
+
+    expect(resultado.sucesso).toBe(false);
+  });
 });
 
 describe('definirModeloAgendamento', () => {
@@ -61,6 +73,18 @@ describe('definirModeloAgendamento', () => {
 
   it('returns a connection error message when fetch throws', async () => {
     globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
+
+    const resultado = await definirModeloAgendamento('professor-1', ModeloAgendamento.Vago);
+
+    expect(resultado.sucesso).toBe(false);
+  });
+
+  it('returns sucesso false instead of throwing when the 200 body is malformed JSON', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new Error('invalid json')),
+    }) as jest.Mock;
 
     const resultado = await definirModeloAgendamento('professor-1', ModeloAgendamento.Vago);
 
