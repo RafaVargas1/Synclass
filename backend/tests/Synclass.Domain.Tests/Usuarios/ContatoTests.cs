@@ -57,4 +57,16 @@ public sealed class ContatoTests
 
         acao.Should().Throw<ContatoInvalidoException>();
     }
+
+    [Fact]
+    public void IdentificarTipo_ContatoNormalizadoComArroba_RetornaEmail()
+    {
+        Contato.IdentificarTipo("maria@exemplo.com").Should().Be(TipoContato.Email);
+    }
+
+    [Fact]
+    public void IdentificarTipo_ContatoNormalizadoSemArroba_RetornaTelefone()
+    {
+        Contato.IdentificarTipo("11987654321").Should().Be(TipoContato.Telefone);
+    }
 }
