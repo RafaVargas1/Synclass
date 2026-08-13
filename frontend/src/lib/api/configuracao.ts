@@ -21,6 +21,7 @@ export type DefinirModeloAgendamentoResultado =
   { sucesso: true; modeloAgendamento: ModeloAgendamento } | { sucesso: false; mensagem: string };
 
 const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente novamente.';
+const JsonHeaders = { 'Content-Type': 'application/json' };
 
 /**
  * Envolve os endpoints de configuração do Professor (issue #7) atrás de uma
@@ -52,16 +53,12 @@ export async function definirModeloAgendamento(
   professorId: string,
   modeloAgendamento: ModeloAgendamento,
 ): Promise<DefinirModeloAgendamentoResultado> {
+  const caminho = `/professores/${professorId}/configuracao/modelo-agendamento`;
+  const init = { method: 'PUT', body: JSON.stringify({ modeloAgendamento }), headers: JsonHeaders };
+
   let response: Response;
   try {
-    response = await fetchComTimeout(
-      `/professores/${professorId}/configuracao/modelo-agendamento`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modeloAgendamento }),
-      },
-    );
+    response = await fetchComTimeout(caminho, init);
   } catch {
     return { sucesso: false, mensagem: MensagemErroConexao };
   }
