@@ -17,6 +17,7 @@ public sealed class AlocacaoHorarioService
 {
     private readonly IAlocacaoHorarioRepository _alocacoes;
     private readonly IMatriculaRepository _matriculas;
+    private readonly IConfiguracaoProfessorRepository _configuracoes;
     private readonly HorarioService _horarioService;
     private readonly IClock _clock;
 
@@ -29,6 +30,7 @@ public sealed class AlocacaoHorarioService
     {
         _alocacoes = alocacoes;
         _matriculas = matriculas;
+        _configuracoes = configuracoes;
         _horarioService = horarioService;
         _clock = clock;
     }
@@ -37,10 +39,26 @@ public sealed class AlocacaoHorarioService
         Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
     {
         await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        await GarantirModeloPermiteAlocacaoAsync(professorId, cancellationToken);
 
         var alocacao = AlocacaoHorario.Criar(horarioId, matriculaId, _clock);
         await _alocacoes.AdicionarAsync(alocacao, cancellationToken);
         await _alocacoes.SalvarAsync(cancellationToken);
         return alocacao;
+    }
+
+    /// <summary>
+    /// Modelo Vago não usa atribuição fixa pelo Professor (AC2) — qualquer
+    /// outro modelo (Fixo ou Híbrido) permite. Ausência de configuração é
+    /// tratada como Vago, defensivamente (ver
+    /// docs/specs/8-aluno-horario/implementation.md#edge-points).
+    /// </summary>
+    private async Task GarantirModeloPermiteAlocacaoAsync(Guid professorId, CancellationToken cancellationToken)
+    {
+        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
+        if (configuracao is null || configuracao.ModeloAgendamento == ModeloAgendamento.Vago)
+        {
+            throw new ModeloNaoPermiteAlocacaoException(professorId);
+        }
     }
 }
