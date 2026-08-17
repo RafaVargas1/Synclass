@@ -8,9 +8,9 @@ Card: https://github.com/RafaVargas1/Synclass/issues/11
 - [x] Implementação mínima: `IRegraDeCobranca` (contrato: `Id`, `MatriculaId`, `CalcularValorDevido(int quantidadeDeAulasNoPeriodo)`) + classe abstrata `RegraDeCobranca` (estado comum) + `RegraFixoMensal`
 - [x] Teste unidade (Domain): `RegraFixoPorAula.CalcularValorDevido` retorna `Valor * quantidadeDeAulasNoPeriodo`
 - [x] Implementação mínima: `RegraFixoPorAula`
-- [ ] Teste unidade (Domain): `RegraValorPorAula.CalcularValorDevido` retorna `Valor * quantidadeDeAulasNoPeriodo` (mesma fórmula de `RegraFixoPorAula`, mas carrega `FrequenciaSemanalContratada` — regressão que garante que o valor da faixa 3x/semana não se confunde com o de 2x/semana quando duas instâncias da regra têm `Valor` diferente para `FrequenciaSemanalContratada` diferente)
-- [ ] Teste unidade (Domain): `RegraValorPorAula` construída com `FrequenciaSemanalContratada` fora de 1-7 rejeita com `FrequenciaSemanalContratadaInvalidaException`
-- [ ] Implementação mínima: `RegraValorPorAula` + validação de `FrequenciaSemanalContratada`
+- [x] Teste unidade (Domain): `RegraValorPorAula.CalcularValorDevido` retorna `Valor * quantidadeDeAulasNoPeriodo` (mesma fórmula de `RegraFixoPorAula`, mas carrega `FrequenciaSemanalContratada` — regressão que garante que o valor da faixa 3x/semana não se confunde com o de 2x/semana quando duas instâncias da regra têm `Valor` diferente para `FrequenciaSemanalContratada` diferente)
+- [x] Teste unidade (Domain): `RegraValorPorAula` construída com `FrequenciaSemanalContratada` fora de 1-7 rejeita com `FrequenciaSemanalContratadaInvalidaException`
+- [x] Implementação mínima: `RegraValorPorAula` + validação de `FrequenciaSemanalContratada`
 - [ ] Teste unidade (Domain): teste parametrizado que instancia `RegraValorPorAula`, `RegraFixoMensal`, `RegraFixoPorAula` e chama `CalcularValorDevido` pela mesma referência `IRegraDeCobranca` — garante contrato estável entre implementações (critério de aceite 4)
 - [ ] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` cria uma regra nova quando a matrícula não tem nenhuma
 - [ ] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` substitui a regra existente (upsert, FK única em `MatriculaId`) quando a matrícula já tem uma regra de outro tipo
