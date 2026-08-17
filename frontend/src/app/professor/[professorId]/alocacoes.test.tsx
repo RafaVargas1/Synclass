@@ -90,6 +90,19 @@ describe('AlocacoesProfessorScreen', () => {
     expect(screen.getByText('Ana')).toBeTruthy();
   });
 
+  it('shows an error message when listarHorarios fails, instead of a silent blank grid', async () => {
+    obterConfiguracaoMock.mockResolvedValue({
+      sucesso: true,
+      definida: true,
+      modeloAgendamento: ModeloAgendamento.Fixo,
+    });
+    listarHorariosMock.mockResolvedValue({ sucesso: false, mensagem: 'Erro de conexão.' });
+
+    await render(<AlocacoesProfessorScreen />);
+
+    await waitFor(() => expect(screen.getByText('Erro de conexão.')).toBeTruthy());
+  });
+
   it('allocates the selected aluno and updates the card on success', async () => {
     obterConfiguracaoMock.mockResolvedValue({
       sucesso: true,

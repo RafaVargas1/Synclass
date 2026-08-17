@@ -92,6 +92,39 @@ describe('HorarioAlocacaoCard', () => {
     expect(onAlocar).toHaveBeenCalledWith('h1', 'a2');
   });
 
+  it('falls back to the first remaining aluno when the selected one leaves disponiveis without remounting', async () => {
+    const onAlocar = jest.fn();
+    const { rerender } = await render(
+      <HorarioAlocacaoCard
+        horario={horario}
+        alunos={alunos}
+        alocacoes={alocacoes}
+        onAlocar={onAlocar}
+        onDesalocar={jest.fn()}
+      />,
+    );
+
+    // Só há um disponível (Bruno) — chip já selecionado nele por padrão.
+    // Simula o pai re-renderizando com Bruno também alocado, sem remontar o
+    // card (mesma key), reproduzindo a dessincronia do achado do dev-review.
+    await rerender(
+      <HorarioAlocacaoCard
+        horario={{ ...horario, limiteAlunos: 3 }}
+        alunos={[...alunos, { matriculaId: 'a3', nome: 'Carla', identificador: 'carla@x.com' }]}
+        alocacoes={[...alocacoes, { id: 'al2', horarioId: 'h1', matriculaId: 'a2', createdAt: '2026-01-01T00:00:00Z' }]}
+        onAlocar={onAlocar}
+        onDesalocar={jest.fn()}
+      />,
+    );
+
+    // Bruno some do seletor (agora só aparece no card "alocado"), Carla assume
+    // o chip selecionado por padrão.
+    expect(screen.getAllByText('Bruno')).toHaveLength(1);
+    await fireEvent.press(screen.getByText('Alocar'));
+
+    expect(onAlocar).toHaveBeenCalledWith('h1', 'a3');
+  });
+
   it('does not show the selector when every aluno is already allocated or there are none', async () => {
     await render(
       <HorarioAlocacaoCard
