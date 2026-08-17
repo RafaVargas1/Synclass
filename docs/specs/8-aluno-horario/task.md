@@ -38,8 +38,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` devolve 204 e remove a alocação
 - [x] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` inexistente devolve 404
 - [x] Implementação mínima: `AlocacoesHorarioController` (`GET`, `DELETE`)
-- [ ] Teste de fumaça (Api): `GET /professores/{id}/alunos-provisorios` lista as Matrículas do Professor
-- [ ] Implementação mínima: `AlunosProvisoriosController.Listar` + `IMatriculaRepository.ListarPorProfessorAsync` (EF Core)
+- [x] Teste de fumaça (Api): `GET /professores/{id}/alunos-provisorios` lista as Matrículas do Professor
+- [x] Implementação mínima: `AlunosProvisoriosController.Listar` + `IMatriculaRepository.ListarPorProfessorAsync` (EF Core)
 - [ ] Log estruturado: evento `AlunoAlocadoEmHorario` (Information) no `POST` de sucesso
 - [ ] Log estruturado: evento `AlocacaoRejeitada` (Warning) em qualquer `AlocacaoRejeitadaException`
 - [ ] Log estruturado: evento `AlocacaoDesfeita` (Information) no `DELETE` de sucesso

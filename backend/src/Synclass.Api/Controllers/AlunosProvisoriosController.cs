@@ -5,7 +5,8 @@ using Synclass.Domain.Matriculas;
 namespace Synclass.Api.Controllers;
 
 /// <summary>
-/// Cadastro de Aluno provisório (issue #3) — sem contato, e-mail, telefone
+/// Cadastro (issue #3) e listagem (issue #8, para o seletor de Aluno da
+/// alocação a horário) de Aluno provisório — sem contato, e-mail, telefone
 /// ou login, diferente do cadastro pleno (issue #1). O <c>professorId</c> é
 /// recebido na rota, não de uma sessão: ainda não há login (issue #18, em
 /// paralelo) de onde derivar o Professor autenticado. Decisão documentada em
@@ -17,12 +18,16 @@ namespace Synclass.Api.Controllers;
 public sealed class AlunosProvisoriosController : ControllerBase
 {
     private readonly CadastroAlunoProvisorioService _cadastroAlunoProvisorio;
+    private readonly IMatriculaRepository _matriculas;
     private readonly ILogger<AlunosProvisoriosController> _logger;
 
     public AlunosProvisoriosController(
-        CadastroAlunoProvisorioService cadastroAlunoProvisorio, ILogger<AlunosProvisoriosController> logger)
+        CadastroAlunoProvisorioService cadastroAlunoProvisorio,
+        IMatriculaRepository matriculas,
+        ILogger<AlunosProvisoriosController> logger)
     {
         _cadastroAlunoProvisorio = cadastroAlunoProvisorio;
+        _matriculas = matriculas;
         _logger = logger;
     }
 
@@ -47,6 +52,26 @@ public sealed class AlunosProvisoriosController : ControllerBase
         {
             return RejeitarCadastro(trackId, professorId, ex);
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Listar(Guid professorId, CancellationToken cancellationToken)
+    {
+        var matriculas = await _matriculas.ListarPorProfessorAsync(professorId, cancellationToken);
+        return Ok(matriculas.Select(ParaResponse));
+    }
+
+    /// <summary>
+    /// Provisórias e plenas são listadas igualmente (issue #8 — a
+    /// distinção não importa para o seletor de alocação). Matrículas plenas
+    /// não têm <see cref="Matricula.NomeProvisorio"/>/<see cref="Matricula.IdentificadorProvisorio"/>
+    /// (nasceram do aceite de convite, issue #2) — <c>string.Empty</c> é o
+    /// melhor-esforço até um endpoint dedicado buscar o nome do Usuario
+    /// vinculado, fora do escopo desta issue.
+    /// </summary>
+    private static AlunoProvisorioResponse ParaResponse(Matricula matricula)
+    {
+        return new AlunoProvisorioResponse(matricula.Id, matricula.NomeProvisorio ?? string.Empty, matricula.IdentificadorProvisorio ?? string.Empty);
     }
 
     private void LogCadastroSucesso(string trackId, Matricula matricula)
@@ -85,3 +110,5 @@ public sealed record CadastroAlunoProvisorioRequest(string Nome, string Identifi
 public sealed record CadastroAlunoProvisorioResponse(Guid MatriculaId, string Nome, string Identificador);
 
 public sealed record CadastroAlunoProvisorioErrorResponse(string Mensagem);
+
+public sealed record AlunoProvisorioResponse(Guid MatriculaId, string Nome, string Identificador);
