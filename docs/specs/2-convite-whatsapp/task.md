@@ -30,26 +30,26 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
       vinculado como Aluno pleno a este Professor rejeita com
       `ContatoJaVinculadoException` (critério de aceite 4)
 - [x] Implementação mínima: `ConviteService.GerarAsync`
-- [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — token
+- [x] Teste unidade (Domain): `ConviteService.AceitarAsync` — token
       inexistente rejeita com `ConviteInvalidoException`
-- [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — contato
+- [x] Teste unidade (Domain): `ConviteService.AceitarAsync` — contato
       divergente do convite rejeita com `ConviteContatoDivergenteException`
       (edge point)
-- [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — sem
+- [x] Teste unidade (Domain): `ConviteService.AceitarAsync` — sem
       `MatriculaId` de origem e contato novo cria `Usuario` com papel Aluno e
       uma `Matricula` vinculada nova (critério de aceite 2, caminho "contato
       novo")
-- [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — contato já
+- [x] Teste unidade (Domain): `ConviteService.AceitarAsync` — contato já
       existente como Aluno provisório de outro convite/fluxo promove a
       identidade existente em vez de duplicar (critério de aceite 2, caminho
       "identidade existente")
-- [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — com
+- [x] Teste unidade (Domain): `ConviteService.AceitarAsync` — com
       `MatriculaId` de origem promove exatamente aquela `Matricula`
       provisória (sem casar por nome/contato), preservando `MatriculaId`
       (critério de aceite 5)
-- [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — convite
+- [x] Teste unidade (Domain): `ConviteService.AceitarAsync` — convite
       expirado rejeita sem criar/alterar nada (critério de aceite 3)
-- [ ] Implementação mínima: `ConviteService.AceitarAsync`
+- [x] Implementação mínima: `ConviteService.AceitarAsync`
 
 ### Infrastructure
 

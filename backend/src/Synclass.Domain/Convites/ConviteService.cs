@@ -94,4 +94,79 @@ public sealed class ConviteService
             throw new ContatoJaVinculadoException();
         }
     }
+
+    /// <summary>
+    /// Aceita um convite: valida o contato submetido contra o do convite
+    /// (Regra de Negócio — "mesmo contato do convite"), marca o convite como
+    /// usado antes de qualquer mutação de Usuario/Matricula (uso único), e
+    /// então cria/reaproveita a identidade e promove ou cria o vínculo.
+    /// </summary>
+    public async Task<Usuario> AceitarAsync(string token, string nome, string contatoBruto, CancellationToken cancellationToken)
+    {
+        var convite = await _convites.BuscarPorTokenAsync(token, cancellationToken) ?? throw new ConviteInvalidoException();
+        var contatoNormalizado = Contato.Normalizar(contatoBruto);
+        if (contatoNormalizado != convite.Contato)
+        {
+            throw new ConviteContatoDivergenteException();
+        }
+
+        var nomeValidado = NomeUsuario.Validar(nome);
+        convite.MarcarUsado(_clock);
+
+        var usuario = await ObterOuCriarUsuarioAsync(nomeValidado, convite.Contato, cancellationToken);
+        await VincularMatriculaAsync(convite, usuario.Id, cancellationToken);
+
+        await _usuarios.SalvarAsync(cancellationToken);
+        await _matriculas.SalvarAsync(cancellationToken);
+        await _convites.SalvarAsync(cancellationToken);
+        return usuario;
+    }
+
+    private async Task<Usuario> ObterOuCriarUsuarioAsync(string nomeValidado, string contatoNormalizado, CancellationToken cancellationToken)
+    {
+        var usuarioExistente = await _usuarios.BuscarPorContatoAsync(contatoNormalizado, cancellationToken);
+        if (usuarioExistente is not null)
+        {
+            AdicionarPapelAlunoIdempotente(usuarioExistente);
+            return usuarioExistente;
+        }
+
+        var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, PapelUsuario.Aluno, _clock);
+        await _usuarios.AdicionarAsync(novoUsuario, cancellationToken);
+        return novoUsuario;
+    }
+
+    /// <summary>
+    /// "Já é Aluno" não deveria impedir a promoção de uma Matricula de
+    /// origem específica — decisão documentada em
+    /// docs/specs/2-convite-whatsapp/implementation.md.
+    /// </summary>
+    private void AdicionarPapelAlunoIdempotente(Usuario usuario)
+    {
+        try
+        {
+            usuario.AdicionarPapel(PapelUsuario.Aluno, _clock);
+        }
+        catch (PapelJaAtribuidoException)
+        {
+        }
+    }
+
+    private async Task VincularMatriculaAsync(Convite convite, Guid alunoUsuarioId, CancellationToken cancellationToken)
+    {
+        if (convite.MatriculaId is not null)
+        {
+            var matriculaOrigem = await _matriculas.BuscarPorIdAsync(convite.MatriculaId.Value, cancellationToken)
+                ?? throw new MatriculaOrigemInvalidaException(convite.MatriculaId.Value);
+            matriculaOrigem.Promover(alunoUsuarioId);
+            return;
+        }
+
+        var vinculoExistente = await _matriculas.BuscarVinculoAsync(convite.ProfessorId, alunoUsuarioId, cancellationToken);
+        if (vinculoExistente is null)
+        {
+            var novaMatricula = Matricula.CriarVinculada(convite.ProfessorId, alunoUsuarioId, _clock);
+            await _matriculas.AdicionarAsync(novaMatricula, cancellationToken);
+        }
+    }
 }
