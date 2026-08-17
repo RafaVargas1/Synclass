@@ -11,4 +11,9 @@ public abstract class AlocacaoRejeitadaException : Exception
         : base(message)
     {
     }
+
+    protected AlocacaoRejeitadaException(string message, Exception causaRaiz)
+        : base(message, causaRaiz)
+    {
+    }
 }
