@@ -19,11 +19,11 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Teste unidade (Domain): `AlocarAsync` com horário inexistente/de outro Professor rejeita com `HorarioNaoEncontradoException`
 - [x] Teste unidade (Domain): `AlocarAsync` com o mesmo Aluno já alocado no horário rejeita com `AlocacaoJaExisteException`
 - [x] Implementação mínima: checagem de duplicidade + `AlocacaoJaExisteException`
-- [ ] Teste unidade (Domain): `DesalocarAsync` remove a alocação e libera a vaga (AC4 — nova `AlocarAsync` após `DesalocarAsync` no mesmo horário funciona)
-- [ ] Teste unidade (Domain): `DesalocarAsync` de um horário não afeta outra alocação do mesmo Aluno em outro horário (RN — alocações independentes)
-- [ ] Teste unidade (Domain): `DesalocarAsync` de alocação inexistente rejeita com `AlocacaoNaoEncontradaException`
-- [ ] Teste unidade (Domain): `DesalocarAsync` com horário inexistente/de outro Professor rejeita com `HorarioNaoEncontradoException`
-- [ ] Implementação mínima: `AlocacaoHorarioService.DesalocarAsync` + `AlocacaoNaoEncontradaException`
+- [x] Teste unidade (Domain): `DesalocarAsync` remove a alocação e libera a vaga (AC4 — nova `AlocarAsync` após `DesalocarAsync` no mesmo horário funciona)
+- [x] Teste unidade (Domain): `DesalocarAsync` de um horário não afeta outra alocação do mesmo Aluno em outro horário (RN — alocações independentes)
+- [x] Teste unidade (Domain): `DesalocarAsync` de alocação inexistente rejeita com `AlocacaoNaoEncontradaException`
+- [x] Teste unidade (Domain): `DesalocarAsync` com horário inexistente/de outro Professor rejeita com `HorarioNaoEncontradoException`
+- [x] Implementação mínima: `AlocacaoHorarioService.DesalocarAsync` + `AlocacaoNaoEncontradaException`
 - [ ] Teste unidade (Domain): `ListarPorHorarioAsync` devolve as alocações do horário (usado pelo `GET`)
 - [ ] Implementação mínima: `AlocacaoHorarioService.ListarPorHorarioAsync`
 - [ ] Migration `CriaAlocacaoHorario`: tabela `AlocacoesHorario` (`Id`, `HorarioId` FK, `MatriculaId` FK, `CreatedAt`), índice único (`HorarioId`, `MatriculaId`) — via `AlocacaoHorarioConfiguration`, `AlocacaoHorarioRepository`, `DbSet` em `SynclassDbContext`

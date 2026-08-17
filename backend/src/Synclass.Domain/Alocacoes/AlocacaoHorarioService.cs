@@ -106,4 +106,25 @@ public sealed class AlocacaoHorarioService
             throw new AlocacaoJaExisteException(horarioId, matriculaId);
         }
     }
+
+    /// <summary>
+    /// Desfaz a alocação de um Aluno a um horário (AC4) — remove a linha de
+    /// <see cref="AlocacaoHorario"/> inteira, diferente de um cancelamento
+    /// pontual de uma data (issue #10, fora de escopo aqui). Alocações do
+    /// mesmo Aluno em outros horários não são afetadas (independentes entre
+    /// si).
+    /// </summary>
+    public async Task DesalocarAsync(Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+
+        var alocacao = await _alocacoes.BuscarAsync(horarioId, matriculaId, cancellationToken);
+        if (alocacao is null)
+        {
+            throw new AlocacaoNaoEncontradaException(horarioId, matriculaId);
+        }
+
+        await _alocacoes.RemoverAsync(alocacao, cancellationToken);
+        await _alocacoes.SalvarAsync(cancellationToken);
+    }
 }

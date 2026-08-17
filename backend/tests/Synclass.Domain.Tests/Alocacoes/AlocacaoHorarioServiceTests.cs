@@ -163,4 +163,63 @@ public sealed class AlocacaoHorarioServiceTests
         await acao.Should().ThrowAsync<AlocacaoJaExisteException>();
         cenario.Alocacoes.Alocacoes.Should().ContainSingle();
     }
+
+    [Fact]
+    public async Task DesalocarAsync_AlocacaoExistente_RemoveELiberaAVaga()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 1);
+        var primeiraMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, primeiraMatricula.Id, CancellationToken.None);
+
+        await cenario.AlocacaoHorarioService.DesalocarAsync(ProfessorId, horario.Id, primeiraMatricula.Id, CancellationToken.None);
+
+        cenario.Alocacoes.Alocacoes.Should().BeEmpty();
+        var segundaMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        var novaAlocacao = await cenario.AlocacaoHorarioService.AlocarAsync(
+            ProfessorId, horario.Id, segundaMatricula.Id, CancellationToken.None);
+        novaAlocacao.MatriculaId.Should().Be(segundaMatricula.Id);
+    }
+
+    [Fact]
+    public async Task DesalocarAsync_DeUmHorario_NaoAfetaAlocacaoDoMesmoAlunoEmOutroHorario()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var primeiroHorario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var segundoHorario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, primeiroHorario.Id, matricula.Id, CancellationToken.None);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, segundoHorario.Id, matricula.Id, CancellationToken.None);
+
+        await cenario.AlocacaoHorarioService.DesalocarAsync(ProfessorId, primeiroHorario.Id, matricula.Id, CancellationToken.None);
+
+        cenario.Alocacoes.Alocacoes.Should().ContainSingle(a => a.HorarioId == segundoHorario.Id);
+    }
+
+    [Fact]
+    public async Task DesalocarAsync_AlocacaoInexistente_RejeitaComAlocacaoNaoEncontradaException()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+
+        var acao = () => cenario.AlocacaoHorarioService.DesalocarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<AlocacaoNaoEncontradaException>();
+    }
+
+    [Fact]
+    public async Task DesalocarAsync_HorarioInexistenteOuDeOutroProfessor_RejeitaComHorarioNaoEncontradoException()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+
+        var acao = () => cenario.AlocacaoHorarioService.DesalocarAsync(
+            ProfessorId, Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
+    }
 }
