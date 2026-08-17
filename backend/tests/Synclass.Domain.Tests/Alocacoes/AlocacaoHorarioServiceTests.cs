@@ -222,4 +222,24 @@ public sealed class AlocacaoHorarioServiceTests
 
         await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
     }
+
+    [Fact]
+    public async Task ListarPorHorarioAsync_DevolveAsAlocacoesDoHorario()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+        var outroHorario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var primeiraMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        var segundaMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, primeiraMatricula.Id, CancellationToken.None);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, segundaMatricula.Id, CancellationToken.None);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, outroHorario.Id, primeiraMatricula.Id, CancellationToken.None);
+
+        var alocacoes = await cenario.AlocacaoHorarioService.ListarPorHorarioAsync(ProfessorId, horario.Id, CancellationToken.None);
+
+        alocacoes.Should().HaveCount(2);
+        alocacoes.Should().OnlyContain(a => a.HorarioId == horario.Id);
+    }
 }

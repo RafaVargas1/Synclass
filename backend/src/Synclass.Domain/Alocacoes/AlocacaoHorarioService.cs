@@ -127,4 +127,16 @@ public sealed class AlocacaoHorarioService
         await _alocacoes.RemoverAsync(alocacao, cancellationToken);
         await _alocacoes.SalvarAsync(cancellationToken);
     }
+
+    /// <summary>
+    /// Lista os Alunos já alocados em um horário — usado pelo <c>GET</c> do
+    /// controller. Confere a posse do horário antes de listar, mesmo padrão
+    /// de <see cref="AlocarAsync"/>/<see cref="DesalocarAsync"/>.
+    /// </summary>
+    public async Task<IReadOnlyCollection<AlocacaoHorario>> ListarPorHorarioAsync(
+        Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    {
+        await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        return await _alocacoes.ListarPorHorarioAsync(horarioId, cancellationToken);
+    }
 }

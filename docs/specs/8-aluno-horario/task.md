@@ -24,8 +24,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Teste unidade (Domain): `DesalocarAsync` de alocação inexistente rejeita com `AlocacaoNaoEncontradaException`
 - [x] Teste unidade (Domain): `DesalocarAsync` com horário inexistente/de outro Professor rejeita com `HorarioNaoEncontradoException`
 - [x] Implementação mínima: `AlocacaoHorarioService.DesalocarAsync` + `AlocacaoNaoEncontradaException`
-- [ ] Teste unidade (Domain): `ListarPorHorarioAsync` devolve as alocações do horário (usado pelo `GET`)
-- [ ] Implementação mínima: `AlocacaoHorarioService.ListarPorHorarioAsync`
+- [x] Teste unidade (Domain): `ListarPorHorarioAsync` devolve as alocações do horário (usado pelo `GET`)
+- [x] Implementação mínima: `AlocacaoHorarioService.ListarPorHorarioAsync`
 - [ ] Migration `CriaAlocacaoHorario`: tabela `AlocacoesHorario` (`Id`, `HorarioId` FK, `MatriculaId` FK, `CreatedAt`), índice único (`HorarioId`, `MatriculaId`) — via `AlocacaoHorarioConfiguration`, `AlocacaoHorarioRepository`, `DbSet` em `SynclassDbContext`
 - [ ] Liga o stub: `HorarioRepository.PossuiAlunosAlocadosAsync` consulta `AlocacoesHorario` de verdade (issue #6 dependia disto — ver implementation.md)
 - [ ] Teste de fumaça (Api): `POST /professores/{id}/horarios/{horarioId}/alocacoes` com dados válidos devolve 200 com a alocação
