@@ -12,10 +12,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/11
 - [x] Teste unidade (Domain): `RegraValorPorAula` construída com `FrequenciaSemanalContratada` fora de 1-7 rejeita com `FrequenciaSemanalContratadaInvalidaException`
 - [x] Implementação mínima: `RegraValorPorAula` + validação de `FrequenciaSemanalContratada`
 - [x] Teste unidade (Domain): teste parametrizado que instancia `RegraValorPorAula`, `RegraFixoMensal`, `RegraFixoPorAula` e chama `CalcularValorDevido` pela mesma referência `IRegraDeCobranca` — garante contrato estável entre implementações (critério de aceite 4)
-- [ ] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` cria uma regra nova quando a matrícula não tem nenhuma
-- [ ] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` substitui a regra existente (upsert, FK única em `MatriculaId`) quando a matrícula já tem uma regra de outro tipo
-- [ ] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` para matrícula inexistente rejeita com `MatriculaNaoEncontradaException`
-- [ ] Implementação mínima: `RegraDeCobrancaService` (`Synclass.Domain.Cobrancas`) + `IRegraDeCobrancaRepository`
+- [x] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` cria uma regra nova quando a matrícula não tem nenhuma
+- [x] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` substitui a regra existente (upsert, FK única em `MatriculaId`) quando a matrícula já tem uma regra de outro tipo
+- [x] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` para matrícula inexistente rejeita com `MatriculaNaoEncontradaException`
+- [x] Implementação mínima: `RegraDeCobrancaService` (`Synclass.Domain.Cobrancas`) + `IRegraDeCobrancaRepository`
 - [ ] Migration `CriaRegraDeCobranca`: tabela `RegrasDeCobranca` (TPH, discriminador `Tipo`), `RegraDeCobrancaConfiguration` com `HasDiscriminator`, índice único em `MatriculaId`
 - [ ] Implementação: `RegraDeCobrancaRepository` (`Synclass.Infrastructure.Persistence`)
 - [ ] Teste de fumaça (Api): `PUT /professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca` com `tipo=ValorPorAula` e `frequenciaSemanalContratada` válido devolve 200 com o corpo da regra criada
