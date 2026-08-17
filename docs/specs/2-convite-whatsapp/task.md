@@ -53,14 +53,14 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
 
 ### Infrastructure
 
-- [ ] Migration (`dotnet ef migrations add CriaConvite`): tabela `Convites`
+- [x] Migration (`dotnet ef migrations add CriaConvite`): tabela `Convites`
       (`Id`, `ProfessorId` FK → `Usuarios`, `Contato`, `ContatoTipo`,
       `Token` com índice único, `MatriculaId` FK nullable → `Matriculas`,
       `ExpiraEm`, `UsadoEm` nullable, `CreatedAt`); `ConviteConfiguration`;
       `ConviteRepository` (EF Core)
-- [ ] Implementação: `GeradorDeTokenConvite` (`RandomNumberGenerator`,
+- [x] Implementação: `GeradorDeTokenConvite` (`RandomNumberGenerator`,
       string base64url de alta entropia, não sequencial)
-- [ ] Estende `IMatriculaRepository`/`MatriculaRepository` com
+- [x] Estende `IMatriculaRepository`/`MatriculaRepository` com
       `BuscarPorIdAsync` e `BuscarVinculoAsync` (Professor + AlunoUsuarioId),
       necessários para o aceite/checagem de vínculo prévio
 
