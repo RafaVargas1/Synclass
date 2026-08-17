@@ -6,16 +6,16 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
 
 ### Domain
 
-- [ ] Teste unidade (Domain): `Contato.IdentificarTipo` classifica e-mail e
+- [x] Teste unidade (Domain): `Contato.IdentificarTipo` classifica e-mail e
       telefone normalizados (edge point de apoio à coluna `ContatoTipo`)
-- [ ] Teste unidade (Domain): `Convite.Gerar` cria convite não expirado com
+- [x] Teste unidade (Domain): `Convite.Gerar` cria convite não expirado com
       token de alta entropia e `ExpiraEm` = agora + N dias configurável
       (critério de aceite 1)
-- [ ] Teste unidade (Domain): `Convite.MarcarUsado` rejeita convite já usado
+- [x] Teste unidade (Domain): `Convite.MarcarUsado` rejeita convite já usado
       com `ConviteInvalidoException` (edge point — uso único)
-- [ ] Teste unidade (Domain): `Convite.MarcarUsado` rejeita convite expirado
+- [x] Teste unidade (Domain): `Convite.MarcarUsado` rejeita convite expirado
       com `ConviteExpiradoException` (critério de aceite 3)
-- [ ] Implementação mínima: `Convite`, `IConviteRepository`,
+- [x] Implementação mínima: `Convite`, `IConviteRepository`,
       `IGeradorDeTokenConvite`, exceções (`ConviteRejeitadoException` e
       subtipos)
 - [ ] Teste unidade (Domain): `ConviteService.GerarAsync` — contato válido
