@@ -87,11 +87,22 @@ function SeletorAluno({
 }) {
   const [selecionado, setSelecionado] = useState(disponiveis[0].matriculaId);
   const opcoes = disponiveis.map((aluno) => ({ valor: aluno.matriculaId, rotulo: aluno.nome }));
+  // `disponiveis` encolhe após uma alocação sem remontar este componente; se o
+  // Aluno selecionado saiu da lista, cai para o primeiro disponível em vez de
+  // manter um `matriculaId` que já não está mais neste seletor.
+  const selecionadoValido = opcoes.some((opcao) => opcao.valor === selecionado)
+    ? selecionado
+    : disponiveis[0].matriculaId;
 
   return (
     <View className="gap-two">
-      <ChipSelector label="Aluno" opcoes={opcoes} valor={selecionado} onChange={setSelecionado} />
-      <Button label="Alocar" onPress={() => onAlocar(selecionado)} />
+      <ChipSelector
+        label="Aluno"
+        opcoes={opcoes}
+        valor={selecionadoValido}
+        onChange={setSelecionado}
+      />
+      <Button label="Alocar" onPress={() => onAlocar(selecionadoValido)} />
     </View>
   );
 }
