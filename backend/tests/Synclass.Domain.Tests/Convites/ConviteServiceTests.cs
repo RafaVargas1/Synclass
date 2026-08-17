@@ -139,14 +139,15 @@ public sealed class ConviteServiceTests
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
         var convite = await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
 
-        var usuario = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
+        var resultado = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
 
-        usuario.Nome.Should().Be("João Pedro");
-        usuario.Contato.Should().Be("11987654321");
-        usuario.Papeis.Should().ContainSingle(p => p.Papel == PapelUsuario.Aluno);
+        resultado.Usuario.Nome.Should().Be("João Pedro");
+        resultado.Usuario.Contato.Should().Be("11987654321");
+        resultado.Usuario.Papeis.Should().ContainSingle(p => p.Papel == PapelUsuario.Aluno);
+        resultado.MatriculaPromovida.Should().BeFalse();
         var matriculaCriada = contexto.Matriculas.Matriculas.Should().ContainSingle().Subject;
         matriculaCriada.ProfessorId.Should().Be(professorId);
-        matriculaCriada.AlunoUsuarioId.Should().Be(usuario.Id);
+        matriculaCriada.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
     }
 
     [Fact]
@@ -157,11 +158,11 @@ public sealed class ConviteServiceTests
         await contexto.Usuarios.AdicionarAsync(professorConvidado, CancellationToken.None);
         var convite = await servico.GerarAsync(professorId, "maria@exemplo.com", null, CancellationToken.None);
 
-        var usuario = await servico.AceitarAsync(convite.Token, "Maria Professora", "maria@exemplo.com", CancellationToken.None);
+        var resultado = await servico.AceitarAsync(convite.Token, "Maria Professora", "maria@exemplo.com", CancellationToken.None);
 
-        usuario.Id.Should().Be(professorConvidado.Id);
-        usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Professor);
-        usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Aluno);
+        resultado.Usuario.Id.Should().Be(professorConvidado.Id);
+        resultado.Usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Professor);
+        resultado.Usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Aluno);
         contexto.Usuarios.Usuarios.Should().HaveCount(2);
     }
 
@@ -175,10 +176,11 @@ public sealed class ConviteServiceTests
         await contexto.Matriculas.AdicionarAsync(matriculaOrigem, CancellationToken.None);
         var convite = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
 
-        var usuario = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
+        var resultado = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
 
-        usuario.Id.Should().Be(alunoExistente.Id);
-        matriculaOrigem.AlunoUsuarioId.Should().Be(usuario.Id);
+        resultado.Usuario.Id.Should().Be(alunoExistente.Id);
+        resultado.MatriculaPromovida.Should().BeTrue();
+        matriculaOrigem.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
     }
 
     [Fact]
@@ -189,9 +191,10 @@ public sealed class ConviteServiceTests
         await contexto.Matriculas.AdicionarAsync(matriculaOrigem, CancellationToken.None);
         var convite = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
 
-        var usuario = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
+        var resultado = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
 
-        matriculaOrigem.AlunoUsuarioId.Should().Be(usuario.Id);
+        resultado.MatriculaPromovida.Should().BeTrue();
+        matriculaOrigem.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
         matriculaOrigem.NomeProvisorio.Should().Be("João Pedro");
         matriculaOrigem.IdentificadorProvisorio.Should().Be("2024-013");
         contexto.Matriculas.Matriculas.Should().ContainSingle();

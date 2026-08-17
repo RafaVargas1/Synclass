@@ -101,7 +101,8 @@ public sealed class ConviteService
     /// usado antes de qualquer mutação de Usuario/Matricula (uso único), e
     /// então cria/reaproveita a identidade e promove ou cria o vínculo.
     /// </summary>
-    public async Task<Usuario> AceitarAsync(string token, string nome, string contatoBruto, CancellationToken cancellationToken)
+    public async Task<ResultadoAceiteConvite> AceitarAsync(
+        string token, string nome, string contatoBruto, CancellationToken cancellationToken)
     {
         var convite = await _convites.BuscarPorTokenAsync(token, cancellationToken) ?? throw new ConviteInvalidoException();
         var contatoNormalizado = Contato.Normalizar(contatoBruto);
@@ -114,12 +115,12 @@ public sealed class ConviteService
         convite.MarcarUsado(_clock);
 
         var usuario = await ObterOuCriarUsuarioAsync(nomeValidado, convite.Contato, cancellationToken);
-        await VincularMatriculaAsync(convite, usuario.Id, cancellationToken);
+        var matriculaPromovida = await VincularMatriculaAsync(convite, usuario.Id, cancellationToken);
 
         await _usuarios.SalvarAsync(cancellationToken);
         await _matriculas.SalvarAsync(cancellationToken);
         await _convites.SalvarAsync(cancellationToken);
-        return usuario;
+        return new ResultadoAceiteConvite(usuario, convite.Id, matriculaPromovida);
     }
 
     private async Task<Usuario> ObterOuCriarUsuarioAsync(string nomeValidado, string contatoNormalizado, CancellationToken cancellationToken)
@@ -152,21 +153,40 @@ public sealed class ConviteService
         }
     }
 
-    private async Task VincularMatriculaAsync(Convite convite, Guid alunoUsuarioId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Promove a matrícula de origem ou o vínculo já existente (devolve
+    /// <c>true</c>), ou cria uma nova matrícula já vinculada quando nenhuma
+    /// das duas existir (devolve <c>false</c>) — usado pelo log estruturado
+    /// <c>ConviteAceito</c> para indicar qual caminho ocorreu (Critérios
+    /// técnicos da issue #2).
+    /// </summary>
+    private async Task<bool> VincularMatriculaAsync(Convite convite, Guid alunoUsuarioId, CancellationToken cancellationToken)
     {
         if (convite.MatriculaId is not null)
         {
             var matriculaOrigem = await _matriculas.BuscarPorIdAsync(convite.MatriculaId.Value, cancellationToken)
                 ?? throw new MatriculaOrigemInvalidaException(convite.MatriculaId.Value);
             matriculaOrigem.Promover(alunoUsuarioId);
-            return;
+            return true;
         }
 
         var vinculoExistente = await _matriculas.BuscarVinculoAsync(convite.ProfessorId, alunoUsuarioId, cancellationToken);
-        if (vinculoExistente is null)
+        if (vinculoExistente is not null)
         {
-            var novaMatricula = Matricula.CriarVinculada(convite.ProfessorId, alunoUsuarioId, _clock);
-            await _matriculas.AdicionarAsync(novaMatricula, cancellationToken);
+            return true;
         }
+
+        var novaMatricula = Matricula.CriarVinculada(convite.ProfessorId, alunoUsuarioId, _clock);
+        await _matriculas.AdicionarAsync(novaMatricula, cancellationToken);
+        return false;
     }
 }
+
+/// <summary>
+/// Resultado do aceite de convite: o <see cref="Usuario"/> resultante
+/// (criado ou reaproveitado), o <see cref="Convite.Id"/> aceito, e se a
+/// matrícula foi promovida (origem específica ou vínculo já existente) ou
+/// criada nova — logado como <c>ConviteAceito</c> pela Api (Critérios
+/// técnicos da issue #2).
+/// </summary>
+public sealed record ResultadoAceiteConvite(Usuario Usuario, Guid ConviteId, bool MatriculaPromovida);

@@ -52,9 +52,9 @@ public sealed class ConvitesController : ControllerBase
 
         try
         {
-            var usuario = await _convites.AceitarAsync(token, request.Nome, request.Contato, cancellationToken);
-            LogConviteAceito(trackId, usuario);
-            return Ok(ParaResponse(usuario));
+            var resultado = await _convites.AceitarAsync(token, request.Nome, request.Contato, cancellationToken);
+            LogConviteAceito(trackId, resultado);
+            return Ok(ParaResponse(resultado.Usuario));
         }
         catch (Exception ex) when (ex is ConviteRejeitadoException or ContatoInvalidoException or NomeInvalidoException)
         {
@@ -68,15 +68,28 @@ public sealed class ConvitesController : ControllerBase
         return new AceitarConviteResponse(usuario.Id, usuario.Nome, papeis);
     }
 
+    /// <summary>
+    /// Inclui <c>ExpiraEm</c> e o contato mascarado (nunca em texto puro em
+    /// log) — Critérios técnicos da issue #2.
+    /// </summary>
     private void LogConviteGerado(string trackId, Convite convite)
     {
+        var contatoMascarado = MascaradorDeContato.Mascarar(convite.Contato);
         _logger.LogInformation(
-            "ConviteGerado {TrackId} {ConviteId} {ProfessorId}", trackId, convite.Id, convite.ProfessorId);
+            "ConviteGerado {TrackId} {ProfessorId} {ExpiraEm} {ContatoMascarado}",
+            trackId, convite.ProfessorId, convite.ExpiraEm, contatoMascarado);
     }
 
-    private void LogConviteAceito(string trackId, Usuario usuario)
+    /// <summary>
+    /// Indica, via <see cref="ResultadoAceiteConvite.MatriculaPromovida"/>,
+    /// se o aceite promoveu uma matrícula já existente (origem específica ou
+    /// vínculo prévio) ou criou uma nova — Critérios técnicos da issue #2.
+    /// </summary>
+    private void LogConviteAceito(string trackId, ResultadoAceiteConvite resultado)
     {
-        _logger.LogInformation("ConviteAceito {TrackId} {UsuarioId}", trackId, usuario.Id);
+        _logger.LogInformation(
+            "ConviteAceito {TrackId} {ConviteId} {UsuarioId} {MatriculaPromovida}",
+            trackId, resultado.ConviteId, resultado.Usuario.Id, resultado.MatriculaPromovida);
     }
 
     private IActionResult RejeitarProfessorNaoEncontrado(string trackId, Guid professorId, ProfessorNaoEncontradoException ex)
