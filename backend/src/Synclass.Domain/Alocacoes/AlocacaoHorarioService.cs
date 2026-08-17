@@ -38,13 +38,29 @@ public sealed class AlocacaoHorarioService
     public async Task<AlocacaoHorario> AlocarAsync(
         Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
     {
-        await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        var horario = await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
         await GarantirModeloPermiteAlocacaoAsync(professorId, cancellationToken);
+        await GarantirVagaDisponivelAsync(horario, cancellationToken);
 
         var alocacao = AlocacaoHorario.Criar(horarioId, matriculaId, _clock);
         await _alocacoes.AdicionarAsync(alocacao, cancellationToken);
         await _alocacoes.SalvarAsync(cancellationToken);
         return alocacao;
+    }
+
+    /// <summary>
+    /// Checagem de aplicação (AC3) — não é atômica com o <c>INSERT</c>, sem
+    /// guard rail equivalente a nível de banco (não é uma constraint de
+    /// unicidade, é uma contagem); risco de corrida aceito, ver
+    /// docs/specs/8-aluno-horario/implementation.md#edge-points.
+    /// </summary>
+    private async Task GarantirVagaDisponivelAsync(Horario horario, CancellationToken cancellationToken)
+    {
+        var quantidadeAlocada = await _alocacoes.ContarPorHorarioAsync(horario.Id, cancellationToken);
+        if (quantidadeAlocada >= horario.LimiteAlunos)
+        {
+            throw new HorarioLotadoException(horario.Id, horario.LimiteAlunos);
+        }
     }
 
     /// <summary>

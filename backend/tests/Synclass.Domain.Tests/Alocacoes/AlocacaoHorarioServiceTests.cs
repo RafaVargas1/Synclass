@@ -80,4 +80,20 @@ public sealed class AlocacaoHorarioServiceTests
         await acao.Should().ThrowAsync<ModeloNaoPermiteAlocacaoException>();
         cenario.Alocacoes.Alocacoes.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task AlocarAsync_HorarioNoLimiteDeAlunos_RejeitaComHorarioLotadoException()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 1);
+        var primeiraMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, primeiraMatricula.Id, CancellationToken.None);
+        var segundaMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+
+        var acao = () => cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, segundaMatricula.Id, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioLotadoException>();
+        cenario.Alocacoes.Alocacoes.Should().ContainSingle();
+    }
 }

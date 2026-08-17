@@ -11,8 +11,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Implementação mínima: `AlocacaoHorario`, `IAlocacaoHorarioRepository`, `AlocacaoHorarioService.AlocarAsync` (caminho feliz), `FakeAlocacaoHorarioRepository`
 - [x] Teste unidade (Domain): `AlocarAsync` em modelo Vago rejeita com `ModeloNaoPermiteAlocacaoException` (AC2)
 - [x] Implementação mínima: checagem de modelo + `ModeloNaoPermiteAlocacaoException`
-- [ ] Teste unidade (Domain): `AlocarAsync` em horário no limite (`LimiteAlunos` já atingido) rejeita com `HorarioLotadoException` (AC3)
-- [ ] Implementação mínima: checagem de vaga via `ContarPorHorarioAsync` + `HorarioLotadoException`
+- [x] Teste unidade (Domain): `AlocarAsync` em horário no limite (`LimiteAlunos` já atingido) rejeita com `HorarioLotadoException` (AC3)
+- [x] Implementação mínima: checagem de vaga via `ContarPorHorarioAsync` + `HorarioLotadoException`
 - [ ] Teste unidade (Domain): `AlocarAsync` com Matrícula inexistente rejeita com `MatriculaNaoVinculadaAoProfessorException` (AC5)
 - [ ] Teste unidade (Domain): `AlocarAsync` com Matrícula de outro Professor rejeita com `MatriculaNaoVinculadaAoProfessorException` (AC5)
 - [ ] Implementação mínima: checagem de vínculo via `IMatriculaRepository.BuscarPorIdAsync` + `MatriculaNaoVinculadaAoProfessorException`
