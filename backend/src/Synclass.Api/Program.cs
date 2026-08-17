@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
+using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Common;
 using Synclass.Domain.Configuracoes;
@@ -47,6 +48,11 @@ builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
 builder.Services.AddScoped<IMatriculaRepository, MatriculaRepository>();
 builder.Services.AddScoped<CadastroAlunoProvisorioService>();
+
+// Alocação de Aluno a horário específico (issue #8) — ver
+// docs/specs/8-aluno-horario/implementation.md.
+builder.Services.AddScoped<IAlocacaoHorarioRepository, AlocacaoHorarioRepository>();
+builder.Services.AddScoped<AlocacaoHorarioService>();
 
 // Login por OTP (issue #18) — ver docs/specs/18-login-otp/implementation.md.
 builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();

@@ -31,6 +31,13 @@ public interface IMatriculaRepository
     /// </summary>
     Task<Matricula?> BuscarVinculoAsync(Guid professorId, Guid alunoUsuarioId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Lista todas as Matrículas (provisórias e plenas) de um Professor —
+    /// usado para alimentar o seletor de Aluno da alocação a horário (issue
+    /// #8, endpoint <c>GET /professores/{professorId}/alunos-provisorios</c>).
+    /// </summary>
+    Task<IReadOnlyCollection<Matricula>> ListarPorProfessorAsync(Guid professorId, CancellationToken cancellationToken);
+
     Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken);
 
     Task SalvarAsync(CancellationToken cancellationToken);

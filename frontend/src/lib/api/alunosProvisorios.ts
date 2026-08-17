@@ -1,3 +1,5 @@
+import { fetchComTimeout, MensagemErroConexao } from './httpClient';
+
 export type CadastroAlunoProvisorioInput = {
   professorId: string;
   nome: string;
@@ -8,21 +10,16 @@ export type CadastroAlunoProvisorioResultado =
   | { sucesso: true; nome: string; identificador: string }
   | { sucesso: false; mensagem: string };
 
-const MensagemErroGenerica = 'Não foi possível concluir o cadastro. Tente novamente.';
-const MensagemErroConexao =
-  'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
+export type AlunoProvisorio = {
+  matriculaId: string;
+  nome: string;
+  identificador: string;
+};
 
-/**
- * URL base da Api do Synclass — mesma variável usada por
- * `lib/api/professores.ts` (ver backend/README.md#debug).
- */
-const ApiBaseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5005';
+export type ListarAlunosProvisoriosResultado =
+  { sucesso: true; alunos: AlunoProvisorio[] } | { sucesso: false; mensagem: string };
 
-/**
- * Tempo máximo de espera pela resposta antes de tratar como erro de conexão
- * — mesmo valor e justificativa de `lib/api/professores.ts`.
- */
-const TimeoutRequisicaoMs = 15000;
+const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente novamente.';
 
 /**
  * Envolve o `fetch` de POST /professores/{professorId}/alunos-provisorios
@@ -45,15 +42,11 @@ export async function cadastrarAlunoProvisorio(
 }
 
 function postCadastro(input: CadastroAlunoProvisorioInput): Promise<Response> {
-  const controle = new AbortController();
-  const timeoutId = setTimeout(() => controle.abort(), TimeoutRequisicaoMs);
-
-  return fetch(`${ApiBaseUrl}/professores/${input.professorId}/alunos-provisorios`, {
+  return fetchComTimeout(`/professores/${input.professorId}/alunos-provisorios`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nome: input.nome, identificador: input.identificador }),
-    signal: controle.signal,
-  }).finally(() => clearTimeout(timeoutId));
+  });
 }
 
 async function interpretarResposta(response: Response): Promise<CadastroAlunoProvisorioResultado> {
@@ -64,4 +57,26 @@ async function interpretarResposta(response: Response): Promise<CadastroAlunoPro
   }
 
   return { sucesso: true, nome: corpo?.nome ?? '', identificador: corpo?.identificador ?? '' };
+}
+
+/**
+ * Envolve o `fetch` de GET /professores/{professorId}/alunos-provisorios
+ * (issue #8, alimenta o seletor de Aluno de `HorarioAlocacaoCard`) — mesma
+ * política de nunca lançar de `cadastrarAlunoProvisorio` acima.
+ */
+export async function listarAlunosProvisorios(
+  professorId: string,
+): Promise<ListarAlunosProvisoriosResultado> {
+  let response: Response;
+  try {
+    response = await fetchComTimeout(`/professores/${professorId}/alunos-provisorios`);
+  } catch {
+    return { sucesso: false, mensagem: MensagemErroConexao };
+  }
+
+  const corpo = await response.json().catch(() => null);
+  if (!response.ok) {
+    return { sucesso: false, mensagem: MensagemErroGenerica };
+  }
+  return { sucesso: true, alunos: (corpo as AlunoProvisorio[] | null) ?? [] };
 }

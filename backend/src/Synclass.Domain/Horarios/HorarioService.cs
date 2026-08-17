@@ -65,7 +65,15 @@ public sealed class HorarioService
         await _horarios.SalvarAsync(cancellationToken);
     }
 
-    private async Task<Horario> BuscarDoProfessorAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    /// <summary>
+    /// <c>internal</c> (não <c>private</c>) para ser reaproveitado por
+    /// <see cref="Synclass.Domain.Alocacoes.AlocacaoHorarioService"/> (issue
+    /// #8), que precisa da mesma checagem de posse "horário pertence a este
+    /// Professor" sem duplicar a lógica (docs/spec/code-style.md — sem
+    /// duplicação de código). Seguro porque ambos vivem no assembly
+    /// Synclass.Domain.
+    /// </summary>
+    internal async Task<Horario> BuscarDoProfessorAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
     {
         var horario = await _horarios.BuscarPorIdAsync(horarioId, cancellationToken);
         if (horario is null || horario.ProfessorId != professorId)

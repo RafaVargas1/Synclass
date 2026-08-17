@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Horarios;
 
 namespace Synclass.Infrastructure.Persistence;
@@ -36,13 +37,13 @@ public sealed class HorarioRepository : IHorarioRepository
     }
 
     /// <summary>
-    /// Sempre <c>false</c> até a issue #8 modelar a alocação de Alunos a
-    /// horários — não existe tabela para consultar de verdade ainda. Ver
-    /// docs/specs/6-horarios-disponiveis/implementation.md#dependência-da-issue-8.
+    /// Consulta real em <c>AlocacoesHorario</c> (issue #8) — antes disso era
+    /// um stub sempre-<c>false</c> (issue #6), já que a tabela não existia.
+    /// Ver docs/specs/8-aluno-horario/implementation.md#dependência-da-issue-6-agora-resolvida.
     /// </summary>
     public Task<bool> PossuiAlunosAlocadosAsync(Guid horarioId, CancellationToken cancellationToken)
     {
-        return Task.FromResult(false);
+        return _dbContext.Set<AlocacaoHorario>().AnyAsync(a => a.HorarioId == horarioId, cancellationToken);
     }
 
     public async Task AdicionarAsync(Horario horario, CancellationToken cancellationToken)
