@@ -24,7 +24,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/11
 - [x] Teste de fumaça (Api): `GET` após um `PUT` bem-sucedido devolve 200 com os dados da regra vigente
 - [x] Implementação mínima: `RegraDeCobrancaController` (rotas acima), DTOs de request/response
 - [x] Log estruturado: evento `RegraDeCobrancaDefinida` (Information, `TrackId`, `MatriculaId`, `Tipo`, `ValorAnterior` nullable) emitido pelo controller — ver architecture.md#logs-estruturados-e-track-id
-- [ ] Componente frontend: `RegraDeCobrancaForm` (organism) — seletor de tipo (`ChipSelector`, mesmo padrão de `ModeloAgendamentoForm`) + campo `Valor` sempre visível + campo `FrequenciaSemanalContratada` condicional (só quando tipo = ValorPorAula), com teste de componente
+- [x] Componente frontend: `RegraDeCobrancaForm` (organism) — seletor de tipo (`ChipSelector`, mesmo padrão de `ModeloAgendamentoForm`) + campo `Valor` sempre visível + campo `FrequenciaSemanalContratada` condicional (só quando tipo = ValorPorAula), com teste de componente
 - [ ] Integração `lib/api/regraDeCobranca.ts` (cliente HTTP do contrato acima) + tela `frontend/src/app/professor/[professorId]/matriculas/[matriculaId]/regra-de-cobranca.tsx`, com teste
 
 ## Fora de escopo nesta Task (documentado, não esquecido)

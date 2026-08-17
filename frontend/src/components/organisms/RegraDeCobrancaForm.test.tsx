@@ -1,0 +1,73 @@
+import { fireEvent, render, screen } from '@testing-library/react-native';
+
+import { RegraDeCobrancaForm } from './RegraDeCobrancaForm';
+
+describe('RegraDeCobrancaForm', () => {
+  it('defaults to ValorPorAula and shows the frequencia field', async () => {
+    await render(<RegraDeCobrancaForm enviando={false} onSubmit={jest.fn()} />);
+
+    expect(screen.getByText('Frequência semanal contratada')).toBeTruthy();
+  });
+
+  it('hides the frequencia field when tipo is FixoMensal', async () => {
+    await render(<RegraDeCobrancaForm enviando={false} onSubmit={jest.fn()} />);
+
+    await fireEvent.press(screen.getByText('Fixo mensal'));
+
+    expect(screen.queryByText('Frequência semanal contratada')).toBeNull();
+  });
+
+  it('submits ValorPorAula with valor and frequenciaSemanalContratada informed', async () => {
+    const onSubmit = jest.fn();
+    await render(<RegraDeCobrancaForm enviando={false} onSubmit={onSubmit} />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('50.00'), '50');
+    await fireEvent.changeText(screen.getByPlaceholderText('3'), '3');
+    await fireEvent.press(screen.getByText('Salvar regra de cobrança'));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      tipo: 'ValorPorAula',
+      valor: 50,
+      frequenciaSemanalContratada: 3,
+    });
+  });
+
+  it('submits FixoMensal with frequenciaSemanalContratada null', async () => {
+    const onSubmit = jest.fn();
+    await render(<RegraDeCobrancaForm enviando={false} onSubmit={onSubmit} />);
+
+    await fireEvent.press(screen.getByText('Fixo mensal'));
+    await fireEvent.changeText(screen.getByPlaceholderText('50.00'), '300');
+    await fireEvent.press(screen.getByText('Salvar regra de cobrança'));
+
+    expect(onSubmit).toHaveBeenCalledWith({ tipo: 'FixoMensal', valor: 300, frequenciaSemanalContratada: null });
+  });
+
+  it('shows a client error and does not submit when valor is invalid', async () => {
+    const onSubmit = jest.fn();
+    await render(<RegraDeCobrancaForm enviando={false} onSubmit={onSubmit} />);
+
+    await fireEvent.press(screen.getByText('Fixo mensal'));
+    await fireEvent.press(screen.getByText('Salvar regra de cobrança'));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText('Informe um valor maior que zero.')).toBeTruthy();
+  });
+
+  it('shows the Api error message passed via prop', async () => {
+    await render(
+      <RegraDeCobrancaForm enviando={false} erro="Não foi possível concluir a operação." onSubmit={jest.fn()} />,
+    );
+
+    expect(screen.getByText('Não foi possível concluir a operação.')).toBeTruthy();
+  });
+
+  it('disables the button and shows Salvando... while enviando', async () => {
+    const onSubmit = jest.fn();
+    await render(<RegraDeCobrancaForm enviando={true} onSubmit={onSubmit} />);
+
+    await fireEvent.press(screen.getByText('Salvando...'));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+});
