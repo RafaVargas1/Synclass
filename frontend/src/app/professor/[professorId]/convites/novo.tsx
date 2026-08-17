@@ -21,7 +21,14 @@ const AppBaseUrl = process.env.EXPO_PUBLIC_APP_URL ?? 'http://localhost:8081';
  * `alunos/cadastro.tsx` — ver docs/specs/2-convite-whatsapp/implementation.md.
  */
 export default function GerarConviteScreen() {
-  const { professorId } = useLocalSearchParams<{ professorId: string }>();
+  // `matriculaId` é opcional: presente quando o link chega a partir da tela
+  // de um Aluno provisório específico (item 3 do backlog), para o convite
+  // já nascer com a referência à matrícula de origem (RN da issue #2,
+  // critério de aceite 5) — nunca digitado pelo Professor.
+  const { professorId, matriculaId } = useLocalSearchParams<{
+    professorId: string;
+    matriculaId?: string;
+  }>();
   const [contato, setContato] = useState('');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
@@ -31,7 +38,7 @@ export default function GerarConviteScreen() {
     setEnviando(true);
     setErro(undefined);
 
-    const resultado = await gerarConvite({ professorId, contato });
+    const resultado = await gerarConvite({ professorId, contato, matriculaId });
 
     setEnviando(false);
     if (!resultado.sucesso) {

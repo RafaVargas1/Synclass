@@ -1,6 +1,7 @@
 import { Linking } from 'react-native';
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { useLocalSearchParams } from 'expo-router';
 
 import { gerarConvite } from '@/lib/api/convites';
 
@@ -11,14 +12,16 @@ jest.mock('@/lib/api/convites', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ professorId: 'professor-1' }),
+  useLocalSearchParams: jest.fn(),
 }));
 
 const gerarConviteMock = gerarConvite as jest.Mock;
+const useLocalSearchParamsMock = useLocalSearchParams as jest.Mock;
 
 describe('GerarConviteScreen', () => {
   beforeEach(() => {
     gerarConviteMock.mockReset();
+    useLocalSearchParamsMock.mockReturnValue({ professorId: 'professor-1' });
     jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
   });
 
@@ -59,6 +62,30 @@ describe('GerarConviteScreen', () => {
     expect(Linking.openURL).toHaveBeenCalledWith(
       expect.stringContaining('https://wa.me/5511987654321'),
     );
+  });
+
+  it('passes matriculaId through when the route carries it (convite a partir de Aluno provisório)', async () => {
+    useLocalSearchParamsMock.mockReturnValue({
+      professorId: 'professor-1',
+      matriculaId: 'matricula-1',
+    });
+    gerarConviteMock.mockResolvedValue({
+      sucesso: true,
+      conviteId: 'convite-1',
+      token: 'token-1',
+      expiraEm: '2026-08-20T00:00:00Z',
+    });
+    await render(<GerarConviteScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('E-mail ou telefone'), '11987654321');
+    await fireEvent.press(screen.getByText('Gerar convite'));
+
+    await waitFor(() => expect(screen.getByText('Convite gerado!')).toBeTruthy());
+    expect(gerarConviteMock).toHaveBeenCalledWith({
+      professorId: 'professor-1',
+      contato: '11987654321',
+      matriculaId: 'matricula-1',
+    });
   });
 
   it('shows the Api error message without crashing when the Api rejects the convite', async () => {
