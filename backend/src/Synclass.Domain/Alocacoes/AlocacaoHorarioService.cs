@@ -42,6 +42,7 @@ public sealed class AlocacaoHorarioService
         await GarantirModeloPermiteAlocacaoAsync(professorId, cancellationToken);
         await GarantirVagaDisponivelAsync(horario, cancellationToken);
         await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
+        await GarantirAindaNaoAlocadoAsync(horarioId, matriculaId, cancellationToken);
 
         var alocacao = AlocacaoHorario.Criar(horarioId, matriculaId, _clock);
         await _alocacoes.AdicionarAsync(alocacao, cancellationToken);
@@ -89,6 +90,20 @@ public sealed class AlocacaoHorarioService
         if (matricula is null || matricula.ProfessorId != professorId)
         {
             throw new MatriculaNaoVinculadaAoProfessorException(matriculaId, professorId);
+        }
+    }
+
+    /// <summary>
+    /// Checagem de aplicação — o índice único (HorarioId, MatriculaId) é o
+    /// guard rail final contra a corrida concorrente (ver
+    /// <see cref="AlocacaoJaExisteException"/>).
+    /// </summary>
+    private async Task GarantirAindaNaoAlocadoAsync(Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        var existente = await _alocacoes.BuscarAsync(horarioId, matriculaId, cancellationToken);
+        if (existente is not null)
+        {
+            throw new AlocacaoJaExisteException(horarioId, matriculaId);
         }
     }
 }

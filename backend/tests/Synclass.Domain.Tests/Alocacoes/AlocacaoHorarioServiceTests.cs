@@ -148,4 +148,19 @@ public sealed class AlocacaoHorarioServiceTests
 
         await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
     }
+
+    [Fact]
+    public async Task AlocarAsync_MesmoAlunoJaAlocadoNoHorario_RejeitaComAlocacaoJaExisteException()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+        var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
+
+        var acao = () => cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<AlocacaoJaExisteException>();
+        cenario.Alocacoes.Alocacoes.Should().ContainSingle();
+    }
 }

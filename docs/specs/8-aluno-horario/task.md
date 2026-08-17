@@ -17,8 +17,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Teste unidade (Domain): `AlocarAsync` com Matrícula de outro Professor rejeita com `MatriculaNaoVinculadaAoProfessorException` (AC5)
 - [x] Implementação mínima: checagem de vínculo via `IMatriculaRepository.BuscarPorIdAsync` + `MatriculaNaoVinculadaAoProfessorException`
 - [x] Teste unidade (Domain): `AlocarAsync` com horário inexistente/de outro Professor rejeita com `HorarioNaoEncontradoException`
-- [ ] Teste unidade (Domain): `AlocarAsync` com o mesmo Aluno já alocado no horário rejeita com `AlocacaoJaExisteException`
-- [ ] Implementação mínima: checagem de duplicidade + `AlocacaoJaExisteException`
+- [x] Teste unidade (Domain): `AlocarAsync` com o mesmo Aluno já alocado no horário rejeita com `AlocacaoJaExisteException`
+- [x] Implementação mínima: checagem de duplicidade + `AlocacaoJaExisteException`
 - [ ] Teste unidade (Domain): `DesalocarAsync` remove a alocação e libera a vaga (AC4 — nova `AlocarAsync` após `DesalocarAsync` no mesmo horário funciona)
 - [ ] Teste unidade (Domain): `DesalocarAsync` de um horário não afeta outra alocação do mesmo Aluno em outro horário (RN — alocações independentes)
 - [ ] Teste unidade (Domain): `DesalocarAsync` de alocação inexistente rejeita com `AlocacaoNaoEncontradaException`
