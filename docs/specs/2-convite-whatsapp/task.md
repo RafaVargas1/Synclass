@@ -18,18 +18,18 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
 - [x] Implementação mínima: `Convite`, `IConviteRepository`,
       `IGeradorDeTokenConvite`, exceções (`ConviteRejeitadoException` e
       subtipos)
-- [ ] Teste unidade (Domain): `ConviteService.GerarAsync` — contato válido
+- [x] Teste unidade (Domain): `ConviteService.GerarAsync` — contato válido
       sem Aluno prévio cria convite vinculado ao Professor (critério de
       aceite 1)
-- [ ] Teste unidade (Domain): `ConviteService.GerarAsync` — `professorId`
+- [x] Teste unidade (Domain): `ConviteService.GerarAsync` — `professorId`
       inexistente rejeita com `ProfessorNaoEncontradoException`
-- [ ] Teste unidade (Domain): `ConviteService.GerarAsync` — `matriculaId` de
+- [x] Teste unidade (Domain): `ConviteService.GerarAsync` — `matriculaId` de
       origem inexistente, de outro Professor, ou já promovida rejeita com
       `MatriculaOrigemInvalidaException` (edge point)
-- [ ] Teste unidade (Domain): `ConviteService.GerarAsync` — contato já
+- [x] Teste unidade (Domain): `ConviteService.GerarAsync` — contato já
       vinculado como Aluno pleno a este Professor rejeita com
       `ContatoJaVinculadoException` (critério de aceite 4)
-- [ ] Implementação mínima: `ConviteService.GerarAsync`
+- [x] Implementação mínima: `ConviteService.GerarAsync`
 - [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — token
       inexistente rejeita com `ConviteInvalidoException`
 - [ ] Teste unidade (Domain): `ConviteService.AceitarAsync` — contato
