@@ -41,15 +41,15 @@ export default function AceiteConviteScreen() {
     const resultado = await aceitarConvite({ token, nome, contato });
 
     setEnviando(false);
-    if (!resultado.sucesso) {
-      if (ehConviteExpirado(resultado.mensagem)) {
-        setExpirado(true);
-        return;
-      }
-      setErro(resultado.mensagem);
+    if (resultado.sucesso) {
+      setNomeConfirmado(resultado.nome);
       return;
     }
-    setNomeConfirmado(resultado.nome);
+    if (ehConviteExpirado(resultado.mensagem)) {
+      setExpirado(true);
+      return;
+    }
+    setErro(resultado.mensagem);
   }
 
   return (
