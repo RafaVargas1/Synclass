@@ -21,6 +21,19 @@ public sealed class FakeMatriculaRepository : IMatriculaRepository
         return Task.FromResult(matricula);
     }
 
+    public Task<Matricula?> BuscarPorIdAsync(Guid matriculaId, CancellationToken cancellationToken)
+    {
+        var matricula = _matriculas.FirstOrDefault(m => m.Id == matriculaId);
+        return Task.FromResult(matricula);
+    }
+
+    public Task<Matricula?> BuscarVinculoAsync(Guid professorId, Guid alunoUsuarioId, CancellationToken cancellationToken)
+    {
+        var matricula = _matriculas.FirstOrDefault(
+            m => m.ProfessorId == professorId && m.AlunoUsuarioId == alunoUsuarioId);
+        return Task.FromResult(matricula);
+    }
+
     public Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken)
     {
         _matriculas.Add(matricula);
