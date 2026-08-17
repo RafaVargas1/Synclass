@@ -28,12 +28,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Implementação mínima: `AlocacaoHorarioService.ListarPorHorarioAsync`
 - [x] Migration `CriaAlocacaoHorario`: tabela `AlocacoesHorario` (`Id`, `HorarioId` FK, `MatriculaId` FK, `CreatedAt`), índice único (`HorarioId`, `MatriculaId`) — via `AlocacaoHorarioConfiguration`, `AlocacaoHorarioRepository`, `DbSet` em `SynclassDbContext`
 - [x] Liga o stub: `HorarioRepository.PossuiAlunosAlocadosAsync` consulta `AlocacoesHorario` de verdade (issue #6 dependia disto — ver implementation.md)
-- [ ] Teste de fumaça (Api): `POST /professores/{id}/horarios/{horarioId}/alocacoes` com dados válidos devolve 200 com a alocação
-- [ ] Teste de fumaça (Api): `POST .../alocacoes` em modelo Vago devolve 400
-- [ ] Teste de fumaça (Api): `POST .../alocacoes` com horário lotado devolve 400
-- [ ] Teste de fumaça (Api): `POST .../alocacoes` com Matrícula não vinculada devolve 400
-- [ ] Teste de fumaça (Api): `POST .../alocacoes` com horário inexistente devolve 404
-- [ ] Implementação mínima: `AlocacoesHorarioController` (`POST`), registro de DI em `Program.cs`
+- [x] Teste de fumaça (Api): `POST /professores/{id}/horarios/{horarioId}/alocacoes` com dados válidos devolve 200 com a alocação
+- [x] Teste de fumaça (Api): `POST .../alocacoes` em modelo Vago devolve 400
+- [x] Teste de fumaça (Api): `POST .../alocacoes` com horário lotado devolve 400
+- [x] Teste de fumaça (Api): `POST .../alocacoes` com Matrícula não vinculada devolve 400
+- [x] Teste de fumaça (Api): `POST .../alocacoes` com horário inexistente devolve 404
+- [x] Implementação mínima: `AlocacoesHorarioController` (`POST`), registro de DI em `Program.cs`
 - [ ] Teste de fumaça (Api): `GET .../alocacoes` lista as alocações do horário
 - [ ] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` devolve 204 e remove a alocação
 - [ ] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` inexistente devolve 404
