@@ -44,7 +44,12 @@ export async function gerarConvite(input: GerarConviteInput): Promise<GerarConvi
   if (!response.ok) {
     return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
   }
-  return { sucesso: true, conviteId: corpo.conviteId, token: corpo.token, expiraEm: corpo.expiraEm };
+  return {
+    sucesso: true,
+    conviteId: corpo.conviteId,
+    token: corpo.token,
+    expiraEm: corpo.expiraEm,
+  };
 }
 
 /**
@@ -68,5 +73,10 @@ export async function aceitarConvite(input: AceitarConviteInput): Promise<Aceita
   if (!response.ok) {
     return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
   }
-  return { sucesso: true, usuarioId: corpo.usuarioId, nome: corpo.nome, papeis: corpo.papeis ?? [] };
+  return {
+    sucesso: true,
+    usuarioId: corpo.usuarioId,
+    nome: corpo.nome,
+    papeis: corpo.papeis ?? [],
+  };
 }

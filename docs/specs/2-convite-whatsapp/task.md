@@ -92,13 +92,13 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
       número BR quando o contato é telefone, e link genérico (sem
       destinatário) quando é e-mail
 - [x] Implementação: `frontend/src/lib/whatsapp.ts`
-- [ ] Teste de tela: `frontend/src/app/professor/[professorId]/convites/novo.tsx`
+- [x] Teste de tela: `frontend/src/app/professor/[professorId]/convites/novo.tsx`
       (gerar convite, exibir link e botão wa.me, erro exibido)
-- [ ] Implementação: tela de geração de convite
-- [ ] Teste de tela: `frontend/src/app/convite/[token].tsx` (reaproveita
+- [x] Implementação: tela de geração de convite
+- [x] Teste de tela: `frontend/src/app/convite/[token].tsx` (reaproveita
       `CadastroProfessorForm`; sucesso mostra confirmação, expirado mostra
       mensagem + ação de pedir novo link)
-- [ ] Implementação: rota pública de aceite
+- [x] Implementação: rota pública de aceite
 
 A ordem segue backend até o contrato da Api estabilizar, depois frontend
 (ver `fluxo-de-feature.md#fase-3--implementação`).

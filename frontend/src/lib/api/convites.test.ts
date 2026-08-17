@@ -27,7 +27,11 @@ describe('gerarConvite', () => {
   });
 
   it('posts to the professor-scoped route', async () => {
-    mockFetchOnce(200, { conviteId: 'convite-1', token: 'token-1', expiraEm: '2026-08-20T00:00:00Z' });
+    mockFetchOnce(200, {
+      conviteId: 'convite-1',
+      token: 'token-1',
+      expiraEm: '2026-08-20T00:00:00Z',
+    });
 
     await gerarConvite({ professorId: 'professor-1', contato: '11987654321' });
 
@@ -104,7 +108,9 @@ describe('aceitarConvite', () => {
   });
 
   it('returns the Api error message when the Api responds with 400 (convite expirado)', async () => {
-    mockFetchOnce(400, { mensagem: 'Este convite expirou. Peça ao Professor para gerar um novo link.' });
+    mockFetchOnce(400, {
+      mensagem: 'Este convite expirou. Peça ao Professor para gerar um novo link.',
+    });
 
     const resultado = await aceitarConvite({
       token: 'token-1',
