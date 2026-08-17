@@ -25,7 +25,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/11
 - [x] Implementação mínima: `RegraDeCobrancaController` (rotas acima), DTOs de request/response
 - [x] Log estruturado: evento `RegraDeCobrancaDefinida` (Information, `TrackId`, `MatriculaId`, `Tipo`, `ValorAnterior` nullable) emitido pelo controller — ver architecture.md#logs-estruturados-e-track-id
 - [x] Componente frontend: `RegraDeCobrancaForm` (organism) — seletor de tipo (`ChipSelector`, mesmo padrão de `ModeloAgendamentoForm`) + campo `Valor` sempre visível + campo `FrequenciaSemanalContratada` condicional (só quando tipo = ValorPorAula), com teste de componente
-- [ ] Integração `lib/api/regraDeCobranca.ts` (cliente HTTP do contrato acima) + tela `frontend/src/app/professor/[professorId]/matriculas/[matriculaId]/regra-de-cobranca.tsx`, com teste
+- [x] Integração `lib/api/regraDeCobranca.ts` (cliente HTTP do contrato acima) + tela `frontend/src/app/professor/[professorId]/matriculas/[matriculaId]/regra-de-cobranca.tsx`, com teste
 
 ## Fora de escopo nesta Task (documentado, não esquecido)
 
