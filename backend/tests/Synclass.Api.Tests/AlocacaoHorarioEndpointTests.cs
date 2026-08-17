@@ -153,4 +153,53 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task Get_Alocacoes_ListaAlocacoesDoHorario()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+        var horarioId = await CriarHorarioAsync(client, professorId, limiteAlunos: 2);
+        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            new CriarAlocacaoHorarioRequest(matriculaId));
+
+        var response = await client.GetAsync($"/professores/{professorId}/horarios/{horarioId}/alocacoes");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<List<AlocacaoHorarioResponse>>();
+        corpo.Should().ContainSingle(a => a.MatriculaId == matriculaId);
+    }
+
+    [Fact]
+    public async Task Delete_Alocacao_ReturnsNoContent_QuandoRemovida()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+        var horarioId = await CriarHorarioAsync(client, professorId);
+        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            new CriarAlocacaoHorarioRequest(matriculaId));
+
+        var response = await client.DeleteAsync($"/professores/{professorId}/horarios/{horarioId}/alocacoes/{matriculaId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var listagem = await client.GetFromJsonAsync<List<AlocacaoHorarioResponse>>(
+            $"/professores/{professorId}/horarios/{horarioId}/alocacoes");
+        listagem.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Delete_Alocacao_ReturnsNotFound_QuandoInexistente()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+        var horarioId = await CriarHorarioAsync(client, professorId);
+
+        var response = await client.DeleteAsync($"/professores/{professorId}/horarios/{horarioId}/alocacoes/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

@@ -34,10 +34,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Teste de fumaça (Api): `POST .../alocacoes` com Matrícula não vinculada devolve 400
 - [x] Teste de fumaça (Api): `POST .../alocacoes` com horário inexistente devolve 404
 - [x] Implementação mínima: `AlocacoesHorarioController` (`POST`), registro de DI em `Program.cs`
-- [ ] Teste de fumaça (Api): `GET .../alocacoes` lista as alocações do horário
-- [ ] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` devolve 204 e remove a alocação
-- [ ] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` inexistente devolve 404
-- [ ] Implementação mínima: `AlocacoesHorarioController` (`GET`, `DELETE`)
+- [x] Teste de fumaça (Api): `GET .../alocacoes` lista as alocações do horário
+- [x] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` devolve 204 e remove a alocação
+- [x] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` inexistente devolve 404
+- [x] Implementação mínima: `AlocacoesHorarioController` (`GET`, `DELETE`)
 - [ ] Teste de fumaça (Api): `GET /professores/{id}/alunos-provisorios` lista as Matrículas do Professor
 - [ ] Implementação mínima: `AlunosProvisoriosController.Listar` + `IMatriculaRepository.ListarPorProfessorAsync` (EF Core)
 - [ ] Log estruturado: evento `AlunoAlocadoEmHorario` (Information) no `POST` de sucesso

@@ -46,6 +46,40 @@ public sealed class AlocacoesHorarioController : ControllerBase
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Listar(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var alocacoes = await _alocacaoHorarioService.ListarPorHorarioAsync(professorId, horarioId, cancellationToken);
+            return Ok(alocacoes.Select(ParaResponse));
+        }
+        catch (HorarioNaoEncontradoException)
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpDelete("{matriculaId:guid}")]
+    public async Task<IActionResult> Desalocar(Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        try
+        {
+            await _alocacaoHorarioService.DesalocarAsync(professorId, horarioId, matriculaId, cancellationToken);
+            LogAlocacaoDesfeita(trackId, horarioId, matriculaId);
+            return NoContent();
+        }
+        catch (HorarioNaoEncontradoException)
+        {
+            return NotFound();
+        }
+        catch (AlocacaoNaoEncontradaException)
+        {
+            return NotFound();
+        }
+    }
+
     private static AlocacaoHorarioResponse ParaResponse(AlocacaoHorario alocacao)
     {
         return new AlocacaoHorarioResponse(alocacao.Id, alocacao.HorarioId, alocacao.MatriculaId, alocacao.CreatedAt);
@@ -63,6 +97,13 @@ public sealed class AlocacoesHorarioController : ControllerBase
         _logger.LogWarning(
             "AlocacaoRejeitada {TrackId} {ProfessorId} {HorarioId} {Motivo}",
             trackId, professorId, horarioId, ex.GetType().Name);
+    }
+
+    private void LogAlocacaoDesfeita(string trackId, Guid horarioId, Guid matriculaId)
+    {
+        _logger.LogInformation(
+            "AlocacaoDesfeita {TrackId} {HorarioId} {MatriculaId}",
+            trackId, horarioId, matriculaId);
     }
 }
 
