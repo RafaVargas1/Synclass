@@ -35,6 +35,14 @@ public sealed class MatriculaRepository : IMatriculaRepository
             .FirstOrDefaultAsync(m => m.ProfessorId == professorId && m.AlunoUsuarioId == alunoUsuarioId, cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Matricula>> ListarPorProfessorAsync(Guid professorId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.Matriculas
+            .Where(m => m.ProfessorId == professorId)
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken)
     {
         await _dbContext.Matriculas.AddAsync(matricula, cancellationToken);

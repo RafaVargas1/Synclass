@@ -34,6 +34,14 @@ public sealed class FakeMatriculaRepository : IMatriculaRepository
         return Task.FromResult(matricula);
     }
 
+    public Task<IReadOnlyCollection<Matricula>> ListarPorProfessorAsync(Guid professorId, CancellationToken cancellationToken)
+    {
+        IReadOnlyCollection<Matricula> resultado = _matriculas
+            .Where(m => m.ProfessorId == professorId)
+            .ToList();
+        return Task.FromResult(resultado);
+    }
+
     public Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken)
     {
         _matriculas.Add(matricula);

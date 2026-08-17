@@ -4,8 +4,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 
 ## Ordem de execução
 
-- [ ] `IMatriculaRepository`: `BuscarPorIdAsync` + `ListarPorProfessorAsync` (interface, `MatriculaRepository`, `FakeMatriculaRepository`) — pré-requisito dos testes de `AlocacaoHorarioService` abaixo
-- [ ] `HorarioService.BuscarDoProfessorAsync` vira `internal` (era `private`) — pré-requisito para `AlocacaoHorarioService` reaproveitar sem duplicar
+- [x] `IMatriculaRepository`: `BuscarPorIdAsync` + `ListarPorProfessorAsync` (interface, `MatriculaRepository`, `FakeMatriculaRepository`) — pré-requisito dos testes de `AlocacaoHorarioService` abaixo
+- [x] `HorarioService.BuscarDoProfessorAsync` vira `internal` (era `private`) — pré-requisito para `AlocacaoHorarioService` reaproveitar sem duplicar
 - [ ] Teste unidade (Domain): `AlocacaoHorarioService.AlocarAsync` em modelo Fixo com vaga cria a alocação (AC1)
 - [ ] Teste unidade (Domain): `AlocarAsync` em modelo Híbrido com vaga cria a alocação (AC1)
 - [ ] Implementação mínima: `AlocacaoHorario`, `IAlocacaoHorarioRepository`, `AlocacaoHorarioService.AlocarAsync` (caminho feliz), `FakeAlocacaoHorarioRepository`
