@@ -88,10 +88,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
       contra o contrato já estabilizado (sucesso, erro de negócio, erro de
       conexão/timeout)
 - [x] Implementação: `frontend/src/lib/api/convites.ts`
-- [ ] Teste (`lib/whatsapp.ts`): `montarLinkWhatsApp` gera link `wa.me` com
+- [x] Teste (`lib/whatsapp.ts`): `montarLinkWhatsApp` gera link `wa.me` com
       número BR quando o contato é telefone, e link genérico (sem
       destinatário) quando é e-mail
-- [ ] Implementação: `frontend/src/lib/whatsapp.ts`
+- [x] Implementação: `frontend/src/lib/whatsapp.ts`
 - [ ] Teste de tela: `frontend/src/app/professor/[professorId]/convites/novo.tsx`
       (gerar convite, exibir link e botão wa.me, erro exibido)
 - [ ] Implementação: tela de geração de convite
