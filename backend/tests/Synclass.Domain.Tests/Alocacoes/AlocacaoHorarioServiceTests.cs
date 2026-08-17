@@ -124,4 +124,28 @@ public sealed class AlocacaoHorarioServiceTests
         await acao.Should().ThrowAsync<MatriculaNaoVinculadaAoProfessorException>();
         cenario.Alocacoes.Alocacoes.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task AlocarAsync_HorarioInexistente_RejeitaComHorarioNaoEncontradoException()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+
+        var acao = () => cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, Guid.NewGuid(), matricula.Id, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
+    }
+
+    [Fact]
+    public async Task AlocarAsync_HorarioDeOutroProfessor_RejeitaComHorarioNaoEncontradoException()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Fixo);
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+
+        var acao = () => cenario.AlocacaoHorarioService.AlocarAsync(Guid.NewGuid(), horario.Id, matricula.Id, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
+    }
 }
