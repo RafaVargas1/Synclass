@@ -41,6 +41,7 @@ public sealed class AlocacaoHorarioService
         var horario = await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
         await GarantirModeloPermiteAlocacaoAsync(professorId, cancellationToken);
         await GarantirVagaDisponivelAsync(horario, cancellationToken);
+        await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
 
         var alocacao = AlocacaoHorario.Criar(horarioId, matriculaId, _clock);
         await _alocacoes.AdicionarAsync(alocacao, cancellationToken);
@@ -75,6 +76,19 @@ public sealed class AlocacaoHorarioService
         if (configuracao is null || configuracao.ModeloAgendamento == ModeloAgendamento.Vago)
         {
             throw new ModeloNaoPermiteAlocacaoException(professorId);
+        }
+    }
+
+    /// <summary>
+    /// AC5 — a Matrícula precisa existir e pertencer a este Professor; os
+    /// dois casos rejeitam com a mesma exceção, sem distinguir na resposta.
+    /// </summary>
+    private async Task GarantirMatriculaVinculadaAsync(Guid professorId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        var matricula = await _matriculas.BuscarPorIdAsync(matriculaId, cancellationToken);
+        if (matricula is null || matricula.ProfessorId != professorId)
+        {
+            throw new MatriculaNaoVinculadaAoProfessorException(matriculaId, professorId);
         }
     }
 }
