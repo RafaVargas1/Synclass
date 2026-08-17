@@ -75,6 +75,47 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     }
 
     [Fact]
+    public async Task Post_Horario_SemInformarLimiteAlunos_AplicaDefault1()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+
+        var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
+        corpo!.LimiteAlunos.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Post_Horario_ComLimiteAlunosInformado_UsaOValorInformado()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, LimiteAlunos: 4));
+
+        var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
+        corpo!.LimiteAlunos.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task Post_Horario_ReturnsBadRequest_QuandoLimiteAlunosZeroOuNegativo()
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, LimiteAlunos: 0));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoDuracaoInvalida()
     {
         var client = _factory.CreateClient();

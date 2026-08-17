@@ -111,6 +111,42 @@ public sealed class HorarioServiceTests
     }
 
     [Fact]
+    public async Task CadastrarAsync_SemInformarLimiteAlunos_AplicaDefault1()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
+
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+
+        horario.LimiteAlunos.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CadastrarAsync_ComLimiteAlunosInformado_UsaOValorInformado()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
+
+        var horario = await servico.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 4);
+
+        horario.LimiteAlunos.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task CadastrarAsync_LimiteAlunosZeroOuNegativo_RejeitaComLimiteAlunosInvalidoException()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
+
+        var acao = () => servico.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 0);
+
+        await acao.Should().ThrowAsync<LimiteAlunosInvalidoException>();
+        repositorio.Horarios.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ListarAsync_DevolveApenasHorariosDoProfessor()
     {
         var repositorio = new FakeHorarioRepository();

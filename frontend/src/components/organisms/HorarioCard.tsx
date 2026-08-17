@@ -10,11 +10,14 @@ export type HorarioCardProps = {
 
 /**
  * Organismo: item da lista de horários disponíveis do Professor (issue #6).
- * Mostra dia, hora de início e duração — sem opção de editar duração
- * (imutável após criação, ver Regra de Negócio da issue #6), só remover.
+ * Mostra dia, hora de início, duração e limite de alunos — sem opção de
+ * editar duração (imutável após criação, ver Regra de Negócio da issue #6),
+ * só remover.
  */
 export function HorarioCard({ horario, onRemover }: HorarioCardProps) {
   const horaFormatada = horario.horaInicio.slice(0, 5);
+  const rotuloLimiteAlunos =
+    horario.limiteAlunos > 1 ? `Grupo até ${horario.limiteAlunos}` : 'Individual';
 
   return (
     <View className="w-full flex-row items-center justify-between rounded-medium border border-background-selected bg-background-element px-four py-three dark:border-dark-background-selected dark:bg-dark-background-element">
@@ -23,7 +26,7 @@ export function HorarioCard({ horario, onRemover }: HorarioCardProps) {
           {NomesDiaSemana[horario.diaSemana]} · {horaFormatada}
         </Text>
         <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">
-          {horario.duracaoMinutos} min
+          {horario.duracaoMinutos} min · {rotuloLimiteAlunos}
         </Text>
       </View>
       <Pressable accessibilityRole="button" onPress={() => onRemover(horario.id)}>

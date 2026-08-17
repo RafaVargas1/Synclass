@@ -25,8 +25,9 @@ public sealed class HorariosController : ControllerBase
         try
         {
             var horario = await _horarioService.CadastrarAsync(
-                professorId, (DiaSemana)request.DiaSemana, request.HoraInicio, request.DuracaoMinutos, cancellationToken);
+                professorId, (DiaSemana)request.DiaSemana, request.HoraInicio, request.DuracaoMinutos, cancellationToken, request.LimiteAlunos);
             LogHorarioCriado(trackId, horario);
+            LogLimiteAlunosAlterado(trackId, horario);
             return Ok(ParaResponse(horario));
         }
         catch (HorarioConflitanteException ex)
@@ -73,7 +74,7 @@ public sealed class HorariosController : ControllerBase
 
     private static HorarioResponse ParaResponse(Horario horario)
     {
-        return new HorarioResponse(horario.Id, (int)horario.DiaSemana, horario.HoraInicio, horario.DuracaoMinutos);
+        return new HorarioResponse(horario.Id, (int)horario.DiaSemana, horario.HoraInicio, horario.DuracaoMinutos, horario.LimiteAlunos);
     }
 
     private void LogHorarioCriado(string trackId, Horario horario)
@@ -81,6 +82,18 @@ public sealed class HorariosController : ControllerBase
         _logger.LogInformation(
             "HorarioCriado {TrackId} {ProfessorId} {HorarioId}",
             trackId, horario.ProfessorId, horario.Id);
+    }
+
+    /// <summary>
+    /// Cobre a definição inicial do limite (não há endpoint de edição de
+    /// horário ainda — <c>LimiteAnterior</c> é sempre <c>null</c> nesta
+    /// issue). Ver docs/specs/17-limite-alunos-horario/implementation.md#decisão-documentada-limitealunosalterado-também-cobre-a-definição-inicial.
+    /// </summary>
+    private void LogLimiteAlunosAlterado(string trackId, Horario horario)
+    {
+        _logger.LogInformation(
+            "LimiteAlunosAlterado {TrackId} {ProfessorId} {HorarioId} {LimiteAnterior} {LimiteNovo}",
+            trackId, horario.ProfessorId, horario.Id, null, horario.LimiteAlunos);
     }
 
     private void LogRejeicaoPorConflito(string trackId, Guid professorId, HorarioConflitanteException ex)
@@ -98,8 +111,8 @@ public sealed class HorariosController : ControllerBase
     }
 }
 
-public sealed record CriarHorarioRequest(int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos);
+public sealed record CriarHorarioRequest(int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int? LimiteAlunos = null);
 
-public sealed record HorarioResponse(Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos);
+public sealed record HorarioResponse(Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int LimiteAlunos);
 
 public sealed record HorarioErrorResponse(string Mensagem);

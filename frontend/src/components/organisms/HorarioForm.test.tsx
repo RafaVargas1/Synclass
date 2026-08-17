@@ -19,13 +19,40 @@ describe('HorarioForm', () => {
       diaSemana: 1,
       horaInicio: '10:00:00',
       duracaoMinutos: 60,
+      limiteAlunos: 1,
     });
+  });
+
+  it('calls onSubmit with the informed limiteAlunos when the default is changed', async () => {
+    const onSubmit = jest.fn();
+    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('1'), '4');
+    await preencherEEnviar('10:00', '60');
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      diaSemana: 1,
+      horaInicio: '10:00:00',
+      duracaoMinutos: 60,
+      limiteAlunos: 4,
+    });
+  });
+
+  it('shows a client-side error and does not call onSubmit when limiteAlunos is zero or negative', async () => {
+    const onSubmit = jest.fn();
+    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('1'), '0');
+    await preencherEEnviar('10:00', '60');
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText('Informe um limite de alunos maior que zero.')).toBeTruthy();
   });
 
   it('shows a client-side error and does not call onSubmit when the new horario overlaps an existing one', async () => {
     const onSubmit = jest.fn();
     const horariosExistentes = [
-      { id: 'h1', diaSemana: 1, horaInicio: '10:00:00', duracaoMinutos: 60 },
+      { id: 'h1', diaSemana: 1, horaInicio: '10:00:00', duracaoMinutos: 60, limiteAlunos: 1 },
     ];
     await render(
       <HorarioForm horariosExistentes={horariosExistentes} enviando={false} onSubmit={onSubmit} />,

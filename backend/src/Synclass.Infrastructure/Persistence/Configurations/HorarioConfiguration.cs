@@ -28,6 +28,10 @@ public sealed class HorarioConfiguration : IEntityTypeConfiguration<Horario>
         builder.Property(h => h.HoraInicio).IsRequired();
         builder.Property(h => h.DuracaoMinutos).IsRequired();
         builder.Property(h => h.CreatedAt).IsRequired();
+        // Default 1 no banco (issue #17) cobre linhas existentes de antes
+        // deste card, que nascem como aula individual — mesmo default já
+        // aplicado em Horario.Criar quando limiteAlunos é omitido.
+        builder.Property(h => h.LimiteAlunos).IsRequired().HasDefaultValue(LimiteAlunosHorario.Padrao);
 
         builder.HasIndex(h => new { h.ProfessorId, h.DiaSemana });
 

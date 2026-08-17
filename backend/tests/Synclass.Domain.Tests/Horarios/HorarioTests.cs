@@ -50,6 +50,65 @@ public sealed class HorarioTests
     }
 
     [Fact]
+    public void Criar_SemInformarLimiteAlunos_AplicaDefault1()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
+
+        horario.LimiteAlunos.Should().Be(1);
+    }
+
+    [Fact]
+    public void Criar_ComLimiteAlunosInformado_UsaOValorInformado()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+
+        horario.LimiteAlunos.Should().Be(4);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Criar_LimiteAlunosZeroOuNegativo_RejeitaComLimiteAlunosInvalidoException(int limiteAlunos)
+    {
+        var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos);
+
+        acao.Should().Throw<LimiteAlunosInvalidoException>();
+    }
+
+    [Fact]
+    public void AlterarLimiteAlunos_NovoLimiteMaiorOuIgualAlocados_AplicaNovoValor()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+
+        horario.AlterarLimiteAlunos(3, quantidadeAlunosAlocados: 3);
+
+        horario.LimiteAlunos.Should().Be(3);
+    }
+
+    [Fact]
+    public void AlterarLimiteAlunos_NovoLimiteMenorQueAlocados_RejeitaComLimiteAlunosMenorQueAlocadosException()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+
+        var acao = () => horario.AlterarLimiteAlunos(2, quantidadeAlunosAlocados: 3);
+
+        acao.Should().Throw<LimiteAlunosMenorQueAlocadosException>();
+        horario.LimiteAlunos.Should().Be(4);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void AlterarLimiteAlunos_NovoLimiteZeroOuNegativo_RejeitaComLimiteAlunosInvalidoException(int novoLimite)
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+
+        var acao = () => horario.AlterarLimiteAlunos(novoLimite, quantidadeAlunosAlocados: 0);
+
+        acao.Should().Throw<LimiteAlunosInvalidoException>();
+    }
+
+    [Fact]
     public void Sobrepoe_MesmoDiaComIntervalosQueSeCruzam_RetornaTrue()
     {
         var existente = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);

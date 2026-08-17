@@ -23,6 +23,7 @@ export type HorarioFormProps = {
 
 const MensagemFormatoHoraInvalido = 'Informe a hora no formato HH:mm.';
 const MensagemDuracaoInvalida = 'Informe uma duração em minutos maior que zero.';
+const MensagemLimiteAlunosInvalido = 'Informe um limite de alunos maior que zero.';
 const MensagemConflito = 'Esse horário conflita com um já cadastrado.';
 
 /**
@@ -35,10 +36,11 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
   const [diaSemana, setDiaSemana] = useState(1);
   const [horaInicio, setHoraInicio] = useState('');
   const [duracaoMinutos, setDuracaoMinutos] = useState('');
+  const [limiteAlunos, setLimiteAlunos] = useState('1');
   const [erroCliente, setErroCliente] = useState<string | undefined>(undefined);
 
   function handleSubmit() {
-    const resultado = validar(diaSemana, horaInicio, duracaoMinutos, horariosExistentes);
+    const resultado = validar(diaSemana, horaInicio, duracaoMinutos, limiteAlunos, horariosExistentes);
     if (!resultado.valido) {
       setErroCliente(resultado.mensagem);
       return;
@@ -69,6 +71,13 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
         placeholder="60"
         keyboardType="numeric"
       />
+      <FormField
+        label="Limite de alunos"
+        value={limiteAlunos}
+        onChangeText={setLimiteAlunos}
+        placeholder="1"
+        keyboardType="numeric"
+      />
       {(erroCliente ?? erro) ? <ErrorMessage>{erroCliente ?? erro}</ErrorMessage> : null}
       <Button
         label={enviando ? 'Salvando...' : 'Adicionar horário'}
@@ -86,6 +95,7 @@ function validar(
   diaSemana: number,
   horaInicio: string,
   duracaoMinutos: string,
+  limiteAlunos: string,
   horariosExistentes: Horario[],
 ): ResultadoValidacao {
   if (!/^\d{2}:\d{2}$/.test(horaInicio)) {
@@ -97,10 +107,16 @@ function validar(
     return { valido: false, mensagem: MensagemDuracaoInvalida };
   }
 
+  const limite = Number(limiteAlunos);
+  if (!Number.isInteger(limite) || limite < 1) {
+    return { valido: false, mensagem: MensagemLimiteAlunosInvalido };
+  }
+
   const input: CriarHorarioInput = {
     diaSemana,
     horaInicio: `${horaInicio}:00`,
     duracaoMinutos: duracao,
+    limiteAlunos: limite,
   };
   const conflita = horariosExistentes.some((existente) => horariosSeSobrepoe(input, existente));
   return conflita ? { valido: false, mensagem: MensagemConflito } : { valido: true, input };
