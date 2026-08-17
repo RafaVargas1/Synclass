@@ -217,6 +217,33 @@ public sealed class ConviteServiceTests
         convite.UsadoEm.Should().BeNull();
     }
 
+    /// <summary>
+    /// Regressão de achado de code-review no PR #29: nada em
+    /// <see cref="ConviteService.GerarAsync"/> impede dois convites distintos
+    /// referenciando a mesma matrícula de origem ainda não promovida (ex:
+    /// reenvio acidental). Antes desta correção, aceitar o segundo convite
+    /// deixava <see cref="Matricula.Promover"/> lançar
+    /// <see cref="MatriculaJaPromovidaException"/> sem tratamento — 500 em
+    /// vez de rejeição controlada — e ainda marcava o segundo convite como
+    /// usado antes de falhar. Agora a validação ocorre antes de
+    /// <see cref="Convite.MarcarUsado"/>, então nada é alterado na rejeição.
+    /// </summary>
+    [Fact]
+    public async Task AceitarAsync_MatriculaOrigemJaPromovidaPorOutroConvite_RejeitaSemMarcarConviteComoUsado()
+    {
+        var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
+        var matriculaOrigem = Matricula.CriarProvisoria(professorId, "João Pedro", "2024-013", Clock);
+        await contexto.Matriculas.AdicionarAsync(matriculaOrigem, CancellationToken.None);
+        var conviteA = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
+        var conviteB = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
+        await servico.AceitarAsync(conviteA.Token, "João Pedro", "11987654321", CancellationToken.None);
+
+        var acao = () => servico.AceitarAsync(conviteB.Token, "João Pedro", "11987654321", CancellationToken.None);
+
+        await acao.Should().ThrowAsync<MatriculaOrigemInvalidaException>();
+        conviteB.UsadoEm.Should().BeNull();
+    }
+
     private static async Task<(ConviteService Servico, Contexto Contexto, Guid ProfessorId)> CriarServicoComProfessorExistenteAsync()
     {
         var contexto = NovoContexto();

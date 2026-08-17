@@ -112,10 +112,11 @@ public sealed class ConviteService
         }
 
         var nomeValidado = NomeUsuario.Validar(nome);
+        var matriculaOrigem = await ObterMatriculaOrigemValidaAsync(convite, cancellationToken);
         convite.MarcarUsado(_clock);
 
         var usuario = await ObterOuCriarUsuarioAsync(nomeValidado, convite.Contato, cancellationToken);
-        var matriculaPromovida = await VincularMatriculaAsync(convite, usuario.Id, cancellationToken);
+        var matriculaPromovida = await VincularMatriculaAsync(convite, matriculaOrigem, usuario.Id, cancellationToken);
 
         await _usuarios.SalvarAsync(cancellationToken);
         await _matriculas.SalvarAsync(cancellationToken);
@@ -154,18 +155,43 @@ public sealed class ConviteService
     }
 
     /// <summary>
-    /// Promove a matrícula de origem ou o vínculo já existente (devolve
-    /// <c>true</c>), ou cria uma nova matrícula já vinculada quando nenhuma
-    /// das duas existir (devolve <c>false</c>) — usado pelo log estruturado
-    /// <c>ConviteAceito</c> para indicar qual caminho ocorreu (Critérios
-    /// técnicos da issue #2).
+    /// Busca e valida a matrícula de origem do convite, se houver, antes de
+    /// qualquer mutação — sem isso, dois convites apontando para a mesma
+    /// matrícula ainda não promovida (ex: reenvio acidental) faziam o
+    /// segundo aceite lançar <see cref="MatriculaJaPromovidaException"/> sem
+    /// tratamento (500) depois de já ter marcado aquele convite como usado
+    /// (achado de code-review no PR #29). Validar aqui, antes de
+    /// <see cref="Convite.MarcarUsado"/>, preserva o edge point "rejeição
+    /// não altera nada".
     /// </summary>
-    private async Task<bool> VincularMatriculaAsync(Convite convite, Guid alunoUsuarioId, CancellationToken cancellationToken)
+    private async Task<Matricula?> ObterMatriculaOrigemValidaAsync(Convite convite, CancellationToken cancellationToken)
     {
-        if (convite.MatriculaId is not null)
+        if (convite.MatriculaId is null)
         {
-            var matriculaOrigem = await _matriculas.BuscarPorIdAsync(convite.MatriculaId.Value, cancellationToken)
-                ?? throw new MatriculaOrigemInvalidaException(convite.MatriculaId.Value);
+            return null;
+        }
+
+        var matriculaOrigem = await _matriculas.BuscarPorIdAsync(convite.MatriculaId.Value, cancellationToken);
+        if (matriculaOrigem is null || matriculaOrigem.AlunoUsuarioId is not null)
+        {
+            throw new MatriculaOrigemInvalidaException(convite.MatriculaId.Value);
+        }
+
+        return matriculaOrigem;
+    }
+
+    /// <summary>
+    /// Promove <paramref name="matriculaOrigem"/> ou o vínculo já existente
+    /// (devolve <c>true</c>), ou cria uma nova matrícula já vinculada quando
+    /// nenhuma das duas existir (devolve <c>false</c>) — usado pelo log
+    /// estruturado <c>ConviteAceito</c> para indicar qual caminho ocorreu
+    /// (Critérios técnicos da issue #2).
+    /// </summary>
+    private async Task<bool> VincularMatriculaAsync(
+        Convite convite, Matricula? matriculaOrigem, Guid alunoUsuarioId, CancellationToken cancellationToken)
+    {
+        if (matriculaOrigem is not null)
+        {
             matriculaOrigem.Promover(alunoUsuarioId);
             return true;
         }
