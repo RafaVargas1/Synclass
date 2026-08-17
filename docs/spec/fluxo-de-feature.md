@@ -49,6 +49,15 @@ agente reportar tarefas) antes de decidir se dorme de novo ou intervém. Isso
 dá visibilidade incremental (não só no final) e um ponto natural de
 recuperação se algo travar no meio.
 
+Este padrão é o default para **toda** execução do fluxo, não só as que já
+nascem pensadas para durar horas — a Fase 3 (implementação) e a Fase 4
+(revisão) sozinhas já produzem output bruto (`dotnet test`/`npm test`,
+docker, Playwright) grande o bastante para estourar o contexto de uma
+sessão única muito antes de chegar na Fase 6. Delegar implementação e
+revisão a `Agent`s separados (ver Fase 3 e Fase 4 abaixo) não é só sobre
+paralelismo — é o que mantém a sessão supervisora com contexto plano ao
+longo das 6 fases, recebendo só o resultado compacto de cada uma.
+
 ## Fase 1 — Issue semente
 
 Se o usuário referenciar uma issue já existente (número, URL, ou "roda o
@@ -194,12 +203,18 @@ swarm. Commit desses dois arquivos é o primeiro commit da branch da Task
 
 Cada rodada:
 
-1. Rode `dev-review` e `qa-review` **em paralelo** (duas invocações
-   independentes — uma é checklist mecânico sobre o diff, a outra é
-   navegador real via Playwright; não têm dependência entre si) sobre o PR
-   aberto na Fase 3.
+1. Delegue `dev-review` e `qa-review` **em paralelo** a dois `Agent`s
+   separados (`subagent_type: "synclass-worker"`, um para cada skill — uma
+   é checklist mecânico sobre o diff, a outra é navegador real via
+   Playwright; não têm dependência entre si) sobre o PR aberto na Fase 3, em
+   vez de chamar `Skill()` direto na sessão supervisora: as duas geram
+   output bruto (docker, `dotnet test`/`npm test`, traces do Playwright)
+   grande o bastante para estourar o contexto se acumulado por até 3
+   rodadas. Avise cada agente de que está "rodando como subagente" — as
+   skills já sabem responder só com a tabela de achados nesse modo.
 2. Corrija tudo que voltou como bloqueante/falhou, um commit por correção
-   coerente.
+   coerente, na sessão supervisora (que só recebeu a tabela compacta de
+   volta, não o log bruto).
 3. Se a rodada não encontrar nenhum achado bloqueante, pare — não force as 3
    rodadas.
 4. Nas rodadas 1 e 2, **não** poste comentário no GitHub — os achados são
@@ -253,9 +268,9 @@ se ainda não tiverem sido removidos pela `qa-review`.
 | 2, reflexão de código/RN anteriores, polimento final, perguntas ao usuário | Modelo principal da sessão | É onde aparecem ligações não óbvias entre cards e julgamento sobre o que perguntar — não delega bem. |
 | 2.5 (spec técnica: `task.md`/`implementation.md`) | Modelo principal | É a formalização em arquivo da mesma reflexão da fase 2 — mesmo julgamento, não delega a modelo leve. |
 | 3 (implementação, thread sequencial principal) | Modelo principal | Correção de código tem custo de erro mais alto que rascunho de issue; não usar modelo leve aqui. |
-| 3 (agentes de swarm, quando compensa) | Mesmo tier do modelo principal (não Haiku) | Swarm aqui é sobre paralelizar, não sobre baratear — a fatia de código de cada agente precisa do mesmo nível de julgamento do restante da implementação. |
+| 3 (agentes de swarm, quando compensa) | `Agent` `subagent_type: "synclass-worker"`, **fixo em Sonnet** (pin no `model:` do agente — sobrescreve o modelo da sessão principal, não herda) | Swarm aqui é sobre paralelizar, não sobre baratear o julgamento — mas o julgamento em si já vem guiado por `docs/specs/<n>-<slug>/`, então Sonnet iguala a qualidade de um tier maior por um custo bem menor; Haiku fica de fora porque o custo de erro em código de produção é alto. Fixo (não herdado) para o custo não variar se a sessão principal estiver rodando num modelo mais caro por outro motivo. |
 | 3 (buscas pontuais de arquivo/padrão antes de implementar) | Agente `Explore` | Busca é mais barata como agente somente-leitura dedicado. |
-| 4 (dev-review, qa-review) | Uma invocação de skill cada, em paralelo | Já são skills prontas com seus próprios passos; não reimplementar. |
+| 4 (dev-review, qa-review) | Uma invocação de `Agent` (`synclass-worker`, também fixo em Sonnet) cada, em paralelo, delegando a skill correspondente | Já são skills prontas com seus próprios passos; não reimplementar — mas rodar via `Agent` (não `Skill()` direto) mantém o output bruto de cada revisão (docker, testes, Playwright) fora do contexto da sessão supervisora, e o pin em Sonnet garante julgamento suficiente para não deixar passar achado bloqueante sem depender do tier da sessão que invocou. |
 | 6 (relatório) | Modelo principal | Síntese final, precisa juntar contexto de todas as fases anteriores. |
 
 ## Board e labels usados

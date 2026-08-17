@@ -40,34 +40,39 @@ verificável por qualquer pessoa que compare o relatório com a issue.
 
 ## Passo 3 — Subir a stack de forma reprodutível
 
-```bash
-# a partir da raiz do repo
-docker compose up -d db api
-```
-
-Aguarde ativamente o backend responder antes de prosseguir — nunca use
-`sleep` fixo:
+Use os scripts do repo — eles já resolvem, sem tentativa e erro, os dois
+problemas que rodadas anteriores desta skill descobriram do zero toda vez
+(imagem Docker desatualizada + migration não aplicada automaticamente, e
+`ENOSPC` do watcher do Expo nesta máquina):
 
 ```bash
-until curl -sf http://localhost:${API_PORT:-8080}/health >/dev/null; do sleep 1; done
+# a partir da raiz do repo — builda a imagem, sobe db+api, aplica migrations
+./scripts/qa-up.sh > /tmp/qa-up.log 2>&1
+echo "qa-up exit: $?"
+
+# a partir da raiz do repo — build estático do frontend web, servido na
+# porta fixa 8081 com fallback de SPA para rotas dinâmicas do Expo Router
+./scripts/qa-web-static.sh > /tmp/qa-web-static.log 2>&1 &
 ```
 
-Depois, suba o frontend web a partir de `frontend/`:
-
-```bash
-cd frontend && npm run web
-```
-
-(`npm run web` executa `expo start --web`; confirme no `package.json` do
-frontend que o script ainda se chama `web` antes de rodar, pois pode mudar.)
-Rode em background e aguarde ativamente a porta responder (por padrão o Expo
-web sobe em `http://localhost:8081` — confirme a porta real no log de start,
-ela pode variar se 8081 estiver ocupada) antes de iniciar qualquer teste
-Playwright:
+`qa-web-static.sh` roda em foreground — inicie em background e aguarde
+ativamente a porta responder antes de testar (nunca `sleep` fixo):
 
 ```bash
 until curl -sf http://localhost:8081 >/dev/null; do sleep 1; done
 ```
+
+Redirecione a saída dos dois scripts para arquivo, como acima, em vez de
+deixá-la crua no contexto (build de imagem Docker é o tipo de log longo que
+não ajuda em nada quando dá certo) — só abra o `.log` se o exit code vier
+não-zero.
+
+Se algum dos dois scripts falhar de um jeito que sugira que o ambiente mudou
+desde que foram escritos (ex: portas diferentes, `docker-compose.yml`
+alterado, `expo export` com flag nova), console os scripts em
+`scripts/qa-up.sh`/`scripts/qa-web-static.sh` antes de tentar contornar na
+mão — e se o contorno for permanente, atualize o script, não só esta
+execução.
 
 **Limitação conhecida a documentar no relatório, não a resolver agora**: o
 projeto ainda não tem seed nem reset automático de dados de teste no banco.
@@ -102,10 +107,14 @@ seletores CSS/XPath frágeis. Cada cenário Gherkin vira um `test(...)`
 próprio, nomeado com o texto do critério, para que o relatório final possa
 citar diretamente qual teste corresponde a qual critério.
 
-Rode com:
+Rode com o reporter de linha (não o padrão, mais verboso), redirecionando
+para arquivo — leia primeiro só as linhas de resumo (`passed`/`failed`) e
+abra o log completo apenas para os cenários que falharam:
 
 ```bash
-cd frontend && npx playwright test e2e/.qa-review/<slug-do-pr>.spec.ts
+cd frontend && npx playwright test e2e/.qa-review/<slug-do-pr>.spec.ts \
+  --reporter=line > /tmp/playwright-<slug-do-pr>.log 2>&1
+grep -E "passed|failed" /tmp/playwright-<slug-do-pr>.log
 ```
 
 Ao final da skill (Passo 7), apague o arquivo de spec gerado
@@ -150,12 +159,12 @@ Trate subida e execução dos testes como um bloco try/finally: mesmo se um
 teste falhar ou o comando Playwright retornar erro, rode ao final:
 
 ```bash
-docker compose down
+./scripts/qa-down.sh
 ```
 
-Se você iniciou `npm run web` em background, encerre esse processo também
-antes de finalizar. Não deixe a stack (nem o Expo dev server) rodando depois
-que a skill termina, mesmo em caso de exceção durante os testes.
+Isso derruba o Docker compose e mata o processo na porta 8081. Não deixe
+nada rodando depois que a skill termina, mesmo em caso de exceção durante os
+testes.
 
 ## Passo 8 — Compor o relatório
 
@@ -170,6 +179,15 @@ Adicione, depois da tabela, uma seção separada para os achados de UX do
 Passo 6 (acessibilidade, responsividade, loading/erro) — eles não mapeiam
 1:1 para um critério da issue, então não force uma linha da tabela para
 cada um.
+
+**Se você está rodando como subagente** (delegado por outra instância do
+Claude, não diretamente pelo usuário): mantenha a tabela e a seção de UX
+completas — são o corpo do trabalho —, mas não elabore prosa adicional além
+delas. Critérios que passaram sem ressalva não precisam de mais que a
+própria linha da tabela; gaste texto extra só nos que falharam ou geraram
+achado de UX. Quem te invocou vai decidir o que fazer com o resultado — não
+é necessário repetir o mesmo achado em formatos diferentes (ex: tabela +
+parágrafo + texto de comentário proposto) só por precaução.
 
 ## Passo 9 — Antes de postar, pedir confirmação
 

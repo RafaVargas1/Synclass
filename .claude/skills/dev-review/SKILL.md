@@ -38,13 +38,25 @@ completo).
 
 ```bash
 # Backend
-cd backend && dotnet format --verify-no-changes && dotnet test
+cd backend && dotnet format --verify-no-changes > /tmp/dotnet-format.log 2>&1
+echo "format exit: $?"
+dotnet test > /tmp/dotnet-test.log 2>&1
+echo "test exit: $?"
 
 # Frontend
-cd frontend && npm run lint && npm run typecheck && npm test
+cd frontend && npm run lint > /tmp/npm-lint.log 2>&1
+echo "lint exit: $?"
+npm run typecheck > /tmp/npm-typecheck.log 2>&1
+echo "typecheck exit: $?"
+npm test > /tmp/npm-test.log 2>&1
+echo "test exit: $?"
 ```
 
 Observações:
+- Não traga esses logs inteiros para o contexto. Se o exit code for 0,
+  descarte o arquivo — o relatório só precisa dizer "passou". Se falhar,
+  rode `grep -inE "error|fail" /tmp/<arquivo>.log` primeiro e só abra o log
+  completo se o grep não bastar para entender a causa.
 - `dotnet format --verify-no-changes` falha (exit não-zero) se houver
   arquivos que o formatador mudaria — é isso que você quer detectar aqui,
   sem aplicar a mudança automaticamente.
@@ -138,6 +150,13 @@ checklist mecânico violado > julgamento por LLM > nota informativa):
 Inclua no topo um resumo de 2-3 linhas com o veredito geral (aprovar,
 aprovar com ressalvas, pedir mudanças) e, logo abaixo da tabela, a seção
 delegada do `/code-review` (Passo 4).
+
+**Se você está rodando como subagente** (delegado por outra instância do
+Claude, não diretamente pelo usuário): a tabela é o entregável — não repita
+o mesmo achado de novo em prosa solta nem no texto do comentário proposto
+do Passo 7 além do necessário para o `gh pr comment` funcionar como texto
+autônomo. Itens "Passou" não precisam de explicação além da célula
+"Observação"; gaste texto extra só nos achados que pedem ação.
 
 ## Passo 7 — Antes de postar, pedir confirmação
 

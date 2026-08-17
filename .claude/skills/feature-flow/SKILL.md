@@ -23,11 +23,12 @@ skills/tools que o pipeline usa (ver
 [`fluxo-de-feature.md#autonomia-sem-pausas`](../../../docs/spec/fluxo-de-feature.md#autonomia-sem-pausas))
 — se um prompt de permissão aparecer no meio de uma rodada, é sinal de gap
 na allowlist, não de uma ação que devesse pedir confirmação; corrija o
-`settings.json` em vez de aprovar item a item. Para rodar isso por várias
-horas ou durante a noite, siga o padrão de
+`settings.json` em vez de aprovar item a item. Siga o padrão de
 ["Execução longa/autônoma"](../../../docs/spec/fluxo-de-feature.md#execução-longaautônoma-várias-horas-ou-durante-a-noite)
-do mesmo documento — supervisor em `/loop`, não uma sessão solta sem
-checkpoint.
+do mesmo documento em toda execução deste fluxo, não só nas que você já
+espera que durem horas — supervisor em `/loop`, implementação/revisão
+delegadas a `Agent`, nunca uma sessão solta acumulando o contexto de todas
+as 6 fases sem checkpoint.
 
 ## Passo 1 — Issue semente
 
@@ -129,14 +130,26 @@ agente de swarm delegado. Commit inicial da branch, antes de qualquer teste.
    Critérios técnicos do card antes de considerar o teste suficiente.
 4. Avalie swarm (ver `fluxo-de-feature.md#fase-3--implementação` para os
    critérios exatos de quando compensa): cards/Tasks independentes → um
-   `Agent` por card, cada um em sua worktree, com o caminho de
-   `docs/specs/<n>-<slug>/` no prompt em vez do desenho técnico reexplicado
-   inline; dentro de um card back+front → backend primeiro até o contrato
+   `Agent` (`subagent_type: "synclass-worker"`) por card, cada um em sua
+   worktree, com o caminho de `docs/specs/<n>-<slug>/` no prompt em vez do
+   desenho técnico reexplicado inline — o toolset mais estreito desse
+   agente (sem `Agent`/`Artifact`) evita pagar overhead de ferramentas que
+   implementação nunca usa, em cada uma das execuções paralelas; dentro de um card back+front → backend primeiro até o contrato
    estabilizar, depois paralelize frontend contra esse contrato. Não abra
    agente extra para trabalho pequeno ou acoplado — e não trate "mesmo
    épico" como sinal de independência: Tasks de um épico rodam espaçadas
    (uma execução do fluxo por Task) por padrão, swarm só quando já
-   satisfazem o critério normal de independência.
+   satisfazem o critério normal de independência. **Exceção que não conta
+   como independência**: se dois cards em swarm mexem em
+   `SynclassDbContext.cs`, `Program.cs` (registro de DI) ou geram migration
+   nova, os `ModelSnapshot.cs` de cada worktree vão divergir do outro e do
+   `main` — conflito garantido no merge, e caro de resolver manualmente
+   (arquivo gerado, não dá pra pegar um lado só). Nesse caso, sempre que um
+   dos cards do swarm mergear em `main`, rebase os worktrees dos outros
+   antes de continuar a revisão deles — resolver o conflito ali, com o
+   card ainda em progresso e o contexto fresco, é muito mais barato que
+   resolver depois de dev-review/qa-review já terem rodado sobre código que
+   vai mudar de novo no merge.
 5. Antes do PR, rode os checks de `CONTRIBUTING.md#antes-de-abrir-um-pr`
    (`dotnet format && dotnet test`, `npm run lint && npm run typecheck &&
    npm test`). Só prossiga com tudo verde.
@@ -150,17 +163,35 @@ gh pr create --title "<título>" --body "Closes #<n>
 
 ## Passo 4 — Revisão (até 3 rodadas)
 
-Cada rodada, em paralelo (duas chamadas independentes na mesma resposta):
+Cada rodada, em paralelo (duas chamadas independentes na mesma resposta),
+delegue para um `Agent` (`subagent_type: "synclass-worker"`) — não chame
+`Skill()` direto neste passo: `dev-review`/`qa-review` produzem muito output
+bruto (docker, `dotnet test`/`npm test`, traces do Playwright) que você não
+quer acumulando na sua própria janela de contexto ao longo de até 3 rodadas.
+Deixe explícito em cada prompt que o agente está "rodando como subagente" —
+as duas skills já reduzem a resposta a só a tabela quando avisadas disso
+(ver Passo 6 de `dev-review` e Passo 8 de `qa-review`):
 
-- `Skill({ skill: "dev-review", args: "<n>" })`
-- `Skill({ skill: "qa-review", args: "<n>" })`
+- Agent 1: "Você está rodando como subagente. Invoque a skill `dev-review`
+  sobre o PR #<n> e retorne só a tabela de achados (Passo 6 da skill), sem
+  prosa adicional."
+- Agent 2: "Você está rodando como subagente. Invoque a skill `qa-review`
+  sobre o PR #<n> e retorne só a tabela de critérios + seção de UX (Passo 8
+  da skill), sem prosa adicional."
 
-Corrija tudo que voltar bloqueante/falhou, um commit por correção. Pare a
+Corrija tudo que voltar bloqueante/falhou, um commit por correção. Como
+autonomia total já está decidida (não há confirmação a pausar), aplique a
+correção na mesma sessão/contexto que acabou de receber o achado pronto —
+nunca abra uma rodada de revisão e uma rodada de correção como dois `Agent`
+pesados e independentes para o mesmo achado: o segundo reconstrói do zero
+(releitura de arquivos, diff, code-style.md) um contexto que o primeiro já
+tinha na mão, e isso é o maior desperdício de token do pipeline. Pare a
 rotação assim que uma rodada não encontrar mais nada bloqueante (não force
 até 3). Nas rodadas 1–2 não poste nada no GitHub — os achados guiam correção
 interna. Na rodada final (ou na 3ª, o que vier primeiro), consolide os dois
-relatórios e poste um único `gh pr comment <n>` com o veredito — sem pedir
-confirmação (exceção de autonomia desta skill). Preserve
+relatórios (que já voltaram compactos dos agentes) e poste um único
+`gh pr comment <n>` com o veredito — sem pedir confirmação (exceção de
+autonomia desta skill). Preserve
 `frontend/e2e/.qa-review/screenshots/<slug-do-pr>/` da rodada final: é a
 evidência usada no relatório do Passo 6.
 

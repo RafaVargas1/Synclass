@@ -37,6 +37,7 @@ Thumbs.db
 /.claude/*
 !/.claude/skills/
 !/.claude/settings.json
+!/.claude/agents/
 
 # ---- Logs ----
 *.log
