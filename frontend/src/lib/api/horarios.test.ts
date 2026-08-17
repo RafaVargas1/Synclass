@@ -16,6 +16,7 @@ describe('criarHorario', () => {
       diaSemana: 2,
       horaInicio: '10:00:00',
       duracaoMinutos: 60,
+      limiteAlunos: 1,
     });
 
     expect(resultado).toEqual({
@@ -31,6 +32,7 @@ describe('criarHorario', () => {
       diaSemana: 2,
       horaInicio: '10:30:00',
       duracaoMinutos: 60,
+      limiteAlunos: 1,
     });
 
     expect(resultado).toEqual({
@@ -46,6 +48,7 @@ describe('criarHorario', () => {
       diaSemana: 2,
       horaInicio: '10:00:00',
       duracaoMinutos: 60,
+      limiteAlunos: 1,
     });
 
     expect(resultado.sucesso).toBe(false);

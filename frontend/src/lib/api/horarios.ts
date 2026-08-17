@@ -5,12 +5,14 @@ export type Horario = {
   diaSemana: number;
   horaInicio: string;
   duracaoMinutos: number;
+  limiteAlunos: number;
 };
 
 export type CriarHorarioInput = {
   diaSemana: number;
   horaInicio: string;
   duracaoMinutos: number;
+  limiteAlunos: number;
 };
 
 export type CriarHorarioResultado =
