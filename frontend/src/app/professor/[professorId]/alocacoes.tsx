@@ -173,6 +173,7 @@ function useGerenciamentoAlocacoes(professorId: string) {
         setHorarios(dados.horarios);
         setAlunos(dados.alunos);
         setAlocacoesPorHorario(dados.alocacoesPorHorario);
+        setErro(dados.erro);
       }
     });
     return () => {
@@ -186,6 +187,13 @@ function useGerenciamentoAlocacoes(professorId: string) {
   return { horarios, alunos, alocacoesPorHorario, erro, handleAlocar, handleDesalocar };
 }
 
+/**
+ * Falha em `listarHorarios`/`listarAlunosProvisorios` antes era descartada
+ * silenciosamente (`resultado.sucesso ? ... : []`), deixando a tela em
+ * branco sem mensagem nem retry — achado de UX do qa-review no PR #30.
+ * Agora a primeira falha encontrada vira `erro` e é exibida via
+ * `<ErrorMessage>`, mesmo padrão já usado no gate de configuração acima.
+ */
 async function carregarTudo(professorId: string) {
   const [resultadoHorarios, resultadoAlunos] = await Promise.all([
     listarHorarios(professorId),
@@ -194,7 +202,12 @@ async function carregarTudo(professorId: string) {
   const horarios = resultadoHorarios.sucesso ? resultadoHorarios.horarios : [];
   const alunos = resultadoAlunos.sucesso ? resultadoAlunos.alunos : [];
   const alocacoesPorHorario = await carregarAlocacoes(professorId, horarios);
-  return { horarios, alunos, alocacoesPorHorario };
+  const erro = !resultadoHorarios.sucesso
+    ? resultadoHorarios.mensagem
+    : !resultadoAlunos.sucesso
+      ? resultadoAlunos.mensagem
+      : undefined;
+  return { horarios, alunos, alocacoesPorHorario, erro };
 }
 
 async function carregarAlocacoes(
