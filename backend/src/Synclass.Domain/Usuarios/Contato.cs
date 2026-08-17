@@ -3,6 +3,18 @@ using System.Text.RegularExpressions;
 namespace Synclass.Domain.Usuarios;
 
 /// <summary>
+/// Tipo do contato após normalização — usado por consumidores que precisam
+/// persistir o tipo separadamente da string normalizada (ex: coluna
+/// <c>ContatoTipo</c> de <c>Convites</c>, issue #2), sem reimplementar a
+/// distinção que <see cref="Contato.Normalizar"/> já faz internamente.
+/// </summary>
+public enum TipoContato
+{
+    Email,
+    Telefone,
+}
+
+/// <summary>
 /// Normaliza e valida um contato (e-mail ou telefone) antes de qualquer
 /// comparação de duplicidade, conforme a Regra de Negócio da issue #1:
 /// e-mail em minúsculas e sem espaços nas pontas; telefone assumindo formato
@@ -38,6 +50,16 @@ public static class Contato
 
         var contato = contatoBruto.Trim();
         return contato.Contains('@') ? NormalizarEmail(contato) : NormalizarTelefone(contato);
+    }
+
+    /// <summary>
+    /// Classifica um contato já normalizado (ver <see cref="Normalizar"/>)
+    /// como e-mail ou telefone, para persistência separada (ex: coluna
+    /// <c>ContatoTipo</c> de <c>Convites</c>, issue #2).
+    /// </summary>
+    public static TipoContato IdentificarTipo(string contatoNormalizado)
+    {
+        return contatoNormalizado.Contains('@') ? TipoContato.Email : TipoContato.Telefone;
     }
 
     private static string NormalizarEmail(string email)

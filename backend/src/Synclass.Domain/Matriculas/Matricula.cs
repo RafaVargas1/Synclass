@@ -16,10 +16,16 @@ namespace Synclass.Domain.Matriculas;
 public sealed class Matricula
 {
     private Matricula(
-        Guid id, Guid professorId, string nomeProvisorio, string identificadorProvisorio, DateTimeOffset createdAt)
+        Guid id,
+        Guid professorId,
+        Guid? alunoUsuarioId,
+        string? nomeProvisorio,
+        string? identificadorProvisorio,
+        DateTimeOffset createdAt)
     {
         Id = id;
         ProfessorId = professorId;
+        AlunoUsuarioId = alunoUsuarioId;
         NomeProvisorio = nomeProvisorio;
         IdentificadorProvisorio = identificadorProvisorio;
         CreatedAt = createdAt;
@@ -48,7 +54,19 @@ public sealed class Matricula
     public static Matricula CriarProvisoria(
         Guid professorId, string nomeValidado, string identificadorValidado, IClock clock)
     {
-        return new Matricula(Guid.NewGuid(), professorId, nomeValidado, identificadorValidado, clock.UtcNow);
+        return new Matricula(Guid.NewGuid(), professorId, null, nomeValidado, identificadorValidado, clock.UtcNow);
+    }
+
+    /// <summary>
+    /// Cria uma matrícula já plena, sem passar pelo estado provisório —
+    /// caminho do aceite de convite (issue #2) quando o Aluno completa
+    /// cadastro sem uma matrícula de origem específica (nasceu de um
+    /// cadastro completo, não de um registro provisório do Professor, então
+    /// não tem <see cref="NomeProvisorio"/>/<see cref="IdentificadorProvisorio"/>).
+    /// </summary>
+    public static Matricula CriarVinculada(Guid professorId, Guid alunoUsuarioId, IClock clock)
+    {
+        return new Matricula(Guid.NewGuid(), professorId, alunoUsuarioId, null, null, clock.UtcNow);
     }
 
     /// <summary>

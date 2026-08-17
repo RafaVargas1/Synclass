@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Synclass.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Synclass.Infrastructure.Persistence;
 namespace Synclass.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SynclassDbContext))]
-    partial class SynclassDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260817172606_CriaConvite")]
+    partial class CriaConvite
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,11 +143,6 @@ namespace Synclass.Infrastructure.Persistence.Migrations
 
                     b.Property<TimeOnly>("HoraInicio")
                         .HasColumnType("time without time zone");
-
-                    b.Property<int>("LimiteAlunos")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1);
 
                     b.Property<Guid>("ProfessorId")
                         .HasColumnType("uuid");
