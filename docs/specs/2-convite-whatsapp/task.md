@@ -84,10 +84,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
 
 ### Frontend
 
-- [ ] Teste (`lib/api/convites.ts`): `gerarConvite` e `aceitarConvite`
+- [x] Teste (`lib/api/convites.ts`): `gerarConvite` e `aceitarConvite`
       contra o contrato já estabilizado (sucesso, erro de negócio, erro de
       conexão/timeout)
-- [ ] Implementação: `frontend/src/lib/api/convites.ts`
+- [x] Implementação: `frontend/src/lib/api/convites.ts`
 - [ ] Teste (`lib/whatsapp.ts`): `montarLinkWhatsApp` gera link `wa.me` com
       número BR quando o contato é telefone, e link genérico (sem
       destinatário) quando é e-mail
