@@ -40,9 +40,9 @@ Card: https://github.com/RafaVargas1/Synclass/issues/8
 - [x] Implementação mínima: `AlocacoesHorarioController` (`GET`, `DELETE`)
 - [x] Teste de fumaça (Api): `GET /professores/{id}/alunos-provisorios` lista as Matrículas do Professor
 - [x] Implementação mínima: `AlunosProvisoriosController.Listar` + `IMatriculaRepository.ListarPorProfessorAsync` (EF Core)
-- [ ] Log estruturado: evento `AlunoAlocadoEmHorario` (Information) no `POST` de sucesso
-- [ ] Log estruturado: evento `AlocacaoRejeitada` (Warning) em qualquer `AlocacaoRejeitadaException`
-- [ ] Log estruturado: evento `AlocacaoDesfeita` (Information) no `DELETE` de sucesso
+- [x] Log estruturado: evento `AlunoAlocadoEmHorario` (Information) no `POST` de sucesso
+- [x] Log estruturado: evento `AlocacaoRejeitada` (Warning) em qualquer `AlocacaoRejeitadaException`
+- [x] Log estruturado: evento `AlocacaoDesfeita` (Information) no `DELETE` de sucesso
 - [ ] Componente frontend: `lib/api/alocacoes.ts` (`alocarAluno`, `listarAlocacoes`, `desalocarAluno`) + `listarAlunosProvisorios` em `lib/api/alunosProvisorios.ts`
 - [ ] Componente frontend: organism `HorarioAlocacaoCard` (vagas ocupadas/total, lista de Alunos alocados com remover, seletor de Aluno disponível + botão Alocar), com teste
 - [ ] Componente frontend: tela `app/professor/[professorId]/alocacoes.tsx` (gate de modelo Vago com mensagem, grade de `HorarioAlocacaoCard` para Fixo/Híbrido), com teste
