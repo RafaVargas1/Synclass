@@ -21,8 +21,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/17
 - [x] Teste de fumaça (Api): `POST /professores/{id}/horarios` com `limiteAlunos: 0` devolve 400
 - [x] Implementação mínima: `CriarHorarioRequest.LimiteAlunos` (opcional), `HorarioResponse.LimiteAlunos`, controller repassa o valor para o `HorarioService`
 - [x] Log estruturado: evento `LimiteAlunosAlterado` (Information) emitido pelo controller ao criar o horário — ver architecture.md#logs-estruturados-e-track-id e a Decisão documentada em implementation.md sobre `LimiteAnterior=null` na criação
-- [ ] Componente frontend: campo numérico "Limite de alunos" em `HorarioForm` (default `'1'`, validação inline para valor menor que 1), propagado em `CriarHorarioInput`/`Horario` (`lib/api/horarios.ts`) — inclui atualizar `HorarioForm.test.tsx` para o novo campo
-- [ ] Componente frontend: `HorarioCard` mostra o limite cadastrado (ex: "Individual" quando 1, "Grupo até N" quando > 1), com teste em `HorarioCard.test.tsx`
+- [x] Componente frontend: campo numérico "Limite de alunos" em `HorarioForm` (default `'1'`, validação inline para valor menor que 1), propagado em `CriarHorarioInput`/`Horario` (`lib/api/horarios.ts`) — inclui atualizar `HorarioForm.test.tsx` para o novo campo
+- [x] Componente frontend: `HorarioCard` mostra o limite cadastrado (ex: "Individual" quando 1, "Grupo até N" quando > 1), com teste em `HorarioCard.test.tsx`
 
 ## Fora de escopo nesta Task (documentado, não esquecido)
 
