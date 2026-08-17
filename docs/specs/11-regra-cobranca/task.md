@@ -6,8 +6,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/11
 
 - [x] Teste unidade (Domain): `RegraFixoMensal.CalcularValorDevido` retorna sempre `Valor`, independente de `quantidadeDeAulasNoPeriodo`
 - [x] Implementação mínima: `IRegraDeCobranca` (contrato: `Id`, `MatriculaId`, `CalcularValorDevido(int quantidadeDeAulasNoPeriodo)`) + classe abstrata `RegraDeCobranca` (estado comum) + `RegraFixoMensal`
-- [ ] Teste unidade (Domain): `RegraFixoPorAula.CalcularValorDevido` retorna `Valor * quantidadeDeAulasNoPeriodo`
-- [ ] Implementação mínima: `RegraFixoPorAula`
+- [x] Teste unidade (Domain): `RegraFixoPorAula.CalcularValorDevido` retorna `Valor * quantidadeDeAulasNoPeriodo`
+- [x] Implementação mínima: `RegraFixoPorAula`
 - [ ] Teste unidade (Domain): `RegraValorPorAula.CalcularValorDevido` retorna `Valor * quantidadeDeAulasNoPeriodo` (mesma fórmula de `RegraFixoPorAula`, mas carrega `FrequenciaSemanalContratada` — regressão que garante que o valor da faixa 3x/semana não se confunde com o de 2x/semana quando duas instâncias da regra têm `Valor` diferente para `FrequenciaSemanalContratada` diferente)
 - [ ] Teste unidade (Domain): `RegraValorPorAula` construída com `FrequenciaSemanalContratada` fora de 1-7 rejeita com `FrequenciaSemanalContratadaInvalidaException`
 - [ ] Implementação mínima: `RegraValorPorAula` + validação de `FrequenciaSemanalContratada`
