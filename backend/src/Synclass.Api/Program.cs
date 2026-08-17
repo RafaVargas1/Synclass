@@ -5,11 +5,13 @@ using Synclass.Api.Middleware;
 using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Common;
 using Synclass.Domain.Configuracoes;
+using Synclass.Domain.Convites;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
 using Synclass.Infrastructure.Autenticacao;
 using Synclass.Infrastructure.Common;
+using Synclass.Infrastructure.Convites;
 using Synclass.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +58,18 @@ builder.Services.AddSingleton<IGeradorDeTokenSessao>(sp => new GeradorDeTokenSes
     sp.GetRequiredService<IClock>()));
 builder.Services.AddScoped<LoginService>();
 
+// Convite de Aluno via WhatsApp (issue #2) — ver
+// docs/specs/2-convite-whatsapp/implementation.md.
+builder.Services.AddScoped<IConviteRepository, ConviteRepository>();
+builder.Services.AddSingleton<IGeradorDeTokenConvite, GeradorDeTokenConvite>();
+builder.Services.AddScoped(sp => new ConviteService(
+    sp.GetRequiredService<IConviteRepository>(),
+    sp.GetRequiredService<IMatriculaRepository>(),
+    sp.GetRequiredService<IUsuarioRepository>(),
+    sp.GetRequiredService<IGeradorDeTokenConvite>(),
+    sp.GetRequiredService<IClock>(),
+    LerDiasValidadeConviteObrigatoria(builder.Configuration)));
+
 var app = builder.Build();
 
 // Falha explícita no startup, mesmo padrão de Jwt:SigningKey acima — sem
@@ -68,6 +82,20 @@ static int LerExpiracaoDiasObrigatoria(IConfiguration configuration)
     {
         throw new InvalidOperationException(
             $"Configuração inválida: Jwt:ExpiracaoDias = \"{valorBruto}\". Esperado um inteiro positivo.");
+    }
+
+    return dias;
+}
+
+// Mesmo padrão (falha explícita no startup) de LerExpiracaoDiasObrigatoria
+// acima — ver docs/specs/2-convite-whatsapp/implementation.md.
+static int LerDiasValidadeConviteObrigatoria(IConfiguration configuration)
+{
+    var valorBruto = configuration["Convites:DiasValidade"];
+    if (!int.TryParse(valorBruto, out var dias) || dias <= 0)
+    {
+        throw new InvalidOperationException(
+            $"Configuração inválida: Convites:DiasValidade = \"{valorBruto}\". Esperado um inteiro positivo.");
     }
 
     return dias;

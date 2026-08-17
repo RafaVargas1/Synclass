@@ -66,17 +66,17 @@ Card: https://github.com/RafaVargas1/Synclass/issues/2
 
 ### Api
 
-- [ ] Teste de fumaça (Api): `POST /professores/{professorId}/convites` com
+- [x] Teste de fumaça (Api): `POST /professores/{professorId}/convites` com
       contato válido retorna 200 com `token`/`expiraEm`
-- [ ] Teste de fumaça (Api): `POST /professores/{professorId}/convites` com
+- [x] Teste de fumaça (Api): `POST /professores/{professorId}/convites` com
       `professorId` inexistente retorna 404
-- [ ] Teste de fumaça (Api): `POST /professores/{professorId}/convites` para
+- [x] Teste de fumaça (Api): `POST /professores/{professorId}/convites` para
       Aluno já vinculado retorna 400
-- [ ] Teste de fumaça (Api): `POST /convites/{token}/aceite` com token válido
+- [x] Teste de fumaça (Api): `POST /convites/{token}/aceite` com token válido
       e contato correspondente retorna 200 com `usuarioId`
-- [ ] Teste de fumaça (Api): `POST /convites/{token}/aceite` com token
+- [x] Teste de fumaça (Api): `POST /convites/{token}/aceite` com token
       expirado retorna 400 com mensagem de expiração
-- [ ] Implementação mínima: `ConvitesController`, DTOs, registro de DI
+- [x] Implementação mínima: `ConvitesController`, DTOs, registro de DI
       (`Program.cs`, incluindo `Convites:DiasValidade` configurável),
       logs estruturados `ConviteGerado` (Information), `ConviteAceito`
       (Information), `ConviteRejeitado` (Warning) — mesma convenção de
