@@ -18,12 +18,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/11
 - [x] Implementação mínima: `RegraDeCobrancaService` (`Synclass.Domain.Cobrancas`) + `IRegraDeCobrancaRepository`
 - [x] Migration `CriaRegraDeCobranca`: tabela `RegrasDeCobranca` (TPH, discriminador `Tipo`), `RegraDeCobrancaConfiguration` com `HasDiscriminator`, índice único em `MatriculaId`
 - [x] Implementação: `RegraDeCobrancaRepository` (`Synclass.Infrastructure.Persistence`)
-- [ ] Teste de fumaça (Api): `PUT /professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca` com `tipo=ValorPorAula` e `frequenciaSemanalContratada` válido devolve 200 com o corpo da regra criada
-- [ ] Teste de fumaça (Api): mesmo endpoint com `matriculaId` que não pertence a `professorId` (ou inexistente) devolve 404
-- [ ] Teste de fumaça (Api): `GET /professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca` sem regra configurada devolve 404 (critério de aceite 1 — "sistema indica que nenhuma regra foi configurada")
-- [ ] Teste de fumaça (Api): `GET` após um `PUT` bem-sucedido devolve 200 com os dados da regra vigente
-- [ ] Implementação mínima: `RegraDeCobrancaController` (rotas acima), DTOs de request/response
-- [ ] Log estruturado: evento `RegraDeCobrancaDefinida` (Information, `TrackId`, `MatriculaId`, `Tipo`, `ValorAnterior` nullable) emitido pelo controller — ver architecture.md#logs-estruturados-e-track-id
+- [x] Teste de fumaça (Api): `PUT /professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca` com `tipo=ValorPorAula` e `frequenciaSemanalContratada` válido devolve 200 com o corpo da regra criada
+- [x] Teste de fumaça (Api): mesmo endpoint com `matriculaId` que não pertence a `professorId` (ou inexistente) devolve 404
+- [x] Teste de fumaça (Api): `GET /professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca` sem regra configurada devolve 404 (critério de aceite 1 — "sistema indica que nenhuma regra foi configurada")
+- [x] Teste de fumaça (Api): `GET` após um `PUT` bem-sucedido devolve 200 com os dados da regra vigente
+- [x] Implementação mínima: `RegraDeCobrancaController` (rotas acima), DTOs de request/response
+- [x] Log estruturado: evento `RegraDeCobrancaDefinida` (Information, `TrackId`, `MatriculaId`, `Tipo`, `ValorAnterior` nullable) emitido pelo controller — ver architecture.md#logs-estruturados-e-track-id
 - [ ] Componente frontend: `RegraDeCobrancaForm` (organism) — seletor de tipo (`ChipSelector`, mesmo padrão de `ModeloAgendamentoForm`) + campo `Valor` sempre visível + campo `FrequenciaSemanalContratada` condicional (só quando tipo = ValorPorAula), com teste de componente
 - [ ] Integração `lib/api/regraDeCobranca.ts` (cliente HTTP do contrato acima) + tela `frontend/src/app/professor/[professorId]/matriculas/[matriculaId]/regra-de-cobranca.tsx`, com teste
 
