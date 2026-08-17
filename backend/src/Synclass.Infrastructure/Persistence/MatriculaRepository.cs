@@ -24,6 +24,17 @@ public sealed class MatriculaRepository : IMatriculaRepository
                 cancellationToken);
     }
 
+    public Task<Matricula?> BuscarPorIdAsync(Guid matriculaId, CancellationToken cancellationToken)
+    {
+        return _dbContext.Matriculas.FirstOrDefaultAsync(m => m.Id == matriculaId, cancellationToken);
+    }
+
+    public Task<Matricula?> BuscarVinculoAsync(Guid professorId, Guid alunoUsuarioId, CancellationToken cancellationToken)
+    {
+        return _dbContext.Matriculas
+            .FirstOrDefaultAsync(m => m.ProfessorId == professorId && m.AlunoUsuarioId == alunoUsuarioId, cancellationToken);
+    }
+
     public async Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken)
     {
         await _dbContext.Matriculas.AddAsync(matricula, cancellationToken);

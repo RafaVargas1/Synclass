@@ -15,6 +15,22 @@ public interface IMatriculaRepository
     Task<Matricula?> BuscarPorIdentificadorAsync(
         Guid professorId, string identificadorProvisorio, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Busca uma matrícula pelo <see cref="Matricula.Id"/> — usado ao aceitar
+    /// um convite gerado a partir de uma matrícula de origem específica
+    /// (issue #2), para promover exatamente aquela linha em vez de casar por
+    /// nome/contato.
+    /// </summary>
+    Task<Matricula?> BuscarPorIdAsync(Guid matriculaId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Busca a matrícula plena que já vincula este Professor a este Aluno
+    /// (por identidade de usuário), se existir — usado para rejeitar convite
+    /// duplicado (issue #2, critério de aceite 4) e para não duplicar o
+    /// vínculo no aceite sem matrícula de origem.
+    /// </summary>
+    Task<Matricula?> BuscarVinculoAsync(Guid professorId, Guid alunoUsuarioId, CancellationToken cancellationToken);
+
     Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken);
 
     Task SalvarAsync(CancellationToken cancellationToken);
