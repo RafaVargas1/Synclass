@@ -3,6 +3,7 @@ using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Autenticacao;
+using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Common;
 using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Convites;
@@ -47,6 +48,8 @@ builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
 builder.Services.AddScoped<IMatriculaRepository, MatriculaRepository>();
 builder.Services.AddScoped<CadastroAlunoProvisorioService>();
+builder.Services.AddScoped<IRegraDeCobrancaRepository, RegraDeCobrancaRepository>();
+builder.Services.AddScoped<RegraDeCobrancaService>();
 
 // Login por OTP (issue #18) — ver docs/specs/18-login-otp/implementation.md.
 builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();

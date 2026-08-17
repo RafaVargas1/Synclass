@@ -16,8 +16,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/11
 - [x] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` substitui a regra existente (upsert, FK única em `MatriculaId`) quando a matrícula já tem uma regra de outro tipo
 - [x] Teste unidade (Domain): `RegraDeCobrancaService.DefinirAsync` para matrícula inexistente rejeita com `MatriculaNaoEncontradaException`
 - [x] Implementação mínima: `RegraDeCobrancaService` (`Synclass.Domain.Cobrancas`) + `IRegraDeCobrancaRepository`
-- [ ] Migration `CriaRegraDeCobranca`: tabela `RegrasDeCobranca` (TPH, discriminador `Tipo`), `RegraDeCobrancaConfiguration` com `HasDiscriminator`, índice único em `MatriculaId`
-- [ ] Implementação: `RegraDeCobrancaRepository` (`Synclass.Infrastructure.Persistence`)
+- [x] Migration `CriaRegraDeCobranca`: tabela `RegrasDeCobranca` (TPH, discriminador `Tipo`), `RegraDeCobrancaConfiguration` com `HasDiscriminator`, índice único em `MatriculaId`
+- [x] Implementação: `RegraDeCobrancaRepository` (`Synclass.Infrastructure.Persistence`)
 - [ ] Teste de fumaça (Api): `PUT /professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca` com `tipo=ValorPorAula` e `frequenciaSemanalContratada` válido devolve 200 com o corpo da regra criada
 - [ ] Teste de fumaça (Api): mesmo endpoint com `matriculaId` que não pertence a `professorId` (ou inexistente) devolve 404
 - [ ] Teste de fumaça (Api): `GET /professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca` sem regra configurada devolve 404 (critério de aceite 1 — "sistema indica que nenhuma regra foi configurada")

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Synclass.Domain.Autenticacao;
+using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Convites;
 using Synclass.Domain.Horarios;
@@ -27,6 +28,7 @@ public sealed class SynclassDbContext : DbContext
     public DbSet<Matricula> Matriculas => Set<Matricula>();
     public DbSet<ConfiguracaoProfessor> ConfiguracoesProfessor => Set<ConfiguracaoProfessor>();
     public DbSet<Convite> Convites => Set<Convite>();
+    public DbSet<RegraDeCobranca> RegrasDeCobranca => Set<RegraDeCobranca>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
