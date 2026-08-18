@@ -1,4 +1,4 @@
-import { cadastrarAlunoProvisorio } from '@/lib/api/alunosProvisorios';
+import { cadastrarAlunoProvisorio, listarAlunosProvisorios } from '@/lib/api/alunosProvisorios';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -84,5 +84,37 @@ describe('cadastrarAlunoProvisorio', () => {
 
     expect(resultado.sucesso).toBe(false);
     jest.useRealTimers();
+  });
+});
+
+describe('listarAlunosProvisorios', () => {
+  it('returns the list of alunos when the Api responds with 200', async () => {
+    mockFetchOnce(200, [{ matriculaId: 'm1', nome: 'João Pedro', identificador: '2024-013' }]);
+
+    const resultado = await listarAlunosProvisorios('professor-1');
+
+    expect(resultado).toEqual({
+      sucesso: true,
+      alunos: [{ matriculaId: 'm1', nome: 'João Pedro', identificador: '2024-013' }],
+    });
+  });
+
+  it('gets the professor-scoped route', async () => {
+    mockFetchOnce(200, []);
+
+    await listarAlunosProvisorios('professor-1');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/professores/professor-1/alunos-provisorios'),
+      expect.anything(),
+    );
+  });
+
+  it('returns sucesso false when fetch throws', async () => {
+    globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
+
+    const resultado = await listarAlunosProvisorios('professor-1');
+
+    expect(resultado.sucesso).toBe(false);
   });
 });

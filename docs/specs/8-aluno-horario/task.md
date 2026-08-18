@@ -1,0 +1,48 @@
+# Task: Professor coloca Aluno em um horário específico (#8)
+
+Card: https://github.com/RafaVargas1/Synclass/issues/8
+
+## Ordem de execução
+
+- [x] `IMatriculaRepository`: `BuscarPorIdAsync` + `ListarPorProfessorAsync` (interface, `MatriculaRepository`, `FakeMatriculaRepository`) — pré-requisito dos testes de `AlocacaoHorarioService` abaixo
+- [x] `HorarioService.BuscarDoProfessorAsync` vira `internal` (era `private`) — pré-requisito para `AlocacaoHorarioService` reaproveitar sem duplicar
+- [x] Teste unidade (Domain): `AlocacaoHorarioService.AlocarAsync` em modelo Fixo com vaga cria a alocação (AC1)
+- [x] Teste unidade (Domain): `AlocarAsync` em modelo Híbrido com vaga cria a alocação (AC1)
+- [x] Implementação mínima: `AlocacaoHorario`, `IAlocacaoHorarioRepository`, `AlocacaoHorarioService.AlocarAsync` (caminho feliz), `FakeAlocacaoHorarioRepository`
+- [x] Teste unidade (Domain): `AlocarAsync` em modelo Vago rejeita com `ModeloNaoPermiteAlocacaoException` (AC2)
+- [x] Implementação mínima: checagem de modelo + `ModeloNaoPermiteAlocacaoException`
+- [x] Teste unidade (Domain): `AlocarAsync` em horário no limite (`LimiteAlunos` já atingido) rejeita com `HorarioLotadoException` (AC3)
+- [x] Implementação mínima: checagem de vaga via `ContarPorHorarioAsync` + `HorarioLotadoException`
+- [x] Teste unidade (Domain): `AlocarAsync` com Matrícula inexistente rejeita com `MatriculaNaoVinculadaAoProfessorException` (AC5)
+- [x] Teste unidade (Domain): `AlocarAsync` com Matrícula de outro Professor rejeita com `MatriculaNaoVinculadaAoProfessorException` (AC5)
+- [x] Implementação mínima: checagem de vínculo via `IMatriculaRepository.BuscarPorIdAsync` + `MatriculaNaoVinculadaAoProfessorException`
+- [x] Teste unidade (Domain): `AlocarAsync` com horário inexistente/de outro Professor rejeita com `HorarioNaoEncontradoException`
+- [x] Teste unidade (Domain): `AlocarAsync` com o mesmo Aluno já alocado no horário rejeita com `AlocacaoJaExisteException`
+- [x] Implementação mínima: checagem de duplicidade + `AlocacaoJaExisteException`
+- [x] Teste unidade (Domain): `DesalocarAsync` remove a alocação e libera a vaga (AC4 — nova `AlocarAsync` após `DesalocarAsync` no mesmo horário funciona)
+- [x] Teste unidade (Domain): `DesalocarAsync` de um horário não afeta outra alocação do mesmo Aluno em outro horário (RN — alocações independentes)
+- [x] Teste unidade (Domain): `DesalocarAsync` de alocação inexistente rejeita com `AlocacaoNaoEncontradaException`
+- [x] Teste unidade (Domain): `DesalocarAsync` com horário inexistente/de outro Professor rejeita com `HorarioNaoEncontradoException`
+- [x] Implementação mínima: `AlocacaoHorarioService.DesalocarAsync` + `AlocacaoNaoEncontradaException`
+- [x] Teste unidade (Domain): `ListarPorHorarioAsync` devolve as alocações do horário (usado pelo `GET`)
+- [x] Implementação mínima: `AlocacaoHorarioService.ListarPorHorarioAsync`
+- [x] Migration `CriaAlocacaoHorario`: tabela `AlocacoesHorario` (`Id`, `HorarioId` FK, `MatriculaId` FK, `CreatedAt`), índice único (`HorarioId`, `MatriculaId`) — via `AlocacaoHorarioConfiguration`, `AlocacaoHorarioRepository`, `DbSet` em `SynclassDbContext`
+- [x] Liga o stub: `HorarioRepository.PossuiAlunosAlocadosAsync` consulta `AlocacoesHorario` de verdade (issue #6 dependia disto — ver implementation.md)
+- [x] Teste de fumaça (Api): `POST /professores/{id}/horarios/{horarioId}/alocacoes` com dados válidos devolve 200 com a alocação
+- [x] Teste de fumaça (Api): `POST .../alocacoes` em modelo Vago devolve 400
+- [x] Teste de fumaça (Api): `POST .../alocacoes` com horário lotado devolve 400
+- [x] Teste de fumaça (Api): `POST .../alocacoes` com Matrícula não vinculada devolve 400
+- [x] Teste de fumaça (Api): `POST .../alocacoes` com horário inexistente devolve 404
+- [x] Implementação mínima: `AlocacoesHorarioController` (`POST`), registro de DI em `Program.cs`
+- [x] Teste de fumaça (Api): `GET .../alocacoes` lista as alocações do horário
+- [x] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` devolve 204 e remove a alocação
+- [x] Teste de fumaça (Api): `DELETE .../alocacoes/{matriculaId}` inexistente devolve 404
+- [x] Implementação mínima: `AlocacoesHorarioController` (`GET`, `DELETE`)
+- [x] Teste de fumaça (Api): `GET /professores/{id}/alunos-provisorios` lista as Matrículas do Professor
+- [x] Implementação mínima: `AlunosProvisoriosController.Listar` + `IMatriculaRepository.ListarPorProfessorAsync` (EF Core)
+- [x] Log estruturado: evento `AlunoAlocadoEmHorario` (Information) no `POST` de sucesso
+- [x] Log estruturado: evento `AlocacaoRejeitada` (Warning) em qualquer `AlocacaoRejeitadaException`
+- [x] Log estruturado: evento `AlocacaoDesfeita` (Information) no `DELETE` de sucesso
+- [x] Componente frontend: `lib/api/alocacoes.ts` (`alocarAluno`, `listarAlocacoes`, `desalocarAluno`) + `listarAlunosProvisorios` em `lib/api/alunosProvisorios.ts`
+- [x] Componente frontend: organism `HorarioAlocacaoCard` (vagas ocupadas/total, lista de Alunos alocados com remover, seletor de Aluno disponível + botão Alocar), com teste
+- [x] Componente frontend: tela `app/professor/[professorId]/alocacoes.tsx` (gate de modelo Vago com mensagem, grade de `HorarioAlocacaoCard` para Fixo/Híbrido), com teste
