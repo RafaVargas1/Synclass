@@ -13,6 +13,15 @@ namespace Synclass.Api.Controllers;
 /// (issue #8) — rotas e semântica de autorização diferentes (ali é o
 /// Professor agindo sobre seus Alunos, aqui é o Aluno agindo sobre si
 /// mesmo), mesmo padrão já usado entre <c>HorariosController</c> e este.
+/// <c>professorId</c> continua vindo da rota (issue #23) — diferente de
+/// <see cref="AlunosProvisoriosController"/>/<see cref="AlocacoesHorarioController"/>,
+/// aqui ele identifica o Professor sendo navegado pelo Aluno, não a
+/// identidade de quem chama; não há "sessão de qual Professor" para ler.
+/// O que de fato precisava de sessão era <c>matriculaId</c> — removido dos
+/// parâmetros do cliente e resolvido a partir do Aluno autenticado
+/// (<see cref="AlocacaoHorarioService.ResolverMatriculaDoAlunoAsync"/>), já
+/// que antes qualquer Aluno autenticado podia informar a <c>matriculaId</c>
+/// de outro Aluno sem checagem de posse.
 /// </summary>
 [ApiController]
 [Route("professores/{professorId:guid}/horarios")]
@@ -29,12 +38,17 @@ public sealed class MarcacoesHorarioController : ControllerBase
     }
 
     [HttpGet("vagos")]
-    public async Task<IActionResult> ListarVagos(Guid professorId, [FromQuery] Guid matriculaId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ListarVagos(Guid professorId, CancellationToken cancellationToken)
     {
         try
         {
+            var matriculaId = await ResolverMatriculaAsync(professorId, cancellationToken);
             var vagos = await _alocacaoHorarioService.ListarVagosAsync(professorId, matriculaId, cancellationToken);
             return Ok(vagos.Select(ParaResponse));
+        }
+        catch (AlunoNaoVinculadoAoProfessorException)
+        {
+            return NotFound();
         }
         catch (AlocacaoRejeitadaException ex)
         {
@@ -43,16 +57,20 @@ public sealed class MarcacoesHorarioController : ControllerBase
     }
 
     [HttpPost("{horarioId:guid}/marcacoes")]
-    public async Task<IActionResult> Marcar(
-        Guid professorId, Guid horarioId, [FromBody] CriarMarcacaoHorarioRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Marcar(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
     {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
         try
         {
+            var matriculaId = await ResolverMatriculaAsync(professorId, cancellationToken);
             var alocacao = await _alocacaoHorarioService.MarcarAsync(
-                professorId, horarioId, request.MatriculaId, cancellationToken);
+                professorId, horarioId, matriculaId, cancellationToken);
             LogAlunoAlocado(trackId, alocacao);
             return Ok(ParaResponse(alocacao));
+        }
+        catch (AlunoNaoVinculadoAoProfessorException)
+        {
+            return NotFound();
         }
         catch (HorarioNaoEncontradoException)
         {
@@ -63,6 +81,12 @@ public sealed class MarcacoesHorarioController : ControllerBase
             LogAlocacaoRejeitada(trackId, professorId, horarioId, ex);
             return BadRequest(new AlocacaoHorarioErrorResponse(ex.Message));
         }
+    }
+
+    private Task<Guid> ResolverMatriculaAsync(Guid professorId, CancellationToken cancellationToken)
+    {
+        var alunoUsuarioId = User.GetUsuarioId();
+        return _alocacaoHorarioService.ResolverMatriculaDoAlunoAsync(professorId, alunoUsuarioId, cancellationToken);
     }
 
     private static AlocacaoHorarioResponse ParaResponse(AlocacaoHorario alocacao)
@@ -91,7 +115,5 @@ public sealed class MarcacoesHorarioController : ControllerBase
             trackId, professorId, horarioId, ex.GetType().Name);
     }
 }
-
-public sealed record CriarMarcacaoHorarioRequest(Guid MatriculaId);
 
 public sealed record HorarioVagoResponse(Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int VagasRestantes);

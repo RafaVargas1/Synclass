@@ -8,15 +8,15 @@ namespace Synclass.Api.Controllers;
 /// <summary>
 /// Cadastro (issue #3) e listagem (issue #8, para o seletor de Aluno da
 /// alocação a horário) de Aluno provisório — sem contato, e-mail, telefone
-/// ou login, diferente do cadastro pleno (issue #1). O <c>professorId</c> é
-/// recebido na rota, não de uma sessão: ainda não há login (issue #18, em
-/// paralelo) de onde derivar o Professor autenticado. Decisão documentada em
-/// docs/specs/3-aluno-provisorio/implementation.md — trocar por sessão real
-/// é o objeto da issue de acompanhamento aberta junto deste PR.
+/// ou login, diferente do cadastro pleno (issue #1). <c>professorId</c> é
+/// sempre a identidade de quem chama (um Professor só gerencia os próprios
+/// Alunos) — lido do token via <see cref="ClaimsPrincipalExtensions.GetUsuarioId"/>,
+/// não mais de parâmetro de rota (issue #23, débito documentado em
+/// docs/specs/3-aluno-provisorio/implementation.md).
 /// </summary>
 [Authorize(Roles = "Professor")]
 [ApiController]
-[Route("professores/{professorId:guid}/alunos-provisorios")]
+[Route("professores/alunos-provisorios")]
 public sealed class AlunosProvisoriosController : ControllerBase
 {
     private readonly CadastroAlunoProvisorioService _cadastroAlunoProvisorio;
@@ -35,9 +35,10 @@ public sealed class AlunosProvisoriosController : ControllerBase
 
     [HttpPost]
     public async Task<IActionResult> Cadastrar(
-        Guid professorId, [FromBody] CadastroAlunoProvisorioRequest request, CancellationToken cancellationToken)
+        [FromBody] CadastroAlunoProvisorioRequest request, CancellationToken cancellationToken)
     {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        var professorId = User.GetUsuarioId();
 
         try
         {
@@ -57,8 +58,9 @@ public sealed class AlunosProvisoriosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Listar(Guid professorId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Listar(CancellationToken cancellationToken)
     {
+        var professorId = User.GetUsuarioId();
         var matriculas = await _matriculas.ListarPorProfessorAsync(professorId, cancellationToken);
         return Ok(matriculas.Select(ParaResponse));
     }

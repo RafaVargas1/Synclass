@@ -15,7 +15,9 @@ namespace Synclass.Api.Tests;
 /// Teste de fumaça do endpoint de listagem de Matrículas do Professor
 /// (issue #8) — alimenta o seletor de Aluno do frontend na alocação a
 /// horário. Usa EF Core InMemory, mesmo padrão de
-/// <see cref="AlunoProvisorioCadastroEndpointTests"/>.
+/// <see cref="AlunoProvisorioCadastroEndpointTests"/>. Rota sem
+/// <c>professorId</c> desde a issue #23 — "outro Professor" nos testes vira
+/// "outro cliente autenticado".
 /// </summary>
 public sealed class AlunosProvisoriosListagemEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -39,28 +41,19 @@ public sealed class AlunosProvisoriosListagemEndpointTests : IClassFixture<WebAp
             options.UseInMemoryDatabase(nomeDoBanco));
     }
 
-    private static async Task<Guid> CadastrarProfessorAsync(HttpClient client, string contato)
-    {
-        var response = await client.PostAsJsonAsync(
-            "/professores/cadastro", new CadastroProfessorRequest("Professor Teste", contato));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
-        return corpo!.UsuarioId;
-    }
-
     [Fact]
     public async Task Get_AlunosProvisorios_ListaMatriculasDoProfessor()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CadastrarProfessorAsync(client, "professor-listagem-1@exemplo.com");
-        var outroProfessorId = await CadastrarProfessorAsync(client, "professor-listagem-2@exemplo.com");
+        var (client, _) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var (outroClient, _) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
         await client.PostAsJsonAsync(
-            $"/professores/{professorId}/alunos-provisorios",
+            "/professores/alunos-provisorios",
             new CadastroAlunoProvisorioRequest("João Pedro", "2024-001"));
-        await client.PostAsJsonAsync(
-            $"/professores/{outroProfessorId}/alunos-provisorios",
+        await outroClient.PostAsJsonAsync(
+            "/professores/alunos-provisorios",
             new CadastroAlunoProvisorioRequest("Outro Aluno", "2024-002"));
 
-        var response = await client.GetAsync($"/professores/{professorId}/alunos-provisorios");
+        var response = await client.GetAsync("/professores/alunos-provisorios");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<List<AlunoProvisorioResponse>>();

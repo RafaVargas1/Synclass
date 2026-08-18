@@ -38,19 +38,16 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
             options.UseInMemoryDatabase(nomeDoBanco));
     }
 
-    private static async Task<Guid> CriarProfessorAsync(HttpClient client)
+    /// <summary>
+    /// Matrícula criada via <c>/professores/alunos-provisorios</c> (issue
+    /// #23: sem <c>professorId</c> de rota) — pertence ao Professor
+    /// autenticado em <paramref name="client"/>, não a um parâmetro
+    /// explícito.
+    /// </summary>
+    private static async Task<Guid> CriarMatriculaAsync(HttpClient client)
     {
         var response = await client.PostAsJsonAsync(
-            "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
-        return corpo!.UsuarioId;
-    }
-
-    private static async Task<Guid> CriarMatriculaAsync(HttpClient client, Guid professorId)
-    {
-        var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/alunos-provisorios",
+            "/professores/alunos-provisorios",
             new CadastroAlunoProvisorioRequest("Aluno Teste", $"aluno-{Guid.NewGuid()}"));
         var corpo = await response.Content.ReadFromJsonAsync<CadastroAlunoProvisorioResponse>();
         return corpo!.MatriculaId;
@@ -59,9 +56,8 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Put_RegraDeCobranca_ReturnsOk_QuandoValorPorAulaComFrequenciaValida()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.PutAsJsonAsync(
             $"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca",
@@ -79,9 +75,8 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [InlineData(-50)]
     public async Task Put_RegraDeCobranca_ReturnsBadRequest_QuandoValorMenorOuIgualAZero(decimal valor)
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.PutAsJsonAsync(
             $"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca",
@@ -93,10 +88,9 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Put_RegraDeCobranca_ReturnsNotFound_QuandoMatriculaNaoPertenceAoProfessor()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        var outroProfessorId = await CriarProfessorAsync(client);
-        var matriculaDeOutroProfessor = await CriarMatriculaAsync(client, outroProfessorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var (outroClient, _) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaDeOutroProfessor = await CriarMatriculaAsync(outroClient);
 
         var response = await client.PutAsJsonAsync(
             $"/professores/{professorId}/matriculas/{matriculaDeOutroProfessor}/regra-de-cobranca",
@@ -108,9 +102,8 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_RegraDeCobranca_ReturnsNotFound_QuandoSemRegraConfigurada()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.GetAsync($"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca");
 
@@ -120,9 +113,8 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_RegraDeCobranca_ReturnsOk_ComDadosDaRegraVigente_AposPutBemSucedido()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
         await client.PutAsJsonAsync(
             $"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca",
             new DefinirRegraDeCobrancaRequest("FixoMensal", 300m, null));

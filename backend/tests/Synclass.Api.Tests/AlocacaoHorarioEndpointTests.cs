@@ -14,7 +14,11 @@ namespace Synclass.Api.Tests;
 /// <summary>
 /// Teste de fumaça dos endpoints de alocação de Aluno a horário (issue #8):
 /// criar, listar e desfazer. Usa EF Core InMemory, mesmo padrão de
-/// <see cref="HorarioEndpointTests"/>.
+/// <see cref="HorarioEndpointTests"/>. Rota sem <c>professorId</c> desde a
+/// issue #23 — usa <see cref="AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync"/>
+/// (o Professor precisa existir de fato no banco, já que o controller
+/// deriva `professorId` do token). `HorariosController`/`ConfiguracoesController`
+/// continuam fora de escopo (mantêm `professorId` de rota).
 /// </summary>
 public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -39,22 +43,16 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     }
 
     /// <summary>
-    /// Cria um Professor com o modelo de agendamento informado (0 = Vago,
-    /// 1 = Fixo, 2 = Híbrido — ver <c>ModeloAgendamento</c>).
+    /// Define o modelo de agendamento do Professor autenticado (0 = Vago,
+    /// 1 = Fixo, 2 = Híbrido — ver <c>ModeloAgendamento</c>). Endpoint fora
+    /// de escopo da issue #23 (<c>ConfiguracoesController</c>), continua
+    /// recebendo <c>professorId</c> na rota.
     /// </summary>
-    private static async Task<Guid> CriarProfessorAsync(HttpClient client, int modeloAgendamento = 1)
+    private static async Task DefinirModeloAgendamentoAsync(HttpClient client, Guid professorId, int modeloAgendamento = 1)
     {
-        var response = await client.PostAsJsonAsync(
-            "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
-        var professorId = corpo!.UsuarioId;
-
         await client.PutAsJsonAsync(
             $"/professores/{professorId}/configuracao/modelo-agendamento",
             new DefinirModeloAgendamentoRequest(modeloAgendamento));
-
-        return professorId;
     }
 
     private static async Task<Guid> CriarHorarioAsync(HttpClient client, Guid professorId, int limiteAlunos = 1)
@@ -66,10 +64,10 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         return corpo!.Id;
     }
 
-    private static async Task<Guid> CriarMatriculaAsync(HttpClient client, Guid professorId)
+    private static async Task<Guid> CriarMatriculaAsync(HttpClient client)
     {
         var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/alunos-provisorios",
+            "/professores/alunos-provisorios",
             new CadastroAlunoProvisorioRequest("Aluno Teste", $"aluno-{Guid.NewGuid()}"));
         var corpo = await response.Content.ReadFromJsonAsync<CadastroAlunoProvisorioResponse>();
         return corpo!.MatriculaId;
@@ -78,13 +76,13 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Alocacao_ReturnsOk_QuandoDadosValidos()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
         var horarioId = await CriarHorarioAsync(client, professorId);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            $"/professores/horarios/{horarioId}/alocacoes",
             new CriarAlocacaoHorarioRequest(matriculaId));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -96,13 +94,13 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Alocacao_ReturnsBadRequest_QuandoModeloVago()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client, modeloAgendamento: 0);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId, modeloAgendamento: 0);
         var horarioId = await CriarHorarioAsync(client, professorId);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            $"/professores/horarios/{horarioId}/alocacoes",
             new CriarAlocacaoHorarioRequest(matriculaId));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -111,17 +109,17 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Alocacao_ReturnsBadRequest_QuandoHorarioLotado()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
         var horarioId = await CriarHorarioAsync(client, professorId, limiteAlunos: 1);
-        var primeiraMatriculaId = await CriarMatriculaAsync(client, professorId);
+        var primeiraMatriculaId = await CriarMatriculaAsync(client);
         await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            $"/professores/horarios/{horarioId}/alocacoes",
             new CriarAlocacaoHorarioRequest(primeiraMatriculaId));
-        var segundaMatriculaId = await CriarMatriculaAsync(client, professorId);
+        var segundaMatriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            $"/professores/horarios/{horarioId}/alocacoes",
             new CriarAlocacaoHorarioRequest(segundaMatriculaId));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -130,13 +128,36 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Alocacao_ReturnsBadRequest_QuandoMatriculaNaoVinculada()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
         var horarioId = await CriarHorarioAsync(client, professorId);
 
         var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            $"/professores/horarios/{horarioId}/alocacoes",
             new CriarAlocacaoHorarioRequest(Guid.NewGuid()));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// Regressão da checagem de posse (issue #23): uma Matrícula que existe
+    /// de fato, mas pertence a OUTRO Professor, é rejeitada como se não
+    /// existisse — mesma resposta de "matrícula não vinculada", já que
+    /// `professorId` agora vem do token e não pode mais ser adulterado pelo
+    /// cliente para apontar para o horário/matrícula de outra pessoa.
+    /// </summary>
+    [Fact]
+    public async Task Post_Alocacao_ReturnsBadRequest_QuandoMatriculaPertenceAOutroProfessor()
+    {
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
+        var horarioId = await CriarHorarioAsync(client, professorId);
+        var (outroClient, _) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaDeOutroProfessor = await CriarMatriculaAsync(outroClient);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/horarios/{horarioId}/alocacoes",
+            new CriarAlocacaoHorarioRequest(matriculaDeOutroProfessor));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -144,12 +165,35 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Alocacao_ReturnsNotFound_QuandoHorarioInexistente()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
+        var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{Guid.NewGuid()}/alocacoes",
+            $"/professores/horarios/{Guid.NewGuid()}/alocacoes",
+            new CriarAlocacaoHorarioRequest(matriculaId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>
+    /// Regressão da checagem de posse (issue #23): um `horarioId` que
+    /// existe mas pertence a outro Professor é tratado como inexistente
+    /// (404), mesma resposta de <c>HorarioNaoEncontradoException</c> — não
+    /// se distingue "não existe" de "não é seu".
+    /// </summary>
+    [Fact]
+    public async Task Post_Alocacao_ReturnsNotFound_QuandoHorarioPertenceAOutroProfessor()
+    {
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
+        var matriculaId = await CriarMatriculaAsync(client);
+        var (outroClient, outroProfessorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(outroClient, outroProfessorId);
+        var horarioDeOutroProfessor = await CriarHorarioAsync(outroClient, outroProfessorId);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/horarios/{horarioDeOutroProfessor}/alocacoes",
             new CriarAlocacaoHorarioRequest(matriculaId));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -158,15 +202,15 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_Alocacoes_ListaAlocacoesDoHorario()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
         var horarioId = await CriarHorarioAsync(client, professorId, limiteAlunos: 2);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var matriculaId = await CriarMatriculaAsync(client);
         await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            $"/professores/horarios/{horarioId}/alocacoes",
             new CriarAlocacaoHorarioRequest(matriculaId));
 
-        var response = await client.GetAsync($"/professores/{professorId}/horarios/{horarioId}/alocacoes");
+        var response = await client.GetAsync($"/professores/horarios/{horarioId}/alocacoes");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<List<AlocacaoHorarioResponse>>();
@@ -176,30 +220,30 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Delete_Alocacao_ReturnsNoContent_QuandoRemovida()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
         var horarioId = await CriarHorarioAsync(client, professorId);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var matriculaId = await CriarMatriculaAsync(client);
         await client.PostAsJsonAsync(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes",
+            $"/professores/horarios/{horarioId}/alocacoes",
             new CriarAlocacaoHorarioRequest(matriculaId));
 
-        var response = await client.DeleteAsync($"/professores/{professorId}/horarios/{horarioId}/alocacoes/{matriculaId}");
+        var response = await client.DeleteAsync($"/professores/horarios/{horarioId}/alocacoes/{matriculaId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         var listagem = await client.GetFromJsonAsync<List<AlocacaoHorarioResponse>>(
-            $"/professores/{professorId}/horarios/{horarioId}/alocacoes");
+            $"/professores/horarios/{horarioId}/alocacoes");
         listagem.Should().BeEmpty();
     }
 
     [Fact]
     public async Task Delete_Alocacao_ReturnsNotFound_QuandoInexistente()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await DefinirModeloAgendamentoAsync(client, professorId);
         var horarioId = await CriarHorarioAsync(client, professorId);
 
-        var response = await client.DeleteAsync($"/professores/{professorId}/horarios/{horarioId}/alocacoes/{Guid.NewGuid()}");
+        var response = await client.DeleteAsync($"/professores/horarios/{horarioId}/alocacoes/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

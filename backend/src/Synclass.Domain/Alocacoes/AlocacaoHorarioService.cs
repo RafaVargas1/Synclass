@@ -221,6 +221,27 @@ public sealed class AlocacaoHorarioService
     }
 
     /// <summary>
+    /// Resolve a Matrícula do Aluno autenticado com este Professor (issue
+    /// #23) — usado por <c>MarcacoesHorarioController</c> para deixar de
+    /// confiar em <c>matriculaId</c> enviado pelo cliente: o Aluno nunca
+    /// escolhe a própria matrícula, ela é derivada do vínculo real
+    /// (<see cref="IMatriculaRepository.BuscarVinculoAsync"/>, já usado
+    /// desde o aceite de convite — issue #2/#5) entre a identidade do token
+    /// e o Professor da rota.
+    /// </summary>
+    public async Task<Guid> ResolverMatriculaDoAlunoAsync(
+        Guid professorId, Guid alunoUsuarioId, CancellationToken cancellationToken)
+    {
+        var matricula = await _matriculas.BuscarVinculoAsync(professorId, alunoUsuarioId, cancellationToken);
+        if (matricula is null)
+        {
+            throw new AlunoNaoVinculadoAoProfessorException(alunoUsuarioId, professorId);
+        }
+
+        return matricula.Id;
+    }
+
+    /// <summary>
     /// Lista os Alunos já alocados em um horário — usado pelo <c>GET</c> do
     /// controller. Confere a posse do horário antes de listar, mesmo padrão
     /// de <see cref="AlocarAsync"/>/<see cref="DesalocarAsync"/>.

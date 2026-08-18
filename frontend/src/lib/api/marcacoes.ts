@@ -22,15 +22,15 @@ const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente no
  * atrás de uma interface própria (ver docs/spec/code-style.md#dependências),
  * mesmo envelope de `alocacoes.ts` (issue #8): nunca lança para erros de
  * negócio (modelo não permite, horário lotado, Aluno não vinculado, já
- * marcado) ou de rede — sempre devolve um resultado tipado.
+ * marcado) ou de rede — sempre devolve um resultado tipado. `professorId`
+ * continua explícito (identifica o Professor sendo navegado pelo Aluno, não
+ * quem chama); `matriculaId` não é mais enviado pelo cliente (issue #23) —
+ * a Api resolve a matrícula do Aluno autenticado a partir do token.
  */
-export async function listarHorariosVagos(
-  professorId: string,
-  matriculaId: string,
-): Promise<ListarHorariosVagosResultado> {
+export async function listarHorariosVagos(professorId: string): Promise<ListarHorariosVagosResultado> {
   let response: Response;
   try {
-    response = await fetchComTimeout(caminhoVagos(professorId, matriculaId));
+    response = await fetchComTimeout(caminhoVagos(professorId));
   } catch {
     return { sucesso: false, mensagem: MensagemErroConexao };
   }
@@ -42,18 +42,10 @@ export async function listarHorariosVagos(
   return { sucesso: true, horarios: (corpo as HorarioVago[] | null) ?? [] };
 }
 
-export async function marcarHorario(
-  professorId: string,
-  horarioId: string,
-  matriculaId: string,
-): Promise<MarcarHorarioResultado> {
+export async function marcarHorario(professorId: string, horarioId: string): Promise<MarcarHorarioResultado> {
   let response: Response;
   try {
-    response = await fetchComTimeout(caminhoMarcacoes(professorId, horarioId), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matriculaId }),
-    });
+    response = await fetchComTimeout(caminhoMarcacoes(professorId, horarioId), { method: 'POST' });
   } catch {
     return { sucesso: false, mensagem: MensagemErroConexao };
   }
@@ -65,8 +57,8 @@ export async function marcarHorario(
   return { sucesso: true, alocacao: corpo as Alocacao };
 }
 
-function caminhoVagos(professorId: string, matriculaId: string): string {
-  return `/professores/${professorId}/horarios/vagos?matriculaId=${matriculaId}`;
+function caminhoVagos(professorId: string): string {
+  return `/professores/${professorId}/horarios/vagos`;
 }
 
 function caminhoMarcacoes(professorId: string, horarioId: string): string {

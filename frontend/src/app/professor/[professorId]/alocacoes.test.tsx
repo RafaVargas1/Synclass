@@ -115,7 +115,7 @@ describe('AlocacoesProfessorScreen', () => {
 
     await fireEvent.press(screen.getByText('Alocar'));
 
-    expect(alocarAlunoMock).toHaveBeenCalledWith('professor-1', 'h1', 'a1');
+    expect(alocarAlunoMock).toHaveBeenCalledWith('h1', 'a1');
     await waitFor(() => expect(screen.getByText('1/2')).toBeTruthy());
   });
 
@@ -132,7 +132,7 @@ describe('AlocacoesProfessorScreen', () => {
 
     await fireEvent.press(screen.getByText('Remover'));
 
-    expect(desalocarAlunoMock).toHaveBeenCalledWith('professor-1', 'h1', 'a1');
+    expect(desalocarAlunoMock).toHaveBeenCalledWith('h1', 'a1');
     await waitFor(() => expect(screen.getByText('0/2')).toBeTruthy());
   });
 });

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Common;
 using Synclass.Domain.Usuarios;
+using Synclass.Infrastructure.Persistence;
 
 namespace Synclass.Api.Tests.Fakes;
 
@@ -47,5 +48,44 @@ public static class AutenticacaoTestHelper
         }
 
         return gerador.Gerar(usuarioAssinante);
+    }
+
+    /// <summary>
+    /// Variante persistida (issue #23): endpoints que passaram a derivar
+    /// <c>professorId</c>/<c>alunoUsuarioId</c> do token (em vez de um
+    /// parâmetro de rota) precisam que o <see cref="Usuario"/> assinante
+    /// exista de fato no banco — diferente de <see cref="ClienteAutenticado"/>,
+    /// usado pelos testes de autorização por papel (issue #4) que nunca
+    /// checavam a identidade contra o banco, só a claim <c>role</c>.
+    /// Devolve o <see cref="Usuario.Id"/> junto do cliente para o teste
+    /// poder montar o resto do cenário (Matrícula vinculada, etc).
+    /// </summary>
+    public static async Task<(HttpClient Client, Guid UsuarioId)> ClienteAutenticadoComoProfessorPersistidoAsync(
+        WebApplicationFactory<Program> factory)
+    {
+        return await ClienteAutenticadoPersistidoAsync(factory, PapelUsuario.Professor);
+    }
+
+    public static async Task<(HttpClient Client, Guid UsuarioId)> ClienteAutenticadoComoAlunoPersistidoAsync(
+        WebApplicationFactory<Program> factory)
+    {
+        return await ClienteAutenticadoPersistidoAsync(factory, PapelUsuario.Aluno);
+    }
+
+    private static async Task<(HttpClient, Guid)> ClienteAutenticadoPersistidoAsync(
+        WebApplicationFactory<Program> factory, PapelUsuario papel)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+        var gerador = scope.ServiceProvider.GetRequiredService<IGeradorDeTokenSessao>();
+
+        var usuario = Usuario.Cadastrar("Usuário de Teste", $"{Guid.NewGuid()}@teste.exemplo", papel, clock);
+        dbContext.Usuarios.Add(usuario);
+        await dbContext.SaveChangesAsync();
+
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", gerador.Gerar(usuario));
+        return (client, usuario.Id);
     }
 }
