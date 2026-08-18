@@ -1,5 +1,4 @@
-import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { Link } from 'expo-router';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +6,7 @@ import { Heading } from '@/components/atoms/Heading';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { AlternadorDePapel } from '@/components/organisms/AlternadorDePapel';
 import { useSessao } from '@/lib/auth/contexto-sessao';
+import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 
 /**
  * Ações disponíveis por papel — placeholder textual (issue #4): as telas
@@ -20,21 +20,6 @@ const AcoesPorPapel: Record<string, string[]> = {
 
 function acoesDoPapel(papelAtivo: string | undefined): string[] {
   return papelAtivo ? (AcoesPorPapel[papelAtivo] ?? []) : [];
-}
-
-/**
- * Guarda de rota mínima (issue #4): redireciona para /login sem sessão
- * salva — ainda não há middleware de rota no Expo Router. Separada de
- * `PainelScreen` só para caber no limite de 20 linhas por função
- * (`code-style.md`).
- */
-function useRedirecionarSemSessao(carregando: boolean, token: string | null) {
-  const router = useRouter();
-  useEffect(() => {
-    if (!carregando && !token) {
-      router.replace('/login');
-    }
-  }, [carregando, token, router]);
 }
 
 /**
@@ -60,6 +45,9 @@ export default function PainelScreen() {
             <Paragraph key={acao}>{acao}</Paragraph>
           ))}
         </View>
+        <Link href="/perfil" className="text-primary underline dark:text-dark-primary">
+          Meu perfil
+        </Link>
       </View>
     </SafeAreaView>
   );
