@@ -26,4 +26,14 @@ public sealed class RegraFixoMensalTests
 
         valorDevido.Should().Be(350m);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-50)]
+    public void Criar_ComValorMenorOuIgualAZero_LancaValorDeRegraDeCobrancaInvalidoException(decimal valor)
+    {
+        var acao = () => RegraFixoMensal.Criar(Guid.NewGuid(), valor, Clock);
+
+        acao.Should().Throw<ValorDeRegraDeCobrancaInvalidoException>();
+    }
 }

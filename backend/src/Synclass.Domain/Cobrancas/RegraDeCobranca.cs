@@ -12,6 +12,11 @@ public abstract class RegraDeCobranca : IRegraDeCobranca
 {
     protected RegraDeCobranca(Guid id, Guid matriculaId, decimal valor, DateTimeOffset createdAt, DateTimeOffset updatedAt)
     {
+        if (valor <= 0)
+        {
+            throw new ValorDeRegraDeCobrancaInvalidoException(valor);
+        }
+
         Id = id;
         MatriculaId = matriculaId;
         Valor = valor;

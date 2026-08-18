@@ -73,6 +73,22 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
         corpo.FrequenciaSemanalContratada.Should().Be(3);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-50)]
+    public async Task Put_RegraDeCobranca_ReturnsBadRequest_QuandoValorMenorOuIgualAZero(decimal valor)
+    {
+        var client = _factory.CreateClient();
+        var professorId = await CriarProfessorAsync(client);
+        var matriculaId = await CriarMatriculaAsync(client, professorId);
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca",
+            new DefinirRegraDeCobrancaRequest("FixoMensal", valor, null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     [Fact]
     public async Task Put_RegraDeCobranca_ReturnsNotFound_QuandoMatriculaNaoPertenceAoProfessor()
     {

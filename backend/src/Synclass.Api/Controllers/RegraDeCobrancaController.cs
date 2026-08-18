@@ -52,7 +52,8 @@ public sealed class RegraDeCobrancaController : ControllerBase
             return Ok(ParaResponse(resultado.Regra));
         }
         catch (Exception ex) when (ex is ArgumentException or FrequenciaSemanalContratadaInvalidaException
-            or FrequenciaSemanalContratadaAusenteException or FrequenciaSemanalContratadaNaoEsperadaException)
+            or FrequenciaSemanalContratadaAusenteException or FrequenciaSemanalContratadaNaoEsperadaException
+            or ValorDeRegraDeCobrancaInvalidoException)
         {
             return BadRequest(new RegraDeCobrancaErrorResponse(ex.Message));
         }
