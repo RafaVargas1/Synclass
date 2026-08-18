@@ -34,6 +34,12 @@ public sealed class AlocacaoHorarioRepository : IAlocacaoHorarioRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<bool> PossuiAlocacaoOrigemProfessorAsync(Guid horarioId, CancellationToken cancellationToken)
+    {
+        return _dbContext.AlocacoesHorario
+            .AnyAsync(a => a.HorarioId == horarioId && a.OrigemAlocacao == OrigemAlocacao.Professor, cancellationToken);
+    }
+
     public async Task AdicionarAsync(AlocacaoHorario alocacao, CancellationToken cancellationToken)
     {
         await _dbContext.AlocacoesHorario.AddAsync(alocacao, cancellationToken);

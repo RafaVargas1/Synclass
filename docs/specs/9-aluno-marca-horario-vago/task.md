@@ -6,7 +6,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/9
 
 - [x] `OrigemAlocacao` (enum `Professor|Aluno`) + `AlocacaoHorario.Criar` passa a exigir origem; `AlocarAsync` (Professor, #8) passa `OrigemAlocacao.Professor` — teste existente de #8 continua verde
 - [x] Migration: `OrigemAlocacao` em `AlocacoesHorario` (`not null default 0`)
-- [ ] `IAlocacaoHorarioRepository.PossuiAlocacaoOrigemProfessorAsync` + implementação EF Core + fake em memória (`FakeAlocacaoHorarioRepository`)
+- [x] `IAlocacaoHorarioRepository.PossuiAlocacaoOrigemProfessorAsync` + implementação EF Core + fake em memória (`FakeAlocacaoHorarioRepository`)
 - [ ] Teste unidade (Domain): Aluno marca horário no modelo Vago com vaga → sucesso, `OrigemAlocacao.Aluno`
 - [ ] Teste unidade (Domain): Aluno tenta marcar no modelo Fixo → `ModeloNaoPermiteMarcacaoLivreException`
 - [ ] Teste unidade (Domain): Aluno marca no Híbrido, horário sem atribuição fixa do Professor → sucesso

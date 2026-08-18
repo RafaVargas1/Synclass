@@ -22,6 +22,14 @@ public interface IAlocacaoHorarioRepository
 
     Task<IReadOnlyCollection<AlocacaoHorario>> ListarPorHorarioAsync(Guid horarioId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Existe ao menos uma <see cref="AlocacaoHorario"/> deste horário com
+    /// <see cref="OrigemAlocacao.Professor"/> — "atribuição fixa" (issue #9),
+    /// usada por <c>AlocacaoHorarioService.GarantirModeloPermiteMarcacaoAsync</c>
+    /// no modelo Híbrido.
+    /// </summary>
+    Task<bool> PossuiAlocacaoOrigemProfessorAsync(Guid horarioId, CancellationToken cancellationToken);
+
     Task AdicionarAsync(AlocacaoHorario alocacao, CancellationToken cancellationToken);
 
     Task RemoverAsync(AlocacaoHorario alocacao, CancellationToken cancellationToken);
