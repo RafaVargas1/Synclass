@@ -15,22 +15,22 @@ Ver `implementation.md` para o contrato de API, decisão de domínio sobre
       quantas vezes um dia da semana cai num período de um mês (casos: mês com 4 e com 5
       ocorrências do mesmo dia da semana)
 - [x] Implementação mínima: `PeriodoConsulta` (`Synclass.Domain.Cobrancas`) + exceção
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` retorna
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` retorna
       `ValorDevidoPorMatricula` com `SemRegraDefinida = true` e `Valor = null` para matrícula
       sem `RegraDeCobranca` (nunca `0`)
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` com matrícula
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` com matrícula
       com `RegraFixoMensal` retorna `Valor` fixo, independente de quantas `AlocacaoHorario`
       existem
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` com matrícula
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` com matrícula
       com `RegraFixoPorAula` e 2 `Horario`s alocados (ex: terça e quinta) retorna
       `Valor * quantidadeDeOcorrenciasNoPeriodo` somada dos dois horários
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` só retorna
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` só retorna
       Matrículas do `professorId` pedido — outra Matrícula de outro Professor (mesmo
       `AlunoUsuarioId`, vínculo N:N) não aparece nem influencia o valor (critério de aceite 4)
-- [ ] Implementação mínima: `ValorDevidoPorMatricula` (record) + `ConsultaCobrancaService`
+- [x] Implementação mínima: `ValorDevidoPorMatricula` (record) + `ConsultaCobrancaService`
       (`Synclass.Domain.Cobrancas`) usando `IMatriculaRepository`, `IRegraDeCobrancaRepository`,
       `IAlocacaoHorarioRepository`, `IHorarioRepository`
-- [ ] Implementação: `IAlocacaoHorarioRepository.ListarPorMatriculaAsync` (interface +
+- [x] Implementação: `IAlocacaoHorarioRepository.ListarPorMatriculaAsync` (interface +
       `AlocacaoHorarioRepository` em `Synclass.Infrastructure.Persistence`)
 - [ ] Teste de fumaça (Api): `GET /professores/{professorId}/valor-devido` sem `inicio`/`fim`
       usa mês corrente e devolve 200 com a lista de Alunos do Professor
