@@ -29,7 +29,7 @@ export default function HorariosVagosAlunoScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1}>Horários disponíveis</Heading>
+        <Heading level={1} accessibilityRole="header">Horários disponíveis</Heading>
         {estado.erro ? <ErrorMessage>{estado.erro}</ErrorMessage> : null}
         <ConteudoHorariosVagos horarios={estado.horarios} onMarcar={estado.handleMarcar} />
       </View>
