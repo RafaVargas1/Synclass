@@ -71,7 +71,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
       só quando `papeis.length > 1`; chama `definirPapelAtivo` ao trocar de
       aba; não renderiza nada com um único papel.
 - [x] Implementação: `AlternadorDePapel.tsx`.
-- [ ] Teste de tela (`app/painel/index.tsx`): redireciona para `/login`
+- [x] Teste de tela (`app/painel/index.tsx`): redireciona para `/login`
       sem sessão salva; mostra `AlternadorDePapel` só com múltiplos papéis;
       conteúdo (lista de ações) muda conforme `papelAtivo`.
-- [ ] Implementação: `app/painel/index.tsx`.
+- [x] Implementação: `app/painel/index.tsx`. `app/_layout.tsx` passa a
+      envolver a árvore com `SessaoProvider` (wiring necessário para
+      `useSessao` funcionar em qualquer tela, não listado explicitamente
+      acima).
