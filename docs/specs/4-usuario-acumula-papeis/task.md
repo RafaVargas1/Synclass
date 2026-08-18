@@ -67,10 +67,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
       `papeis`, `papelAtivo` (default: primeiro papel) e
       `definirPapelAtivo`.
 - [x] Implementação: `contexto-sessao.tsx` (Provider + hook).
-- [ ] Teste (`components/organisms/AlternadorDePapel.tsx`): renderiza abas
+- [x] Teste (`components/organisms/AlternadorDePapel.tsx`): renderiza abas
       só quando `papeis.length > 1`; chama `definirPapelAtivo` ao trocar de
       aba; não renderiza nada com um único papel.
-- [ ] Implementação: `AlternadorDePapel.tsx`.
+- [x] Implementação: `AlternadorDePapel.tsx`.
 - [ ] Teste de tela (`app/painel/index.tsx`): redireciona para `/login`
       sem sessão salva; mostra `AlternadorDePapel` só com múltiplos papéis;
       conteúdo (lista de ações) muda conforme `papelAtivo`.
