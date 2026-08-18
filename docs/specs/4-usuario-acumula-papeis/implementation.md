@@ -128,6 +128,15 @@ banco.
   (`/professores/cadastro`, `/auth/*`, aceite de convite) e nenhum
   Critério técnico do card pede fechar tudo por padrão; autorização é
   aplicada só onde o produto já pede papel específico.
+- **Cliente HTTP do frontend não enviava `Authorization`**: achado no
+  `qa-review` deste PR — `lib/api/httpClient.ts` (`fetchComTimeout`, base de
+  todos os módulos de `lib/api/*`) nunca anexava o token salvo em
+  `lib/auth/sessao.ts`. Isso quebrava, na prática, todo fluxo de Professor
+  autenticado (gerar convite, criar horário etc.) assim que este PR ligou
+  `[Authorize]` nos controllers — Api respondendo 401 mesmo com sessão
+  válida no app. Corrigido anexando `Authorization: Bearer <token>` quando
+  há sessão salva, sem alterar chamadas a endpoints públicos (sem token,
+  sem header, como antes).
 - **`AdicionarPapelAlunoIdempotente` muda de `void` para `bool`**: efeito
   colateral do log `PapelAdicionado` — o comportamento de negócio (engolir
   `PapelJaAtribuidoException`) não muda, só passa a informar o chamador.
