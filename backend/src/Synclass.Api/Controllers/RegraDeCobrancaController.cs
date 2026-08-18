@@ -36,6 +36,12 @@ public sealed class RegraDeCobrancaController : ControllerBase
             return NotFound();
         }
 
+        return await AplicarDefinicaoAsync(matriculaId, request, cancellationToken);
+    }
+
+    private async Task<IActionResult> AplicarDefinicaoAsync(
+        Guid matriculaId, DefinirRegraDeCobrancaRequest request, CancellationToken cancellationToken)
+    {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
         try
         {

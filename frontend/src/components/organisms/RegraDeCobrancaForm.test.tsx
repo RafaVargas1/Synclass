@@ -70,4 +70,22 @@ describe('RegraDeCobrancaForm', () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it('pre-fills the fields from regraExistente instead of the ValorPorAula default', async () => {
+    const onSubmit = jest.fn();
+    await render(
+      <RegraDeCobrancaForm
+        enviando={false}
+        onSubmit={onSubmit}
+        regraExistente={{ matriculaId: 'matricula-1', tipo: 'FixoMensal', valor: 300, frequenciaSemanalContratada: null }}
+      />,
+    );
+
+    expect(screen.getByDisplayValue('300')).toBeTruthy();
+    expect(screen.queryByText('Frequência semanal contratada')).toBeNull();
+
+    await fireEvent.press(screen.getByText('Salvar regra de cobrança'));
+
+    expect(onSubmit).toHaveBeenCalledWith({ tipo: 'FixoMensal', valor: 300, frequenciaSemanalContratada: null });
+  });
 });

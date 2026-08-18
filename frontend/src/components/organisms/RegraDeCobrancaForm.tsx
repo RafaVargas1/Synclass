@@ -5,11 +5,22 @@ import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { ChipSelector, type ChipSelectorOption } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
-import type { DefinirRegraDeCobrancaInput, TipoRegraDeCobranca } from '@/lib/api/regraDeCobranca';
+import type {
+  DefinirRegraDeCobrancaInput,
+  RegraDeCobranca,
+  TipoRegraDeCobranca,
+} from '@/lib/api/regraDeCobranca';
 
 export type RegraDeCobrancaFormProps = {
   enviando: boolean;
   erro?: string;
+  /**
+   * Regra já configurada para a matrícula, se houver — pré-preenche os
+   * campos em vez de deixar a tela voltar ao default (`ValorPorAula`
+   * vazio) e o Professor sobrescrever a regra vigente sem perceber (achado
+   * de dev-review, rodada 1 do PR #31).
+   */
+  regraExistente?: RegraDeCobranca;
   onSubmit: (input: DefinirRegraDeCobrancaInput) => void;
 };
 
@@ -29,10 +40,12 @@ const MensagemFrequenciaInvalida = 'Informe uma frequência semanal entre 1 e 7.
  * `tipo === 'ValorPorAula'` — primeiro caso de campo condicional no
  * frontend, sem padrão prévio para copiar (ver implementation.md).
  */
-export function RegraDeCobrancaForm({ enviando, erro, onSubmit }: RegraDeCobrancaFormProps) {
-  const [tipo, setTipo] = useState<TipoRegraDeCobranca>(TipoInicial);
-  const [valor, setValor] = useState('');
-  const [frequenciaSemanalContratada, setFrequenciaSemanalContratada] = useState('');
+export function RegraDeCobrancaForm({ enviando, erro, regraExistente, onSubmit }: RegraDeCobrancaFormProps) {
+  const [tipo, setTipo] = useState<TipoRegraDeCobranca>(regraExistente?.tipo ?? TipoInicial);
+  const [valor, setValor] = useState(regraExistente ? String(regraExistente.valor) : '');
+  const [frequenciaSemanalContratada, setFrequenciaSemanalContratada] = useState(
+    regraExistente?.frequenciaSemanalContratada != null ? String(regraExistente.frequenciaSemanalContratada) : '',
+  );
   const [erroCliente, setErroCliente] = useState<string | undefined>(undefined);
 
   function handleSubmit() {
