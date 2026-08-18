@@ -31,6 +31,12 @@ public sealed class FakeAlocacaoHorarioRepository : IAlocacaoHorarioRepository
         return Task.FromResult(resultado);
     }
 
+    public Task<IReadOnlyCollection<AlocacaoHorario>> ListarPorMatriculaAsync(Guid matriculaId, CancellationToken cancellationToken)
+    {
+        IReadOnlyCollection<AlocacaoHorario> resultado = _alocacoes.Where(a => a.MatriculaId == matriculaId).ToList();
+        return Task.FromResult(resultado);
+    }
+
     public Task<bool> PossuiAlocacaoOrigemProfessorAsync(Guid horarioId, CancellationToken cancellationToken)
     {
         var possui = _alocacoes.Any(a => a.HorarioId == horarioId && a.OrigemAlocacao == OrigemAlocacao.Professor);
