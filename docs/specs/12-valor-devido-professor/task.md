@@ -46,11 +46,11 @@ Ver `implementation.md` para o contrato de API, decisão de domínio sobre
       architecture.md#logs-estruturados-e-track-id
 - [x] Registro de DI em `Program.cs`: `ConsultaCobrancaService`,
       `IAlocacaoHorarioRepository`/`AlocacaoHorarioRepository` (se ainda não scoped)
-- [ ] Integração `lib/api/valorDevido.ts` (cliente HTTP do contrato acima)
-- [ ] Componente frontend: tela de listagem de Alunos do Professor com valor devido +
+- [x] Integração `lib/api/valorDevido.ts` (cliente HTTP do contrato acima)
+- [x] Componente frontend: tela de listagem de Alunos do Professor com valor devido +
       seletor de período (mês corrente por padrão), mesmo padrão de estados
       (carregando/falha/carregada) da tela `regra-de-cobranca.tsx`, com teste
-- [ ] Rota `frontend/src/app/professor/[professorId]/valor-devido.tsx`, com teste
+- [x] Rota `frontend/src/app/professor/[professorId]/valor-devido.tsx`, com teste
 
 ## Fora de escopo nesta Task (documentado, não esquecido)
 
