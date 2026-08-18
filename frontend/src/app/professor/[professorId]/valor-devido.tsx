@@ -131,14 +131,13 @@ function useConsultaValorDevido(professorId: string) {
     setPeriodo(inicio && fim ? { inicio, fim } : undefined);
   };
 
+  return { inicio, setInicio, fim, setFim, consultar, ...derivarEstadoConsulta(resultado) };
+}
+
+function derivarEstadoConsulta(resultado: ListarValorDevidoResultado | undefined) {
   return {
-    inicio,
-    setInicio,
-    fim,
-    setFim,
     carregando: resultado === undefined,
     erro: resultado && !resultado.sucesso ? resultado.mensagem : undefined,
     valoresDevidos: resultado && resultado.sucesso ? resultado.valoresDevidos : [],
-    consultar,
   };
 }
