@@ -84,12 +84,21 @@ public sealed class ConvitesController : ControllerBase
     /// Indica, via <see cref="ResultadoAceiteConvite.MatriculaPromovida"/>,
     /// se o aceite promoveu uma matrícula já existente (origem específica ou
     /// vínculo prévio) ou criou uma nova — Critérios técnicos da issue #2.
+    /// Também loga <c>PapelAdicionado</c> quando o papel Aluno foi de fato
+    /// anexado a uma identidade já existente (issue #4).
     /// </summary>
     private void LogConviteAceito(string trackId, ResultadoAceiteConvite resultado)
     {
         _logger.LogInformation(
             "ConviteAceito {TrackId} {ConviteId} {UsuarioId} {MatriculaPromovida}",
             trackId, resultado.ConviteId, resultado.Usuario.Id, resultado.MatriculaPromovida);
+
+        if (resultado.PapelAdicionado)
+        {
+            _logger.LogInformation(
+                "PapelAdicionado {TrackId} {UsuarioId} {Papel}",
+                trackId, resultado.Usuario.Id, PapelUsuario.Aluno);
+        }
     }
 
     private IActionResult RejeitarProfessorNaoEncontrado(string trackId, Guid professorId, ProfessorNaoEncontradoException ex)

@@ -17,11 +17,11 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
       cria usuário novo.
 - [x] Implementação mínima: `CadastroProfessorService` retorna
       `ResultadoCadastroProfessor(Usuario, bool UsuarioReaproveitado)`.
-- [ ] Teste unidade: `ConviteService.AceitarAsync` devolve indicador
+- [x] Teste unidade: `ConviteService.AceitarAsync` devolve indicador
       `PapelAdicionado = true` quando o papel Aluno é de fato anexado a um
       usuário existente; `false` quando o usuário já tinha o papel
       (idempotente, sem-op) ou é recém-criado.
-- [ ] Implementação mínima: `ResultadoAceiteConvite` ganha o campo
+- [x] Implementação mínima: `ResultadoAceiteConvite` ganha o campo
       `PapelAdicionado`.
 
 ### Infrastructure/Api — autorização por papel
@@ -45,7 +45,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
 - [ ] Teste de fumaça (Api): `POST /auth/confirmacao` — confirma (ou
       complementa, se faltar assert) que o corpo da resposta inclui
       `papeis` (já implementado na issue #18).
-- [ ] Log estruturado: evento `PapelAdicionado` (Information, `TrackId`,
+- [x] Log estruturado: evento `PapelAdicionado` (Information, `TrackId`,
       `UsuarioId`, `Papel`) em `ProfessoresController` (quando
       `UsuarioReaproveitado == true`) e em `ConvitesController` (quando
       `PapelAdicionado == true`) — ver
