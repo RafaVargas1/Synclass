@@ -50,7 +50,7 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Post_Convites_ReturnsOk_QuandoContatoValido()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor1@exemplo.com");
 
         var response = await client.PostAsJsonAsync(
@@ -65,7 +65,7 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Post_Convites_ReturnsNotFound_QuandoProfessorIdInexistente()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorIdInexistente = Guid.NewGuid();
 
         var response = await client.PostAsJsonAsync(
@@ -79,7 +79,7 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Post_Convites_ReturnsBadRequest_QuandoAlunoJaVinculado()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor2@exemplo.com");
         var conviteAceito = await GerarEAceitarConviteAsync(client, professorId, "11987654321");
         conviteAceito.Should().NotBeNull();
@@ -93,7 +93,7 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Post_Aceite_ReturnsOk_QuandoTokenValidoEContatoCorrespondente()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor3@exemplo.com");
         var convite = await GerarConviteAsync(client, professorId, "11987654321");
 
@@ -109,7 +109,7 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Post_Aceite_ReturnsBadRequest_QuandoTokenExpirado()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor4@exemplo.com");
         var convite = await GerarConviteAsync(client, professorId, "11987654321");
         _clock.UtcNow = _clock.UtcNow.AddDays(8);

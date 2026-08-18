@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Synclass.Api.Controllers;
+using Synclass.Api.Tests.Fakes;
 using Synclass.Infrastructure.Persistence;
 
 namespace Synclass.Api.Tests;
@@ -73,7 +74,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Marcacao_ReturnsOk_QuandoModeloVagoComVaga()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
@@ -91,7 +92,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Marcacao_ReturnsBadRequest_QuandoModeloFixo()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client, modeloAgendamento: 1);
         var horarioId = await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
@@ -106,7 +107,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Marcacao_ReturnsBadRequest_QuandoHorarioLotado()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId, limiteAlunos: 1);
         var primeiraMatriculaId = await CriarMatriculaAsync(client, professorId);
@@ -125,7 +126,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Marcacao_ReturnsBadRequest_QuandoMatriculaNaoVinculada()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId);
 
@@ -139,7 +140,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Marcacao_ReturnsBadRequest_QuandoAlunoJaMarcado()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId, limiteAlunos: 2);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
@@ -157,7 +158,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Post_Marcacao_ReturnsNotFound_QuandoHorarioInexistente()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
 
@@ -171,7 +172,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_Vagos_ListaHorariosDisponiveisNoModeloVago()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
@@ -186,7 +187,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_Vagos_ListaVaziaNoModeloFixo()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client, modeloAgendamento: 1);
         await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
@@ -201,7 +202,7 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_Vagos_ReturnsBadRequest_QuandoMatriculaNaoVinculada()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={Guid.NewGuid()}");

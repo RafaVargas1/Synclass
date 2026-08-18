@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
@@ -40,6 +43,27 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(origensFrontendPermitidas).AllowAnyHeader().AllowAnyMethod());
 });
 
+// Autenticação/autorização por papel (issue #4) — validação do mesmo token
+// JWT já emitido por GeradorDeTokenSessaoJwt (login por OTP, issue #18),
+// deixada propositalmente de fora até esta issue por não haver, até então,
+// endpoint algum que precisasse validar o token (ver
+// docs/specs/4-usuario-acumula-papeis/implementation.md).
+var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]
+    ?? throw new InvalidOperationException("Configuração ausente: Jwt:SigningKey.");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+            ValidateLifetime = true,
+        };
+    });
+builder.Services.AddAuthorization();
+
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroProfessorService>();
@@ -62,7 +86,7 @@ builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();
 builder.Services.AddSingleton<IGeradorDeCodigoOtp, GeradorDeCodigoOtp>();
 builder.Services.AddScoped<INotificador, NotificadorDeLog>();
 builder.Services.AddSingleton<IGeradorDeTokenSessao>(sp => new GeradorDeTokenSessaoJwt(
-    builder.Configuration["Jwt:SigningKey"] ?? throw new InvalidOperationException("Configuração ausente: Jwt:SigningKey."),
+    jwtSigningKey,
     LerExpiracaoDiasObrigatoria(builder.Configuration),
     sp.GetRequiredService<IClock>()));
 builder.Services.AddScoped<LoginService>();
@@ -125,6 +149,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -26,25 +26,27 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
 
 ### Infrastructure/Api — autorização por papel
 
-- [ ] Teste de fumaça (Api): `POST /professores/{id}/horarios` (endpoint
+- [x] Teste de fumaça (Api): `POST /professores/{id}/horarios` (endpoint
       Professor-only já existente) retorna 401 sem header `Authorization`.
-- [ ] Teste de fumaça (Api): mesmo endpoint retorna 403 com token válido mas
+- [x] Teste de fumaça (Api): mesmo endpoint retorna 403 com token válido mas
       sem o papel `Professor` (ex: token só com `Aluno`).
-- [ ] Teste de fumaça (Api): mesmo endpoint aceita a requisição (não
+- [x] Teste de fumaça (Api): mesmo endpoint aceita a requisição (não
       401/403) com token contendo o papel `Professor`.
-- [ ] Implementação: `Program.cs` — `AddAuthentication().AddJwtBearer(...)`
+- [x] Implementação: `Program.cs` — `AddAuthentication().AddJwtBearer(...)`
       (mesma `Jwt:SigningKey` já usada por `GeradorDeTokenSessaoJwt`) +
       `AddAuthorization()` + `app.UseAuthentication()` antes de
       `app.UseAuthorization()` (já existente).
-- [ ] Implementação: `[Authorize(Roles = "Professor")]` em
+- [x] Implementação: `[Authorize(Roles = "Professor")]` em
       `HorariosController`, `AlocacoesHorarioController`,
       `AlunosProvisoriosController`, `RegraDeCobrancaController`,
       `ConfiguracoesController` (nível de classe) e no método `Gerar` de
       `ConvitesController`; `[AllowAnonymous]` explícito no método `Aceite`
       do mesmo controller (convite é aceito por quem ainda não tem sessão).
-- [ ] Teste de fumaça (Api): `POST /auth/confirmacao` — confirma (ou
+- [x] Teste de fumaça (Api): `POST /auth/confirmacao` — confirma (ou
       complementa, se faltar assert) que o corpo da resposta inclui
-      `papeis` (já implementado na issue #18).
+      `papeis` (já implementado na issue #18). Assert já existia em
+      `AutenticacaoEndpointTests.Post_Confirmacao_ReturnsOkComToken_QuandoCodigoCorreto`
+      — nenhuma mudança necessária.
 - [x] Log estruturado: evento `PapelAdicionado` (Information, `TrackId`,
       `UsuarioId`, `Papel`) em `ProfessoresController` (quando
       `UsuarioReaproveitado == true`) e em `ConvitesController` (quando

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Convites;
@@ -24,6 +25,7 @@ public sealed class ConvitesController : ControllerBase
         _logger = logger;
     }
 
+    [Authorize(Roles = "Professor")]
     [HttpPost("professores/{professorId:guid}/convites")]
     public async Task<IActionResult> Gerar(Guid professorId, [FromBody] GerarConviteRequest request, CancellationToken cancellationToken)
     {
@@ -45,6 +47,7 @@ public sealed class ConvitesController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
     [HttpPost("convites/{token}/aceite")]
     public async Task<IActionResult> Aceitar(string token, [FromBody] AceitarConviteRequest request, CancellationToken cancellationToken)
     {
