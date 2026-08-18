@@ -12,6 +12,13 @@ namespace Synclass.Domain.Matriculas;
 /// #3) e pode ser promovida para plena (<see cref="Promover"/>) quando o
 /// Aluno completa cadastro via convite direcionado (issue #2), preservando
 /// o mesmo <see cref="Id"/> e portanto todo histórico associado via FK.
+/// Nada aqui limita quantas linhas existem por <see cref="AlunoUsuarioId"/>
+/// — não há índice único em <see cref="AlunoUsuarioId"/> isolado (só em
+/// <c>(ProfessorId, IdentificadorProvisorio)</c>, ver
+/// <c>MatriculaConfiguration</c>), então um mesmo Aluno pode ter uma
+/// <see cref="Matricula"/> independente por Professor: a relação
+/// Aluno-Professor é N:N por propriedade emergente do desenho, formalizada
+/// em teste pela issue #5 (não exigiu nenhuma mudança de comportamento).
 /// </summary>
 public sealed class Matricula
 {

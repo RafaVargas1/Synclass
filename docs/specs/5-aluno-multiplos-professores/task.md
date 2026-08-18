@@ -27,7 +27,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/5
       para a matrícula com A, então a matrícula com B continua sem regra
       (ou com sua própria regra prévia, se houver) — a mudança não vaza
       entre matrículas do mesmo Aluno (critério de aceite 4)
-- [ ] Revisão de comentário XML: `Matricula.cs`/`IMatriculaRepository.cs` já
+- [x] Revisão de comentário XML: `Matricula.cs`/`IMatriculaRepository.cs` já
       documentam o desenho (issue #3/#2); adicionar referência à issue #5
       onde a ausência de índice único em `AlunoUsuarioId` sozinho é o que
       sustenta N:N, para não perder o rastro da decisão (nenhuma mudança de

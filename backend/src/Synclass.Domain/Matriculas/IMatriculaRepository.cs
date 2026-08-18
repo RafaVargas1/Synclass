@@ -4,6 +4,10 @@ namespace Synclass.Domain.Matriculas;
 /// Abstrai a persistência de <see cref="Matricula"/>. Implementado em
 /// Synclass.Infrastructure (EF Core), permitindo que o Domain e seus testes
 /// de unidade não dependam de banco de dados.
+/// <see cref="BuscarVinculoAsync"/> é sempre escopado por
+/// <c>professorId</c> — nunca bloqueia um segundo Professor diferente para
+/// o mesmo Aluno, o que sustenta a relação N:N entre Aluno e Professor
+/// (issue #5, formalizada em teste sem exigir mudança de comportamento).
 /// </summary>
 public interface IMatriculaRepository
 {
