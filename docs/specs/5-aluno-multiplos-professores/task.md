@@ -21,7 +21,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/5
       matrícula provisória de A permanece intacta (`AlunoUsuarioId` ainda
       nulo, `NomeProvisorio`/`IdentificadorProvisorio` preservados) enquanto
       uma nova `Matricula` plena é criada para B (critério de aceite 3)
-- [ ] Teste unidade (Domain, `Cobrancas/RegraDeCobrancaServiceTests` ou teste
+- [x] Teste unidade (Domain, `Cobrancas/RegraDeCobrancaServiceTests` ou teste
       cruzado novo em `Matriculas`): dado um Aluno com duas `Matricula`
       (Professor A e Professor B), quando uma `RegraDeCobranca` é definida
       para a matrícula com A, então a matrícula com B continua sem regra
