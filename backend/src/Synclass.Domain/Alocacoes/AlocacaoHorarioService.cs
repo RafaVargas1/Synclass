@@ -173,7 +173,7 @@ public sealed class AlocacaoHorarioService
         var vagos = new List<HorarioVago>();
         foreach (var horario in horarios)
         {
-            var horarioVago = await ParaHorarioVagoSeElegivelAsync(configuracao, horario, cancellationToken);
+            var horarioVago = await ParaHorarioVagoSeElegivelAsync(configuracao, horario, matriculaId, cancellationToken);
             if (horarioVago is not null)
             {
                 vagos.Add(horarioVago);
@@ -184,8 +184,14 @@ public sealed class AlocacaoHorarioService
     }
 
     private async Task<HorarioVago?> ParaHorarioVagoSeElegivelAsync(
-        ConfiguracaoProfessor configuracao, Horario horario, CancellationToken cancellationToken)
+        ConfiguracaoProfessor configuracao, Horario horario, Guid matriculaId, CancellationToken cancellationToken)
     {
+        var alocacaoExistente = await _alocacoes.BuscarAsync(horario.Id, matriculaId, cancellationToken);
+        if (alocacaoExistente is not null)
+        {
+            return null;
+        }
+
         var quantidadeAlocada = await _alocacoes.ContarPorHorarioAsync(horario.Id, cancellationToken);
         var vagasRestantes = horario.LimiteAlunos - quantidadeAlocada;
         var horarioPossuiAtribuicaoFixa = await _alocacoes.PossuiAlocacaoOrigemProfessorAsync(horario.Id, cancellationToken);

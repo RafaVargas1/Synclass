@@ -230,4 +230,18 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
 
         vagos.Should().ContainSingle(h => h.Horario.Id == horarioComVaga.Id);
     }
+
+    [Fact]
+    public async Task ListarVagosAsync_ExcluiHorarioOndeAMatriculaJaEstaAlocada()
+    {
+        var cenario = CriarCenario(ModeloAgendamento.Vago);
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+        var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
+        await cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
+
+        var vagos = await cenario.AlocacaoHorarioService.ListarVagosAsync(ProfessorId, matricula.Id, CancellationToken.None);
+
+        vagos.Should().BeEmpty();
+    }
 }
