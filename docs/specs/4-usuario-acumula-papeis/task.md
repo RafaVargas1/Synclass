@@ -58,10 +58,11 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
 - [x] Teste (`lib/auth/sessao.ts`): salvar/ler/limpar papéis junto do token.
 - [x] Implementação: `sessao.ts` ganha `salvarPapeis`/`lerPapeis` (mesmo
       padrão de `salvarToken`/`lerToken`).
-- [ ] Implementação: `app/login/verificar.tsx` persiste
+- [x] Implementação: `app/login/verificar.tsx` persiste
       `resultado.papeis` (hoje descartado) e navega para `/painel` em vez
       de só mostrar confirmação (não há mais "sem área logada", ver
-      `docs/specs/18-login-otp/implementation.md`).
+      `docs/specs/18-login-otp/implementation.md`). `LoginConfirmado.tsx`
+      removido por ficar sem uso.
 - [ ] Teste (`lib/auth/contexto-sessao.tsx`): hook `useSessao` expõe
       `papeis`, `papelAtivo` (default: primeiro papel) e
       `definirPapelAtivo`.
