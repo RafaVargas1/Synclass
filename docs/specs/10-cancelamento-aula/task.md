@@ -41,8 +41,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
 - [x] Teste de fumaça (Api): `GET .../horarios/proximas-aulas` — 200 com lista de
   próximas aulas. `matriculaId` resolvida da sessão do Aluno, não mais recebida
   por query string.
-- [ ] Componente frontend: `lib/api/cancelamentos.ts` (contrato já estabilizado
+- [x] Componente frontend: `lib/api/cancelamentos.ts` (contrato já estabilizado
   pelos smoke tests acima).
-- [ ] Componente frontend: tela `minhas-aulas.tsx` (lista de próximas aulas do
+- [x] Componente frontend: tela `minhas-aulas.tsx` (lista de próximas aulas do
   Aluno) + organism `AulaProximaCard` (botão cancelar, desabilitado com motivo
   quando `podeCancelar === false`).
