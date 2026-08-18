@@ -6,16 +6,16 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
 
 ### Domain
 
-- [ ] Confirmar (sem novo teste): `Usuario.AdicionarPapel` e sua cobertura de
+- [x] Confirmar (sem novo teste): `Usuario.AdicionarPapel` e sua cobertura de
       idempotência/duplicidade já existem (`UsuarioTests.cs`,
       `AdicionarPapel_PapelDiferenteDoExistente_AdicionaSemDuplicarIdentidade`
       e `AdicionarPapel_PapelJaAtribuido_LancaPapelJaAtribuidoException`) —
       nada novo aqui, issue #1 já entregou.
-- [ ] Teste unidade: `CadastroProfessorService.CadastrarProfessorAsync`
+- [x] Teste unidade: `CadastroProfessorService.CadastrarProfessorAsync`
       devolve indicador `UsuarioReaproveitado = true` quando adiciona o
       papel Professor a um usuário existente (ex: já Aluno); `false` quando
       cria usuário novo.
-- [ ] Implementação mínima: `CadastroProfessorService` retorna
+- [x] Implementação mínima: `CadastroProfessorService` retorna
       `ResultadoCadastroProfessor(Usuario, bool UsuarioReaproveitado)`.
 - [ ] Teste unidade: `ConviteService.AceitarAsync` devolve indicador
       `PapelAdicionado = true` quando o papel Aluno é de fato anexado a um

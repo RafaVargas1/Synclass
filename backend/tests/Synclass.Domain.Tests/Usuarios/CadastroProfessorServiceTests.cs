@@ -19,10 +19,21 @@ public sealed class CadastroProfessorServiceTests
         var repositorio = new FakeUsuarioRepository();
         var servico = new CadastroProfessorService(repositorio, Clock);
 
-        var usuario = await servico.CadastrarProfessorAsync("Maria Silva", "maria@exemplo.com", CancellationToken.None);
+        var resultado = await servico.CadastrarProfessorAsync("Maria Silva", "maria@exemplo.com", CancellationToken.None);
 
-        usuario.Papeis.Should().ContainSingle(p => p.Papel == PapelUsuario.Professor);
+        resultado.Usuario.Papeis.Should().ContainSingle(p => p.Papel == PapelUsuario.Professor);
         repositorio.Usuarios.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task CadastrarProfessorAsync_ContatoInexistente_UsuarioReaproveitadoEhFalso()
+    {
+        var repositorio = new FakeUsuarioRepository();
+        var servico = new CadastroProfessorService(repositorio, Clock);
+
+        var resultado = await servico.CadastrarProfessorAsync("Maria Silva", "maria@exemplo.com", CancellationToken.None);
+
+        resultado.UsuarioReaproveitado.Should().BeFalse();
     }
 
     [Fact]
@@ -34,11 +45,24 @@ public sealed class CadastroProfessorServiceTests
         var servico = new CadastroProfessorService(repositorio, Clock);
 
         // Capitalização e máscara diferentes do contato já cadastrado.
-        var usuario = await servico.CadastrarProfessorAsync("Maria Silva", "  MARIA@EXEMPLO.COM  ", CancellationToken.None);
+        var resultado = await servico.CadastrarProfessorAsync("Maria Silva", "  MARIA@EXEMPLO.COM  ", CancellationToken.None);
 
-        usuario.Id.Should().Be(alunoExistente.Id);
-        usuario.Papeis.Should().HaveCount(2);
+        resultado.Usuario.Id.Should().Be(alunoExistente.Id);
+        resultado.Usuario.Papeis.Should().HaveCount(2);
         repositorio.Usuarios.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task CadastrarProfessorAsync_UsuarioJaExisteComoAluno_UsuarioReaproveitadoEhTrue()
+    {
+        var repositorio = new FakeUsuarioRepository();
+        var alunoExistente = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Aluno, Clock);
+        await repositorio.AdicionarAsync(alunoExistente, CancellationToken.None);
+        var servico = new CadastroProfessorService(repositorio, Clock);
+
+        var resultado = await servico.CadastrarProfessorAsync("Maria Silva", "maria@exemplo.com", CancellationToken.None);
+
+        resultado.UsuarioReaproveitado.Should().BeTrue();
     }
 
     [Fact]

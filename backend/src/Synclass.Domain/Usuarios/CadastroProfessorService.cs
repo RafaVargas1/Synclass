@@ -19,7 +19,7 @@ public sealed class CadastroProfessorService
         _clock = clock;
     }
 
-    public async Task<Usuario> CadastrarProfessorAsync(string nome, string contatoBruto, CancellationToken cancellationToken)
+    public async Task<ResultadoCadastroProfessor> CadastrarProfessorAsync(string nome, string contatoBruto, CancellationToken cancellationToken)
     {
         var nomeValidado = NomeUsuario.Validar(nome);
         var contatoNormalizado = Contato.Normalizar(contatoBruto);
@@ -27,7 +27,7 @@ public sealed class CadastroProfessorService
 
         var usuario = await ObterOuCriarUsuarioAsync(usuarioExistente, nomeValidado, contatoNormalizado, cancellationToken);
         await _usuarios.SalvarAsync(cancellationToken);
-        return usuario;
+        return new ResultadoCadastroProfessor(usuario, usuarioExistente is not null);
     }
 
     private async Task<Usuario> ObterOuCriarUsuarioAsync(
@@ -47,3 +47,12 @@ public sealed class CadastroProfessorService
         return novoUsuario;
     }
 }
+
+/// <summary>
+/// Resultado do cadastro de Professor: o <see cref="Usuario"/> resultante
+/// (criado ou reaproveitado) e se o papel Professor foi anexado a uma
+/// identidade já existente (<c>true</c>) ou a um usuário recém-criado
+/// (<c>false</c>) — logado como <c>PapelAdicionado</c> pela Api quando
+/// <c>true</c> (Critérios técnicos da issue #4).
+/// </summary>
+public sealed record ResultadoCadastroProfessor(Usuario Usuario, bool UsuarioReaproveitado);

@@ -24,9 +24,9 @@ public sealed class ProfessoresController : ControllerBase
 
         try
         {
-            var usuario = await _cadastroProfessor.CadastrarProfessorAsync(request.Nome, request.Contato, cancellationToken);
-            LogCadastroSucesso(trackId, usuario);
-            return Ok(new CadastroProfessorResponse(usuario.Id, usuario.Nome));
+            var resultado = await _cadastroProfessor.CadastrarProfessorAsync(request.Nome, request.Contato, cancellationToken);
+            LogCadastroSucesso(trackId, resultado);
+            return Ok(new CadastroProfessorResponse(resultado.Usuario.Id, resultado.Usuario.Nome));
         }
         catch (CadastroProfessorRejeitadoException ex)
         {
@@ -34,11 +34,19 @@ public sealed class ProfessoresController : ControllerBase
         }
     }
 
-    private void LogCadastroSucesso(string trackId, Usuario usuario)
+    private void LogCadastroSucesso(string trackId, ResultadoCadastroProfessor resultado)
     {
+        if (resultado.UsuarioReaproveitado)
+        {
+            _logger.LogInformation(
+                "PapelAdicionado {TrackId} {UsuarioId} {Papel}",
+                trackId, resultado.Usuario.Id, PapelUsuario.Professor);
+            return;
+        }
+
         _logger.LogInformation(
             "UsuarioCadastrado {TrackId} {UsuarioId} {Papel}",
-            trackId, usuario.Id, PapelUsuario.Professor);
+            trackId, resultado.Usuario.Id, PapelUsuario.Professor);
     }
 
     private IActionResult RejeitarCadastro(string trackId, string? contatoBruto, CadastroProfessorRejeitadoException ex)
