@@ -7,9 +7,9 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
 - [x] Migration: `dotnet ef migrations add CriaAulaECancelamento` (tabelas `Aulas`,
   `CancelamentosAula`, coluna `PrazoCancelamentoMinutos` em `ConfiguracoesProfessor`)
   — schema primeiro, sem lógica ainda.
-- [ ] Teste unidade (Domain): `AulaService.CancelarAsync` cria a `Aula` sob demanda
+- [x] Teste unidade (Domain): `AulaService.CancelarAsync` cria a `Aula` sob demanda
   quando ainda não existe registro para (HorarioId, Data).
-- [ ] Implementação mínima: `Aula`, `IAulaRepository`, `AulaService.CancelarAsync`
+- [x] Implementação mínima: `Aula`, `IAulaRepository`, `AulaService.CancelarAsync`
   (só o caminho "ainda não existe Aula").
 - [ ] Teste unidade (Domain): cancelamento permitido quando dentro do prazo
   (AC1 — 30h de antecedência, prazo 24h).
