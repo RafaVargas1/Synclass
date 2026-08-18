@@ -76,6 +76,10 @@ builder.Services.AddScoped<CadastroAlunoProvisorioService>();
 builder.Services.AddScoped<IRegraDeCobrancaRepository, RegraDeCobrancaRepository>();
 builder.Services.AddScoped<RegraDeCobrancaService>();
 
+// Consulta de valor devido por Aluno (issue #12) — ver
+// docs/specs/12-valor-devido-professor/implementation.md.
+builder.Services.AddScoped<ConsultaCobrancaService>();
+
 // Alocação de Aluno a horário específico (issue #8) — ver
 // docs/specs/8-aluno-horario/implementation.md.
 builder.Services.AddScoped<IAlocacaoHorarioRepository, AlocacaoHorarioRepository>();

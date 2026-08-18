@@ -32,19 +32,19 @@ Ver `implementation.md` para o contrato de API, decisão de domínio sobre
       `IAlocacaoHorarioRepository`, `IHorarioRepository`
 - [x] Implementação: `IAlocacaoHorarioRepository.ListarPorMatriculaAsync` (interface +
       `AlocacaoHorarioRepository` em `Synclass.Infrastructure.Persistence`)
-- [ ] Teste de fumaça (Api): `GET /professores/{professorId}/valor-devido` sem `inicio`/`fim`
+- [x] Teste de fumaça (Api): `GET /professores/{professorId}/valor-devido` sem `inicio`/`fim`
       usa mês corrente e devolve 200 com a lista de Alunos do Professor
-- [ ] Teste de fumaça (Api): matrícula sem regra aparece com `semRegraDefinida: true` e
+- [x] Teste de fumaça (Api): matrícula sem regra aparece com `semRegraDefinida: true` e
       `valor: null` no corpo da resposta
-- [ ] Teste de fumaça (Api): só `inicio` informado (sem `fim`) devolve 400
-- [ ] Teste de fumaça (Api): Aluno vinculado a dois Professores diferentes — cada Professor
+- [x] Teste de fumaça (Api): só `inicio` informado (sem `fim`) devolve 400
+- [x] Teste de fumaça (Api): Aluno vinculado a dois Professores diferentes — cada Professor
       consulta e vê só o próprio valor, calculado pela própria regra (isolamento, critério de
       aceite 4)
-- [ ] Implementação mínima: `ValorDevidoController` (rota acima), DTOs de request/response
-- [ ] Log estruturado: evento `ConsultaValorDevidoRealizada` (Information, `TrackId`,
+- [x] Implementação mínima: `ValorDevidoController` (rota acima), DTOs de request/response
+- [x] Log estruturado: evento `ConsultaValorDevidoRealizada` (Information, `TrackId`,
       `ProfessorId`, `PeriodoInicio`, `PeriodoFim`) emitido pelo controller — ver
       architecture.md#logs-estruturados-e-track-id
-- [ ] Registro de DI em `Program.cs`: `ConsultaCobrancaService`,
+- [x] Registro de DI em `Program.cs`: `ConsultaCobrancaService`,
       `IAlocacaoHorarioRepository`/`AlocacaoHorarioRepository` (se ainda não scoped)
 - [ ] Integração `lib/api/valorDevido.ts` (cliente HTTP do contrato acima)
 - [ ] Componente frontend: tela de listagem de Alunos do Professor com valor devido +
