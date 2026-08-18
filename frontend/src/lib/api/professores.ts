@@ -46,3 +46,31 @@ async function interpretarResposta(response: Response): Promise<CadastroProfesso
 
   return { sucesso: true, nome: corpo?.nome ?? '' };
 }
+
+export type VerificarContatoResultado = { identidadeExistente: boolean; nome: string | null };
+
+const IdentidadeInexistente: VerificarContatoResultado = { identidadeExistente: false, nome: null };
+
+/**
+ * Envolve o `fetch` de GET /professores/verificar-contato (issue #27):
+ * alimenta o campo Nome readonly do formulário quando o contato já pertence
+ * a uma identidade existente. Fail-open — erro de rede ou resposta
+ * inesperada nunca trava o cadastro, só deixa o campo Nome editável (pior
+ * caso é o comportamento original da RN da issue #20 se aplicar no fim).
+ */
+export async function verificarContatoProfessor(contato: string): Promise<VerificarContatoResultado> {
+  let response: Response;
+  try {
+    response = await fetchComTimeout(`/professores/verificar-contato?contato=${encodeURIComponent(contato)}`);
+  } catch {
+    return IdentidadeInexistente;
+  }
+
+  if (!response.ok) {
+    return IdentidadeInexistente;
+  }
+  const corpo = await response.json().catch(() => null);
+  return corpo?.identidadeExistente
+    ? { identidadeExistente: true, nome: corpo.nome ?? null }
+    : IdentidadeInexistente;
+}
