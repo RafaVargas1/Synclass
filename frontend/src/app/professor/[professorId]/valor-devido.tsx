@@ -11,6 +11,7 @@ import { Paragraph } from '@/components/atoms/Paragraph';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
 import {
   listarValorDevido,
+  type ListarValorDevidoResultado,
   type PeriodoConsultaInput,
   type ValorDevidoPorMatricula,
 } from '@/lib/api/valorDevido';
@@ -103,30 +104,22 @@ function TelaCarregando() {
 
 /**
  * Carrega o valor devido ao montar (mês corrente, `periodo` indefinido) e
- * expõe `consultar` para recarregar com o período digitado — mesma
- * estratégia de retry/estado de falha de `alocacoes.tsx#useCarregamentoConfiguracao`,
- * adaptada para também aceitar um novo `periodo` disparado pelo usuário.
+ * expõe `consultar` para recarregar com o período digitado. `resultado`
+ * indefinido é o próprio estado de carregamento (mesma estratégia de
+ * `regra-de-cobranca.tsx#useCarregamentoRegra`) — evita chamar `setState`
+ * síncrono no corpo do efeito (`react-hooks/set-state-in-effect`), já que
+ * `consultar` reseta `resultado` para `undefined` antes de trocar `periodo`.
  */
 function useConsultaValorDevido(professorId: string) {
   const [inicio, setInicio] = useState('');
   const [fim, setFim] = useState('');
   const [periodo, setPeriodo] = useState<PeriodoConsultaInput | undefined>(undefined);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | undefined>(undefined);
-  const [valoresDevidos, setValoresDevidos] = useState<ValorDevidoPorMatricula[]>([]);
+  const [resultado, setResultado] = useState<ListarValorDevidoResultado | undefined>(undefined);
 
   useEffect(() => {
     let cancelado = false;
-    setCarregando(true);
-    setErro(undefined);
-    listarValorDevido(professorId, periodo).then((resultado) => {
-      if (cancelado) return;
-      setCarregando(false);
-      if (!resultado.sucesso) {
-        setErro(resultado.mensagem);
-        return;
-      }
-      setValoresDevidos(resultado.valoresDevidos);
+    listarValorDevido(professorId, periodo).then((res) => {
+      if (!cancelado) setResultado(res);
     });
     return () => {
       cancelado = true;
@@ -134,8 +127,18 @@ function useConsultaValorDevido(professorId: string) {
   }, [professorId, periodo]);
 
   const consultar = () => {
+    setResultado(undefined);
     setPeriodo(inicio && fim ? { inicio, fim } : undefined);
   };
 
-  return { inicio, setInicio, fim, setFim, carregando, erro, valoresDevidos, consultar };
+  return {
+    inicio,
+    setInicio,
+    fim,
+    setFim,
+    carregando: resultado === undefined,
+    erro: resultado && !resultado.sucesso ? resultado.mensagem : undefined,
+    valoresDevidos: resultado && resultado.sucesso ? resultado.valoresDevidos : [],
+    consultar,
+  };
 }
