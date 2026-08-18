@@ -9,12 +9,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/5
       `ProfessorId` diferentes, coexistem como linhas independentes — `Id`
       diferentes, cada uma preserva seu próprio `ProfessorId`, nenhuma
       sobrescreve a outra (RN, propriedade estrutural da tabela)
-- [ ] Teste unidade (Domain, `Convites/ConviteServiceTests`): dado um Aluno já
+- [x] Teste unidade (Domain, `Convites/ConviteServiceTests`): dado um Aluno já
       pleno de um Professor A (`Matricula` existente com `AlunoUsuarioId`
       definido), quando um Professor B gera e aceita um convite para o
       mesmo contato, então uma nova `Matricula` é criada vinculando o Aluno
       a B, sem alterar a `Matricula` existente com A (critério de aceite 1)
-- [ ] Teste unidade (Domain, `Convites/ConviteServiceTests`): dado um Aluno
+- [x] Teste unidade (Domain, `Convites/ConviteServiceTests`): dado um Aluno
       **provisório** vinculado a um Professor A (`Matricula` com
       `AlunoUsuarioId` nulo), quando o mesmo Aluno se cadastra pleno via
       convite de um Professor B (sem `matriculaId` de origem), então a
