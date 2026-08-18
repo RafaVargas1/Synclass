@@ -93,6 +93,19 @@ banco.
 
 ## Edge points
 
+- **`definirSessao` como único ponto de gravação de sessão** (achado do
+  `qa-review` do PR #34): a primeira versão de `app/login/verificar.tsx`
+  chamava `salvarToken`/`salvarPapeis` (`lib/auth/sessao.ts`) diretamente,
+  contornando o `SessaoProvider` — o estado em memória do Provider só é
+  carregado uma vez, no `useEffect` de montagem em `_layout.tsx`, então
+  `token` continuava `null` até o próximo mount, e a guarda de rota de
+  `app/painel/index.tsx` batia de volta para `/login` mesmo com o backend
+  já tendo autenticado (2 dos 4 critérios de aceite falhavam no QA). Fix:
+  `contexto-sessao.tsx` expõe `definirSessao(token, papeis)`, que persiste
+  em `sessao.ts` **e** atualiza o estado em memória atomicamente;
+  `verificar.tsx` chama só isso, nunca `salvarToken`/`salvarPapeis`
+  diretamente. Qualquer tela futura que logue o usuário deve seguir o
+  mesmo caminho.
 - **Autorização por papel, não por posse do recurso**: `[Authorize(Roles =
   "Professor")]` garante que quem chama tem o papel Professor em algum
   lugar do sistema, mas não que `{professorId}` da rota é o próprio usuário
