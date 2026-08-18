@@ -67,6 +67,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroProfessorService>();
+builder.Services.AddScoped<AtualizacaoNomeUsuarioService>();
 builder.Services.AddScoped<IConfiguracaoProfessorRepository, ConfiguracaoProfessorRepository>();
 builder.Services.AddScoped<ConfiguracaoProfessorService>();
 builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
