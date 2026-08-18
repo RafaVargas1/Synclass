@@ -2,6 +2,7 @@ import { View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
+import { Paragraph } from '@/components/atoms/Paragraph';
 import { FormField } from '@/components/molecules/FormField';
 
 export type CadastroProfessorFormProps = {
@@ -9,8 +10,17 @@ export type CadastroProfessorFormProps = {
   contato: string;
   erro?: string;
   enviando: boolean;
+  /**
+   * `true` quando `onBlurContato` (issue #27) já detectou que o contato
+   * pertence a uma identidade existente — trava o campo Nome (que a Api
+   * ignoraria de qualquer forma, RN da issue #20) e orienta a corrigir pelo
+   * perfil depois de logado, em vez de deixar o usuário preencher um valor
+   * descartado silenciosamente.
+   */
+  nomeReadonly: boolean;
   onChangeNome: (nome: string) => void;
   onChangeContato: (contato: string) => void;
+  onBlurContato: () => void;
   onSubmit: () => void;
 };
 
@@ -29,8 +39,10 @@ export function CadastroProfessorForm({
   contato,
   erro,
   enviando,
+  nomeReadonly,
   onChangeNome,
   onChangeContato,
+  onBlurContato,
   onSubmit,
 }: CadastroProfessorFormProps) {
   return (
@@ -40,11 +52,16 @@ export function CadastroProfessorForm({
         value={nome}
         onChangeText={onChangeNome}
         placeholder="Seu nome completo"
+        editable={!nomeReadonly}
       />
+      {nomeReadonly ? (
+        <Paragraph>Contato já cadastrado. Para corrigir o nome, edite pelo perfil depois de logado.</Paragraph>
+      ) : null}
       <FormField
         label="Contato"
         value={contato}
         onChangeText={onChangeContato}
+        onBlur={onBlurContato}
         placeholder="E-mail ou telefone"
       />
       {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
