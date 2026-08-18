@@ -22,6 +22,11 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .FirstOrDefaultAsync(u => u.Contato == contatoNormalizado, cancellationToken);
     }
 
+    public Task<Usuario?> BuscarPorIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return _dbContext.Usuarios.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
     public Task<bool> ExisteAsync(Guid id, CancellationToken cancellationToken)
     {
         return _dbContext.Usuarios.AnyAsync(u => u.Id == id, cancellationToken);

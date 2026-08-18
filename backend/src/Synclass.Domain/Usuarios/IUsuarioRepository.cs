@@ -10,6 +10,14 @@ public interface IUsuarioRepository
     Task<Usuario?> BuscarPorContatoAsync(string contatoNormalizado, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Busca um <see cref="Usuario"/> pelo <see cref="Usuario.Id"/> — usado
+    /// para resolver o nome de exibição do Professor na consulta de valor
+    /// devido do Aluno (issue #13), onde não existe um "nome provisório"
+    /// equivalente ao de <c>Matricula.NomeProvisorio</c>.
+    /// </summary>
+    Task<Usuario?> BuscarPorIdAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Confirma se existe um <see cref="Usuario"/> com o <paramref name="id"/>
     /// informado, sem carregar a entidade inteira — usado para validar
     /// referências recebidas de fora do Domain (ex: <c>professorId</c> de rota,

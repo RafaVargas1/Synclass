@@ -43,6 +43,14 @@ public sealed class MatriculaRepository : IMatriculaRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Matricula>> ListarPorAlunoAsync(Guid alunoUsuarioId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.Matriculas
+            .Where(m => m.AlunoUsuarioId == alunoUsuarioId)
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken)
     {
         await _dbContext.Matriculas.AddAsync(matricula, cancellationToken);
