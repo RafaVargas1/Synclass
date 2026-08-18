@@ -7,27 +7,23 @@ domínio criado na issue #12 (`ConsultaCobrancaService`/`PeriodoConsulta`/`Valor
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain): `IUsuarioRepository.BuscarPorIdAsync` — `FakeUsuarioRepository`
-      encontra usuário existente e devolve `null` para id inexistente
-- [ ] Implementação mínima: `IUsuarioRepository.BuscarPorIdAsync` (interface +
-      `UsuarioRepository` em `Synclass.Infrastructure.Persistence` + `FakeUsuarioRepository`)
-- [ ] Teste unidade (Domain): `IMatriculaRepository.ListarPorAlunoAsync` — `FakeMatriculaRepository`
-      só retorna matrículas plenas do `alunoUsuarioId` pedido, nunca provisórias (sem
-      `AlunoUsuarioId`) nem de outro Aluno
-- [ ] Implementação mínima: `IMatriculaRepository.ListarPorAlunoAsync` (interface +
-      `MatriculaRepository` + `FakeMatriculaRepository`)
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` retorna
+- [x] Teste unidade (Domain) + implementação: `IUsuarioRepository.BuscarPorIdAsync`
+      (`UsuarioRepository` em `Synclass.Infrastructure.Persistence` + `FakeUsuarioRepository`)
+- [x] Teste unidade (Domain) + implementação: `IMatriculaRepository.ListarPorAlunoAsync`
+      (`MatriculaRepository` + `FakeMatriculaRepository`) — só matrículas plenas do
+      `alunoUsuarioId` pedido
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` retorna
       `ValorDevidoPorMatricula` com `SemRegraDefinida = true`/`Valor = null` para vínculo sem
       `RegraDeCobranca` (mesmo edge point da #12, agora do lado do Aluno)
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` com dois vínculos
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` com dois vínculos
       (Professor A com `RegraFixoMensal`, Professor B com `RegraFixoPorAula`) retorna uma entrada
       por Professor, cada uma calculada pela própria strategy, sem somar num total único
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` usa o `Nome` do
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` usa o `Nome` do
       Professor (via `IUsuarioRepository.BuscarPorIdAsync(matricula.ProfessorId)`), não o
       `NomeProvisorio` da matrícula
-- [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` para Aluno sem
+- [x] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorAlunoAsync` para Aluno sem
       nenhuma `Matricula` retorna lista vazia (cobre "Aluno provisório sem vínculo pleno")
-- [ ] Implementação: `ConsultaCobrancaService.ConsultarPorAlunoAsync` + refatorar
+- [x] Implementação: `ConsultaCobrancaService.ConsultarPorAlunoAsync` + refatorar
       `CalcularParaMatriculaAsync` para receber a resolução de nome como parâmetro (função
       compartilhada entre as duas direções, sem duplicar cálculo/edge point de "sem regra")
 - [ ] Teste de fumaça (Api): `GET /alunos/valor-devido` sem `inicio`/`fim` usa mês corrente e
