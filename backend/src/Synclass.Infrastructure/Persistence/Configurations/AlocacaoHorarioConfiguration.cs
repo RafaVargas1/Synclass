@@ -27,6 +27,11 @@ public sealed class AlocacaoHorarioConfiguration : IEntityTypeConfiguration<Aloc
         builder.Property(a => a.HorarioId).IsRequired();
         builder.Property(a => a.MatriculaId).IsRequired();
         builder.Property(a => a.CreatedAt).IsRequired();
+        // Enum -> int (mapeamento padrão), mesmo padrão de
+        // ConfiguracaoProfessorConfiguration (ModeloAgendamento). Default 0
+        // (Professor) na migration cobre as linhas criadas antes da issue #9
+        // existir.
+        builder.Property(a => a.OrigemAlocacao).IsRequired();
 
         // Remover o Horario (template recorrente) remove suas alocações —
         // na prática nunca dispara via fluxo normal, já que

@@ -11,11 +11,13 @@ namespace Synclass.Domain.Alocacoes;
 /// </summary>
 public sealed class AlocacaoHorario
 {
-    private AlocacaoHorario(Guid id, Guid horarioId, Guid matriculaId, DateTimeOffset createdAt)
+    private AlocacaoHorario(
+        Guid id, Guid horarioId, Guid matriculaId, OrigemAlocacao origemAlocacao, DateTimeOffset createdAt)
     {
         Id = id;
         HorarioId = horarioId;
         MatriculaId = matriculaId;
+        OrigemAlocacao = origemAlocacao;
         CreatedAt = createdAt;
     }
 
@@ -25,10 +27,18 @@ public sealed class AlocacaoHorario
 
     public Guid MatriculaId { get; private set; }
 
+    /// <summary>
+    /// Quem iniciou esta alocação (issue #9) — não opcional: força todo call
+    /// site de <see cref="Criar"/> a declarar explicitamente se foi o
+    /// Professor (issue #8) ou o Aluno (issue #9).
+    /// </summary>
+    public OrigemAlocacao OrigemAlocacao { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
-    public static AlocacaoHorario Criar(Guid horarioId, Guid matriculaId, Common.IClock clock)
+    public static AlocacaoHorario Criar(
+        Guid horarioId, Guid matriculaId, OrigemAlocacao origemAlocacao, Common.IClock clock)
     {
-        return new AlocacaoHorario(Guid.NewGuid(), horarioId, matriculaId, clock.UtcNow);
+        return new AlocacaoHorario(Guid.NewGuid(), horarioId, matriculaId, origemAlocacao, clock.UtcNow);
     }
 }
