@@ -11,11 +11,17 @@ namespace Synclass.Domain.Configuracoes;
 public sealed class ConfiguracaoProfessor
 {
     private ConfiguracaoProfessor(
-        Guid id, Guid professorId, ModeloAgendamento modeloAgendamento, DateTimeOffset createdAt, DateTimeOffset updatedAt)
+        Guid id,
+        Guid professorId,
+        ModeloAgendamento modeloAgendamento,
+        int prazoCancelamentoMinutos,
+        DateTimeOffset createdAt,
+        DateTimeOffset updatedAt)
     {
         Id = id;
         ProfessorId = professorId;
         ModeloAgendamento = modeloAgendamento;
+        PrazoCancelamentoMinutos = prazoCancelamentoMinutos;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
     }
@@ -26,14 +32,45 @@ public sealed class ConfiguracaoProfessor
 
     public ModeloAgendamento ModeloAgendamento { get; private set; }
 
+    /// <summary>
+    /// Antecedência mínima, em minutos, exigida do Aluno para cancelar uma
+    /// aula (issue #10) — <c>0</c> significa "sem antecedência mínima
+    /// exigida", default para Professores cadastrados antes desta issue (ver
+    /// docs/specs/10-cancelamento-aula/implementation.md).
+    /// </summary>
+    public int PrazoCancelamentoMinutos { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public static ConfiguracaoProfessor Criar(Guid professorId, ModeloAgendamento modeloAgendamento, IClock clock)
+    public static ConfiguracaoProfessor Criar(
+        Guid professorId, ModeloAgendamento modeloAgendamento, IClock clock, int prazoCancelamentoMinutos = 0)
     {
         ValidarModeloAgendamento(modeloAgendamento);
-        return new ConfiguracaoProfessor(Guid.NewGuid(), professorId, modeloAgendamento, clock.UtcNow, clock.UtcNow);
+        ValidarPrazoCancelamentoMinutos(prazoCancelamentoMinutos);
+        return new ConfiguracaoProfessor(
+            Guid.NewGuid(), professorId, modeloAgendamento, prazoCancelamentoMinutos, clock.UtcNow, clock.UtcNow);
+    }
+
+    /// <summary>
+    /// Altera <see cref="PrazoCancelamentoMinutos"/> (issue #10, AC5) — não
+    /// afeta cancelamentos já feitos, só os próximos: <c>AulaService</c>
+    /// sempre lê o valor vigente no momento do cancelamento, nunca cacheia.
+    /// </summary>
+    public void AlterarPrazoCancelamento(int novoPrazoCancelamentoMinutos, IClock clock)
+    {
+        ValidarPrazoCancelamentoMinutos(novoPrazoCancelamentoMinutos);
+        PrazoCancelamentoMinutos = novoPrazoCancelamentoMinutos;
+        UpdatedAt = clock.UtcNow;
+    }
+
+    private static void ValidarPrazoCancelamentoMinutos(int prazoCancelamentoMinutos)
+    {
+        if (prazoCancelamentoMinutos < 0)
+        {
+            throw new PrazoCancelamentoMinutosInvalidoException(prazoCancelamentoMinutos);
+        }
     }
 
     /// <summary>

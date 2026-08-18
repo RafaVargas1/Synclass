@@ -4,7 +4,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
 
 ## Ordem de execução
 
-- [ ] Migration: `dotnet ef migrations add CriaAulaECancelamento` (tabelas `Aulas`,
+- [x] Migration: `dotnet ef migrations add CriaAulaECancelamento` (tabelas `Aulas`,
   `CancelamentosAula`, coluna `PrazoCancelamentoMinutos` em `ConfiguracoesProfessor`)
   — schema primeiro, sem lógica ainda.
 - [ ] Teste unidade (Domain): `AulaService.CancelarAsync` cria a `Aula` sob demanda
