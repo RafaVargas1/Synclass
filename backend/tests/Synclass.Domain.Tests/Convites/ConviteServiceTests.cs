@@ -244,6 +244,66 @@ public sealed class ConviteServiceTests
         conviteB.UsadoEm.Should().BeNull();
     }
 
+    /// <summary>
+    /// Prova formal (issue #5, critério de aceite 1) de N:N: um Aluno já
+    /// pleno de um Professor A aceita convite de um Professor B distinto —
+    /// uma nova <see cref="Matricula"/> é criada para B, e a matrícula
+    /// existente com A não é alterada.
+    /// </summary>
+    [Fact]
+    public async Task AceitarAsync_AlunoJaPlenoDeOutroProfessor_CriaNovaMatriculaSemAlterarAMatriculaExistente()
+    {
+        var contexto = NovoContexto();
+        var servico = NovoServico(contexto);
+        var professorAId = await AdicionarProfessorAsync(contexto.Usuarios, "professor-a@exemplo.com");
+        var professorBId = await AdicionarProfessorAsync(contexto.Usuarios, "professor-b@exemplo.com");
+        var alunoExistente = Usuario.Cadastrar("João Pedro", "11987654321", PapelUsuario.Aluno, Clock);
+        await contexto.Usuarios.AdicionarAsync(alunoExistente, CancellationToken.None);
+        var matriculaComA = Matricula.CriarVinculada(professorAId, alunoExistente.Id, Clock);
+        await contexto.Matriculas.AdicionarAsync(matriculaComA, CancellationToken.None);
+        var conviteDoB = await servico.GerarAsync(professorBId, "11987654321", null, CancellationToken.None);
+
+        var resultado = await servico.AceitarAsync(conviteDoB.Token, "João Pedro", "11987654321", CancellationToken.None);
+
+        resultado.Usuario.Id.Should().Be(alunoExistente.Id);
+        resultado.MatriculaPromovida.Should().BeFalse();
+        contexto.Matriculas.Matriculas.Should().HaveCount(2);
+        var matriculaComB = contexto.Matriculas.Matriculas.Should()
+            .ContainSingle(m => m.ProfessorId == professorBId).Subject;
+        matriculaComB.AlunoUsuarioId.Should().Be(alunoExistente.Id);
+        matriculaComA.ProfessorId.Should().Be(professorAId);
+        matriculaComA.AlunoUsuarioId.Should().Be(alunoExistente.Id);
+    }
+
+    /// <summary>
+    /// Prova formal (issue #5, critério de aceite 3) de N:N: um Aluno
+    /// provisório do Professor A (matrícula sem <see cref="Matricula.AlunoUsuarioId"/>)
+    /// se cadastra pleno via convite do Professor B sem matrícula de origem —
+    /// a matrícula provisória de A permanece intacta, e uma nova matrícula
+    /// plena é criada para B.
+    /// </summary>
+    [Fact]
+    public async Task AceitarAsync_ConviteDeOutroProfessorSemMatriculaDeOrigem_PreservaMatriculaProvisoriaExistente()
+    {
+        var contexto = NovoContexto();
+        var servico = NovoServico(contexto);
+        var professorAId = await AdicionarProfessorAsync(contexto.Usuarios, "professor-a@exemplo.com");
+        var professorBId = await AdicionarProfessorAsync(contexto.Usuarios, "professor-b@exemplo.com");
+        var matriculaProvisoriaComA = Matricula.CriarProvisoria(professorAId, "João Pedro", "2024-013", Clock);
+        await contexto.Matriculas.AdicionarAsync(matriculaProvisoriaComA, CancellationToken.None);
+        var conviteDoB = await servico.GerarAsync(professorBId, "11987654321", null, CancellationToken.None);
+
+        var resultado = await servico.AceitarAsync(conviteDoB.Token, "João Pedro", "11987654321", CancellationToken.None);
+
+        matriculaProvisoriaComA.AlunoUsuarioId.Should().BeNull();
+        matriculaProvisoriaComA.NomeProvisorio.Should().Be("João Pedro");
+        matriculaProvisoriaComA.IdentificadorProvisorio.Should().Be("2024-013");
+        contexto.Matriculas.Matriculas.Should().HaveCount(2);
+        var matriculaComB = contexto.Matriculas.Matriculas.Should()
+            .ContainSingle(m => m.ProfessorId == professorBId).Subject;
+        matriculaComB.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
+    }
+
     private static async Task<(ConviteService Servico, Contexto Contexto, Guid ProfessorId)> CriarServicoComProfessorExistenteAsync()
     {
         var contexto = NovoContexto();

@@ -55,6 +55,35 @@ public sealed class RegraDeCobrancaServiceTests
         regras.Regras.Single().Should().BeOfType<RegraValorPorAula>();
     }
 
+    /// <summary>
+    /// Prova formal (issue #5, critério de aceite 4) de que a cobrança é
+    /// escopada por <see cref="RegraDeCobranca.MatriculaId"/>, não por Aluno:
+    /// um mesmo Aluno com duas <see cref="Matricula"/> (Professor A e
+    /// Professor B) tem a regra definida numa delas sem que isso vaze para a
+    /// outra.
+    /// </summary>
+    [Fact]
+    public async Task DefinirAsync_AlunoComDuasMatriculasDeProfessoresDiferentes_RegraNaoVazaEntreMatriculas()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var alunoUsuarioId = Guid.NewGuid();
+        var matriculaComA = Matricula.CriarVinculada(Guid.NewGuid(), alunoUsuarioId, Clock);
+        var matriculaComB = Matricula.CriarVinculada(Guid.NewGuid(), alunoUsuarioId, Clock);
+        await matriculas.AdicionarAsync(matriculaComA, CancellationToken.None);
+        await matriculas.AdicionarAsync(matriculaComB, CancellationToken.None);
+        var regras = new FakeRegraDeCobrancaRepository();
+        var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
+
+        await servico.DefinirAsync(matriculaComA.Id, TipoRegraDeCobranca.FixoMensal, 300m, null, CancellationToken.None);
+
+        var regraDeA = await servico.BuscarVigenteAsync(matriculaComA.Id, CancellationToken.None);
+        var regraDeB = await servico.BuscarVigenteAsync(matriculaComB.Id, CancellationToken.None);
+        regraDeA.Should().NotBeNull();
+        regraDeA!.MatriculaId.Should().Be(matriculaComA.Id);
+        regraDeB.Should().BeNull();
+        regras.Regras.Should().ContainSingle();
+    }
+
     [Fact]
     public async Task DefinirAsync_MatriculaInexistente_RejeitaComMatriculaNaoEncontradaException()
     {

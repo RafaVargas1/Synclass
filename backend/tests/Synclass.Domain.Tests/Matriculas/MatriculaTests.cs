@@ -40,4 +40,27 @@ public sealed class MatriculaTests
 
         acao.Should().Throw<MatriculaJaPromovidaException>();
     }
+
+    /// <summary>
+    /// Prova formal (issue #5) de que a relação Aluno-Professor é N:N: duas
+    /// <see cref="Matricula"/> plenas do mesmo <see cref="Matricula.AlunoUsuarioId"/>,
+    /// uma para cada Professor, coexistem como linhas independentes — nada no
+    /// desenho da entidade impede múltiplos vínculos simultâneos do mesmo Aluno.
+    /// </summary>
+    [Fact]
+    public void CriarVinculada_MesmoAlunoDoisProfessoresDiferentes_CoexistemComoLinhasIndependentes()
+    {
+        var alunoUsuarioId = Guid.NewGuid();
+        var professorAId = Guid.NewGuid();
+        var professorBId = Guid.NewGuid();
+
+        var matriculaComA = Matricula.CriarVinculada(professorAId, alunoUsuarioId, Clock);
+        var matriculaComB = Matricula.CriarVinculada(professorBId, alunoUsuarioId, Clock);
+
+        matriculaComA.Id.Should().NotBe(matriculaComB.Id);
+        matriculaComA.AlunoUsuarioId.Should().Be(alunoUsuarioId);
+        matriculaComB.AlunoUsuarioId.Should().Be(alunoUsuarioId);
+        matriculaComA.ProfessorId.Should().Be(professorAId);
+        matriculaComB.ProfessorId.Should().Be(professorBId);
+    }
 }
