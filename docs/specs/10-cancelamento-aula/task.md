@@ -17,16 +17,16 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
 - [x] Teste unidade (Domain): cancelamento rejeitado quando fora do prazo, com
   mensagem indicando até quando era possível cancelar (AC2 — 10h de antecedência,
   prazo 24h) → `PrazoCancelamentoExpiradoException`.
-- [ ] Teste unidade (Domain): cancelamento não afeta a `AlocacaoHorario` (alocação
+- [x] Teste unidade (Domain): cancelamento não afeta a `AlocacaoHorario` (alocação
   recorrente permanece) — só cria `CancelamentoAula` para aquela `Aula` (AC3).
-- [ ] Teste unidade (Domain): dois Alunos alocados no mesmo horário — cancelamento
+- [x] Teste unidade (Domain): dois Alunos alocados no mesmo horário — cancelamento
   de um não cria `CancelamentoAula` para o outro (AC4, independência).
-- [ ] Teste unidade (Domain): prazo aplicado é sempre o `PrazoCancelamentoMinutos`
+- [x] Teste unidade (Domain): prazo aplicado é sempre o `PrazoCancelamentoMinutos`
   vigente no momento do cancelamento, não o vigente quando o Aluno foi alocado
   (AC5 — muda de 24h para 48h, cancelamentos antigos não são reavaliados).
-- [ ] Teste unidade (Domain): cancelar uma aula já cancelada pelo mesmo Aluno é
+- [x] Teste unidade (Domain): cancelar uma aula já cancelada pelo mesmo Aluno é
   idempotente (edge point) — não lança, retorna o `CancelamentoAula` existente.
-- [ ] Teste unidade (Domain): Aluno não alocado naquele horário tentando cancelar
+- [x] Teste unidade (Domain): Aluno não alocado naquele horário tentando cancelar
   → rejeitado (mesmo padrão de `MatriculaNaoVinculadaAoProfessorException`/nova
   exceção equivalente).
 - [ ] Teste unidade (Domain): `AulaService.ListarProximasAsync` — calcula a
