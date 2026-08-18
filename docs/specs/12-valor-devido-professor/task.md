@@ -7,14 +7,14 @@ Ver `implementation.md` para o contrato de API, decisão de domínio sobre
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain): `PeriodoConsulta.Criar` com `inicio >= fim` rejeita com
+- [x] Teste unidade (Domain): `PeriodoConsulta.Criar` com `inicio >= fim` rejeita com
       `PeriodoConsultaInvalidoException`
-- [ ] Teste unidade (Domain): `PeriodoConsulta.MesCorrente(clock)` retorna primeiro dia do mês
+- [x] Teste unidade (Domain): `PeriodoConsulta.MesCorrente(clock)` retorna primeiro dia do mês
       corrente até primeiro dia do mês seguinte (exclusivo), usando `FixedClock`
-- [ ] Teste unidade (Domain): `PeriodoConsulta.ContarOcorrencias(diaSemana)` conta corretamente
+- [x] Teste unidade (Domain): `PeriodoConsulta.ContarOcorrencias(diaSemana)` conta corretamente
       quantas vezes um dia da semana cai num período de um mês (casos: mês com 4 e com 5
       ocorrências do mesmo dia da semana)
-- [ ] Implementação mínima: `PeriodoConsulta` (`Synclass.Domain.Cobrancas`) + exceção
+- [x] Implementação mínima: `PeriodoConsulta` (`Synclass.Domain.Cobrancas`) + exceção
 - [ ] Teste unidade (Domain): `ConsultaCobrancaService.ConsultarPorProfessorAsync` retorna
       `ValorDevidoPorMatricula` com `SemRegraDefinida = true` e `Valor = null` para matrícula
       sem `RegraDeCobranca` (nunca `0`)
