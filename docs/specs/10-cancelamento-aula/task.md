@@ -32,7 +32,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
 - [x] Teste unidade (Domain): `AulaService.ListarProximasAsync` — calcula a
   próxima ocorrência futura de cada `AlocacaoHorario` da matrícula (sem exigir
   `Aula` pré-existente), pulando ocorrências já canceladas.
-- [ ] Log estruturado: evento `AulaCancelada` (Information) e
+- [x] Log estruturado: evento `AulaCancelada` (Information) e
   `CancelamentoRejeitadoPorPrazo` (Warning) — ver architecture.md#logs-estruturados-e-track-id.
 - [ ] Teste de fumaça (Api): `POST .../aulas/{data}/cancelamentos` — 200 dentro do
   prazo, 400 fora do prazo, 404 horário inexistente.

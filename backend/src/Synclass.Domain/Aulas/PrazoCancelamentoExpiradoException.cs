@@ -14,5 +14,23 @@ public sealed class PrazoCancelamentoExpiradoException : AulaRejeitadaException
             $"Prazo de cancelamento expirado para a aula {aulaId}: era exigida antecedência de " +
             $"{prazoCancelamentoMinutos} minutos, então só era possível cancelar até {limite:O}.")
     {
+        AulaId = aulaId;
+        PrazoCancelamentoMinutos = prazoCancelamentoMinutos;
+        Limite = limite;
     }
+
+    public Guid AulaId { get; }
+
+    /// <summary>
+    /// Prazo configurado (minutos) que a tentativa não respeitou — usado
+    /// pelo log estruturado <c>CancelamentoRejeitadoPorPrazo</c> (Warning)
+    /// em <c>AulasController</c>.
+    /// </summary>
+    public int PrazoCancelamentoMinutos { get; }
+
+    /// <summary>
+    /// Até quando era possível cancelar — mesmo valor exibido na mensagem,
+    /// exposto para o log estruturado não precisar reparseá-la.
+    /// </summary>
+    public DateTimeOffset Limite { get; }
 }
