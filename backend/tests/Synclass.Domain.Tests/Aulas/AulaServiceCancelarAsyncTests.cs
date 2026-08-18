@@ -67,4 +67,46 @@ public sealed class AulaServiceCancelarAsyncTests
 
         cenario.Aulas.Aulas.Should().ContainSingle(a => a.HorarioId == horario.Id && a.Data == data);
     }
+
+    /// <summary>
+    /// AC1 — Professor configura prazo de 24h; aula em 30h de antecedência
+    /// (dentro do prazo) permite o cancelamento.
+    /// </summary>
+    [Fact]
+    public async Task CancelarAsync_DentroDoPrazoConfigurado_PermiteECriaOCancelamento()
+    {
+        var cenario = CriarCenario(prazoCancelamentoMinutos: 24 * 60);
+        // Relógio fixo em 18/08 12:00; aula em 20/08 18:00 = 30h de antecedência.
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Quinta, new TimeOnly(18, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
+        var data = new DateOnly(2026, 8, 20);
+
+        var cancelamento = await cenario.AulaService.CancelarAsync(
+            ProfessorId, horario.Id, data, matricula.Id, CancellationToken.None);
+
+        cancelamento.MatriculaId.Should().Be(matricula.Id);
+        cenario.Cancelamentos.Cancelamentos.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// AC2 — mesmo prazo de 24h, mas aula em 10h de antecedência (fora do
+    /// prazo): rejeitado com a mensagem indicando até quando era possível
+    /// cancelar.
+    /// </summary>
+    [Fact]
+    public async Task CancelarAsync_ForaDoPrazoConfigurado_RejeitaComPrazoCancelamentoExpiradoException()
+    {
+        var cenario = CriarCenario(prazoCancelamentoMinutos: 24 * 60);
+        // Relógio fixo em 18/08 12:00; aula em 18/08 22:00 = 10h de antecedência.
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(22, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
+        var data = new DateOnly(2026, 8, 18);
+
+        var acao = () => cenario.AulaService.CancelarAsync(ProfessorId, horario.Id, data, matricula.Id, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<PrazoCancelamentoExpiradoException>();
+        cenario.Cancelamentos.Cancelamentos.Should().BeEmpty();
+    }
 }

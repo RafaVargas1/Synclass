@@ -51,6 +51,8 @@ public sealed class AulaService
             return cancelamento;
         }
 
+        await GarantirDentroDoPrazoAsync(professorId, aula, horario.HoraInicio, cancellationToken);
+
         var novoCancelamento = CancelamentoAula.Criar(aula.Id, matriculaId, _clock);
         await _cancelamentos.AdicionarAsync(novoCancelamento, cancellationToken);
         await _cancelamentos.SalvarAsync(cancellationToken);
@@ -73,6 +75,30 @@ public sealed class AulaService
         await _aulas.AdicionarAsync(aula, cancellationToken);
         await _aulas.SalvarAsync(cancellationToken);
         return aula;
+    }
+
+    /// <summary>
+    /// Compara o instante atual com <c>Aula.Data + Horario.HoraInicio -
+    /// PrazoCancelamentoMinutos</c> (issue #10, AC1/AC2) — lê a configuração
+    /// vigente a cada chamada, nunca cacheia o prazo em <see cref="AlocacaoHorario"/>
+    /// ou <see cref="Aula"/> (AC5: mudança de prazo não reavalia cancelamentos
+    /// antigos, só afeta os próximos). Ausência de configuração usa 0
+    /// minutos (mesmo default de <c>ConfiguracaoProfessor.Criar</c>).
+    /// </summary>
+    private async Task GarantirDentroDoPrazoAsync(
+        Guid professorId, Aula aula, TimeOnly horaInicio, CancellationToken cancellationToken)
+    {
+        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
+        var prazoCancelamentoMinutos = configuracao?.PrazoCancelamentoMinutos ?? 0;
+
+        // Sem tratamento de fuso horário — mesma simplificação do resto do
+        // domínio (ver docs/specs/10-cancelamento-aula/implementation.md#edge-points).
+        var inicioAula = new DateTimeOffset(aula.Data.ToDateTime(horaInicio), TimeSpan.Zero);
+        var limite = inicioAula.AddMinutes(-prazoCancelamentoMinutos);
+        if (_clock.UtcNow > limite)
+        {
+            throw new PrazoCancelamentoExpiradoException(aula.Id, prazoCancelamentoMinutos, limite);
+        }
     }
 
     /// <summary>

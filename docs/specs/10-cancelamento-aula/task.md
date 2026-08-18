@@ -11,10 +11,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
   quando ainda não existe registro para (HorarioId, Data).
 - [x] Implementação mínima: `Aula`, `IAulaRepository`, `AulaService.CancelarAsync`
   (só o caminho "ainda não existe Aula").
-- [ ] Teste unidade (Domain): cancelamento permitido quando dentro do prazo
+- [x] Teste unidade (Domain): cancelamento permitido quando dentro do prazo
   (AC1 — 30h de antecedência, prazo 24h).
-- [ ] Implementação mínima: `GarantirDentroDoPrazoAsync`, cria `CancelamentoAula`.
-- [ ] Teste unidade (Domain): cancelamento rejeitado quando fora do prazo, com
+- [x] Implementação mínima: `GarantirDentroDoPrazoAsync`, cria `CancelamentoAula`.
+- [x] Teste unidade (Domain): cancelamento rejeitado quando fora do prazo, com
   mensagem indicando até quando era possível cancelar (AC2 — 10h de antecedência,
   prazo 24h) → `PrazoCancelamentoExpiradoException`.
 - [ ] Teste unidade (Domain): cancelamento não afeta a `AlocacaoHorario` (alocação
