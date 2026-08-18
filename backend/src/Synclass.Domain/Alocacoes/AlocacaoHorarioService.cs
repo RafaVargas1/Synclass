@@ -44,7 +44,7 @@ public sealed class AlocacaoHorarioService
         await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
         await GarantirAindaNaoAlocadoAsync(horarioId, matriculaId, cancellationToken);
 
-        var alocacao = AlocacaoHorario.Criar(horarioId, matriculaId, _clock);
+        var alocacao = AlocacaoHorario.Criar(horarioId, matriculaId, OrigemAlocacao.Professor, _clock);
         await _alocacoes.AdicionarAsync(alocacao, cancellationToken);
         await _alocacoes.SalvarAsync(cancellationToken);
         return alocacao;
