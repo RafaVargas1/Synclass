@@ -55,6 +55,7 @@ describe('ValorDevidoScreen', () => {
     await render(<ValorDevidoScreen />);
 
     await waitFor(() => expect(screen.getByText('Erro de conexão.')).toBeTruthy());
+    expect(screen.queryByText('Nenhum Aluno encontrado para este período.')).toBeNull();
   });
 
   it('shows each aluno with its formatted valor devido', async () => {

@@ -39,8 +39,9 @@ export default function ValorDevidoScreen() {
           onChangeFim={estado.setFim}
           onConsultar={estado.consultar}
         />
-        {estado.erro ? <ErrorMessage>{estado.erro}</ErrorMessage> : null}
-        {estado.carregando ? <TelaCarregando /> : <ListaDeValoresDevidos valoresDevidos={estado.valoresDevidos} />}
+        {estado.carregando && <TelaCarregando />}
+        {!estado.carregando && estado.erro && <ErrorMessage>{estado.erro}</ErrorMessage>}
+        {!estado.carregando && !estado.erro && <ListaDeValoresDevidos valoresDevidos={estado.valoresDevidos} />}
       </View>
     </SafeAreaView>
   );
