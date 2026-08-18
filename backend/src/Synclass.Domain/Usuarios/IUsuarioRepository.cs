@@ -10,6 +10,13 @@ public interface IUsuarioRepository
     Task<Usuario?> BuscarPorContatoAsync(string contatoNormalizado, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Busca um <see cref="Usuario"/> pelo próprio id — usado por
+    /// <see cref="AtualizacaoNomeUsuarioService"/> (issue #27) a partir do
+    /// <c>usuarioId</c> lido do token de sessão.
+    /// </summary>
+    Task<Usuario?> BuscarPorIdAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Confirma se existe um <see cref="Usuario"/> com o <paramref name="id"/>
     /// informado, sem carregar a entidade inteira — usado para validar
     /// referências recebidas de fora do Domain (ex: <c>professorId</c> de rota,
