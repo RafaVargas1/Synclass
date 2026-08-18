@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Synclass.Api.Controllers;
+using Synclass.Api.Tests.Fakes;
 using Synclass.Infrastructure.Persistence;
 
 namespace Synclass.Api.Tests;
@@ -49,7 +50,7 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     [Fact]
     public async Task Put_ModeloAgendamento_ReturnsOk_QuandoAindaNaoDefinido()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PutAsJsonAsync(
@@ -64,7 +65,7 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     [Fact]
     public async Task Put_ModeloAgendamento_ReturnsOk_QuandoJaDefinido()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         await client.PutAsJsonAsync(
             $"/professores/{professorId}/configuracao/modelo-agendamento",
@@ -82,7 +83,7 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     [Fact]
     public async Task Put_ModeloAgendamento_ReturnsBadRequest_QuandoModeloInvalido()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PutAsJsonAsync(
@@ -95,7 +96,7 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     [Fact]
     public async Task Get_Configuracao_ReturnsOk_QuandoDefinida()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         await client.PutAsJsonAsync(
             $"/professores/{professorId}/configuracao/modelo-agendamento",
@@ -111,7 +112,7 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     [Fact]
     public async Task Get_Configuracao_ReturnsNotFound_QuandoNaoDefinida()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.GetAsync($"/professores/{professorId}/configuracao");
@@ -122,7 +123,7 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoProfessorNaoDefiniuModelo()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(

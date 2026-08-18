@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Cobrancas;
@@ -11,6 +12,7 @@ namespace Synclass.Api.Controllers;
 /// <c>matriculaId</c> e confere <c>ProfessorId == professorId</c> da rota —
 /// 404 se não bater ou não existir (ver implementation.md).
 /// </summary>
+[Authorize(Roles = "Professor")]
 [ApiController]
 [Route("professores/{professorId:guid}/matriculas/{matriculaId:guid}/regra-de-cobranca")]
 public sealed class RegraDeCobrancaController : ControllerBase

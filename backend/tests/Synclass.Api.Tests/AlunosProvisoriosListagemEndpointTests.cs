@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Synclass.Api.Controllers;
+using Synclass.Api.Tests.Fakes;
 using Synclass.Infrastructure.Persistence;
 
 namespace Synclass.Api.Tests;
@@ -49,7 +50,7 @@ public sealed class AlunosProvisoriosListagemEndpointTests : IClassFixture<WebAp
     [Fact]
     public async Task Get_AlunosProvisorios_ListaMatriculasDoProfessor()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor-listagem-1@exemplo.com");
         var outroProfessorId = await CadastrarProfessorAsync(client, "professor-listagem-2@exemplo.com");
         await client.PostAsJsonAsync(

@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-import { lerToken, limparToken, salvarToken } from '@/lib/auth/sessao';
+import { lerPapeis, lerToken, limparToken, salvarPapeis, salvarToken } from '@/lib/auth/sessao';
 
 jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(),
@@ -44,6 +44,31 @@ describe('sessao', () => {
     await limparToken();
 
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(expect.stringContaining('sessao'));
+  });
+
+  it('salvarPapeis stores the papeis (JSON-encoded) under the session key', async () => {
+    await salvarPapeis(['Professor', 'Aluno']);
+
+    expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+      expect.stringContaining('sessao'),
+      JSON.stringify(['Professor', 'Aluno']),
+    );
+  });
+
+  it('lerPapeis reads the papeis from the same key used by salvarPapeis', async () => {
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(JSON.stringify(['Professor']));
+
+    const papeis = await lerPapeis();
+
+    expect(papeis).toEqual(['Professor']);
+  });
+
+  it('lerPapeis returns null when there is no stored session', async () => {
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
+
+    const papeis = await lerPapeis();
+
+    expect(papeis).toBeNull();
   });
 
   describe('on web', () => {
@@ -91,6 +116,22 @@ describe('sessao', () => {
 
       expect(localStorage.getItem('synclass.sessao.token')).toBeNull();
       expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
+    });
+
+    it('salvarPapeis stores the papeis in localStorage instead of SecureStore', async () => {
+      await salvarPapeis(['Professor']);
+
+      expect(localStorage.getItem('synclass.sessao.papeis')).toBe(JSON.stringify(['Professor']));
+      expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    });
+
+    it('lerPapeis reads the papeis from localStorage', async () => {
+      localStorage.setItem('synclass.sessao.papeis', JSON.stringify(['Aluno']));
+
+      const papeis = await lerPapeis();
+
+      expect(papeis).toEqual(['Aluno']);
+      expect(SecureStore.getItemAsync).not.toHaveBeenCalled();
     });
   });
 });

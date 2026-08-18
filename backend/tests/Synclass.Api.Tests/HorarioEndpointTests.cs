@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Synclass.Api.Controllers;
+using Synclass.Api.Tests.Fakes;
 using Synclass.Infrastructure.Persistence;
 
 namespace Synclass.Api.Tests;
@@ -62,7 +63,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Post_Horario_ReturnsOk_QuandoDadosValidos()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(
@@ -77,7 +78,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Post_Horario_SemInformarLimiteAlunos_AplicaDefault1()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(
@@ -91,7 +92,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Post_Horario_ComLimiteAlunosInformado_UsaOValorInformado()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(
@@ -105,7 +106,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoLimiteAlunosZeroOuNegativo()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(
@@ -118,7 +119,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoDuracaoInvalida()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(
@@ -131,7 +132,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoDiaSemanaInvalido()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(
@@ -144,7 +145,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoConflitaComHorarioExistente()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
@@ -162,7 +163,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Get_Horarios_ListaHorariosCadastrados()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
@@ -178,7 +179,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Delete_Horario_ReturnsNoContent_QuandoRemovido()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var criado = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
@@ -193,7 +194,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Delete_Horario_ReturnsNotFound_QuandoHorarioNaoExiste()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.DeleteAsync($"/professores/{professorId}/horarios/{Guid.NewGuid()}");

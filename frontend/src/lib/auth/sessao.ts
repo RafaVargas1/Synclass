@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
  * https://docs.expo.dev/versions/latest/sdk/securestore/#web-support.
  */
 const ChaveToken = 'synclass.sessao.token';
+const ChavePapeis = 'synclass.sessao.papeis';
 
 export async function salvarToken(token: string): Promise<void> {
   if (Platform.OS === 'web') {
@@ -32,4 +33,24 @@ export async function limparToken(): Promise<void> {
     return;
   }
   await SecureStore.deleteItemAsync(ChaveToken);
+}
+
+/**
+ * Persiste os papéis do usuário (issue #4) junto do token — mesmo wrapper
+ * fino de `salvarToken`/`lerToken`, serializado como JSON já que
+ * `SecureStore`/`localStorage` só guardam string.
+ */
+export async function salvarPapeis(papeis: string[]): Promise<void> {
+  const valor = JSON.stringify(papeis);
+  if (Platform.OS === 'web') {
+    localStorage.setItem(ChavePapeis, valor);
+    return;
+  }
+  await SecureStore.setItemAsync(ChavePapeis, valor);
+}
+
+export async function lerPapeis(): Promise<string[] | null> {
+  const valor =
+    Platform.OS === 'web' ? localStorage.getItem(ChavePapeis) : await SecureStore.getItemAsync(ChavePapeis);
+  return valor ? (JSON.parse(valor) as string[]) : null;
 }

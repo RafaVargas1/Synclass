@@ -145,6 +145,7 @@ public sealed class ConviteServiceTests
         resultado.Usuario.Contato.Should().Be("11987654321");
         resultado.Usuario.Papeis.Should().ContainSingle(p => p.Papel == PapelUsuario.Aluno);
         resultado.MatriculaPromovida.Should().BeFalse();
+        resultado.PapelAdicionado.Should().BeFalse();
         var matriculaCriada = contexto.Matriculas.Matriculas.Should().ContainSingle().Subject;
         matriculaCriada.ProfessorId.Should().Be(professorId);
         matriculaCriada.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
@@ -163,6 +164,7 @@ public sealed class ConviteServiceTests
         resultado.Usuario.Id.Should().Be(professorConvidado.Id);
         resultado.Usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Professor);
         resultado.Usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Aluno);
+        resultado.PapelAdicionado.Should().BeTrue();
         contexto.Usuarios.Usuarios.Should().HaveCount(2);
     }
 
@@ -180,6 +182,7 @@ public sealed class ConviteServiceTests
 
         resultado.Usuario.Id.Should().Be(alunoExistente.Id);
         resultado.MatriculaPromovida.Should().BeTrue();
+        resultado.PapelAdicionado.Should().BeFalse();
         matriculaOrigem.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
     }
 

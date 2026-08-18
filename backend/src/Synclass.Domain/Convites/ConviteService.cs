@@ -115,42 +115,48 @@ public sealed class ConviteService
         var matriculaOrigem = await ObterMatriculaOrigemValidaAsync(convite, cancellationToken);
         convite.MarcarUsado(_clock);
 
-        var usuario = await ObterOuCriarUsuarioAsync(nomeValidado, convite.Contato, cancellationToken);
+        var (usuario, papelAdicionado) = await ObterOuCriarUsuarioAsync(nomeValidado, convite.Contato, cancellationToken);
         var matriculaPromovida = await VincularMatriculaAsync(convite, matriculaOrigem, usuario.Id, cancellationToken);
 
         await _usuarios.SalvarAsync(cancellationToken);
         await _matriculas.SalvarAsync(cancellationToken);
         await _convites.SalvarAsync(cancellationToken);
-        return new ResultadoAceiteConvite(usuario, convite.Id, matriculaPromovida);
+        return new ResultadoAceiteConvite(usuario, convite.Id, matriculaPromovida, papelAdicionado);
     }
 
-    private async Task<Usuario> ObterOuCriarUsuarioAsync(string nomeValidado, string contatoNormalizado, CancellationToken cancellationToken)
+    private async Task<(Usuario Usuario, bool PapelAdicionado)> ObterOuCriarUsuarioAsync(
+        string nomeValidado, string contatoNormalizado, CancellationToken cancellationToken)
     {
         var usuarioExistente = await _usuarios.BuscarPorContatoAsync(contatoNormalizado, cancellationToken);
         if (usuarioExistente is not null)
         {
-            AdicionarPapelAlunoIdempotente(usuarioExistente);
-            return usuarioExistente;
+            var papelAdicionado = AdicionarPapelAlunoIdempotente(usuarioExistente);
+            return (usuarioExistente, papelAdicionado);
         }
 
         var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, PapelUsuario.Aluno, _clock);
         await _usuarios.AdicionarAsync(novoUsuario, cancellationToken);
-        return novoUsuario;
+        return (novoUsuario, false);
     }
 
     /// <summary>
     /// "Já é Aluno" não deveria impedir a promoção de uma Matricula de
     /// origem específica — decisão documentada em
-    /// docs/specs/2-convite-whatsapp/implementation.md.
+    /// docs/specs/2-convite-whatsapp/implementation.md. Devolve se o papel
+    /// foi de fato anexado (<c>true</c>) ou já estava presente, virando
+    /// no-op (<c>false</c>) — usado pelo log estruturado
+    /// <c>PapelAdicionado</c> (Critérios técnicos da issue #4).
     /// </summary>
-    private void AdicionarPapelAlunoIdempotente(Usuario usuario)
+    private bool AdicionarPapelAlunoIdempotente(Usuario usuario)
     {
         try
         {
             usuario.AdicionarPapel(PapelUsuario.Aluno, _clock);
+            return true;
         }
         catch (PapelJaAtribuidoException)
         {
+            return false;
         }
     }
 
@@ -210,9 +216,11 @@ public sealed class ConviteService
 
 /// <summary>
 /// Resultado do aceite de convite: o <see cref="Usuario"/> resultante
-/// (criado ou reaproveitado), o <see cref="Convite.Id"/> aceito, e se a
+/// (criado ou reaproveitado), o <see cref="Convite.Id"/> aceito, se a
 /// matrícula foi promovida (origem específica ou vínculo já existente) ou
 /// criada nova — logado como <c>ConviteAceito</c> pela Api (Critérios
-/// técnicos da issue #2).
+/// técnicos da issue #2) — e se o papel Aluno foi de fato anexado a uma
+/// identidade já existente — logado como <c>PapelAdicionado</c> (Critérios
+/// técnicos da issue #4).
 /// </summary>
-public sealed record ResultadoAceiteConvite(Usuario Usuario, Guid ConviteId, bool MatriculaPromovida);
+public sealed record ResultadoAceiteConvite(Usuario Usuario, Guid ConviteId, bool MatriculaPromovida, bool PapelAdicionado);

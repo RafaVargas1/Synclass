@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Synclass.Api.Controllers;
+using Synclass.Api.Tests.Fakes;
 using Synclass.Infrastructure.Persistence;
 
 namespace Synclass.Api.Tests;
@@ -58,7 +59,7 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Put_RegraDeCobranca_ReturnsOk_QuandoValorPorAulaComFrequenciaValida()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
 
@@ -78,7 +79,7 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [InlineData(-50)]
     public async Task Put_RegraDeCobranca_ReturnsBadRequest_QuandoValorMenorOuIgualAZero(decimal valor)
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
 
@@ -92,7 +93,7 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Put_RegraDeCobranca_ReturnsNotFound_QuandoMatriculaNaoPertenceAoProfessor()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var outroProfessorId = await CriarProfessorAsync(client);
         var matriculaDeOutroProfessor = await CriarMatriculaAsync(client, outroProfessorId);
@@ -107,7 +108,7 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_RegraDeCobranca_ReturnsNotFound_QuandoSemRegraConfigurada()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
 
@@ -119,7 +120,7 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     [Fact]
     public async Task Get_RegraDeCobranca_ReturnsOk_ComDadosDaRegraVigente_AposPutBemSucedido()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
         await client.PutAsJsonAsync(

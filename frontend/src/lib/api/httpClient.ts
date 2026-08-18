@@ -1,3 +1,5 @@
+import { lerToken } from '@/lib/auth/sessao';
+
 /**
  * Envelope de `fetch` compartilhado por todos os módulos de `lib/api/*`
  * (ver docs/spec/code-style.md#dependências — bibliotecas de terceiros
@@ -26,15 +28,26 @@ export const MensagemErroConexao =
   'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
 
 /**
- * `fetch` com base URL e timeout já aplicados. Nunca resolve para uma
- * resposta "pendurada" — ou devolve dentro do timeout, ou rejeita (o
- * chamador decide como transformar isso num resultado de erro tipado).
+ * `fetch` com base URL, timeout e autenticação já aplicados. Nunca resolve
+ * para uma resposta "pendurada" — ou devolve dentro do timeout, ou rejeita
+ * (o chamador decide como transformar isso num resultado de erro tipado).
+ *
+ * Anexa `Authorization: Bearer <token>` (issue #18) quando há sessão salva
+ * (`lib/auth/sessao.ts`) — sem isso, todo endpoint que a issue #4 passou a
+ * proteger com `[Authorize]` responderia 401 mesmo para quem está logado.
+ * Requisições sem sessão salva (cadastro, login, aceite de convite) seguem
+ * sem o header, como antes.
  */
-export function fetchComTimeout(caminho: string, init?: RequestInit): Promise<Response> {
+export async function fetchComTimeout(caminho: string, init?: RequestInit): Promise<Response> {
   const controle = new AbortController();
   const timeoutId = setTimeout(() => controle.abort(), TimeoutRequisicaoMs);
+  const token = await lerToken();
+  const headers = new Headers(init?.headers);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
 
-  return fetch(`${ApiBaseUrl}${caminho}`, { ...init, signal: controle.signal }).finally(() =>
+  return fetch(`${ApiBaseUrl}${caminho}`, { ...init, headers, signal: controle.signal }).finally(() =>
     clearTimeout(timeoutId),
   );
 }

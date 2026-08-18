@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Synclass.Api.Controllers;
+using Synclass.Api.Tests.Fakes;
 using Synclass.Infrastructure.Persistence;
 
 namespace Synclass.Api.Tests;
@@ -41,7 +42,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     [Fact]
     public async Task Post_Cadastro_ReturnsOk_QuandoDadosValidos()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor1@exemplo.com");
 
         var response = await client.PostAsJsonAsync(
@@ -58,7 +59,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     [Fact]
     public async Task Post_Cadastro_ReturnsBadRequest_QuandoNomeVazio()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor2@exemplo.com");
 
         var response = await client.PostAsJsonAsync(
@@ -73,7 +74,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     [Fact]
     public async Task Post_Cadastro_ReturnsBadRequest_QuandoIdentificadorJaUsadoPeloMesmoProfessor()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CadastrarProfessorAsync(client, "professor3@exemplo.com");
         var request = new CadastroAlunoProvisorioRequest("João Pedro", "2024-013");
         await client.PostAsJsonAsync($"/professores/{professorId}/alunos-provisorios", request);
@@ -90,7 +91,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     [Fact]
     public async Task Post_Cadastro_ReturnsOk_QuandoIdentificadorRepetidoEmOutroProfessor()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId1 = await CadastrarProfessorAsync(client, "professor4@exemplo.com");
         var professorId2 = await CadastrarProfessorAsync(client, "professor5@exemplo.com");
         var request = new CadastroAlunoProvisorioRequest("João Pedro", "2024-013");
@@ -111,7 +112,7 @@ public sealed class AlunoProvisorioCadastroEndpointTests : IClassFixture<WebAppl
     [Fact]
     public async Task Post_Cadastro_ReturnsNotFound_QuandoProfessorIdInexistente()
     {
-        var client = _factory.CreateClient();
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorIdInexistente = Guid.NewGuid();
 
         var response = await client.PostAsJsonAsync(

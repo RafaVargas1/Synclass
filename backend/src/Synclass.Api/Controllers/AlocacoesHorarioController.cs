@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Alocacoes;
@@ -10,6 +11,7 @@ namespace Synclass.Api.Controllers;
 /// atribui, desfaz e lista os Alunos alocados a um horário disponível
 /// (template recorrente, ver <c>HorariosController</c>).
 /// </summary>
+[Authorize(Roles = "Professor")]
 [ApiController]
 [Route("professores/{professorId:guid}/horarios/{horarioId:guid}/alocacoes")]
 public sealed class AlocacoesHorarioController : ControllerBase

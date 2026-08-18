@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Matriculas;
@@ -13,6 +14,7 @@ namespace Synclass.Api.Controllers;
 /// docs/specs/3-aluno-provisorio/implementation.md — trocar por sessão real
 /// é o objeto da issue de acompanhamento aberta junto deste PR.
 /// </summary>
+[Authorize(Roles = "Professor")]
 [ApiController]
 [Route("professores/{professorId:guid}/alunos-provisorios")]
 public sealed class AlunosProvisoriosController : ControllerBase
