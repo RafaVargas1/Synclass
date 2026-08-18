@@ -25,7 +25,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/9
 - [x] Implementação: `MarcacoesHorarioController` (`POST .../marcacoes`, `GET .../horarios/vagos`)
 - [x] Log estruturado: reaproveita `AlunoAlocadoEmHorario`/`AlocacaoRejeitada` (payload já inclui `AlocacaoId`; adicionar `OrigemAlocacao` ao log de criado — ver architecture.md#logs-estruturados-e-track-id)
 - [x] `dotnet format && dotnet test` verde
-- [ ] `src/lib/api/marcacoes.ts` (`listarHorariosVagos`, `marcarHorario`)
+- [x] `src/lib/api/marcacoes.ts` (`listarHorariosVagos`, `marcarHorario`)
 - [ ] Componente frontend: `HorarioVagoCard` (organism) + tela `aluno/[matriculaId]/professores/[professorId]/horarios.tsx`
 - [ ] `npm run lint && npm run typecheck && npm test` verde
 - [ ] Editar issue `#23` (ou abrir nova) para incluir débito de sessão real também nas rotas do Aluno criadas aqui
