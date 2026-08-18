@@ -4,7 +4,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/5
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain, `Matriculas`): duas `Matricula` plenas do mesmo
+- [x] Teste unidade (Domain, `Matriculas`): duas `Matricula` plenas do mesmo
       `AlunoUsuarioId`, criadas via `Matricula.CriarVinculada` para dois
       `ProfessorId` diferentes, coexistem como linhas independentes — `Id`
       diferentes, cada uma preserva seu próprio `ProfessorId`, nenhuma
