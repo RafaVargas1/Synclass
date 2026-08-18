@@ -19,7 +19,7 @@ describe('alocarAluno', () => {
   it('returns sucesso with the created alocacao when the Api responds with 200', async () => {
     mockFetchOnce(200, alocacaoExistente);
 
-    const resultado = await alocarAluno('professor-1', 'h1', 'm1');
+    const resultado = await alocarAluno('h1', 'm1');
 
     expect(resultado).toEqual({ sucesso: true, alocacao: alocacaoExistente });
   });
@@ -27,10 +27,10 @@ describe('alocarAluno', () => {
   it('posts matriculaId to the horario-scoped route', async () => {
     mockFetchOnce(200, alocacaoExistente);
 
-    await alocarAluno('professor-1', 'h1', 'm1');
+    await alocarAluno('h1', 'm1');
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/professores/professor-1/horarios/h1/alocacoes'),
+      expect.stringContaining('/professores/horarios/h1/alocacoes'),
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ matriculaId: 'm1' }) }),
     );
   });
@@ -38,7 +38,7 @@ describe('alocarAluno', () => {
   it('returns the Api error message when the Api rejects with 400 (horário lotado)', async () => {
     mockFetchOnce(400, { mensagem: 'Este horário já atingiu o limite de Alunos.' });
 
-    const resultado = await alocarAluno('professor-1', 'h1', 'm1');
+    const resultado = await alocarAluno('h1', 'm1');
 
     expect(resultado).toEqual({
       sucesso: false,
@@ -49,7 +49,7 @@ describe('alocarAluno', () => {
   it('returns a connection error message when fetch throws', async () => {
     globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
 
-    const resultado = await alocarAluno('professor-1', 'h1', 'm1');
+    const resultado = await alocarAluno('h1', 'm1');
 
     expect(resultado.sucesso).toBe(false);
   });
@@ -59,7 +59,7 @@ describe('listarAlocacoes', () => {
   it('returns the list of alocacoes when the Api responds with 200', async () => {
     mockFetchOnce(200, [alocacaoExistente]);
 
-    const resultado = await listarAlocacoes('professor-1', 'h1');
+    const resultado = await listarAlocacoes('h1');
 
     expect(resultado).toEqual({ sucesso: true, alocacoes: [alocacaoExistente] });
   });
@@ -67,7 +67,7 @@ describe('listarAlocacoes', () => {
   it('returns sucesso false when fetch throws', async () => {
     globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
 
-    const resultado = await listarAlocacoes('professor-1', 'h1');
+    const resultado = await listarAlocacoes('h1');
 
     expect(resultado.sucesso).toBe(false);
   });
@@ -77,7 +77,7 @@ describe('desalocarAluno', () => {
   it('returns sucesso true when the Api responds with 204', async () => {
     mockFetchOnce(204, null);
 
-    const resultado = await desalocarAluno('professor-1', 'h1', 'm1');
+    const resultado = await desalocarAluno('h1', 'm1');
 
     expect(resultado).toEqual({ sucesso: true });
   });
@@ -85,10 +85,10 @@ describe('desalocarAluno', () => {
   it('deletes on the matricula-scoped route', async () => {
     mockFetchOnce(204, null);
 
-    await desalocarAluno('professor-1', 'h1', 'm1');
+    await desalocarAluno('h1', 'm1');
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/professores/professor-1/horarios/h1/alocacoes/m1'),
+      expect.stringContaining('/professores/horarios/h1/alocacoes/m1'),
       expect.objectContaining({ method: 'DELETE' }),
     );
   });
@@ -96,7 +96,7 @@ describe('desalocarAluno', () => {
   it('returns sucesso false when the Api responds with 404', async () => {
     mockFetchOnce(404, null);
 
-    const resultado = await desalocarAluno('professor-1', 'h1', 'm1');
+    const resultado = await desalocarAluno('h1', 'm1');
 
     expect(resultado.sucesso).toBe(false);
   });

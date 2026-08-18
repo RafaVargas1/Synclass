@@ -5,7 +5,7 @@ import { listarHorariosVagos, marcarHorario } from '@/lib/api/marcacoes';
 import HorariosVagosAlunoScreen from './horarios';
 
 jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ professorId: 'professor-1', matriculaId: 'matricula-1' }),
+  useLocalSearchParams: () => ({ professorId: 'professor-1' }),
 }));
 
 jest.mock('@/lib/api/marcacoes', () => ({
@@ -35,7 +35,7 @@ describe('HorariosVagosAlunoScreen', () => {
     await render(<HorariosVagosAlunoScreen />);
 
     await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
-    expect(listarHorariosVagosMock).toHaveBeenCalledWith('professor-1', 'matricula-1');
+    expect(listarHorariosVagosMock).toHaveBeenCalledWith('professor-1');
   });
 
   it('removes the horario from the list when marcar succeeds', async () => {
@@ -54,7 +54,7 @@ describe('HorariosVagosAlunoScreen', () => {
     await fireEvent.press(screen.getByText('Marcar'));
 
     await waitFor(() => expect(screen.queryByText(/Terça/)).toBeNull());
-    expect(marcarHorarioMock).toHaveBeenCalledWith('professor-1', 'h1', 'matricula-1');
+    expect(marcarHorarioMock).toHaveBeenCalledWith('professor-1', 'h1');
   });
 
   it('shows the Api error message and keeps the horario when marcar fails', async () => {

@@ -22,15 +22,13 @@ const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente no
  * atrás de uma interface própria (ver docs/spec/code-style.md#dependências):
  * nunca lança para erros de negócio (modelo Vago, horário lotado, Aluno não
  * vinculado, já alocado) ou de rede — sempre devolve um resultado tipado.
+ * Sem `professorId` (issue #23) — o Professor é sempre quem está logado, a
+ * Api deriva a identidade do token da sessão.
  */
-export async function alocarAluno(
-  professorId: string,
-  horarioId: string,
-  matriculaId: string,
-): Promise<AlocarAlunoResultado> {
+export async function alocarAluno(horarioId: string, matriculaId: string): Promise<AlocarAlunoResultado> {
   let response: Response;
   try {
-    response = await fetchComTimeout(caminhoAlocacoes(professorId, horarioId), {
+    response = await fetchComTimeout(caminhoAlocacoes(horarioId), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ matriculaId }),
@@ -46,13 +44,10 @@ export async function alocarAluno(
   return { sucesso: true, alocacao: corpo as Alocacao };
 }
 
-export async function listarAlocacoes(
-  professorId: string,
-  horarioId: string,
-): Promise<ListarAlocacoesResultado> {
+export async function listarAlocacoes(horarioId: string): Promise<ListarAlocacoesResultado> {
   let response: Response;
   try {
-    response = await fetchComTimeout(caminhoAlocacoes(professorId, horarioId));
+    response = await fetchComTimeout(caminhoAlocacoes(horarioId));
   } catch {
     return { sucesso: false, mensagem: MensagemErroConexao };
   }
@@ -64,14 +59,10 @@ export async function listarAlocacoes(
   return { sucesso: true, alocacoes: (corpo as Alocacao[] | null) ?? [] };
 }
 
-export async function desalocarAluno(
-  professorId: string,
-  horarioId: string,
-  matriculaId: string,
-): Promise<DesalocarAlunoResultado> {
+export async function desalocarAluno(horarioId: string, matriculaId: string): Promise<DesalocarAlunoResultado> {
   let response: Response;
   try {
-    response = await fetchComTimeout(`${caminhoAlocacoes(professorId, horarioId)}/${matriculaId}`, {
+    response = await fetchComTimeout(`${caminhoAlocacoes(horarioId)}/${matriculaId}`, {
       method: 'DELETE',
     });
   } catch {
@@ -84,6 +75,6 @@ export async function desalocarAluno(
   return { sucesso: true };
 }
 
-function caminhoAlocacoes(professorId: string, horarioId: string): string {
-  return `/professores/${professorId}/horarios/${horarioId}/alocacoes`;
+function caminhoAlocacoes(horarioId: string): string {
+  return `/professores/horarios/${horarioId}/alocacoes`;
 }

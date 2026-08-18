@@ -8,10 +8,6 @@ jest.mock('@/lib/api/alunosProvisorios', () => ({
   cadastrarAlunoProvisorio: jest.fn(),
 }));
 
-jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ professorId: 'professor-1' }),
-}));
-
 const cadastrarAlunoProvisorioMock = cadastrarAlunoProvisorio as jest.Mock;
 
 describe('CadastroAlunoProvisorioScreen', () => {
@@ -36,7 +32,6 @@ describe('CadastroAlunoProvisorioScreen', () => {
 
     await waitFor(() => expect(screen.getByText('Aluno provisório cadastrado!')).toBeTruthy());
     expect(cadastrarAlunoProvisorioMock).toHaveBeenCalledWith({
-      professorId: 'professor-1',
       nome: 'João Pedro',
       identificador: '2024-013',
     });

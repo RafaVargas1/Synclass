@@ -13,7 +13,6 @@ describe('cadastrarAlunoProvisorio', () => {
     mockFetchOnce(200, { matriculaId: 'id-1', nome: 'João Pedro', identificador: '2024-013' });
 
     const resultado = await cadastrarAlunoProvisorio({
-      professorId: 'professor-1',
       nome: 'João Pedro',
       identificador: '2024-013',
     });
@@ -25,13 +24,12 @@ describe('cadastrarAlunoProvisorio', () => {
     mockFetchOnce(200, { matriculaId: 'id-1', nome: 'João Pedro', identificador: '2024-013' });
 
     await cadastrarAlunoProvisorio({
-      professorId: 'professor-1',
       nome: 'João Pedro',
       identificador: '2024-013',
     });
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/professores/professor-1/alunos-provisorios'),
+      expect.stringContaining('/professores/alunos-provisorios'),
       expect.objectContaining({ method: 'POST' }),
     );
   });
@@ -42,7 +40,6 @@ describe('cadastrarAlunoProvisorio', () => {
     });
 
     const resultado = await cadastrarAlunoProvisorio({
-      professorId: 'professor-1',
       nome: 'João Pedro',
       identificador: '2024-013',
     });
@@ -57,7 +54,6 @@ describe('cadastrarAlunoProvisorio', () => {
     globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
 
     const resultado = await cadastrarAlunoProvisorio({
-      professorId: 'professor-1',
       nome: 'João Pedro',
       identificador: '2024-013',
     });
@@ -75,7 +71,6 @@ describe('cadastrarAlunoProvisorio', () => {
     ) as jest.Mock;
 
     const resultadoPromise = cadastrarAlunoProvisorio({
-      professorId: 'professor-1',
       nome: 'João Pedro',
       identificador: '2024-013',
     });
@@ -91,7 +86,7 @@ describe('listarAlunosProvisorios', () => {
   it('returns the list of alunos when the Api responds with 200', async () => {
     mockFetchOnce(200, [{ matriculaId: 'm1', nome: 'João Pedro', identificador: '2024-013' }]);
 
-    const resultado = await listarAlunosProvisorios('professor-1');
+    const resultado = await listarAlunosProvisorios();
 
     expect(resultado).toEqual({
       sucesso: true,
@@ -102,10 +97,10 @@ describe('listarAlunosProvisorios', () => {
   it('gets the professor-scoped route', async () => {
     mockFetchOnce(200, []);
 
-    await listarAlunosProvisorios('professor-1');
+    await listarAlunosProvisorios();
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/professores/professor-1/alunos-provisorios'),
+      expect.stringContaining('/professores/alunos-provisorios'),
       expect.anything(),
     );
   });
@@ -113,7 +108,7 @@ describe('listarAlunosProvisorios', () => {
   it('returns sucesso false when fetch throws', async () => {
     globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
 
-    const resultado = await listarAlunosProvisorios('professor-1');
+    const resultado = await listarAlunosProvisorios();
 
     expect(resultado.sucesso).toBe(false);
   });

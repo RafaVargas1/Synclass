@@ -25,8 +25,11 @@ const MensagemModeloVagoTexto =
  * vez de exigir definir um modelo, bloqueia o conteúdo com uma mensagem
  * quando o modelo é Vago (ou ainda não definido), já que esse fluxo
  * pressupõe atribuição fixa (ver docs/specs/8-aluno-horario/implementation.md).
- * `professorId` vem da rota, mesma decisão de `horarios.tsx` (sem sessão
- * ainda, issue #18).
+ * `professorId` continua vindo da rota (issue #23 não muda `horarios.tsx`/
+ * `HorariosController` nem `configuracao.ts`/`ConfiguracoesController`,
+ * chamados aqui também — fora de escopo). Deixou de ser repassado às
+ * chamadas de `alocacoes.ts`/`alunosProvisorios.ts`: essas Api's agora
+ * derivam o Professor da sessão autenticada.
  */
 export default function AlocacoesProfessorScreen() {
   const { professorId } = useLocalSearchParams<{ professorId: string }>();
@@ -181,8 +184,8 @@ function useGerenciamentoAlocacoes(professorId: string) {
     };
   }, [professorId]);
 
-  const handleAlocar = criarHandleAlocar(professorId, setAlocacoesPorHorario, setErro);
-  const handleDesalocar = criarHandleDesalocar(professorId, setAlocacoesPorHorario, setErro);
+  const handleAlocar = criarHandleAlocar(setAlocacoesPorHorario, setErro);
+  const handleDesalocar = criarHandleDesalocar(setAlocacoesPorHorario, setErro);
 
   return { horarios, alunos, alocacoesPorHorario, erro, handleAlocar, handleDesalocar };
 }
@@ -197,11 +200,11 @@ function useGerenciamentoAlocacoes(professorId: string) {
 async function carregarTudo(professorId: string) {
   const [resultadoHorarios, resultadoAlunos] = await Promise.all([
     listarHorarios(professorId),
-    listarAlunosProvisorios(professorId),
+    listarAlunosProvisorios(),
   ]);
   const horarios = resultadoHorarios.sucesso ? resultadoHorarios.horarios : [];
   const alunos = resultadoAlunos.sucesso ? resultadoAlunos.alunos : [];
-  const alocacoesPorHorario = await carregarAlocacoes(professorId, horarios);
+  const alocacoesPorHorario = await carregarAlocacoes(horarios);
   const erro = !resultadoHorarios.sucesso
     ? resultadoHorarios.mensagem
     : !resultadoAlunos.sucesso
@@ -210,13 +213,8 @@ async function carregarTudo(professorId: string) {
   return { horarios, alunos, alocacoesPorHorario, erro };
 }
 
-async function carregarAlocacoes(
-  professorId: string,
-  horarios: Horario[],
-): Promise<AlocacoesPorHorario> {
-  const resultados = await Promise.all(
-    horarios.map((horario) => listarAlocacoes(professorId, horario.id)),
-  );
+async function carregarAlocacoes(horarios: Horario[]): Promise<AlocacoesPorHorario> {
+  const resultados = await Promise.all(horarios.map((horario) => listarAlocacoes(horario.id)));
   const entradas = horarios.map((horario, indice) => {
     const resultado = resultados[indice];
     return [horario.id, resultado.sucesso ? resultado.alocacoes : []] as const;
@@ -225,13 +223,12 @@ async function carregarAlocacoes(
 }
 
 function criarHandleAlocar(
-  professorId: string,
   setAlocacoesPorHorario: (atualizador: (atual: AlocacoesPorHorario) => AlocacoesPorHorario) => void,
   setErro: (mensagem: string | undefined) => void,
 ) {
   return async (horarioId: string, matriculaId: string) => {
     setErro(undefined);
-    const resultado = await alocarAluno(professorId, horarioId, matriculaId);
+    const resultado = await alocarAluno(horarioId, matriculaId);
     if (!resultado.sucesso) {
       setErro(resultado.mensagem);
       return;
@@ -244,13 +241,12 @@ function criarHandleAlocar(
 }
 
 function criarHandleDesalocar(
-  professorId: string,
   setAlocacoesPorHorario: (atualizador: (atual: AlocacoesPorHorario) => AlocacoesPorHorario) => void,
   setErro: (mensagem: string | undefined) => void,
 ) {
   return async (horarioId: string, matriculaId: string) => {
     setErro(undefined);
-    const resultado = await desalocarAluno(professorId, horarioId, matriculaId);
+    const resultado = await desalocarAluno(horarioId, matriculaId);
     if (!resultado.sucesso) {
       setErro(resultado.mensagem);
       return;

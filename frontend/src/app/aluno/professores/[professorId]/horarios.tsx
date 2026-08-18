@@ -15,16 +15,14 @@ const MensagemNenhumHorarioVago = 'Nenhum horário disponível para marcação n
  * (issue #9) — sem gate de modelo de agendamento na frente (diferente de
  * `alocacoes.tsx`, issue #8): o próprio `GET vagos` já devolve lista vazia
  * quando o modelo não permite nada, então a tela mostra um estado vazio em
- * vez de bloquear. Rota de dois segmentos (`matriculaId`/`professorId`
- * explícitos), mesma decisão de `alocacoes.tsx` — sem sessão real ainda
- * (débito técnico #23, ver docs/specs/9-aluno-marca-horario-vago/implementation.md).
+ * vez de bloquear. `professorId` continua vindo da rota (identifica o
+ * Professor sendo navegado, não é a identidade do Aluno) — `matriculaId`
+ * saiu da rota e do parâmetro (issue #23): a Api resolve a matrícula do
+ * Aluno autenticado a partir do token da sessão.
  */
 export default function HorariosVagosAlunoScreen() {
-  const { professorId, matriculaId } = useLocalSearchParams<{
-    professorId: string;
-    matriculaId: string;
-  }>();
-  const estado = useGerenciamentoHorariosVagos(professorId, matriculaId);
+  const { professorId } = useLocalSearchParams<{ professorId: string }>();
+  const estado = useGerenciamentoHorariosVagos(professorId);
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
@@ -66,13 +64,13 @@ function ConteudoHorariosVagos({
  * Carrega os horários vagos ao montar e expõe o handler de marcar — mesmo
  * padrão de `horarios.tsx#useGerenciamentoHorarios` (issue #6/#7).
  */
-function useGerenciamentoHorariosVagos(professorId: string, matriculaId: string) {
+function useGerenciamentoHorariosVagos(professorId: string) {
   const [horarios, setHorarios] = useState<HorarioVago[]>([]);
   const [erro, setErro] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     let cancelado = false;
-    listarHorariosVagos(professorId, matriculaId).then((resultado) => {
+    listarHorariosVagos(professorId).then((resultado) => {
       if (cancelado) return;
       if (!resultado.sucesso) {
         setErro(resultado.mensagem);
@@ -83,21 +81,20 @@ function useGerenciamentoHorariosVagos(professorId: string, matriculaId: string)
     return () => {
       cancelado = true;
     };
-  }, [professorId, matriculaId]);
+  }, [professorId]);
 
-  const handleMarcar = criarHandleMarcar(professorId, matriculaId, setHorarios, setErro);
+  const handleMarcar = criarHandleMarcar(professorId, setHorarios, setErro);
   return { horarios, erro, handleMarcar };
 }
 
 function criarHandleMarcar(
   professorId: string,
-  matriculaId: string,
   setHorarios: (atualizador: (atual: HorarioVago[]) => HorarioVago[]) => void,
   setErro: (mensagem: string | undefined) => void,
 ) {
   return async (horarioId: string) => {
     setErro(undefined);
-    const resultado = await marcarHorario(professorId, horarioId, matriculaId);
+    const resultado = await marcarHorario(professorId, horarioId);
     if (!resultado.sucesso) {
       setErro(resultado.mensagem);
       return;
