@@ -7,19 +7,19 @@ Card: https://github.com/RafaVargas1/Synclass/issues/9
 - [x] `OrigemAlocacao` (enum `Professor|Aluno`) + `AlocacaoHorario.Criar` passa a exigir origem; `AlocarAsync` (Professor, #8) passa `OrigemAlocacao.Professor` — teste existente de #8 continua verde
 - [x] Migration: `OrigemAlocacao` em `AlocacoesHorario` (`not null default 0`)
 - [x] `IAlocacaoHorarioRepository.PossuiAlocacaoOrigemProfessorAsync` + implementação EF Core + fake em memória (`FakeAlocacaoHorarioRepository`)
-- [ ] Teste unidade (Domain): Aluno marca horário no modelo Vago com vaga → sucesso, `OrigemAlocacao.Aluno`
-- [ ] Teste unidade (Domain): Aluno tenta marcar no modelo Fixo → `ModeloNaoPermiteMarcacaoLivreException`
-- [ ] Teste unidade (Domain): Aluno marca no Híbrido, horário sem atribuição fixa do Professor → sucesso
-- [ ] Teste unidade (Domain): Aluno tenta marcar no Híbrido, horário já com alocação `OrigemAlocacao.Professor` → `ModeloNaoPermiteMarcacaoLivreException`
-- [ ] Teste unidade (Domain): horário no limite de `LimiteAlunos` → `HorarioLotadoException` (reaproveita `GarantirVagaDisponivelAsync`)
-- [ ] Teste unidade (Domain): matrícula não vinculada ao Professor → `MatriculaNaoVinculadaAoProfessorException` (reaproveita)
-- [ ] Teste unidade (Domain): Aluno já marcado neste horário → `AlocacaoJaExisteException` (reaproveita)
-- [ ] Implementação: `AlocacaoHorarioService.MarcarAsync` + `GarantirModeloPermiteMarcacaoAsync`
-- [ ] Teste unidade (Domain): `ListarVagosAsync` no Vago retorna todos os horários com vaga
-- [ ] Teste unidade (Domain): `ListarVagosAsync` no Híbrido filtra os horários com atribuição fixa do Professor
-- [ ] Teste unidade (Domain): `ListarVagosAsync` no Fixo (ou sem `ConfiguracaoProfessor`) retorna lista vazia, sem lançar
-- [ ] Teste unidade (Domain): `ListarVagosAsync` exclui horários sem vaga (`vagasRestantes == 0`)
-- [ ] Implementação: `AlocacaoHorarioService.ListarVagosAsync`
+- [x] Teste unidade (Domain): Aluno marca horário no modelo Vago com vaga → sucesso, `OrigemAlocacao.Aluno`
+- [x] Teste unidade (Domain): Aluno tenta marcar no modelo Fixo → `ModeloNaoPermiteMarcacaoLivreException`
+- [x] Teste unidade (Domain): Aluno marca no Híbrido, horário sem atribuição fixa do Professor → sucesso
+- [x] Teste unidade (Domain): Aluno tenta marcar no Híbrido, horário já com alocação `OrigemAlocacao.Professor` → `ModeloNaoPermiteMarcacaoLivreException`
+- [x] Teste unidade (Domain): horário no limite de `LimiteAlunos` → `HorarioLotadoException` (reaproveita `GarantirVagaDisponivelAsync`)
+- [x] Teste unidade (Domain): matrícula não vinculada ao Professor → `MatriculaNaoVinculadaAoProfessorException` (reaproveita)
+- [x] Teste unidade (Domain): Aluno já marcado neste horário → `AlocacaoJaExisteException` (reaproveita)
+- [x] Implementação: `AlocacaoHorarioService.MarcarAsync` + `GarantirModeloPermiteMarcacaoAsync`
+- [x] Teste unidade (Domain): `ListarVagosAsync` no Vago retorna todos os horários com vaga
+- [x] Teste unidade (Domain): `ListarVagosAsync` no Híbrido filtra os horários com atribuição fixa do Professor
+- [x] Teste unidade (Domain): `ListarVagosAsync` no Fixo (ou sem `ConfiguracaoProfessor`) retorna lista vazia, sem lançar
+- [x] Teste unidade (Domain): `ListarVagosAsync` exclui horários sem vaga (`vagasRestantes == 0`)
+- [x] Implementação: `AlocacaoHorarioService.ListarVagosAsync`
 - [ ] Teste de fumaça (Api): `POST /professores/{professorId}/horarios/{horarioId}/marcacoes` — sucesso e cada rejeição (400/404)
 - [ ] Teste de fumaça (Api): `GET /professores/{professorId}/horarios/vagos?matriculaId=` — lista filtrada
 - [ ] Implementação: `MarcacoesHorarioController` (`POST .../marcacoes`, `GET .../horarios/vagos`)

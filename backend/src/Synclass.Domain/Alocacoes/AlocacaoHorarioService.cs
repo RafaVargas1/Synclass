@@ -108,6 +108,92 @@ public sealed class AlocacaoHorarioService
     }
 
     /// <summary>
+    /// Aluno se marca livremente em um horário vago (issue #9) — mesma
+    /// orquestração de <see cref="AlocarAsync"/>, mas usando a regra oposta
+    /// de modelo (<see cref="GarantirModeloPermiteMarcacaoAsync"/>) e
+    /// gravando <see cref="OrigemAlocacao.Aluno"/>.
+    /// </summary>
+    public async Task<AlocacaoHorario> MarcarAsync(
+        Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        var horario = await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        await GarantirModeloPermiteMarcacaoAsync(professorId, horarioId, cancellationToken);
+        await GarantirVagaDisponivelAsync(horario, cancellationToken);
+        await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
+        await GarantirAindaNaoAlocadoAsync(horarioId, matriculaId, cancellationToken);
+
+        var alocacao = AlocacaoHorario.Criar(horarioId, matriculaId, OrigemAlocacao.Aluno, _clock);
+        await _alocacoes.AdicionarAsync(alocacao, cancellationToken);
+        await _alocacoes.SalvarAsync(cancellationToken);
+        return alocacao;
+    }
+
+    /// <summary>
+    /// Regra oposta a <see cref="GarantirModeloPermiteAlocacaoAsync"/> —
+    /// Vago sempre permite, Fixo nunca permite, Híbrido só permite quando
+    /// este horário específico não tem atribuição fixa do Professor (issue
+    /// #9). Ausência de configuração é tratada como "não permite",
+    /// defensivamente (oposto do default de #8 — ver
+    /// docs/specs/9-aluno-marca-horario-vago/implementation.md#edge-points).
+    /// </summary>
+    private async Task GarantirModeloPermiteMarcacaoAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    {
+        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
+        if (configuracao is null)
+        {
+            throw new ModeloNaoPermiteMarcacaoLivreException(professorId);
+        }
+
+        var horarioPossuiAtribuicaoFixa = await _alocacoes.PossuiAlocacaoOrigemProfessorAsync(horarioId, cancellationToken);
+        if (!configuracao.PermiteMarcacaoLivre(horarioPossuiAtribuicaoFixa))
+        {
+            throw new ModeloNaoPermiteMarcacaoLivreException(professorId);
+        }
+    }
+
+    /// <summary>
+    /// Lista os horários do Professor que este Aluno pode marcar livremente
+    /// agora (issue #9) — GET é consulta, não ação: modelo Fixo ou ausência
+    /// de configuração devolvem lista vazia, sem lançar (diferente de
+    /// <see cref="MarcarAsync"/>, que rejeita com exceção porque é uma
+    /// tentativa de ação).
+    /// </summary>
+    public async Task<IReadOnlyCollection<HorarioVago>> ListarVagosAsync(
+        Guid professorId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
+
+        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
+        if (configuracao is null)
+        {
+            return Array.Empty<HorarioVago>();
+        }
+
+        var horarios = await _horarioService.ListarAsync(professorId, cancellationToken);
+        var vagos = new List<HorarioVago>();
+        foreach (var horario in horarios)
+        {
+            var horarioVago = await ParaHorarioVagoSeElegivelAsync(configuracao, horario, cancellationToken);
+            if (horarioVago is not null)
+            {
+                vagos.Add(horarioVago);
+            }
+        }
+
+        return vagos;
+    }
+
+    private async Task<HorarioVago?> ParaHorarioVagoSeElegivelAsync(
+        ConfiguracaoProfessor configuracao, Horario horario, CancellationToken cancellationToken)
+    {
+        var quantidadeAlocada = await _alocacoes.ContarPorHorarioAsync(horario.Id, cancellationToken);
+        var vagasRestantes = horario.LimiteAlunos - quantidadeAlocada;
+        var horarioPossuiAtribuicaoFixa = await _alocacoes.PossuiAlocacaoOrigemProfessorAsync(horario.Id, cancellationToken);
+        var elegivel = configuracao.PermiteMarcacaoLivre(horarioPossuiAtribuicaoFixa) && vagasRestantes > 0;
+        return elegivel ? new HorarioVago(horario, vagasRestantes) : null;
+    }
+
+    /// <summary>
     /// Desfaz a alocação de um Aluno a um horário (AC4) — remove a linha de
     /// <see cref="AlocacaoHorario"/> inteira, diferente de um cancelamento
     /// pontual de uma data (issue #10, fora de escopo aqui). Alocações do
