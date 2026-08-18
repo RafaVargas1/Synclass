@@ -20,11 +20,11 @@ Card: https://github.com/RafaVargas1/Synclass/issues/9
 - [x] Teste unidade (Domain): `ListarVagosAsync` no Fixo (ou sem `ConfiguracaoProfessor`) retorna lista vazia, sem lançar
 - [x] Teste unidade (Domain): `ListarVagosAsync` exclui horários sem vaga (`vagasRestantes == 0`)
 - [x] Implementação: `AlocacaoHorarioService.ListarVagosAsync`
-- [ ] Teste de fumaça (Api): `POST /professores/{professorId}/horarios/{horarioId}/marcacoes` — sucesso e cada rejeição (400/404)
-- [ ] Teste de fumaça (Api): `GET /professores/{professorId}/horarios/vagos?matriculaId=` — lista filtrada
-- [ ] Implementação: `MarcacoesHorarioController` (`POST .../marcacoes`, `GET .../horarios/vagos`)
-- [ ] Log estruturado: reaproveita `AlunoAlocadoEmHorario`/`AlocacaoRejeitada` (payload já inclui `AlocacaoId`; adicionar `OrigemAlocacao` ao log de criado — ver architecture.md#logs-estruturados-e-track-id)
-- [ ] `dotnet format && dotnet test` verde
+- [x] Teste de fumaça (Api): `POST /professores/{professorId}/horarios/{horarioId}/marcacoes` — sucesso e cada rejeição (400/404)
+- [x] Teste de fumaça (Api): `GET /professores/{professorId}/horarios/vagos?matriculaId=` — lista filtrada
+- [x] Implementação: `MarcacoesHorarioController` (`POST .../marcacoes`, `GET .../horarios/vagos`)
+- [x] Log estruturado: reaproveita `AlunoAlocadoEmHorario`/`AlocacaoRejeitada` (payload já inclui `AlocacaoId`; adicionar `OrigemAlocacao` ao log de criado — ver architecture.md#logs-estruturados-e-track-id)
+- [x] `dotnet format && dotnet test` verde
 - [ ] `src/lib/api/marcacoes.ts` (`listarHorariosVagos`, `marcarHorario`)
 - [ ] Componente frontend: `HorarioVagoCard` (organism) + tela `aluno/[matriculaId]/professores/[professorId]/horarios.tsx`
 - [ ] `npm run lint && npm run typecheck && npm test` verde
