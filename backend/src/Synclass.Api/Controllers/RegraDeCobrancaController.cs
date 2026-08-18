@@ -60,6 +60,10 @@ public sealed class RegraDeCobrancaController : ControllerBase
         {
             return NotFound();
         }
+        catch (RegraDeCobrancaConflitanteException ex)
+        {
+            return Conflict(new RegraDeCobrancaErrorResponse(ex.Message));
+        }
     }
 
     [HttpGet]
