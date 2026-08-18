@@ -34,10 +34,13 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
   `Aula` pré-existente), pulando ocorrências já canceladas.
 - [x] Log estruturado: evento `AulaCancelada` (Information) e
   `CancelamentoRejeitadoPorPrazo` (Warning) — ver architecture.md#logs-estruturados-e-track-id.
-- [ ] Teste de fumaça (Api): `POST .../aulas/{data}/cancelamentos` — 200 dentro do
-  prazo, 400 fora do prazo, 404 horário inexistente.
-- [ ] Teste de fumaça (Api): `GET .../horarios/proximas-aulas?matriculaId=` — 200
-  com lista de próximas aulas.
+- [x] Teste de fumaça (Api): `POST .../aulas/{data}/cancelamentos` — 200 dentro do
+  prazo, 400 fora do prazo, 404 horário inexistente/Aluno não vinculado.
+  `matriculaId` resolvida da sessão do Aluno (mesmo padrão de
+  `MarcacoesHorarioController`, issue #23), não mais recebida no corpo.
+- [x] Teste de fumaça (Api): `GET .../horarios/proximas-aulas` — 200 com lista de
+  próximas aulas. `matriculaId` resolvida da sessão do Aluno, não mais recebida
+  por query string.
 - [ ] Componente frontend: `lib/api/cancelamentos.ts` (contrato já estabilizado
   pelos smoke tests acima).
 - [ ] Componente frontend: tela `minhas-aulas.tsx` (lista de próximas aulas do

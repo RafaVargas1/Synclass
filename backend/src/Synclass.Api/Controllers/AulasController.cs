@@ -11,7 +11,13 @@ namespace Synclass.Api.Controllers;
 /// Cancelamento de aula pelo Aluno, com antecedência mínima configurável
 /// pelo Professor (issue #10) — o Aluno consulta as próximas aulas em que
 /// está alocado e cancela uma delas, respeitando o prazo. Mesmo padrão de
-/// rota/autorização de <see cref="MarcacoesHorarioController"/> (issue #9).
+/// rota/autorização de <see cref="MarcacoesHorarioController"/> (issue #9):
+/// <c>professorId</c> na rota identifica o Professor sendo navegado pelo
+/// Aluno, mas <c>matriculaId</c> nunca vem de query/body do cliente — é
+/// resolvida do Aluno autenticado via
+/// <see cref="AlocacaoHorarioService.ResolverMatriculaDoAlunoAsync"/> (issue
+/// #23), fechando a mesma lacuna que existiria aqui se o Aluno pudesse
+/// informar a matrícula de outro Aluno.
 /// </summary>
 [ApiController]
 [Route("professores/{professorId:guid}/horarios")]
@@ -19,24 +25,34 @@ namespace Synclass.Api.Controllers;
 public sealed class AulasController : ControllerBase
 {
     private readonly AulaService _aulaService;
+    private readonly AlocacaoHorarioService _alocacaoHorarioService;
     private readonly IHorarioRepository _horarios;
     private readonly ILogger<AulasController> _logger;
 
-    public AulasController(AulaService aulaService, IHorarioRepository horarios, ILogger<AulasController> logger)
+    public AulasController(
+        AulaService aulaService,
+        AlocacaoHorarioService alocacaoHorarioService,
+        IHorarioRepository horarios,
+        ILogger<AulasController> logger)
     {
         _aulaService = aulaService;
+        _alocacaoHorarioService = alocacaoHorarioService;
         _horarios = horarios;
         _logger = logger;
     }
 
     [HttpGet("proximas-aulas")]
-    public async Task<IActionResult> ListarProximasAulas(
-        Guid professorId, [FromQuery] Guid matriculaId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ListarProximasAulas(Guid professorId, CancellationToken cancellationToken)
     {
         try
         {
+            var matriculaId = await ResolverMatriculaAsync(professorId, cancellationToken);
             var proximas = await _aulaService.ListarProximasAsync(professorId, matriculaId, cancellationToken);
             return Ok(proximas.Select(ParaResponse));
+        }
+        catch (AlunoNaoVinculadoAoProfessorException)
+        {
+            return NotFound();
         }
         catch (MatriculaNaoVinculadaAoProfessorException ex)
         {
@@ -46,15 +62,20 @@ public sealed class AulasController : ControllerBase
 
     [HttpPost("{horarioId:guid}/aulas/{data}/cancelamentos")]
     public async Task<IActionResult> Cancelar(
-        Guid professorId, Guid horarioId, DateOnly data, [FromBody] CancelarAulaRequest request, CancellationToken cancellationToken)
+        Guid professorId, Guid horarioId, DateOnly data, CancellationToken cancellationToken)
     {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
         try
         {
+            var matriculaId = await ResolverMatriculaAsync(professorId, cancellationToken);
             var cancelamento = await _aulaService.CancelarAsync(
-                professorId, horarioId, data, request.MatriculaId, cancellationToken);
+                professorId, horarioId, data, matriculaId, cancellationToken);
             await LogAulaCanceladaAsync(trackId, horarioId, data, cancelamento, cancellationToken);
             return Ok(ParaResponse(cancelamento));
+        }
+        catch (AlunoNaoVinculadoAoProfessorException)
+        {
+            return NotFound();
         }
         catch (HorarioNaoEncontradoException)
         {
@@ -62,13 +83,19 @@ public sealed class AulasController : ControllerBase
         }
         catch (PrazoCancelamentoExpiradoException ex)
         {
-            LogCancelamentoRejeitadoPorPrazo(trackId, request.MatriculaId, ex);
+            LogCancelamentoRejeitadoPorPrazo(trackId, ex);
             return BadRequest(new AulaErrorResponse(ex.Message));
         }
         catch (AulaRejeitadaException ex)
         {
             return BadRequest(new AulaErrorResponse(ex.Message));
         }
+    }
+
+    private Task<Guid> ResolverMatriculaAsync(Guid professorId, CancellationToken cancellationToken)
+    {
+        var alunoUsuarioId = User.GetUsuarioId();
+        return _alocacaoHorarioService.ResolverMatriculaDoAlunoAsync(professorId, alunoUsuarioId, cancellationToken);
     }
 
     private static AulaProximaResponse ParaResponse(AulaProxima aulaProxima)
@@ -110,17 +137,15 @@ public sealed class AulasController : ControllerBase
     /// Evento <c>CancelamentoRejeitadoPorPrazo</c> (Warning) — prazo
     /// configurado vs. antecedência tentada.
     /// </summary>
-    private void LogCancelamentoRejeitadoPorPrazo(string trackId, Guid matriculaId, PrazoCancelamentoExpiradoException ex)
+    private void LogCancelamentoRejeitadoPorPrazo(string trackId, PrazoCancelamentoExpiradoException ex)
     {
         var antecedenciaTentadaMinutos = (ex.Limite.AddMinutes(ex.PrazoCancelamentoMinutos) - DateTimeOffset.UtcNow).TotalMinutes;
 
         _logger.LogWarning(
-            "CancelamentoRejeitadoPorPrazo {TrackId} {MatriculaId} {AulaId} {PrazoCancelamentoMinutos} {AntecedenciaTentadaMinutos}",
-            trackId, matriculaId, ex.AulaId, ex.PrazoCancelamentoMinutos, antecedenciaTentadaMinutos);
+            "CancelamentoRejeitadoPorPrazo {TrackId} {AulaId} {PrazoCancelamentoMinutos} {AntecedenciaTentadaMinutos}",
+            trackId, ex.AulaId, ex.PrazoCancelamentoMinutos, antecedenciaTentadaMinutos);
     }
 }
-
-public sealed record CancelarAulaRequest(Guid MatriculaId);
 
 public sealed record AulaProximaResponse(
     Guid HorarioId,
