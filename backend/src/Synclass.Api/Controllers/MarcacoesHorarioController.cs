@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Alocacoes;
@@ -15,6 +16,7 @@ namespace Synclass.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("professores/{professorId:guid}/horarios")]
+[Authorize(Roles = "Aluno")]
 public sealed class MarcacoesHorarioController : ControllerBase
 {
     private readonly AlocacaoHorarioService _alocacaoHorarioService;

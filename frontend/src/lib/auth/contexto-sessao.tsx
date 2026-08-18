@@ -18,6 +18,19 @@ async function carregarSessaoSalva(): Promise<{ token: string | null; papeis: st
   return { token: tokenSalvo, papeis: papeisSalvos ?? [] };
 }
 
+async function aplicarSessaoNova(
+  tokenNovo: string,
+  papeisNovos: string[],
+  setToken: (token: string) => void,
+  setPapeis: (papeis: string[]) => void,
+  setPapelAtivo: (papel: string | undefined) => void,
+): Promise<void> {
+  await Promise.all([salvarToken(tokenNovo), salvarPapeis(papeisNovos)]);
+  setToken(tokenNovo);
+  setPapeis(papeisNovos);
+  setPapelAtivo(papeisNovos[0]);
+}
+
 /**
  * Estado da sessão (issue #4): carrega token e papéis salvos
  * (`lib/auth/sessao.ts`) ao montar e expõe o papel ativo — por padrão o
@@ -46,12 +59,8 @@ function useSessaoState(): SessaoContextValue {
     });
   }, []);
 
-  async function definirSessao(tokenNovo: string, papeisNovos: string[]) {
-    await Promise.all([salvarToken(tokenNovo), salvarPapeis(papeisNovos)]);
-    setToken(tokenNovo);
-    setPapeis(papeisNovos);
-    setPapelAtivo(papeisNovos[0]);
-  }
+  const definirSessao = (tokenNovo: string, papeisNovos: string[]) =>
+    aplicarSessaoNova(tokenNovo, papeisNovos, setToken, setPapeis, setPapelAtivo);
 
   return { carregando, token, papeis, papelAtivo, definirPapelAtivo: setPapelAtivo, definirSessao };
 }

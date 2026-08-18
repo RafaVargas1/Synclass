@@ -78,8 +78,9 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.PostAsJsonAsync(
+        var response = await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{horarioId}/marcacoes",
             new CriarMarcacaoHorarioRequest(matriculaId));
 
@@ -96,8 +97,9 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var professorId = await CriarProfessorAsync(client, modeloAgendamento: 1);
         var horarioId = await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.PostAsJsonAsync(
+        var response = await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{horarioId}/marcacoes",
             new CriarMarcacaoHorarioRequest(matriculaId));
 
@@ -111,12 +113,13 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId, limiteAlunos: 1);
         var primeiraMatriculaId = await CriarMatriculaAsync(client, professorId);
-        await client.PostAsJsonAsync(
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
+        await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{horarioId}/marcacoes",
             new CriarMarcacaoHorarioRequest(primeiraMatriculaId));
         var segundaMatriculaId = await CriarMatriculaAsync(client, professorId);
 
-        var response = await client.PostAsJsonAsync(
+        var response = await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{horarioId}/marcacoes",
             new CriarMarcacaoHorarioRequest(segundaMatriculaId));
 
@@ -129,8 +132,9 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId);
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.PostAsJsonAsync(
+        var response = await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{horarioId}/marcacoes",
             new CriarMarcacaoHorarioRequest(Guid.NewGuid()));
 
@@ -144,11 +148,12 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId, limiteAlunos: 2);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
-        await client.PostAsJsonAsync(
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
+        await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{horarioId}/marcacoes",
             new CriarMarcacaoHorarioRequest(matriculaId));
 
-        var response = await client.PostAsJsonAsync(
+        var response = await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{horarioId}/marcacoes",
             new CriarMarcacaoHorarioRequest(matriculaId));
 
@@ -161,8 +166,9 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.PostAsJsonAsync(
+        var response = await alunoClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios/{Guid.NewGuid()}/marcacoes",
             new CriarMarcacaoHorarioRequest(matriculaId));
 
@@ -176,8 +182,9 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var professorId = await CriarProfessorAsync(client);
         var horarioId = await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={matriculaId}");
+        var response = await alunoClient.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={matriculaId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<List<HorarioVagoResponse>>();
@@ -191,8 +198,9 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
         var professorId = await CriarProfessorAsync(client, modeloAgendamento: 1);
         await CriarHorarioAsync(client, professorId);
         var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={matriculaId}");
+        var response = await alunoClient.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={matriculaId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<List<HorarioVagoResponse>>();
@@ -204,8 +212,9 @@ public sealed class MarcacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     {
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
+        var alunoClient = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={Guid.NewGuid()}");
+        var response = await alunoClient.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

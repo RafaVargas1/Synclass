@@ -114,14 +114,14 @@ banco.
   "autorização por papel, não por rota fixa", não isolamento por
   propriedade do recurso). Fica registrado aqui como próximo gap de
   segurança, não resolvido por #4.
-- **Sem endpoint Aluno-only hoje**: nenhum controller atual é exclusivo do
-  papel Aluno (o mais próximo, `AlunosProvisoriosController`, é operado
-  pelo Professor). O critério técnico "endpoints de Professor/Aluno
-  recusando acesso quando o papel correspondente não está presente" é
-  coberto no lado Professor com teste de fumaça real; no lado Aluno, a
-  infraestrutura de autorização é genérica por papel (`[Authorize(Roles =
-  "Aluno")]` funciona do mesmo jeito) e será exercida pelo primeiro
-  endpoint Aluno-only (ex: issue #9, "Aluno marca horário vago").
+- **Endpoint Aluno-only**: `MarcacoesHorarioController` (issue #9, "Aluno
+  marca horário vago" — mergeada em `main` depois do rascunho original
+  desta spec) é hoje o único controller exclusivo do papel Aluno. Achado no
+  `dev-review` deste PR: ele tinha ficado sem `[Authorize]` mesmo depois
+  deste PR ligar `app.UseAuthentication()`/`app.UseAuthorization()`, ficando
+  acessível sem token — corrigido com `[Authorize(Roles = "Aluno")]` a
+  nível de classe, mais os três testes de fumaça (401/403/aceita)
+  equivalentes aos de `HorariosController` em `AutorizacaoEndpointTests.cs`.
 - **Sem policy global de fallback**: decisão deliberada de não adicionar
   `options.FallbackPolicy = RequireAuthenticatedUser` — isso exigiria
   `[AllowAnonymous]` explícito em todo endpoint público existente
