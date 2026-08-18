@@ -33,9 +33,27 @@ export async function listarValorDevido(
   professorId: string,
   periodo?: PeriodoConsultaInput,
 ): Promise<ListarValorDevidoResultado> {
+  return buscarValorDevido(caminhoComQuery(`/professores/${professorId}/valor-devido`, periodo));
+}
+
+/**
+ * Envolve o `fetch` de GET /alunos/valor-devido (issue #13) — Aluno
+ * autenticado consultando o próprio total devido, detalhado por Professor.
+ * Sem parâmetro de id: `alunoUsuarioId` vem do token da sessão anexado por
+ * `fetchComTimeout`, nunca de rota/query (mesmo padrão de `marcacoes.ts`).
+ */
+export async function listarValorDevidoDoAluno(periodo?: PeriodoConsultaInput): Promise<ListarValorDevidoResultado> {
+  return buscarValorDevido(caminhoComQuery('/alunos/valor-devido', periodo));
+}
+
+/**
+ * Fetch + tratamento de resposta compartilhado pelas duas direções (issue
+ * #12/#13) — só o caminho muda entre elas, ver implementation.md da #13.
+ */
+async function buscarValorDevido(caminho: string): Promise<ListarValorDevidoResultado> {
   let response: Response;
   try {
-    response = await fetchComTimeout(caminho(professorId, periodo));
+    response = await fetchComTimeout(caminho);
   } catch {
     return { sucesso: false, mensagem: MensagemErroConexao };
   }
@@ -47,8 +65,7 @@ export async function listarValorDevido(
   return { sucesso: true, valoresDevidos: (corpo as ValorDevidoPorMatricula[] | null) ?? [] };
 }
 
-function caminho(professorId: string, periodo?: PeriodoConsultaInput): string {
-  const base = `/professores/${professorId}/valor-devido`;
+function caminhoComQuery(base: string, periodo?: PeriodoConsultaInput): string {
   if (!periodo) {
     return base;
   }

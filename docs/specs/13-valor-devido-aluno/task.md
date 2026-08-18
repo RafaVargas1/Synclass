@@ -26,22 +26,27 @@ domínio criado na issue #12 (`ConsultaCobrancaService`/`PeriodoConsulta`/`Valor
 - [x] Implementação: `ConsultaCobrancaService.ConsultarPorAlunoAsync` + refatorar
       `CalcularParaMatriculaAsync` para receber a resolução de nome como parâmetro (função
       compartilhada entre as duas direções, sem duplicar cálculo/edge point de "sem regra")
-- [ ] Teste de fumaça (Api): `GET /alunos/valor-devido` sem `inicio`/`fim` usa mês corrente e
+- [x] Teste de fumaça (Api): `GET /alunos/valor-devido` sem `inicio`/`fim` usa mês corrente e
       devolve 200 com a lista de Professores do Aluno autenticado (`ClienteAutenticadoComoAlunoPersistidoAsync`)
-- [ ] Teste de fumaça (Api): Aluno vinculado a dois Professores com regras diferentes — a resposta
+- [x] Teste de fumaça (Api): Aluno vinculado a dois Professores com regras diferentes — a resposta
       tem uma entrada por Professor, cada uma com o valor certo (sem soma)
-- [ ] Teste de fumaça (Api): vínculo sem regra aparece com `semRegraDefinida: true`/`valor: null`
-- [ ] Teste de fumaça (Api): Aluno autenticado sem nenhuma `Matricula` recebe 200 com lista vazia
-- [ ] Teste de fumaça (Api): só `inicio` informado (sem `fim`) devolve 400
-- [ ] Implementação mínima: `ValorDevidoAlunoController` (rota `GET /alunos/valor-devido`,
+- [x] Teste de fumaça (Api): vínculo sem regra aparece com `semRegraDefinida: true`/`valor: null`
+- [x] Teste de fumaça (Api): Aluno autenticado sem nenhuma `Matricula` recebe 200 com lista vazia
+- [x] Teste de fumaça (Api): só `inicio` informado (sem `fim`) devolve 400
+- [x] Implementação mínima: `ValorDevidoAlunoController` (rota `GET /alunos/valor-devido`,
       `[Authorize(Roles = "Aluno")]`, `alunoUsuarioId` de `User.GetUsuarioId()`)
-- [ ] Log estruturado: evento `ConsultaTotalDevidoRealizada` (Information, `TrackId`,
+- [x] Log estruturado: evento `ConsultaTotalDevidoRealizada` (Information, `TrackId`,
       `UsuarioId`, `PeriodoInicio`, `PeriodoFim`)
-- [ ] Registro de DI em `Program.cs`: novo parâmetro `IUsuarioRepository` de
-      `ConsultaCobrancaService` (se o registro atual não resolver sozinho)
-- [ ] Integração `lib/api/valorDevido.ts`: `listarValorDevidoDoAluno(periodo?)`, com teste
-- [ ] Rota `frontend/src/app/aluno/valor-devido.tsx` (lista agregada por Professor, sem total
+- [x] Registro de DI em `Program.cs`: já resolvia sozinho (`IUsuarioRepository` já era scoped)
+- [x] Integração `lib/api/valorDevido.ts`: `listarValorDevidoDoAluno(periodo?)`, com teste
+- [x] Rota `frontend/src/app/aluno/valor-devido.tsx` (lista agregada por Professor, sem total
       somado), reaproveitando `ValorDevidoCard`, com teste
+
+## Correção incidental (achada durante esta Task)
+
+- `ValorDevidoEndpointTests.cs` (issue #12) estava quebrado em `main` desde a #23 (rota de
+  `alunos-provisorios` mudou para derivar `professorId` do token) — corrigido no mesmo PR desta
+  Task, já que bloqueava o gate `dotnet test` exigido antes de abrir PR.
 
 ## Fora de escopo nesta Task (documentado, não esquecido)
 
