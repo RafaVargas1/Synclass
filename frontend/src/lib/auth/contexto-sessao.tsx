@@ -19,34 +19,31 @@ async function carregarSessaoSalva(): Promise<{ token: string | null; papeis: st
 }
 
 /**
- * Provider da sessão (issue #4): carrega token e papéis salvos
+ * Estado da sessão (issue #4): carrega token e papéis salvos
  * (`lib/auth/sessao.ts`) ao montar e expõe o papel ativo — por padrão o
- * primeiro papel salvo — para telas que precisam alternar entre Professor e
- * Aluno (`AlternadorDePapel`, `app/painel`).
+ * primeiro papel salvo. Separado de `SessaoProvider` só para caber no
+ * limite de 20 linhas por função (`code-style.md`).
  *
  * `definirSessao` é a única forma de logar o usuário: persiste em
  * `lib/auth/sessao.ts` e atualiza o estado em memória juntos, para nenhuma
- * tela conseguir gravar a sessão sem que o Provider (e quem lê
- * `useSessao()`) saiba na hora — gravar direto em `sessao.ts` deixaria o
- * `token` em memória `null` até o próximo mount, quebrando qualquer guarda
- * de rota que decida com base em `useSessao()` logo após o login.
+ * tela conseguir gravar a sessão sem que quem lê `useSessao()` saiba na
+ * hora — gravar direto em `sessao.ts` deixaria o `token` em memória `null`
+ * até o próximo mount, quebrando qualquer guarda de rota que decida com
+ * base em `useSessao()` logo após o login.
  */
-export function SessaoProvider({ children }: { children: ReactNode }) {
+function useSessaoState(): SessaoContextValue {
   const [carregando, setCarregando] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [papeis, setPapeis] = useState<string[]>([]);
   const [papelAtivo, setPapelAtivo] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    async function inicializar() {
-      const sessaoSalva = await carregarSessaoSalva();
+    void carregarSessaoSalva().then((sessaoSalva) => {
       setToken(sessaoSalva.token);
       setPapeis(sessaoSalva.papeis);
       setPapelAtivo(sessaoSalva.papeis[0]);
       setCarregando(false);
-    }
-
-    void inicializar();
+    });
   }, []);
 
   async function definirSessao(tokenNovo: string, papeisNovos: string[]) {
@@ -56,15 +53,12 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     setPapelAtivo(papeisNovos[0]);
   }
 
-  const valor: SessaoContextValue = {
-    carregando,
-    token,
-    papeis,
-    papelAtivo,
-    definirPapelAtivo: setPapelAtivo,
-    definirSessao,
-  };
+  return { carregando, token, papeis, papelAtivo, definirPapelAtivo: setPapelAtivo, definirSessao };
+}
 
+/** Provider da sessão (issue #4) — ver `useSessaoState` para o comportamento. */
+export function SessaoProvider({ children }: { children: ReactNode }) {
+  const valor = useSessaoState();
   return <SessaoContext.Provider value={valor}>{children}</SessaoContext.Provider>;
 }
 
