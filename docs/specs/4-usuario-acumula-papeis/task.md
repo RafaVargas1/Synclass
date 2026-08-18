@@ -63,10 +63,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
       de só mostrar confirmação (não há mais "sem área logada", ver
       `docs/specs/18-login-otp/implementation.md`). `LoginConfirmado.tsx`
       removido por ficar sem uso.
-- [ ] Teste (`lib/auth/contexto-sessao.tsx`): hook `useSessao` expõe
+- [x] Teste (`lib/auth/contexto-sessao.tsx`): hook `useSessao` expõe
       `papeis`, `papelAtivo` (default: primeiro papel) e
       `definirPapelAtivo`.
-- [ ] Implementação: `contexto-sessao.tsx` (Provider + hook).
+- [x] Implementação: `contexto-sessao.tsx` (Provider + hook).
 - [ ] Teste (`components/organisms/AlternadorDePapel.tsx`): renderiza abas
       só quando `papeis.length > 1`; chama `definirPapelAtivo` ao trocar de
       aba; não renderiza nada com um único papel.
