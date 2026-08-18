@@ -135,6 +135,24 @@ Nenhuma migration — reaproveita `Usuario.Id`/`Matricula.ProfessorId`/
   caminho de erro de negócio (sem teste de fumaça dedicado, mesmo padrão de
   outras invariantes "impossíveis" do código-base).
 
+## Débito técnico encontrado em revisão (fora de escopo desta Task)
+
+`dev-review` do PR #36 apontou que `ResolverMatriculaDoAlunoAsync` (novo
+nesta Task) assume que existe no máximo uma `Matricula` por par
+`(ProfessorId, AlunoUsuarioId)` — pressuposto que `BuscarVinculoAsync`
+(`FirstOrDefaultAsync`, sem índice único no par) não garante. A causa raiz
+não é código desta Task: `ConviteService.VincularMatriculaAsync` (issue #2)
+promove `matriculaOrigem` quando o convite tem `MatriculaId` explícito sem
+checar se o Aluno já tem outro vínculo com o mesmo Professor — decisão
+documentada e testada em `docs/specs/2-convite-whatsapp/implementation.md`
+("nunca cria uma segunda linha... conforme a RN", especificamente para o
+caso de promoção direta). Mudar esse comportamento é uma decisão de
+produto (o que fazer quando já existe vínculo: rejeitar o convite? mesclar
+matrículas? ignorar a nova?), não uma correção técnica local — por isso não
+alterado aqui, mesmo padrão desta própria Task nascendo de um débito
+documentado em vez de corrigido inline nos PRs #22/#30/#32. Rastreado para
+decisão de produto: ver issue nova criada a partir deste achado.
+
 ## Dependência de outras Tasks
 
 Depende conceitualmente de #4 (mergeada — `[Authorize]`/JWT no backend,

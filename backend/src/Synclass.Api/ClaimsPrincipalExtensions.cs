@@ -21,7 +21,8 @@ public static class ClaimsPrincipalExtensions
         if (valor is null || !Guid.TryParse(valor, out var usuarioId))
         {
             throw new InvalidOperationException(
-                "Token autenticado sem claim de identidade válida — inesperado sob [Authorize].");
+                $"Token autenticado sem claim de identidade válida (valor: '{valor ?? "ausente"}', " +
+                "esperado um Guid) — inesperado sob [Authorize].");
         }
 
         return usuarioId;
