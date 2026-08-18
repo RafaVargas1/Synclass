@@ -4,6 +4,7 @@ using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Autenticacao;
+using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Common;
 using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Convites;
@@ -48,6 +49,8 @@ builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
 builder.Services.AddScoped<IMatriculaRepository, MatriculaRepository>();
 builder.Services.AddScoped<CadastroAlunoProvisorioService>();
+builder.Services.AddScoped<IRegraDeCobrancaRepository, RegraDeCobrancaRepository>();
+builder.Services.AddScoped<RegraDeCobrancaService>();
 
 // Alocação de Aluno a horário específico (issue #8) — ver
 // docs/specs/8-aluno-horario/implementation.md.
