@@ -41,7 +41,7 @@ public sealed class AulaServiceCancelarAsyncTests
         var alocacoes = new FakeAlocacaoHorarioRepository();
         var matriculas = new FakeMatriculaRepository();
         var aulaService = new AulaService(
-            aulas, cancelamentos, alocacoes, configuracoes, horarioService, Clock);
+            aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService, Clock);
         return new Cenario(aulaService, aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService);
     }
 

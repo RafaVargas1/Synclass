@@ -2,6 +2,7 @@ using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Common;
 using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Horarios;
+using Synclass.Domain.Matriculas;
 
 namespace Synclass.Domain.Aulas;
 
@@ -18,6 +19,7 @@ public sealed class AulaService
     private readonly IAulaRepository _aulas;
     private readonly ICancelamentoAulaRepository _cancelamentos;
     private readonly IAlocacaoHorarioRepository _alocacoes;
+    private readonly IMatriculaRepository _matriculas;
     private readonly IConfiguracaoProfessorRepository _configuracoes;
     private readonly HorarioService _horarioService;
     private readonly IClock _clock;
@@ -26,6 +28,7 @@ public sealed class AulaService
         IAulaRepository aulas,
         ICancelamentoAulaRepository cancelamentos,
         IAlocacaoHorarioRepository alocacoes,
+        IMatriculaRepository matriculas,
         IConfiguracaoProfessorRepository configuracoes,
         HorarioService horarioService,
         IClock clock)
@@ -33,6 +36,7 @@ public sealed class AulaService
         _aulas = aulas;
         _cancelamentos = cancelamentos;
         _alocacoes = alocacoes;
+        _matriculas = matriculas;
         _configuracoes = configuracoes;
         _horarioService = horarioService;
         _clock = clock;
@@ -91,14 +95,25 @@ public sealed class AulaService
         var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
         var prazoCancelamentoMinutos = configuracao?.PrazoCancelamentoMinutos ?? 0;
 
-        // Sem tratamento de fuso horário — mesma simplificação do resto do
-        // domínio (ver docs/specs/10-cancelamento-aula/implementation.md#edge-points).
-        var inicioAula = new DateTimeOffset(aula.Data.ToDateTime(horaInicio), TimeSpan.Zero);
-        var limite = inicioAula.AddMinutes(-prazoCancelamentoMinutos);
+        var limite = CalcularLimiteCancelamento(aula.Data, horaInicio, prazoCancelamentoMinutos);
         if (_clock.UtcNow > limite)
         {
             throw new PrazoCancelamentoExpiradoException(aula.Id, prazoCancelamentoMinutos, limite);
         }
+    }
+
+    /// <summary>
+    /// Regra pura (sem I/O) compartilhada por <see cref="GarantirDentroDoPrazoAsync"/>
+    /// e <see cref="ListarProximasAsync"/> — até quando é possível cancelar
+    /// uma ocorrência em <paramref name="data"/>/<paramref name="horaInicio"/>
+    /// dado o prazo vigente. Sem tratamento de fuso horário — mesma
+    /// simplificação do resto do domínio (ver
+    /// docs/specs/10-cancelamento-aula/implementation.md#edge-points).
+    /// </summary>
+    private static DateTimeOffset CalcularLimiteCancelamento(DateOnly data, TimeOnly horaInicio, int prazoCancelamentoMinutos)
+    {
+        var inicioAula = new DateTimeOffset(data.ToDateTime(horaInicio), TimeSpan.Zero);
+        return inicioAula.AddMinutes(-prazoCancelamentoMinutos);
     }
 
     /// <summary>
@@ -112,6 +127,98 @@ public sealed class AulaService
         if (alocacao is null)
         {
             throw new AlocacaoNaoEncontradaException(horarioId, matriculaId);
+        }
+    }
+
+    /// <summary>
+    /// Lista, para cada horário em que a matrícula está alocada, a próxima
+    /// ocorrência futura ainda não cancelada — issue #10. Ver
+    /// docs/specs/10-cancelamento-aula/implementation.md#decisão-de-implementação
+    /// sobre mostrar só 1 ocorrência por alocação, não uma janela de semanas.
+    /// </summary>
+    public async Task<IReadOnlyCollection<AulaProxima>> ListarProximasAsync(
+        Guid professorId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
+
+        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
+        var prazoCancelamentoMinutos = configuracao?.PrazoCancelamentoMinutos ?? 0;
+
+        var alocacoes = await _alocacoes.ListarPorMatriculaAsync(matriculaId, cancellationToken);
+        var proximas = new List<AulaProxima>();
+        foreach (var alocacao in alocacoes)
+        {
+            var horario = await _horarioService.BuscarDoProfessorAsync(professorId, alocacao.HorarioId, cancellationToken);
+            var proxima = await CalcularProximaOcorrenciaAsync(horario, matriculaId, prazoCancelamentoMinutos, cancellationToken);
+            proximas.Add(proxima);
+        }
+
+        return proximas;
+    }
+
+    /// <summary>
+    /// Avança semana a semana a partir de hoje até achar uma ocorrência de
+    /// <paramref name="horario"/> que ainda não tem <see cref="CancelamentoAula"/>
+    /// desta matrícula — não mostra uma aula já cancelada como "próxima".
+    /// </summary>
+    private async Task<AulaProxima> CalcularProximaOcorrenciaAsync(
+        Horario horario, Guid matriculaId, int prazoCancelamentoMinutos, CancellationToken cancellationToken)
+    {
+        var data = ProximaDataDoDiaSemana(horario.DiaSemana, horario.HoraInicio);
+        while (await ExisteCancelamentoAsync(horario.Id, data, matriculaId, cancellationToken))
+        {
+            data = data.AddDays(7);
+        }
+
+        var cancelavelAte = CalcularLimiteCancelamento(data, horario.HoraInicio, prazoCancelamentoMinutos);
+        var podeCancelar = _clock.UtcNow <= cancelavelAte;
+        return new AulaProxima(
+            horario.Id, data, horario.DiaSemana, horario.HoraInicio, horario.DuracaoMinutos,
+            podeCancelar, cancelavelAte, prazoCancelamentoMinutos);
+    }
+
+    private async Task<bool> ExisteCancelamentoAsync(
+        Guid horarioId, DateOnly data, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        var aula = await _aulas.BuscarPorHorarioEDataAsync(horarioId, data, cancellationToken);
+        if (aula is null)
+        {
+            return false;
+        }
+
+        var cancelamento = await _cancelamentos.BuscarAsync(aula.Id, matriculaId, cancellationToken);
+        return cancelamento is not null;
+    }
+
+    /// <summary>
+    /// Primeira data ≥ hoje cujo dia da semana bate com <paramref name="diaSemana"/>;
+    /// se hoje bate mas <paramref name="horaInicio"/> já passou, pula para a
+    /// semana seguinte (sem tratamento de fuso horário, mesma simplificação
+    /// do resto do domínio).
+    /// </summary>
+    private DateOnly ProximaDataDoDiaSemana(DiaSemana diaSemana, TimeOnly horaInicio)
+    {
+        var agora = _clock.UtcNow;
+        var hoje = DateOnly.FromDateTime(agora.UtcDateTime);
+        var diasAteODia = ((int)diaSemana - (int)hoje.DayOfWeek + 7) % 7;
+        var data = hoje.AddDays(diasAteODia);
+
+        var horaJaPassouHoje = diasAteODia == 0 && TimeOnly.FromDateTime(agora.UtcDateTime) >= horaInicio;
+        return horaJaPassouHoje ? data.AddDays(7) : data;
+    }
+
+    /// <summary>
+    /// Mesma checagem de <c>AlocacaoHorarioService.GarantirMatriculaVinculadaAsync</c>
+    /// (issue #8) — não reaproveitada diretamente por ser <c>private</c> em
+    /// outra classe; duplicação mínima e intencional, ver
+    /// docs/spec/code-style.md#sem-duplicação-de-código.
+    /// </summary>
+    private async Task GarantirMatriculaVinculadaAsync(Guid professorId, Guid matriculaId, CancellationToken cancellationToken)
+    {
+        var matricula = await _matriculas.BuscarPorIdAsync(matriculaId, cancellationToken);
+        if (matricula is null || matricula.ProfessorId != professorId)
+        {
+            throw new MatriculaNaoVinculadaAoProfessorException(matriculaId, professorId);
         }
     }
 }

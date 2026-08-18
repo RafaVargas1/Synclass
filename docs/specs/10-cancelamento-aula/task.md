@@ -29,7 +29,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/10
 - [x] Teste unidade (Domain): Aluno não alocado naquele horário tentando cancelar
   → rejeitado (mesmo padrão de `MatriculaNaoVinculadaAoProfessorException`/nova
   exceção equivalente).
-- [ ] Teste unidade (Domain): `AulaService.ListarProximasAsync` — calcula a
+- [x] Teste unidade (Domain): `AulaService.ListarProximasAsync` — calcula a
   próxima ocorrência futura de cada `AlocacaoHorario` da matrícula (sem exigir
   `Aula` pré-existente), pulando ocorrências já canceladas.
 - [ ] Log estruturado: evento `AulaCancelada` (Information) e
