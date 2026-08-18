@@ -86,7 +86,7 @@ public sealed class AutorizacaoEndpointTests : IClassFixture<WebApplicationFacto
         var clientSetup = _factory.CreateClient();
         var professorId = await CriarProfessorAsync(clientSetup);
 
-        var response = await clientSetup.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={Guid.NewGuid()}");
+        var response = await clientSetup.GetAsync($"/professores/{professorId}/horarios/vagos");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -98,21 +98,28 @@ public sealed class AutorizacaoEndpointTests : IClassFixture<WebApplicationFacto
         var professorId = await CriarProfessorAsync(clientSetup);
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
 
-        var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={Guid.NewGuid()}");
+        var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    /// <summary>
+    /// Com papel Aluno mas sem vínculo (Matrícula) com este Professor, a
+    /// requisição é aceita pela autorização por papel (issue #4) e rejeitada
+    /// só depois, pela checagem de posse da issue #23 — 404, não 400: o
+    /// Aluno deste teste nunca foi persistido/vinculado, então não há nada
+    /// que ele possa corrigir reenviando os mesmos dados.
+    /// </summary>
     [Fact]
-    public async Task Get_HorariosVagos_AceitaRequisicao_ComTokenContendoPapelAluno()
+    public async Task Get_HorariosVagos_AceitaAutorizacaoPorPapel_ComTokenContendoPapelAluno()
     {
         var clientSetup = _factory.CreateClient();
         var professorId = await CriarProfessorAsync(clientSetup);
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoAluno(_factory);
 
-        var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos?matriculaId={Guid.NewGuid()}");
+        var response = await client.GetAsync($"/professores/{professorId}/horarios/vagos");
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     private async Task<Guid> CriarProfessorAsync(HttpClient client)

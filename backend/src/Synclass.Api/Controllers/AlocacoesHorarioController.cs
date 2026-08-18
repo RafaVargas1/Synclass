@@ -9,11 +9,17 @@ namespace Synclass.Api.Controllers;
 /// <summary>
 /// Alocação de Alunos a horários específicos (issue #8) — o Professor
 /// atribui, desfaz e lista os Alunos alocados a um horário disponível
-/// (template recorrente, ver <c>HorariosController</c>).
+/// (template recorrente, ver <c>HorariosController</c>). <c>professorId</c>
+/// é sempre a identidade de quem chama (um Professor só age sobre os
+/// próprios horários) — lido do token, não mais de parâmetro de rota (issue
+/// #23). A checagem de posse de <c>horarioId</c>/<c>matriculaId</c> contra
+/// este <c>professorId</c> já existia (<see cref="Alocacoes.AlocacaoHorarioService"/>)
+/// — vira checagem de posse de verdade agora que <c>professorId</c> não é
+/// mais adulterável pelo cliente.
 /// </summary>
 [Authorize(Roles = "Professor")]
 [ApiController]
-[Route("professores/{professorId:guid}/horarios/{horarioId:guid}/alocacoes")]
+[Route("professores/horarios/{horarioId:guid}/alocacoes")]
 public sealed class AlocacoesHorarioController : ControllerBase
 {
     private readonly AlocacaoHorarioService _alocacaoHorarioService;
@@ -27,9 +33,10 @@ public sealed class AlocacoesHorarioController : ControllerBase
 
     [HttpPost]
     public async Task<IActionResult> Alocar(
-        Guid professorId, Guid horarioId, [FromBody] CriarAlocacaoHorarioRequest request, CancellationToken cancellationToken)
+        Guid horarioId, [FromBody] CriarAlocacaoHorarioRequest request, CancellationToken cancellationToken)
     {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        var professorId = User.GetUsuarioId();
         try
         {
             var alocacao = await _alocacaoHorarioService.AlocarAsync(
@@ -49,8 +56,9 @@ public sealed class AlocacoesHorarioController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Listar(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Listar(Guid horarioId, CancellationToken cancellationToken)
     {
+        var professorId = User.GetUsuarioId();
         try
         {
             var alocacoes = await _alocacaoHorarioService.ListarPorHorarioAsync(professorId, horarioId, cancellationToken);
@@ -63,9 +71,10 @@ public sealed class AlocacoesHorarioController : ControllerBase
     }
 
     [HttpDelete("{matriculaId:guid}")]
-    public async Task<IActionResult> Desalocar(Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Desalocar(Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
     {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        var professorId = User.GetUsuarioId();
         try
         {
             await _alocacaoHorarioService.DesalocarAsync(professorId, horarioId, matriculaId, cancellationToken);
