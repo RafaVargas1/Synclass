@@ -56,4 +56,18 @@ public sealed class Usuario
 
         _papeis.Add(PapelAtribuido.Criar(Id, papel, clock));
     }
+
+    /// <summary>
+    /// Corrige o próprio nome (issue #27) — canal explícito para quem
+    /// cadastrou o nome errado, já que um segundo cadastro com o mesmo
+    /// contato não sobrescreve o nome existente (RN da issue #20). Valida
+    /// internamente (diferente de <see cref="Cadastrar"/>, que recebe o nome
+    /// já validado pelo chamador): este é o único ponto de mutação de
+    /// <see cref="Nome"/> depois da criação, então a entidade protege o
+    /// próprio invariante aqui em vez de depender do chamador validar antes.
+    /// </summary>
+    public void AtualizarNome(string nomeBruto)
+    {
+        Nome = NomeUsuario.Validar(nomeBruto);
+    }
 }

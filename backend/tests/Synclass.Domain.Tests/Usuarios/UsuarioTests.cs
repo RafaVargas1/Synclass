@@ -39,4 +39,35 @@ public sealed class UsuarioTests
 
         acao.Should().Throw<PapelJaAtribuidoException>();
     }
+
+    [Fact]
+    public void AtualizarNome_NomeValido_TrocaNome()
+    {
+        var usuario = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+
+        usuario.AtualizarNome("Maria Souza");
+
+        usuario.Nome.Should().Be("Maria Souza");
+    }
+
+    [Fact]
+    public void AtualizarNome_ComEspacosNasBordas_Normaliza()
+    {
+        var usuario = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+
+        usuario.AtualizarNome("  Maria Souza  ");
+
+        usuario.Nome.Should().Be("Maria Souza");
+    }
+
+    [Fact]
+    public void AtualizarNome_NomeVazio_LancaNomeInvalidoExceptionSemAlterarNome()
+    {
+        var usuario = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+
+        var acao = () => usuario.AtualizarNome("   ");
+
+        acao.Should().Throw<NomeInvalidoException>();
+        usuario.Nome.Should().Be("Maria Silva");
+    }
 }
