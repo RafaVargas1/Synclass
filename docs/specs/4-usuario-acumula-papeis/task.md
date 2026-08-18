@@ -55,8 +55,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/4
 
 ### Frontend
 
-- [ ] Teste (`lib/auth/sessao.ts`): salvar/ler/limpar papéis junto do token.
-- [ ] Implementação: `sessao.ts` ganha `salvarPapeis`/`lerPapeis` (mesmo
+- [x] Teste (`lib/auth/sessao.ts`): salvar/ler/limpar papéis junto do token.
+- [x] Implementação: `sessao.ts` ganha `salvarPapeis`/`lerPapeis` (mesmo
       padrão de `salvarToken`/`lerToken`).
 - [ ] Implementação: `app/login/verificar.tsx` persiste
       `resultado.papeis` (hoje descartado) e navega para `/painel` em vez
