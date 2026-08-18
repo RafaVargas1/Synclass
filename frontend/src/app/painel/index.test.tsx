@@ -5,9 +5,13 @@ import { useSessao } from '@/lib/auth/contexto-sessao';
 import PainelScreen from './index';
 
 const mockRouterReplace = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockRouterReplace }),
-}));
+jest.mock('expo-router', () => {
+  const { Text } = require('react-native');
+  return {
+    useRouter: () => ({ replace: mockRouterReplace }),
+    Link: ({ children }: { children: React.ReactNode }) => <Text>{children}</Text>,
+  };
+});
 
 jest.mock('@/lib/auth/contexto-sessao', () => ({
   useSessao: jest.fn(),
@@ -96,5 +100,19 @@ describe('PainelScreen', () => {
     await fireEvent.press(screen.getByText('Aluno'));
 
     expect(definirPapelAtivo).toHaveBeenCalledWith('Aluno');
+  });
+
+  it('shows a link to the perfil screen', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papeis: ['Professor'],
+      papelAtivo: 'Professor',
+      definirPapelAtivo: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    expect(screen.getByText('Meu perfil')).toBeTruthy();
   });
 });
