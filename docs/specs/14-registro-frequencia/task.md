@@ -37,7 +37,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/14
 - [x] Teste de fumaça (Api): `POST .../aulas/{data}/frequencias` — 200 com
   registro em lote, 400 para `matriculaId` não alocada, 404 horário
   inexistente/não pertence ao Professor.
-- [ ] Componente frontend: `lib/api/frequencias.ts` (contrato já
+- [x] Componente frontend: `lib/api/frequencias.ts` (contrato já
   estabilizado pelos smoke tests acima).
 - [ ] Componente frontend: tela de chamada do Professor
   (`professor/[professorId]/horarios/[horarioId]/chamada.tsx`) — lista de
