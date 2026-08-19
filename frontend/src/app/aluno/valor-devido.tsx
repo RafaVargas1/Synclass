@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
-import { Input } from '@/components/atoms/Input';
 import { Paragraph } from '@/components/atoms/Paragraph';
+import { SeletorDePeriodo } from '@/components/molecules/SeletorDePeriodo';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
 import {
   listarValorDevidoDoAluno,
@@ -42,43 +41,6 @@ export default function ValorDevidoAlunoScreen() {
         {!estado.carregando && !estado.erro && <ListaDeValoresDevidos valoresDevidos={estado.valoresDevidos} />}
       </View>
     </SafeAreaView>
-  );
-}
-
-function SeletorDePeriodo({
-  inicio,
-  fim,
-  onChangeInicio,
-  onChangeFim,
-  onConsultar,
-}: {
-  inicio: string;
-  fim: string;
-  onChangeInicio: (valor: string) => void;
-  onChangeFim: (valor: string) => void;
-  onConsultar: () => void;
-}) {
-  return (
-    <View className="gap-two">
-      <Paragraph>Período (aaaa-mm-dd) — vazio usa o mês corrente</Paragraph>
-      <View className="flex-row gap-two">
-        <Input
-          accessibilityLabel="Início do período"
-          placeholder="Início"
-          value={inicio}
-          onChangeText={onChangeInicio}
-          className="flex-1"
-        />
-        <Input
-          accessibilityLabel="Fim do período"
-          placeholder="Fim"
-          value={fim}
-          onChangeText={onChangeFim}
-          className="flex-1"
-        />
-      </View>
-      <Button label="Consultar" onPress={onConsultar} />
-    </View>
   );
 }
 
