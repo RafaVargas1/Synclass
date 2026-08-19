@@ -41,11 +41,14 @@ describe('MinhasAulasAlunoScreen', () => {
     expect(listarProximasAulasMock).toHaveBeenCalledWith('professor-1');
   });
 
-  it('removes the aula from the list when cancelar succeeds', async () => {
+  it('refetches the list when cancelar succeeds, dropping the canceled occurrence', async () => {
     cancelarAulaMock.mockResolvedValue({
       sucesso: true,
       cancelamento: { id: 'c1', aulaId: 'aula-1', matriculaId: 'matricula-1', canceladoEm: '2026-08-18T12:00:00Z' },
     });
+    listarProximasAulasMock
+      .mockResolvedValueOnce({ sucesso: true, aulas: [aulaProximaExistente] })
+      .mockResolvedValueOnce({ sucesso: true, aulas: [] });
     await render(<MinhasAulasAlunoScreen />);
     await waitFor(() => expect(screen.getByText(/Quinta/)).toBeTruthy());
 
@@ -53,6 +56,25 @@ describe('MinhasAulasAlunoScreen', () => {
 
     await waitFor(() => expect(screen.queryByText(/Quinta/)).toBeNull());
     expect(cancelarAulaMock).toHaveBeenCalledWith('professor-1', 'h1', '2026-08-20');
+    expect(listarProximasAulasMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps showing the horário after cancelar when the next occurrence is still returned by the refetch', async () => {
+    const proximaOcorrencia = { ...aulaProximaExistente, data: '2026-08-27' };
+    cancelarAulaMock.mockResolvedValue({
+      sucesso: true,
+      cancelamento: { id: 'c1', aulaId: 'aula-1', matriculaId: 'matricula-1', canceladoEm: '2026-08-18T12:00:00Z' },
+    });
+    listarProximasAulasMock
+      .mockResolvedValueOnce({ sucesso: true, aulas: [aulaProximaExistente] })
+      .mockResolvedValueOnce({ sucesso: true, aulas: [proximaOcorrencia] });
+    await render(<MinhasAulasAlunoScreen />);
+    await waitFor(() => expect(screen.getByText(/Quinta/)).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Cancelar'));
+
+    await waitFor(() => expect(listarProximasAulasMock).toHaveBeenCalledTimes(2));
+    expect(screen.getByText(/Quinta/)).toBeTruthy();
   });
 
   it('shows the Api error message and keeps the aula when cancelar fails', async () => {

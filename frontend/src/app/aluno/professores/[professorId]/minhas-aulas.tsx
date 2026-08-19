@@ -70,14 +70,7 @@ function useGerenciamentoProximasAulas(professorId: string) {
 
   useEffect(() => {
     let cancelado = false;
-    listarProximasAulas(professorId).then((resultado) => {
-      if (cancelado) return;
-      if (!resultado.sucesso) {
-        setErro(resultado.mensagem);
-        return;
-      }
-      setAulas(resultado.aulas);
-    });
+    carregarProximasAulas(professorId, setAulas, setErro, () => cancelado);
     return () => {
       cancelado = true;
     };
@@ -87,9 +80,24 @@ function useGerenciamentoProximasAulas(professorId: string) {
   return { aulas, erro, handleCancelar };
 }
 
+async function carregarProximasAulas(
+  professorId: string,
+  setAulas: (aulas: AulaProxima[]) => void,
+  setErro: (mensagem: string | undefined) => void,
+  foiCancelado: () => boolean,
+) {
+  const resultado = await listarProximasAulas(professorId);
+  if (foiCancelado()) return;
+  if (!resultado.sucesso) {
+    setErro(resultado.mensagem);
+    return;
+  }
+  setAulas(resultado.aulas);
+}
+
 function criarHandleCancelar(
   professorId: string,
-  setAulas: (atualizador: (atual: AulaProxima[]) => AulaProxima[]) => void,
+  setAulas: (aulas: AulaProxima[]) => void,
   setErro: (mensagem: string | undefined) => void,
 ) {
   return async (horarioId: string, data: string) => {
@@ -99,6 +107,9 @@ function criarHandleCancelar(
       setErro(resultado.mensagem);
       return;
     }
-    setAulas((atual) => atual.filter((aula) => aula.horarioId !== horarioId));
+    // Recarrega em vez de remover só pelo horarioId: a alocação recorrente
+    // continua (AC3), então a próxima ocorrência daquele horário deve
+    // reaparecer na lista, não sumir permanentemente.
+    await carregarProximasAulas(professorId, setAulas, setErro, () => false);
   };
 }
