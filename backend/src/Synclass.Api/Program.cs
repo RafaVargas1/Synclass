@@ -94,8 +94,12 @@ builder.Services.AddScoped<IAulaRepository, AulaRepository>();
 builder.Services.AddScoped<ICancelamentoAulaRepository, CancelamentoAulaRepository>();
 builder.Services.AddScoped<AulaService>();
 
-// Registro de frequência pelo Professor (issue #14) — ver
-// docs/specs/14-registro-frequencia/implementation.md.
+// Registro de frequência pelo Professor (issue #14) e confirmação de
+// presença pelo Aluno (issue #15) — ver
+// docs/specs/14-registro-frequencia/implementation.md e
+// docs/specs/15-aluno-confirma-presenca/implementation.md. Novas
+// dependências de FrequenciaService (AlocacaoHorarioService,
+// ICancelamentoAulaRepository) já registradas acima.
 builder.Services.AddScoped<IRegistroFrequenciaRepository, RegistroFrequenciaRepository>();
 builder.Services.AddScoped<FrequenciaService>();
 
