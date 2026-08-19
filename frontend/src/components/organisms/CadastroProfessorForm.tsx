@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { FormField } from '@/components/molecules/FormField';
+import { contatoEhValido, MensagemContatoInvalido } from '@/lib/validacaoContato';
 
 export type CadastroProfessorFormProps = {
   nome: string;
@@ -45,6 +47,17 @@ export function CadastroProfessorForm({
   onBlurContato,
   onSubmit,
 }: CadastroProfessorFormProps) {
+  const [erroContato, setErroContato] = useState<string | undefined>(undefined);
+
+  function handleSubmit() {
+    if (!contatoEhValido(contato)) {
+      setErroContato(MensagemContatoInvalido);
+      return;
+    }
+    setErroContato(undefined);
+    onSubmit();
+  }
+
   return (
     <View className="w-full gap-four">
       <FormField
@@ -63,11 +76,12 @@ export function CadastroProfessorForm({
         onChangeText={onChangeContato}
         onBlur={onBlurContato}
         placeholder="E-mail ou telefone"
+        errorMessage={erroContato}
       />
       {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
       <Button
         label={enviando ? 'Enviando...' : 'Cadastrar'}
-        onPress={onSubmit}
+        onPress={handleSubmit}
         disabled={enviando}
       />
     </View>
