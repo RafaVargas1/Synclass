@@ -30,17 +30,11 @@ function zigzagSvg(cor: string): string {
  */
 export function ZigzagDivider() {
   const escuro = useColorScheme() === 'dark';
+  const estilo: EstiloWeb = {
+    backgroundImage: escuro ? PadraoEscuro : PadraoClaro,
+    backgroundRepeat: 'repeat-x',
+    backgroundSize: '34px 12px',
+  };
 
-  return (
-    <View
-      className="h-3 w-full"
-      style={
-        {
-          backgroundImage: escuro ? PadraoEscuro : PadraoClaro,
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: '34px 12px',
-        } satisfies EstiloWeb
-      }
-    />
-  );
+  return <View className="h-3 w-full" style={estilo} />;
 }
