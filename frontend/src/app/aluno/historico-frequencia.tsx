@@ -45,11 +45,9 @@ export default function HistoricoFrequenciaAlunoScreen() {
 }
 
 function ListaDeHistoricos({ historico }: { historico: HistoricoFrequenciaPorProfessor[] }) {
-  const aulasComProfessor = historico.flatMap((porProfessor) =>
-    porProfessor.aulas.map((aula) => ({ ...aula, chave: `${porProfessor.professorId}-${aula.horarioId}-${aula.data}` })),
-  );
+  const semAulas = historico.every((porProfessor) => porProfessor.aulas.length === 0);
 
-  if (aulasComProfessor.length === 0) {
+  if (semAulas) {
     return <Paragraph>Nenhum histórico de frequência para este período.</Paragraph>;
   }
 
