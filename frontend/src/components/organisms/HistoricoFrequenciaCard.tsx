@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 import type { AulaFrequenciaHistorico, StatusHistoricoFrequencia } from '@/lib/api/historicoFrequencia';
-import { formatarData } from '@/lib/data';
+import { formatarData } from '@/lib/formatarData';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 
 export type HistoricoFrequenciaCardProps = {

@@ -2,7 +2,7 @@ import { Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import type { AulaProxima } from '@/lib/api/cancelamentos';
-import { formatarData } from '@/lib/data';
+import { formatarData } from '@/lib/formatarData';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 
 export type AulaProximaCardProps = {

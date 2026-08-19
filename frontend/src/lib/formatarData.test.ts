@@ -1,4 +1,4 @@
-import { formatarData } from '@/lib/data';
+import { formatarData } from '@/lib/formatarData';
 
 describe('formatarData', () => {
   it('converts a yyyy-MM-dd date to dd/mm/aaaa', () => {
