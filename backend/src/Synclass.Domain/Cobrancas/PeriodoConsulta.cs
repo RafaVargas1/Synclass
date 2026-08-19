@@ -1,3 +1,4 @@
+using System.Linq;
 using Synclass.Domain.Common;
 using Synclass.Domain.Horarios;
 
@@ -57,15 +58,25 @@ public sealed class PeriodoConsulta
     /// </summary>
     public int ContarOcorrencias(DiaSemana diaSemana)
     {
-        var quantidade = 0;
+        return GerarDatas(diaSemana).Count();
+    }
+
+    /// <summary>
+    /// Gera cada <see cref="DateOnly"/> do período cujo dia da semana bate
+    /// com <paramref name="diaSemana"/> — usado por
+    /// <see cref="ContarOcorrencias"/> e por
+    /// <c>FrequenciaService.ListarHistoricoAsync</c> (issue #16) para
+    /// converter um <see cref="Horario"/> recorrente nas datas concretas do
+    /// período consultado.
+    /// </summary>
+    public IEnumerable<DateOnly> GerarDatas(DiaSemana diaSemana)
+    {
         for (var data = Inicio; data < FimExclusivo; data = data.AddDays(1))
         {
             if ((int)data.DayOfWeek == (int)diaSemana)
             {
-                quantidade++;
+                yield return data;
             }
         }
-
-        return quantidade;
     }
 }

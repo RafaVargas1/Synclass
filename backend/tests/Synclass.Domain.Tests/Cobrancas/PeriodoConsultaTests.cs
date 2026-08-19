@@ -57,4 +57,31 @@ public sealed class PeriodoConsultaTests
 
         quantidade.Should().Be(5);
     }
+
+    [Fact]
+    public void GerarDatas_MesComQuatroTercasFeiras_RetornaAsQuatroDatas()
+    {
+        // Agosto/2026 tem só 4 terças-feiras: 04, 11, 18, 25.
+        var periodo = PeriodoConsulta.Criar(new DateOnly(2026, 8, 1), new DateOnly(2026, 9, 1));
+
+        var datas = periodo.GerarDatas(DiaSemana.Terca);
+
+        datas.Should().BeEquivalentTo(new[]
+        {
+            new DateOnly(2026, 8, 4),
+            new DateOnly(2026, 8, 11),
+            new DateOnly(2026, 8, 18),
+            new DateOnly(2026, 8, 25),
+        });
+    }
+
+    [Fact]
+    public void GerarDatas_FimExclusivoNaoEntraNoResultado_RespeitaLimiteSuperior()
+    {
+        var periodo = PeriodoConsulta.Criar(new DateOnly(2026, 8, 18), new DateOnly(2026, 8, 25));
+
+        var datas = periodo.GerarDatas(DiaSemana.Terca);
+
+        datas.Should().BeEquivalentTo(new[] { new DateOnly(2026, 8, 18) });
+    }
 }
