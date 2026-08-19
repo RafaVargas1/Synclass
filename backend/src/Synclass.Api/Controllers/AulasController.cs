@@ -4,18 +4,20 @@ using Synclass.Api.Middleware;
 using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Aulas;
 using Synclass.Domain.Common;
+using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 
 namespace Synclass.Api.Controllers;
 
 /// <summary>
 /// Cancelamento de aula pelo Aluno, com antecedência mínima configurável
-/// pelo Professor (issue #10) — o Aluno consulta as próximas aulas em que
-/// está alocado e cancela uma delas, respeitando o prazo. Mesmo padrão de
-/// rota/autorização de <see cref="MarcacoesHorarioController"/> (issue #9):
-/// <c>professorId</c> na rota identifica o Professor sendo navegado pelo
-/// Aluno, mas <c>matriculaId</c> nunca vem de query/body do cliente — é
-/// resolvida do Aluno autenticado via
+/// pelo Professor (issue #10), e confirmação de presença pelo Aluno (issue
+/// #15) — o Aluno consulta as próximas aulas em que está alocado e cancela
+/// ou confirma presença numa delas. Mesmo padrão de rota/autorização de
+/// <see cref="MarcacoesHorarioController"/> (issue #9): <c>professorId</c>
+/// na rota identifica o Professor sendo navegado pelo Aluno, mas
+/// <c>matriculaId</c> nunca vem de query/body do cliente — é resolvida do
+/// Aluno autenticado via
 /// <see cref="AlocacaoHorarioService.ResolverMatriculaDoAlunoAsync"/> (issue
 /// #23), fechando a mesma lacuna que existiria aqui se o Aluno pudesse
 /// informar a matrícula de outro Aluno.
@@ -27,6 +29,7 @@ public sealed class AulasController : ControllerBase
 {
     private readonly AulaService _aulaService;
     private readonly AlocacaoHorarioService _alocacaoHorarioService;
+    private readonly FrequenciaService _frequenciaService;
     private readonly IHorarioRepository _horarios;
     private readonly IClock _clock;
     private readonly ILogger<AulasController> _logger;
@@ -34,12 +37,14 @@ public sealed class AulasController : ControllerBase
     public AulasController(
         AulaService aulaService,
         AlocacaoHorarioService alocacaoHorarioService,
+        FrequenciaService frequenciaService,
         IHorarioRepository horarios,
         IClock clock,
         ILogger<AulasController> logger)
     {
         _aulaService = aulaService;
         _alocacaoHorarioService = alocacaoHorarioService;
+        _frequenciaService = frequenciaService;
         _horarios = horarios;
         _clock = clock;
         _logger = logger;
@@ -96,6 +101,33 @@ public sealed class AulasController : ControllerBase
         }
     }
 
+    [HttpPost("{horarioId:guid}/aulas/{data}/confirmacao-presenca")]
+    public async Task<IActionResult> ConfirmarPresenca(
+        Guid professorId, Guid horarioId, DateOnly data, CancellationToken cancellationToken)
+    {
+        var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        try
+        {
+            var alunoUsuarioId = User.GetUsuarioId();
+            var registro = await _frequenciaService.ConfirmarPresencaAsync(
+                professorId, horarioId, data, alunoUsuarioId, cancellationToken);
+            LogPresencaConfirmadaPeloAluno(trackId, registro);
+            return Ok(ParaResponse(registro));
+        }
+        catch (AlunoNaoVinculadoAoProfessorException)
+        {
+            return NotFound();
+        }
+        catch (HorarioNaoEncontradoException)
+        {
+            return NotFound();
+        }
+        catch (AulaRejeitadaException ex)
+        {
+            return BadRequest(new AulaErrorResponse(ex.Message));
+        }
+    }
+
     private Task<Guid> ResolverMatriculaAsync(Guid professorId, CancellationToken cancellationToken)
     {
         var alunoUsuarioId = User.GetUsuarioId();
@@ -118,6 +150,11 @@ public sealed class AulasController : ControllerBase
     private static CancelamentoAulaResponse ParaResponse(CancelamentoAula cancelamento)
     {
         return new CancelamentoAulaResponse(cancelamento.Id, cancelamento.AulaId, cancelamento.MatriculaId, cancelamento.CanceladoEm);
+    }
+
+    private static ConfirmacaoPresencaResponse ParaResponse(RegistroFrequencia registro)
+    {
+        return new ConfirmacaoPresencaResponse(registro.AulaId, registro.MatriculaId, registro.ConfirmadoPeloAluno == true);
     }
 
     /// <summary>
@@ -149,6 +186,17 @@ public sealed class AulasController : ControllerBase
             "CancelamentoRejeitadoPorPrazo {TrackId} {AulaId} {PrazoCancelamentoMinutos} {AntecedenciaTentadaMinutos}",
             trackId, ex.AulaId, ex.PrazoCancelamentoMinutos, antecedenciaTentadaMinutos);
     }
+
+    /// <summary>
+    /// Evento <c>PresencaConfirmadaPeloAluno</c> (Information) — issue #15,
+    /// ver docs/specs/15-aluno-confirma-presenca/task.md#logs.
+    /// </summary>
+    private void LogPresencaConfirmadaPeloAluno(string trackId, RegistroFrequencia registro)
+    {
+        _logger.LogInformation(
+            "PresencaConfirmadaPeloAluno {TrackId} {MatriculaId} {AulaId}",
+            trackId, registro.MatriculaId, registro.AulaId);
+    }
 }
 
 public sealed record AulaProximaResponse(
@@ -162,5 +210,7 @@ public sealed record AulaProximaResponse(
     int PrazoCancelamentoMinutos);
 
 public sealed record CancelamentoAulaResponse(Guid Id, Guid AulaId, Guid MatriculaId, DateTimeOffset CanceladoEm);
+
+public sealed record ConfirmacaoPresencaResponse(Guid AulaId, Guid MatriculaId, bool ConfirmadoPeloAluno);
 
 public sealed record AulaErrorResponse(string Mensagem);

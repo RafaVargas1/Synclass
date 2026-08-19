@@ -24,10 +24,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/15
   ele mesmo cancelou (issue #10) → rejeitado (edge point do card).
 - [x] Teste unidade (Domain): Aluno não vinculado ao Professor/horário →
   rejeitado (mesma exceção de `AulaService.CancelarAsync`).
-- [ ] Log estruturado: evento `PresencaConfirmadaPeloAluno` (Information,
+- [x] Log estruturado: evento `PresencaConfirmadaPeloAluno` (Information,
   `{TrackId} {MatriculaId} {AulaId}`) — ver
   architecture.md#logs-estruturados-e-track-id.
-- [ ] Teste de fumaça (Api): `POST
+- [x] Teste de fumaça (Api): `POST
   professores/{professorId}/horarios/{horarioId}/aulas/{data}/confirmacao-presenca`
   — 200 no caminho feliz, 400 se cancelada pelo próprio Aluno, 404 se
   horário não existe/Aluno não vinculado.
