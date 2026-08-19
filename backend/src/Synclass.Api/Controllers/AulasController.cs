@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Aulas;
+using Synclass.Domain.Common;
 using Synclass.Domain.Horarios;
 
 namespace Synclass.Api.Controllers;
@@ -27,17 +28,20 @@ public sealed class AulasController : ControllerBase
     private readonly AulaService _aulaService;
     private readonly AlocacaoHorarioService _alocacaoHorarioService;
     private readonly IHorarioRepository _horarios;
+    private readonly IClock _clock;
     private readonly ILogger<AulasController> _logger;
 
     public AulasController(
         AulaService aulaService,
         AlocacaoHorarioService alocacaoHorarioService,
         IHorarioRepository horarios,
+        IClock clock,
         ILogger<AulasController> logger)
     {
         _aulaService = aulaService;
         _alocacaoHorarioService = alocacaoHorarioService;
         _horarios = horarios;
+        _clock = clock;
         _logger = logger;
     }
 
@@ -139,7 +143,7 @@ public sealed class AulasController : ControllerBase
     /// </summary>
     private void LogCancelamentoRejeitadoPorPrazo(string trackId, PrazoCancelamentoExpiradoException ex)
     {
-        var antecedenciaTentadaMinutos = (ex.Limite.AddMinutes(ex.PrazoCancelamentoMinutos) - DateTimeOffset.UtcNow).TotalMinutes;
+        var antecedenciaTentadaMinutos = (ex.Limite.AddMinutes(ex.PrazoCancelamentoMinutos) - _clock.UtcNow).TotalMinutes;
 
         _logger.LogWarning(
             "CancelamentoRejeitadoPorPrazo {TrackId} {AulaId} {PrazoCancelamentoMinutos} {AntecedenciaTentadaMinutos}",
