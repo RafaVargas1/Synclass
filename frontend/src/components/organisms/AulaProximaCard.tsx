@@ -33,8 +33,8 @@ export function AulaProximaCard({ aulaProxima, confirmado, onCancelar, onConfirm
   const descricaoAula = `${NomesDiaSemana[aulaProxima.diaSemana]} ${horaFormatada} em ${aulaProxima.data}`;
 
   return (
-    <View className="w-full flex-row items-center justify-between rounded-medium border border-background-selected bg-background-element px-four py-three dark:border-dark-background-selected dark:bg-dark-background-element">
-      <View className="shrink">
+    <View className="w-full flex-col gap-two rounded-medium border border-background-selected bg-background-element px-four py-three dark:border-dark-background-selected dark:bg-dark-background-element sm:flex-row sm:items-center sm:justify-between">
+      <View className="sm:shrink">
         <Text className="text-base font-semibold text-text dark:text-dark-text">
           {NomesDiaSemana[aulaProxima.diaSemana]} · {horaFormatada}
         </Text>
@@ -52,7 +52,7 @@ export function AulaProximaCard({ aulaProxima, confirmado, onCancelar, onConfirm
           </Text>
         ) : null}
       </View>
-      <View className="flex-row gap-two">
+      <View className="flex-row flex-wrap gap-two">
         {!confirmado ? (
           <Button
             label="Confirmar presença"
