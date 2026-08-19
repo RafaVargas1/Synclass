@@ -1,6 +1,18 @@
-import { useColorScheme, View } from 'react-native';
+import { useColorScheme, View, type ViewStyle } from 'react-native';
 
 import { Colors } from '@/theme/tokens';
+
+/**
+ * `backgroundImage`/`backgroundRepeat`/`backgroundSize` são CSS válido no
+ * RN Web, mas não fazem parte do tipo `ViewStyle` (pensado pro nativo) —
+ * extensão local só pra essas três propriedades, em vez de `any` ou
+ * silenciar o typecheck inteiro do bloco.
+ */
+type EstiloWeb = ViewStyle & {
+  backgroundImage?: string;
+  backgroundRepeat?: string;
+  backgroundSize?: string;
+};
 
 const PadraoClaro = zigzagSvg(Colors.light.primary);
 const PadraoEscuro = zigzagSvg(Colors.dark.primary);
@@ -22,11 +34,13 @@ export function ZigzagDivider() {
   return (
     <View
       className="h-3 w-full"
-      style={{
-        backgroundImage: escuro ? PadraoEscuro : PadraoClaro,
-        backgroundRepeat: 'repeat-x',
-        backgroundSize: '34px 12px',
-      }}
+      style={
+        {
+          backgroundImage: escuro ? PadraoEscuro : PadraoClaro,
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: '34px 12px',
+        } satisfies EstiloWeb
+      }
     />
   );
 }
