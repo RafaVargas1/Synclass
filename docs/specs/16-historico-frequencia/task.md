@@ -28,10 +28,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/16
 - [x] Implementação mínima: `FrequenciaService.ListarHistoricoAsync`
   (percorre `Matricula` do Aluno → `AlocacaoHorario` de cada uma → datas do
   período via `GerarDatas` → status por data).
-- [ ] Log estruturado: evento `HistoricoFrequenciaConsultado`
+- [x] Log estruturado: evento `HistoricoFrequenciaConsultado`
   (Information, `{TrackId} {UsuarioId} {PeriodoInicio} {PeriodoFim}`) — ver
   architecture.md#logs-estruturados-e-track-id.
-- [ ] Teste de fumaça (Api): `GET alunos/historico-frequencia` — 200 com
+- [x] Teste de fumaça (Api): `GET alunos/historico-frequencia` — 200 com
   período default (mês corrente) e com `inicio`/`fim` explícitos, 400
   período incompleto/invertido (mesmo padrão de `ValorDevidoAlunoController`).
 - [ ] Componente frontend: `lib/api/historicoFrequencia.ts`
