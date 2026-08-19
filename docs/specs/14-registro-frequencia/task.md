@@ -15,7 +15,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/14
   registro existia ainda (AC1).
 - [x] Implementação mínima: `RegistroFrequencia`, `IRegistroFrequenciaRepository`,
   `FrequenciaService.RegistrarAsync` (caminho "ainda não existe registro").
-- [ ] Teste unidade (Domain): registrar para uma `Aula` que ainda não existe
+- [x] Teste unidade (Domain): registrar para uma `Aula` que ainda não existe
   (mesma data nunca referenciada antes) cria a `Aula` sob demanda antes do
   registro.
 - [ ] Teste unidade (Domain): Aluno já confirmou presença antes (linha

@@ -84,4 +84,26 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
         cenario.Registros.Registros.Should().Contain(
             r => r.MatriculaId == alunoAusente.Id && r.StatusProfessor == StatusFrequencia.Ausente);
     }
+
+    /// <summary>
+    /// Edge point — registrar para uma data ainda não referenciada (nenhum
+    /// cancelamento nem registro anterior tocou essa ocorrência) instancia a
+    /// `Aula` sob demanda antes de gravar o registro, mesmo mecanismo da
+    /// issue #10 (`AulaService.ObterOuCriarAulaAsync`).
+    /// </summary>
+    [Fact]
+    public async Task RegistrarAsync_AulaAindaNaoExisteParaEssaData_InstanciaSobDemanda()
+    {
+        var cenario = CriarCenario();
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
+        var data = new DateOnly(2026, 8, 20);
+        var statusPorMatricula = new Dictionary<Guid, StatusFrequencia> { [matricula.Id] = StatusFrequencia.Presente };
+
+        await cenario.FrequenciaService.RegistrarAsync(
+            ProfessorId, horario.Id, data, statusPorMatricula, CancellationToken.None);
+
+        cenario.Aulas.Aulas.Should().ContainSingle(a => a.HorarioId == horario.Id && a.Data == data);
+    }
 }
