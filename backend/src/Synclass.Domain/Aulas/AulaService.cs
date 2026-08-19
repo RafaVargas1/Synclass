@@ -66,8 +66,11 @@ public sealed class AulaService
     /// <summary>
     /// Instancia a <see cref="Aula"/> (ocorrência datada) sob demanda na
     /// primeira vez que é referenciada — RN explícita da issue #10.
+    /// Promovido de <c>private</c> para <c>internal</c> na issue #14 para
+    /// ser reaproveitado por <c>Synclass.Domain.Frequencias.FrequenciaService</c>
+    /// sem duplicar a lógica de instanciação sob demanda.
     /// </summary>
-    private async Task<Aula> ObterOuCriarAulaAsync(Guid horarioId, DateOnly data, CancellationToken cancellationToken)
+    internal async Task<Aula> ObterOuCriarAulaAsync(Guid horarioId, DateOnly data, CancellationToken cancellationToken)
     {
         var aulaExistente = await _aulas.BuscarPorHorarioEDataAsync(horarioId, data, cancellationToken);
         if (aulaExistente is not null)
