@@ -57,4 +57,19 @@ describe('LoginScreen', () => {
     );
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it('shows a client-side error and blocks the submit when the contato is neither an e-mail nor a phone', async () => {
+    await render(<LoginScreen />);
+
+    await fireEvent.changeText(
+      screen.getByPlaceholderText('E-mail ou telefone cadastrado'),
+      'não é um contato válido',
+    );
+    await fireEvent.press(screen.getByText('Enviar código'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Informe um e-mail ou telefone válido.')).toBeTruthy(),
+    );
+    expect(solicitarCodigoMock).not.toHaveBeenCalled();
+  });
 });

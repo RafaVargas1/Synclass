@@ -81,4 +81,17 @@ describe('CadastroProfessorScreen', () => {
     await waitFor(() => expect(verificarContatoProfessorMock).toHaveBeenCalledWith('novo@exemplo.com'));
     expect(screen.getByPlaceholderText('Seu nome completo').props.editable).not.toBe(false);
   });
+
+  it('shows a client-side error and blocks the submit when the contato is neither an e-mail nor a phone', async () => {
+    await render(<CadastroProfessorScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Seu nome completo'), 'Maria Silva');
+    await fireEvent.changeText(screen.getByPlaceholderText('E-mail ou telefone'), 'contato invalido');
+    await fireEvent.press(screen.getByText('Cadastrar'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Informe um e-mail ou telefone válido.')).toBeTruthy(),
+    );
+    expect(cadastrarProfessorMock).not.toHaveBeenCalled();
+  });
 });

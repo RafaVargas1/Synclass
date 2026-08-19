@@ -103,4 +103,16 @@ describe('GerarConviteScreen', () => {
     );
     expect(screen.getByText('Gerar convite')).toBeTruthy();
   });
+
+  it('shows a client-side error and blocks the submit when the contato is neither an e-mail nor a phone', async () => {
+    await render(<GerarConviteScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('E-mail ou telefone'), 'contato invalido');
+    await fireEvent.press(screen.getByText('Gerar convite'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Informe um e-mail ou telefone válido.')).toBeTruthy(),
+    );
+    expect(gerarConviteMock).not.toHaveBeenCalled();
+  });
 });
