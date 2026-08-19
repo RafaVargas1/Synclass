@@ -40,19 +40,16 @@ public sealed class ValorDevidoEndpointTests : IClassFixture<WebApplicationFacto
             options.UseInMemoryDatabase(nomeDoBanco));
     }
 
-    private static async Task<Guid> CriarProfessorAsync(HttpClient client)
+    /// <summary>
+    /// Matrícula criada via <c>/professores/alunos-provisorios</c> (issue
+    /// #23: sem <c>professorId</c> de rota) — pertence ao Professor
+    /// autenticado em <paramref name="client"/>, não a um parâmetro
+    /// explícito. Mesmo padrão de <c>RegraDeCobrancaEndpointTests</c>.
+    /// </summary>
+    private static async Task<Guid> CriarMatriculaAsync(HttpClient client)
     {
         var response = await client.PostAsJsonAsync(
-            "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
-        return corpo!.UsuarioId;
-    }
-
-    private static async Task<Guid> CriarMatriculaAsync(HttpClient client, Guid professorId)
-    {
-        var response = await client.PostAsJsonAsync(
-            $"/professores/{professorId}/alunos-provisorios",
+            "/professores/alunos-provisorios",
             new CadastroAlunoProvisorioRequest("Aluno Teste", $"aluno-{Guid.NewGuid()}"));
         var corpo = await response.Content.ReadFromJsonAsync<CadastroAlunoProvisorioResponse>();
         return corpo!.MatriculaId;
@@ -61,9 +58,8 @@ public sealed class ValorDevidoEndpointTests : IClassFixture<WebApplicationFacto
     [Fact]
     public async Task Get_ValorDevido_SemInicioNemFim_UsaMesCorrenteEDevolveOkComListaDeAlunos()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        await CriarMatriculaAsync(client, professorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        await CriarMatriculaAsync(client);
 
         var response = await client.GetAsync($"/professores/{professorId}/valor-devido");
 
@@ -75,9 +71,8 @@ public sealed class ValorDevidoEndpointTests : IClassFixture<WebApplicationFacto
     [Fact]
     public async Task Get_ValorDevido_MatriculaSemRegra_AparaceComSemRegraDefinidaTrueEValorNull()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
-        var matriculaId = await CriarMatriculaAsync(client, professorId);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.GetAsync($"/professores/{professorId}/valor-devido");
 
@@ -90,8 +85,7 @@ public sealed class ValorDevidoEndpointTests : IClassFixture<WebApplicationFacto
     [Fact]
     public async Task Get_ValorDevido_SoInicioInformado_DevolveBadRequest()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorId = await CriarProfessorAsync(client);
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
 
         var response = await client.GetAsync($"/professores/{professorId}/valor-devido?inicio=2026-08-01");
 
@@ -101,20 +95,19 @@ public sealed class ValorDevidoEndpointTests : IClassFixture<WebApplicationFacto
     [Fact]
     public async Task Get_ValorDevido_AlunoVinculadoADoisProfessores_CadaProfessorVeSoOProprioValor()
     {
-        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
-        var professorA = await CriarProfessorAsync(client);
-        var professorB = await CriarProfessorAsync(client);
-        var matriculaComA = await CriarMatriculaAsync(client, professorA);
-        var matriculaComB = await CriarMatriculaAsync(client, professorB);
-        await client.PutAsJsonAsync(
+        var (clientA, professorA) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var (clientB, professorB) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaComA = await CriarMatriculaAsync(clientA);
+        var matriculaComB = await CriarMatriculaAsync(clientB);
+        await clientA.PutAsJsonAsync(
             $"/professores/{professorA}/matriculas/{matriculaComA}/regra-de-cobranca",
             new DefinirRegraDeCobrancaRequest("FixoMensal", 300m, null));
-        await client.PutAsJsonAsync(
+        await clientB.PutAsJsonAsync(
             $"/professores/{professorB}/matriculas/{matriculaComB}/regra-de-cobranca",
             new DefinirRegraDeCobrancaRequest("FixoMensal", 500m, null));
 
-        var responseA = await client.GetAsync($"/professores/{professorA}/valor-devido");
-        var responseB = await client.GetAsync($"/professores/{professorB}/valor-devido");
+        var responseA = await clientA.GetAsync($"/professores/{professorA}/valor-devido");
+        var responseB = await clientB.GetAsync($"/professores/{professorB}/valor-devido");
 
         var corpoA = await responseA.Content.ReadFromJsonAsync<List<ValorDevidoResponse>>();
         var corpoB = await responseB.Content.ReadFromJsonAsync<List<ValorDevidoResponse>>();

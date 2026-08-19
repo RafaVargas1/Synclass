@@ -19,6 +19,12 @@ public sealed class FakeUsuarioRepository : IUsuarioRepository
         return Task.FromResult(usuario);
     }
 
+    public Task<Usuario?> BuscarPorIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var usuario = _usuarios.FirstOrDefault(u => u.Id == id);
+        return Task.FromResult(usuario);
+    }
+
     public Task<bool> ExisteAsync(Guid id, CancellationToken cancellationToken)
     {
         return Task.FromResult(_usuarios.Any(u => u.Id == id));

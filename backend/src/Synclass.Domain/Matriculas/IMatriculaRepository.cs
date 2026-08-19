@@ -42,6 +42,15 @@ public interface IMatriculaRepository
     /// </summary>
     Task<IReadOnlyCollection<Matricula>> ListarPorProfessorAsync(Guid professorId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Lista todas as Matrículas plenas do Aluno autenticado — usado pela
+    /// consulta de valor devido do Aluno (issue #13). Como
+    /// <see cref="Matricula.AlunoUsuarioId"/> só é definido em matrículas
+    /// plenas (ver <see cref="Matricula.Promover"/>), nunca devolve
+    /// matrícula provisória.
+    /// </summary>
+    Task<IReadOnlyCollection<Matricula>> ListarPorAlunoAsync(Guid alunoUsuarioId, CancellationToken cancellationToken);
+
     Task AdicionarAsync(Matricula matricula, CancellationToken cancellationToken);
 
     Task SalvarAsync(CancellationToken cancellationToken);
