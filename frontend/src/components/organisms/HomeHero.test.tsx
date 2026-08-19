@@ -16,7 +16,7 @@ describe('HomeHero', () => {
     const onLogin = jest.fn();
     await render(<HomeHero onGetStarted={jest.fn()} onLogin={onLogin} />);
 
-    await fireEvent.press(screen.getByText('Já tenho conta — Entrar'));
+    await fireEvent.press(screen.getByText('Já tenho conta, entrar'));
 
     expect(onLogin).toHaveBeenCalled();
   });
