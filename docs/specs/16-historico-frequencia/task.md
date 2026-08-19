@@ -34,15 +34,15 @@ Card: https://github.com/RafaVargas1/Synclass/issues/16
 - [x] Teste de fumaça (Api): `GET alunos/historico-frequencia` — 200 com
   período default (mês corrente) e com `inicio`/`fim` explícitos, 400
   período incompleto/invertido (mesmo padrão de `ValorDevidoAlunoController`).
-- [ ] Componente frontend: `lib/api/historicoFrequencia.ts`
+- [x] Componente frontend: `lib/api/historicoFrequencia.ts`
   (`listarHistoricoFrequenciaDoAluno`, contrato já estabilizado pelo smoke
   test acima).
-- [ ] Refactor pequeno: extrair `SeletorDePeriodo` (hoje função privada em
+- [x] Refactor pequeno: extrair `SeletorDePeriodo` (hoje função privada em
   `aluno/valor-devido.tsx`) para `components/molecules/SeletorDePeriodo.tsx`
   — evita duplicar o mesmo par de `Input`+`Button` nesta tela (code-style.md,
   sem duplicação de código). Atualizar `valor-devido.tsx` para importar do
   novo local.
-- [ ] Componente frontend: tela `aluno/historico-frequencia.tsx`,
+- [x] Componente frontend: tela `aluno/historico-frequencia.tsx`,
   reaproveitando o `SeletorDePeriodo` extraído e um organism novo
   `HistoricoFrequenciaCard.tsx` (aula + status, indicador visual por
   status).
