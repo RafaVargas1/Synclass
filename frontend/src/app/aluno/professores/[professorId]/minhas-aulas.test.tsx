@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { cancelarAula, listarProximasAulas } from '@/lib/api/cancelamentos';
+import { confirmarPresenca } from '@/lib/api/frequencias';
 
 import MinhasAulasAlunoScreen from './minhas-aulas';
 
@@ -13,8 +14,13 @@ jest.mock('@/lib/api/cancelamentos', () => ({
   cancelarAula: jest.fn(),
 }));
 
+jest.mock('@/lib/api/frequencias', () => ({
+  confirmarPresenca: jest.fn(),
+}));
+
 const listarProximasAulasMock = listarProximasAulas as jest.Mock;
 const cancelarAulaMock = cancelarAula as jest.Mock;
+const confirmarPresencaMock = confirmarPresenca as jest.Mock;
 
 const aulaProximaExistente = {
   horarioId: 'h1',
@@ -31,6 +37,7 @@ describe('MinhasAulasAlunoScreen', () => {
   beforeEach(() => {
     listarProximasAulasMock.mockReset();
     cancelarAulaMock.mockReset();
+    confirmarPresencaMock.mockReset();
     listarProximasAulasMock.mockResolvedValue({ sucesso: true, aulas: [aulaProximaExistente] });
   });
 
@@ -107,5 +114,38 @@ describe('MinhasAulasAlunoScreen', () => {
     await render(<MinhasAulasAlunoScreen />);
 
     await waitFor(() => expect(screen.getByText(/Você ainda não tem nenhuma aula/)).toBeTruthy());
+  });
+
+  it('shows the confirmado indicator, optimistically, when confirmar presença succeeds', async () => {
+    confirmarPresencaMock.mockResolvedValue({
+      sucesso: true,
+      confirmacao: { aulaId: 'aula-1', matriculaId: 'matricula-1', confirmadoPeloAluno: true },
+    });
+    await render(<MinhasAulasAlunoScreen />);
+    await waitFor(() => expect(screen.getByText(/Quinta/)).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Confirmar presença'));
+
+    await waitFor(() => expect(screen.getByText(/Presença confirmada/)).toBeTruthy());
+    expect(confirmarPresencaMock).toHaveBeenCalledWith('professor-1', 'h1', '2026-08-20');
+    expect(listarProximasAulasMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the Api error message and keeps sem confirmar when confirmar presença fails', async () => {
+    confirmarPresencaMock.mockResolvedValue({
+      sucesso: false,
+      mensagem: 'A matrícula matricula-1 já cancelou a aula aula-1 e não pode confirmar presença nela.',
+    });
+    await render(<MinhasAulasAlunoScreen />);
+    await waitFor(() => expect(screen.getByText(/Quinta/)).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Confirmar presença'));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('A matrícula matricula-1 já cancelou a aula aula-1 e não pode confirmar presença nela.'),
+      ).toBeTruthy(),
+    );
+    expect(screen.getByText('Confirmar presença')).toBeTruthy();
   });
 });

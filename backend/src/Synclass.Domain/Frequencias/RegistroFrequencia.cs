@@ -4,11 +4,10 @@ namespace Synclass.Domain.Frequencias;
 
 /// <summary>
 /// Registra, para um par (<see cref="AulaId"/>, <see cref="MatriculaId"/>), o
-/// status de presença marcado pelo Professor (<see cref="StatusProfessor"/>)
-/// e a confirmação do Aluno (<see cref="ConfirmadoPeloAluno"/>, issue #15
-/// futura — este card só lê essa coluna para detectar divergência, nunca
-/// escreve nela). Índice único (AulaId, MatriculaId) garante 1 linha por
-/// Aluno por aula — mesma postura de <c>CancelamentoAula</c> (issue #10), ver
+/// status de presença marcado pelo Professor (<see cref="StatusProfessor"/>,
+/// issue #14) e a confirmação do Aluno (<see cref="ConfirmadoPeloAluno"/>,
+/// issue #15). Índice único (AulaId, MatriculaId) garante 1 linha por Aluno
+/// por aula — mesma postura de <c>CancelamentoAula</c> (issue #10), ver
 /// <c>RegistroFrequenciaConfiguration</c>.
 /// </summary>
 public sealed class RegistroFrequencia
@@ -61,7 +60,8 @@ public sealed class RegistroFrequencia
     /// <see cref="ConfirmadoPeloAluno"/> já preenchido para os testes de
     /// reconciliação de <c>FrequenciaService.RegistrarAsync</c> (AC2/AC3).
     /// Não é o caminho de escrita real da confirmação do Aluno: esse é
-    /// escopo da issue #15, ainda não implementada.
+    /// <see cref="ConfirmarAluno"/> (issue #15), chamado por
+    /// <see cref="FrequenciaService.ConfirmarPresencaAsync"/>.
     /// </summary>
     internal static RegistroFrequencia CriarComConfirmacaoDoAluno(
         Guid aulaId, Guid matriculaId, bool confirmadoPeloAluno, IClock clock)
@@ -79,6 +79,20 @@ public sealed class RegistroFrequencia
     public void RegistrarProfessor(StatusFrequencia status, IClock clock)
     {
         StatusProfessor = status;
+        UpdatedAt = clock.UtcNow;
+    }
+
+    /// <summary>
+    /// Marca a confirmação de presença feita pelo próprio Aluno (issue #15)
+    /// — idempotente por natureza (AC2: confirmar de novo não duplica nem
+    /// muda o resultado). Simetria exata de <see cref="RegistrarProfessor"/>:
+    /// nunca mexe em <see cref="StatusProfessor"/>, preservando o valor
+    /// existente mesmo que o Professor já tenha registrado antes (AC3, ordem
+    /// inversa).
+    /// </summary>
+    public void ConfirmarAluno(IClock clock)
+    {
+        ConfirmadoPeloAluno = true;
         UpdatedAt = clock.UtcNow;
     }
 }
