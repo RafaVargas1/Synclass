@@ -31,7 +31,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/15
   professores/{professorId}/horarios/{horarioId}/aulas/{data}/confirmacao-presenca`
   — 200 no caminho feliz, 400 se cancelada pelo próprio Aluno, 404 se
   horário não existe/Aluno não vinculado.
-- [ ] Componente frontend: `lib/api/frequencias.ts` ganha
+- [x] Componente frontend: `lib/api/frequencias.ts` ganha
   `confirmarPresenca` (contrato já estabilizado pelo smoke test acima).
 - [ ] Componente frontend: botão "Confirmar presença" na tela de próximas
   aulas do Aluno (`minhas-aulas.tsx`, issue #10), com estado visual
