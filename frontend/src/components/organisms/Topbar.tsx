@@ -55,10 +55,16 @@ function TituloComVoltar({ titulo }: { titulo: string }) {
 
   return (
     <View className="flex-row items-center gap-three">
-      <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={voltar} hitSlop={8}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        onPress={voltar}
+        className="items-center justify-center"
+        style={{ minWidth: 44, minHeight: 44 }}
+      >
         <View
           className="border-l-2 border-t-2 border-text dark:border-dark-text"
-          style={{ width: 10, height: 10, transform: [{ rotate: '-45deg' }] }}
+          style={{ width: 12, height: 12, transform: [{ rotate: '-45deg' }] }}
         />
       </Pressable>
       <Text accessibilityRole="header" className="text-lg font-bold text-text dark:text-dark-text">

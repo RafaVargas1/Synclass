@@ -1,11 +1,14 @@
 # Sistema de estilização
 
-Este documento é o **orientador central de UI/UX** do Synclass — cores, tipografia,
+Este documento é o **orientador de aparência** do Synclass — cores, tipografia,
 forma, ícones, movimento e voz de conteúdo, para app (React Native/Expo) e para
 qualquer superfície pública (ex: tela inicial de cadastro). Ele complementa
-[`code-style.md`](./code-style.md) (como o código é escrito) e
-[`architecture.md`](./architecture.md) (stack e camadas); este aqui define **como
-tudo deve parecer e se comportar**.
+[`code-style.md`](./code-style.md) (como o código é escrito),
+[`architecture.md`](./architecture.md) (stack e camadas) e
+[`ux-heuristics.md`](./ux-heuristics.md) (como a interface deve se
+*comportar* — tamanho de alvo de toque, navegação, hierarquia — com base
+em pesquisa de usabilidade, não em preferência de estilo); este aqui
+define **como tudo deve parecer**.
 
 Os tokens vivem em `frontend/src/theme/palette.js` (fonte única, consumida por
 `tailwind.config.js` e por `theme/tokens.ts`) e em `frontend/src/global.css`
