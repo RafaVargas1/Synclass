@@ -4,10 +4,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/14
 
 ## Ordem de execução
 
-- [ ] Migration: `dotnet ef migrations add CriaRegistroFrequencia` (tabela
+- [x] Migration: `dotnet ef migrations add CriaRegistroFrequencia` (tabela
   `RegistrosFrequencia`, índice único em `(AulaId, MatriculaId)`) — schema
   primeiro, sem lógica ainda.
-- [ ] Refactor pequeno: promover `AulaService.ObterOuCriarAulaAsync` de
+- [x] Refactor pequeno: promover `AulaService.ObterOuCriarAulaAsync` de
   `private` para `internal`, reaproveitado por `FrequenciaService` (mesma
   instanciação sob demanda da issue #10, não duplicar).
 - [ ] Teste unidade (Domain): `FrequenciaService.RegistrarAsync` cria
