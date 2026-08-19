@@ -10,7 +10,7 @@ jest.mock('@/lib/api/auth', () => ({
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
 }));
 
 const solicitarCodigoMock = solicitarCodigo as jest.Mock;

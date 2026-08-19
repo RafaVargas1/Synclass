@@ -5,9 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { RegraDeCobrancaForm } from '@/components/organisms/RegraDeCobrancaForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import {
   definirRegraDeCobranca,
   obterRegraDeCobranca,
@@ -54,8 +54,8 @@ function TelaComFormulario({
   const { enviando, erro, salva, handleSubmit } = useDefinirRegraDeCobranca(professorId, matriculaId);
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
+      <Topbar titulo="Regra de cobrança" />
       <View className="flex-1 items-center justify-center gap-four px-four">
-        <Heading level={1}>Regra de cobrança</Heading>
         {salva ? (
           <Paragraph>Regra de cobrança salva!</Paragraph>
         ) : (

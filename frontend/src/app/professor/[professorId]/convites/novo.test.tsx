@@ -13,6 +13,7 @@ jest.mock('@/lib/api/convites', () => ({
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
 }));
 
 const gerarConviteMock = gerarConvite as jest.Mock;

@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SolicitarCodigoForm } from '@/components/organisms/SolicitarCodigoForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import { solicitarCodigo } from '@/lib/api/auth';
 
 /**
@@ -33,6 +34,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
+      <Topbar titulo="Entrar" />
       <View className="flex-1 items-center justify-center px-four">
         <SolicitarCodigoForm
           contato={contato}

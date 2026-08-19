@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConviteGerado } from '@/components/molecules/ConviteGerado';
 import { GerarConviteForm } from '@/components/organisms/GerarConviteForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import { gerarConvite } from '@/lib/api/convites';
 import { montarLinkWhatsApp } from '@/lib/whatsapp';
 
@@ -58,6 +59,7 @@ export default function GerarConviteScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
+      <Topbar titulo="Convidar Aluno" />
       <View className="flex-1 items-center justify-center px-four">
         {linkConvite ? (
           <ConviteGerado linkConvite={linkConvite} onEnviarWhatsApp={handleEnviarWhatsApp} />
