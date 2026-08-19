@@ -39,7 +39,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/14
   inexistente/não pertence ao Professor.
 - [x] Componente frontend: `lib/api/frequencias.ts` (contrato já
   estabilizado pelos smoke tests acima).
-- [ ] Componente frontend: tela de chamada do Professor
+- [x] Componente frontend: tela de chamada do Professor
   (`professor/[professorId]/horarios/[horarioId]/chamada.tsx`) — lista de
   Alunos alocados naquele horário/data (menos os cancelados, issue #10) com
   toggle presente/ausente por Aluno e botão salvar (chamada em lote).
