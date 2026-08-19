@@ -8,6 +8,7 @@ import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
 import { Input } from '@/components/atoms/Input';
 import { Paragraph } from '@/components/atoms/Paragraph';
+import { TEXTO_AJUDA_PERIODO } from '@/components/molecules/SeletorDePeriodo';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
 import {
   listarValorDevido,
@@ -62,7 +63,7 @@ function SeletorDePeriodo({
 }) {
   return (
     <View className="gap-two">
-      <Paragraph>Período (aaaa-mm-dd) — vazio usa o mês corrente</Paragraph>
+      <Paragraph>{TEXTO_AJUDA_PERIODO}</Paragraph>
       <View className="flex-row gap-two">
         <Input
           accessibilityLabel="Início do período"

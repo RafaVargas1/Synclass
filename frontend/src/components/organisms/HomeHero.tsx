@@ -23,7 +23,7 @@ export function HomeHero({ onGetStarted, onLogin }: HomeHeroProps) {
       <Button label="Cadastrar como Professor" onPress={onGetStarted} />
       <Pressable accessibilityRole="button" onPress={onLogin}>
         <Text className="text-sm text-primary dark:text-dark-primary">
-          Já tenho conta — Entrar
+          Já tenho conta, entrar
         </Text>
       </Pressable>
     </View>
