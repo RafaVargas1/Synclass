@@ -10,10 +10,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/14
 - [x] Refactor pequeno: promover `AulaService.ObterOuCriarAulaAsync` de
   `private` para `internal`, reaproveitado por `FrequenciaService` (mesma
   instanciação sob demanda da issue #10, não duplicar).
-- [ ] Teste unidade (Domain): `FrequenciaService.RegistrarAsync` cria
+- [x] Teste unidade (Domain): `FrequenciaService.RegistrarAsync` cria
   `RegistroFrequencia` para cada Aluno alocado no horário quando nenhum
   registro existia ainda (AC1).
-- [ ] Implementação mínima: `RegistroFrequencia`, `IRegistroFrequenciaRepository`,
+- [x] Implementação mínima: `RegistroFrequencia`, `IRegistroFrequenciaRepository`,
   `FrequenciaService.RegistrarAsync` (caminho "ainda não existe registro").
 - [ ] Teste unidade (Domain): registrar para uma `Aula` que ainda não existe
   (mesma data nunca referenciada antes) cria a `Aula` sob demanda antes do
