@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import type { AulaProxima } from '@/lib/api/cancelamentos';
+import { formatarData } from '@/lib/data';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 
 export type AulaProximaCardProps = {
@@ -30,7 +31,8 @@ const MensagemPresencaConfirmada = 'Presença confirmada.';
  */
 export function AulaProximaCard({ aulaProxima, confirmado, onCancelar, onConfirmar }: AulaProximaCardProps) {
   const horaFormatada = aulaProxima.horaInicio.slice(0, 5);
-  const descricaoAula = `${NomesDiaSemana[aulaProxima.diaSemana]} ${horaFormatada} em ${aulaProxima.data}`;
+  const dataFormatada = formatarData(aulaProxima.data);
+  const descricaoAula = `${NomesDiaSemana[aulaProxima.diaSemana]} ${horaFormatada} em ${dataFormatada}`;
 
   return (
     <View className="w-full flex-col gap-two rounded-medium border border-background-selected bg-background-element px-four py-three dark:border-dark-background-selected dark:bg-dark-background-element sm:flex-row sm:items-center sm:justify-between">
@@ -39,7 +41,7 @@ export function AulaProximaCard({ aulaProxima, confirmado, onCancelar, onConfirm
           {NomesDiaSemana[aulaProxima.diaSemana]} · {horaFormatada}
         </Text>
         <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">
-          {aulaProxima.data}
+          {dataFormatada}
         </Text>
         {!aulaProxima.podeCancelar ? (
           <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">

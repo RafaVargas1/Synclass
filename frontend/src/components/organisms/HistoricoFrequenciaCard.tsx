@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 
 import type { AulaFrequenciaHistorico, StatusHistoricoFrequencia } from '@/lib/api/historicoFrequencia';
+import { formatarData } from '@/lib/data';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 
 export type HistoricoFrequenciaCardProps = {
@@ -45,9 +46,4 @@ export function HistoricoFrequenciaCard({ aula }: HistoricoFrequenciaCardProps) 
       <Text className={`text-sm font-semibold ${CoresPorStatus[aula.status]}`}>{RotulosPorStatus[aula.status]}</Text>
     </View>
   );
-}
-
-function formatarData(data: string): string {
-  const [ano, mes, dia] = data.split('-');
-  return `${dia}/${mes}/${ano}`;
 }
