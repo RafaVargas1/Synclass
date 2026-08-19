@@ -5,8 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConviteGerado } from '@/components/molecules/ConviteGerado';
 import { GerarConviteForm } from '@/components/organisms/GerarConviteForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import { gerarConvite } from '@/lib/api/convites';
 import { montarLinkWhatsApp } from '@/lib/whatsapp';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * URL base do app (Expo web), usada para montar o link público de aceite
@@ -58,7 +60,11 @@ export default function GerarConviteScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 items-center justify-center px-four">
+      <Topbar titulo="Convidar Aluno" />
+      <View
+        className="w-full flex-1 self-center items-center justify-center px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {linkConvite ? (
           <ConviteGerado linkConvite={linkConvite} onEnviarWhatsApp={handleEnviarWhatsApp} />
         ) : (

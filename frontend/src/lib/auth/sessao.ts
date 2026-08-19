@@ -54,3 +54,11 @@ export async function lerPapeis(): Promise<string[] | null> {
     Platform.OS === 'web' ? localStorage.getItem(ChavePapeis) : await SecureStore.getItemAsync(ChavePapeis);
   return valor ? (JSON.parse(valor) as string[]) : null;
 }
+
+export async function limparPapeis(): Promise<void> {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(ChavePapeis);
+    return;
+  }
+  await SecureStore.deleteItemAsync(ChavePapeis);
+}

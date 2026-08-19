@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { HorarioAlocacaoCard } from '@/components/organisms/HorarioAlocacaoCard';
+import { Topbar } from '@/components/organisms/Topbar';
 import { alocarAluno, desalocarAluno, listarAlocacoes, type Alocacao } from '@/lib/api/alocacoes';
 import { listarAlunosProvisorios, type AlunoProvisorio } from '@/lib/api/alunosProvisorios';
 import {
@@ -15,6 +15,7 @@ import {
   type ObterConfiguracaoResultado,
 } from '@/lib/api/configuracao';
 import { listarHorarios, type Horario } from '@/lib/api/horarios';
+import { MaxContentWidth } from '@/theme/tokens';
 
 const MensagemModeloVagoTexto =
   'O modelo de agendamento Vago não usa atribuição fixa de Aluno a horário.';
@@ -48,8 +49,11 @@ export default function AlocacoesProfessorScreen() {
   }
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1}>Alocação de Alunos</Heading>
+      <Topbar titulo="Alocação de Alunos" />
+      <View
+        className="w-full flex-1 self-center gap-four px-four py-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {permiteAlocacao(carregamento) ? (
           <AlocacoesConteudo professorId={professorId} />
         ) : (

@@ -4,6 +4,10 @@ import { listarValorDevidoDoAluno } from '@/lib/api/valorDevido';
 
 import ValorDevidoAlunoScreen from './valor-devido';
 
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+}));
+
 jest.mock('@/lib/api/valorDevido', () => ({ listarValorDevidoDoAluno: jest.fn() }));
 
 const listarValorDevidoDoAlunoMock = listarValorDevidoDoAluno as jest.Mock;

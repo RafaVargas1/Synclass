@@ -1,29 +1,32 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
-import { Input } from '@/components/atoms/Input';
 import { Paragraph } from '@/components/atoms/Paragraph';
-import { TEXTO_AJUDA_PERIODO } from '@/components/molecules/SeletorDePeriodo';
+import { SeletorDeData } from '@/components/molecules/SeletorDeData';
+import { Topbar } from '@/components/organisms/Topbar';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
 import {
+  calcularPeriodoTodos,
   listarValorDevido,
   type ListarValorDevidoResultado,
   type PeriodoConsultaInput,
   type ValorDevidoPorMatricula,
 } from '@/lib/api/valorDevido';
+import { proximoDia } from '@/lib/formatarData';
+import { MaxContentWidth } from '@/theme/tokens';
+
+type Modo = 'todos' | 'mes' | 'personalizado';
 
 /**
- * Tela de consulta do valor devido por Aluno (issue #12). `professorId` vem
- * da rota, mesmo padrão de `alocacoes.tsx`/`regra-de-cobranca.tsx` — ainda
- * não há sessão logada (issue #18, em paralelo) de onde derivar o Professor
- * autenticado. Sem período informado, carrega o mês corrente (default do
- * backend, ver `lib/api/valorDevido.ts`); o seletor permite consultar um
- * período específico digitando `inicio`/`fim` (yyyy-MM-dd).
+ * Tela de consulta do valor devido por Aluno (issue #12, revisitada por
+ * problema de usabilidade real: sem período informado a Api caía no mês
+ * corrente, dando a falsa impressão de "nenhum Aluno" quando só não havia
+ * cobrança nesse mês). Agora lista TODOS por padrão (`calcularPeriodoTodos`),
+ * com "Este mês" e "Personalizado" como filtros explícitos — o período
+ * personalizado usa um calendário de verdade em vez de `yyyy-MM-dd` digitado.
  */
 export default function ValorDevidoScreen() {
   const { professorId } = useLocalSearchParams<{ professorId: string }>();
@@ -31,58 +34,89 @@ export default function ValorDevidoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1}>Valor devido por Aluno</Heading>
-        <SeletorDePeriodo
-          inicio={estado.inicio}
-          fim={estado.fim}
-          onChangeInicio={estado.setInicio}
-          onChangeFim={estado.setFim}
-          onConsultar={estado.consultar}
-        />
-        {estado.carregando && <TelaCarregando />}
-        {!estado.carregando && estado.erro && <ErrorMessage>{estado.erro}</ErrorMessage>}
-        {!estado.carregando && !estado.erro && <ListaDeValoresDevidos valoresDevidos={estado.valoresDevidos} />}
+      <Topbar titulo="Valor devido por Aluno" />
+      <View className="w-full flex-1 self-center gap-four px-four py-five" style={{ maxWidth: MaxContentWidth }}>
+        <FiltroDePeriodo modo={estado.modo} onMudarModo={estado.setModo} />
+        {estado.modo === 'personalizado' ? (
+          <PeriodoPersonalizado
+            inicio={estado.inicioP}
+            fim={estado.fimP}
+            onSelecionarInicio={estado.setInicioP}
+            onSelecionarFim={estado.setFimP}
+          />
+        ) : null}
+        <ConteudoDaConsulta estado={estado} />
       </View>
     </SafeAreaView>
   );
 }
 
-function SeletorDePeriodo({
-  inicio,
-  fim,
-  onChangeInicio,
-  onChangeFim,
-  onConsultar,
-}: {
-  inicio: string;
-  fim: string;
-  onChangeInicio: (valor: string) => void;
-  onChangeFim: (valor: string) => void;
-  onConsultar: () => void;
-}) {
+function FiltroDePeriodo({ modo, onMudarModo }: { modo: Modo; onMudarModo: (modo: Modo) => void }) {
+  const opcoes: { valor: Modo; label: string }[] = [
+    { valor: 'todos', label: 'Todos' },
+    { valor: 'mes', label: 'Este mês' },
+    { valor: 'personalizado', label: 'Personalizado' },
+  ];
+
   return (
-    <View className="gap-two">
-      <Paragraph>{TEXTO_AJUDA_PERIODO}</Paragraph>
-      <View className="flex-row gap-two">
-        <Input
-          accessibilityLabel="Início do período"
-          placeholder="Início"
-          value={inicio}
-          onChangeText={onChangeInicio}
-          className="flex-1"
-        />
-        <Input
-          accessibilityLabel="Fim do período"
-          placeholder="Fim"
-          value={fim}
-          onChangeText={onChangeFim}
-          className="flex-1"
-        />
-      </View>
-      <Button label="Consultar" onPress={onConsultar} />
+    <View accessibilityRole="tablist" className="flex-row self-start border border-text dark:border-dark-text">
+      {opcoes.map((opcao) => (
+        <ChipDeModo key={opcao.valor} label={opcao.label} selecionado={modo === opcao.valor} onPress={() => onMudarModo(opcao.valor)} />
+      ))}
     </View>
   );
+}
+
+function ChipDeModo({ label, selecionado, onPress }: { label: string; selecionado: boolean; onPress: () => void }) {
+  const fundo = selecionado ? 'bg-text dark:bg-dark-text' : 'bg-transparent';
+  const texto = selecionado ? 'text-background dark:text-dark-background' : 'text-text dark:text-dark-text';
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: selecionado }}
+      onPress={onPress}
+      className={`px-three py-two ${fundo}`}
+    >
+      <Text className={`text-sm font-semibold ${texto}`}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function PeriodoPersonalizado({
+  inicio,
+  fim,
+  onSelecionarInicio,
+  onSelecionarFim,
+}: {
+  inicio: string | undefined;
+  fim: string | undefined;
+  onSelecionarInicio: (dataISO: string) => void;
+  onSelecionarFim: (dataISO: string) => void;
+}) {
+  return (
+    <View className="flex-row gap-three">
+      <View className="flex-1">
+        <SeletorDeData label="Início" valor={inicio} onSelecionar={onSelecionarInicio} />
+      </View>
+      <View className="flex-1">
+        <SeletorDeData label="Fim" valor={fim} onSelecionar={onSelecionarFim} />
+      </View>
+    </View>
+  );
+}
+
+function ConteudoDaConsulta({ estado }: { estado: EstadoConsulta }) {
+  if (!estado.pronto) {
+    return <Paragraph>Selecione o início e o fim do período.</Paragraph>;
+  }
+  if (estado.carregando) {
+    return <ActivityIndicator accessibilityLabel="Carregando" />;
+  }
+  if (estado.erro) {
+    return <ErrorMessage>{estado.erro}</ErrorMessage>;
+  }
+  return <ListaDeValoresDevidos valoresDevidos={estado.valoresDevidos} />;
 }
 
 function ListaDeValoresDevidos({ valoresDevidos }: { valoresDevidos: ValorDevidoPorMatricula[] }) {
@@ -100,46 +134,73 @@ function ListaDeValoresDevidos({ valoresDevidos }: { valoresDevidos: ValorDevido
   );
 }
 
-function TelaCarregando() {
-  return <ActivityIndicator accessibilityLabel="Carregando" />;
+type EstadoConsulta = {
+  modo: Modo;
+  setModo: (modo: Modo) => void;
+  inicioP: string | undefined;
+  setInicioP: (dataISO: string) => void;
+  fimP: string | undefined;
+  setFimP: (dataISO: string) => void;
+  pronto: boolean;
+  carregando: boolean;
+  erro: string | undefined;
+  valoresDevidos: ValorDevidoPorMatricula[];
+};
+
+function periodoDoModo(modo: Modo, inicioP: string | undefined, fimP: string | undefined): PeriodoConsultaInput | undefined {
+  if (modo === 'todos') {
+    return calcularPeriodoTodos(new Date());
+  }
+  if (modo === 'personalizado' && inicioP && fimP) {
+    return { inicio: inicioP, fim: proximoDia(fimP) };
+  }
+  return undefined;
 }
 
 /**
- * Carrega o valor devido ao montar (mês corrente, `periodo` indefinido) e
- * expõe `consultar` para recarregar com o período digitado. `resultado`
- * indefinido é o próprio estado de carregamento (mesma estratégia de
- * `regra-de-cobranca.tsx#useCarregamentoRegra`) — evita chamar `setState`
- * síncrono no corpo do efeito (`react-hooks/set-state-in-effect`), já que
- * `consultar` reseta `resultado` para `undefined` antes de trocar `periodo`.
+ * `resultado` guarda a chave da consulta que ele responde (`chaveAtual`),
+ * não só os dados — assim `carregando` é derivado comparando chaves em vez
+ * de zerar `resultado` de forma síncrona no corpo do efeito (mesma
+ * preocupação de `react-hooks/set-state-in-effect` já documentada em
+ * `painel/index.tsx#useUsuarioIdLogado`).
  */
 function useConsultaValorDevido(professorId: string) {
-  const [inicio, setInicio] = useState('');
-  const [fim, setFim] = useState('');
-  const [periodo, setPeriodo] = useState<PeriodoConsultaInput | undefined>(undefined);
-  const [resultado, setResultado] = useState<ListarValorDevidoResultado | undefined>(undefined);
+  const [modo, setModo] = useState<Modo>('todos');
+  const [inicioP, setInicioP] = useState<string | undefined>(undefined);
+  const [fimP, setFimP] = useState<string | undefined>(undefined);
+  const [resultado, setResultado] = useState<{ chave: string; dados: ListarValorDevidoResultado } | undefined>(undefined);
+
+  const pronto = modo !== 'personalizado' || (inicioP !== undefined && fimP !== undefined);
+  const periodo = periodoDoModo(modo, inicioP, fimP);
+  const chaveAtual = `${modo}|${periodo?.inicio ?? ''}|${periodo?.fim ?? ''}`;
 
   useEffect(() => {
+    if (!pronto) {
+      return;
+    }
     let cancelado = false;
-    listarValorDevido(professorId, periodo).then((res) => {
-      if (!cancelado) setResultado(res);
+    listarValorDevido(professorId, periodo).then((dados) => {
+      if (!cancelado) setResultado({ chave: chaveAtual, dados });
     });
     return () => {
       cancelado = true;
     };
-  }, [professorId, periodo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `periodo` é derivado de `chaveAtual`, incluir os dois duplicaria a dependência
+  }, [professorId, pronto, chaveAtual]);
 
-  const consultar = () => {
-    setResultado(undefined);
-    setPeriodo(inicio && fim ? { inicio, fim } : undefined);
-  };
+  const carregando = pronto && (resultado === undefined || resultado.chave !== chaveAtual);
+  const dadosAtuais = resultado?.chave === chaveAtual ? resultado.dados : undefined;
 
-  return { inicio, setInicio, fim, setFim, consultar, ...derivarEstadoConsulta(resultado) };
-}
-
-function derivarEstadoConsulta(resultado: ListarValorDevidoResultado | undefined) {
   return {
-    carregando: resultado === undefined,
-    erro: resultado && !resultado.sucesso ? resultado.mensagem : undefined,
-    valoresDevidos: resultado && resultado.sucesso ? resultado.valoresDevidos : [],
+    modo,
+    setModo,
+    inicioP,
+    setInicioP,
+    fimP,
+    setFimP,
+    pronto,
+    carregando,
+    erro: dadosAtuais && !dadosAtuais.sucesso ? dadosAtuais.mensagem : undefined,
+    valoresDevidos: dadosAtuais?.sucesso ? dadosAtuais.valoresDevidos : [],
   };
 }

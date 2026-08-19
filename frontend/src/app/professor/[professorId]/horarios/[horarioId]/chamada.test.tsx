@@ -21,6 +21,7 @@ jest.mock('@/lib/api/frequencias', () => ({
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
 }));
 
 const listarAlocacoesMock = listarAlocacoes as jest.Mock;

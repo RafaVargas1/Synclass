@@ -4,8 +4,13 @@
 
 :root {
   --font-display: 'Spline Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-deco: 'Bebas Neue', var(--font-display);
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
+}
+
+body {
+  font-family: var(--font-display);
 }

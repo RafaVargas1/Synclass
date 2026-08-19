@@ -7,7 +7,7 @@ import PerfilScreen from './perfil';
 
 const mockRouterReplace = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockRouterReplace }),
+  useRouter: () => ({ replace: mockRouterReplace, back: jest.fn(), canGoBack: () => false }),
 }));
 
 jest.mock('@/lib/auth/contexto-sessao', () => ({

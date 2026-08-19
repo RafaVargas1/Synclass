@@ -4,6 +4,10 @@ import { cadastrarAlunoProvisorio } from '@/lib/api/alunosProvisorios';
 
 import CadastroAlunoProvisorioScreen from './cadastro';
 
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+}));
+
 jest.mock('@/lib/api/alunosProvisorios', () => ({
   cadastrarAlunoProvisorio: jest.fn(),
 }));

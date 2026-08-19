@@ -5,15 +5,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { RegraDeCobrancaForm } from '@/components/organisms/RegraDeCobrancaForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import {
   definirRegraDeCobranca,
   obterRegraDeCobranca,
   type DefinirRegraDeCobrancaInput,
   type RegraDeCobranca,
 } from '@/lib/api/regraDeCobranca';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de definição da regra de cobrança de uma matrícula (issue #11).
@@ -54,8 +55,11 @@ function TelaComFormulario({
   const { enviando, erro, salva, handleSubmit } = useDefinirRegraDeCobranca(professorId, matriculaId);
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 items-center justify-center gap-four px-four">
-        <Heading level={1}>Regra de cobrança</Heading>
+      <Topbar titulo="Regra de cobrança" />
+      <View
+        className="w-full flex-1 self-center items-center justify-center gap-four px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {salva ? (
           <Paragraph>Regra de cobrança salva!</Paragraph>
         ) : (

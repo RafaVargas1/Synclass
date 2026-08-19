@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Heading } from '@/components/atoms/Heading';
 import { PerfilForm } from '@/components/organisms/PerfilForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import { atualizarNome, buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Carrega o nome atual do usuário autenticado ao montar (issue #27). Separado
@@ -83,8 +84,11 @@ export default function PerfilScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 items-center justify-center gap-four px-four">
-        <Heading level={1} accessibilityRole="header">Meu perfil</Heading>
+      <Topbar titulo="Meu perfil" />
+      <View
+        className="w-full flex-1 self-center items-center justify-center gap-four px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         <PerfilForm
           nome={nome}
           erro={erro}

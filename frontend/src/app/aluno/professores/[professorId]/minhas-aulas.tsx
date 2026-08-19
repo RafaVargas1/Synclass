@@ -4,10 +4,11 @@ import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { AulaProximaCard } from '@/components/organisms/AulaProximaCard';
+import { Topbar } from '@/components/organisms/Topbar';
 import { cancelarAula, listarProximasAulas, type AulaProxima } from '@/lib/api/cancelamentos';
 import { confirmarPresenca } from '@/lib/api/frequencias';
+import { MaxContentWidth } from '@/theme/tokens';
 
 const MensagemNenhumaAulaProxima = 'Você ainda não tem nenhuma aula marcada.';
 
@@ -27,8 +28,11 @@ export default function MinhasAulasAlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1} accessibilityRole="header">Minhas aulas</Heading>
+      <Topbar titulo="Minhas aulas" />
+      <View
+        className="w-full flex-1 self-center gap-four px-four py-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {estado.erro ? <ErrorMessage>{estado.erro}</ErrorMessage> : null}
         <ConteudoProximasAulas
           aulas={estado.aulas}

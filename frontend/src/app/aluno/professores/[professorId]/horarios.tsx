@@ -4,9 +4,10 @@ import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { HorarioVagoCard } from '@/components/organisms/HorarioVagoCard';
+import { Topbar } from '@/components/organisms/Topbar';
 import { listarHorariosVagos, marcarHorario, type HorarioVago } from '@/lib/api/marcacoes';
+import { MaxContentWidth } from '@/theme/tokens';
 
 const MensagemNenhumHorarioVago = 'Nenhum horário disponível para marcação no momento.';
 
@@ -26,8 +27,8 @@ export default function HorariosVagosAlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1} accessibilityRole="header">Horários disponíveis</Heading>
+      <Topbar titulo="Horários disponíveis" />
+      <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
         {estado.erro ? <ErrorMessage>{estado.erro}</ErrorMessage> : null}
         <ConteudoHorariosVagos horarios={estado.horarios} onMarcar={estado.handleMarcar} />
       </View>

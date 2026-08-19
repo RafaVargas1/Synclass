@@ -1,15 +1,16 @@
 import { Link, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { AlternadorDePapel } from '@/components/organisms/AlternadorDePapel';
+import { Topbar } from '@/components/organisms/Topbar';
 import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
+import { MaxContentWidth } from '@/theme/tokens';
 
 const MensagemErroUsuarioId =
   'Não foi possível carregar suas ações de Professor. Tente novamente.';
@@ -114,20 +115,21 @@ function ListaDeAcoes({ acoes }: { acoes: Acao[] }) {
   }
 
   return (
-    <View className="border border-background-selected dark:border-dark-background-selected">
-      {acoes.map((acao, indice) => (
-        <ItemDeAcao key={acao.label} acao={acao} ultimo={indice === acoes.length - 1} />
+    <View className="flex-row flex-wrap gap-three">
+      {acoes.map((acao) => (
+        <ItemDeAcao key={acao.label} acao={acao} />
       ))}
     </View>
   );
 }
 
-function ItemDeAcao({ acao, ultimo }: { acao: Acao; ultimo: boolean }) {
-  const divisor = ultimo ? '' : 'border-b border-background-selected dark:border-dark-background-selected';
-
+function ItemDeAcao({ acao }: { acao: Acao }) {
   return (
-    <Link href={acao.href} className={`px-four py-three text-base font-semibold text-text dark:text-dark-text ${divisor}`}>
-      {acao.label}
+    <Link
+      href={acao.href}
+      className="w-full min-w-[220px] flex-1 basis-[45%] border border-border bg-background-element px-four py-four dark:border-dark-border dark:bg-dark-background-element"
+    >
+      <Text className="text-base font-semibold text-text dark:text-dark-text">{acao.label}</Text>
     </Link>
   );
 }
@@ -139,7 +141,7 @@ function ItemDeAcao({ acao, ultimo }: { acao: Acao; ultimo: boolean }) {
  * navegação real (issue #44) — ver `acoesDoPapel`.
  */
 export default function PainelScreen() {
-  const { carregando, token, papeis, papelAtivo, definirPapelAtivo } = useSessao();
+  const { carregando, token, papeis, papelAtivo, definirPapelAtivo, sair } = useSessao();
   useRedirecionarSemSessao(carregando, token);
   const { usuarioId, erro, tentarNovamente } = useUsuarioIdLogado(token, papelAtivo);
 
@@ -149,8 +151,13 @@ export default function PainelScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1}>Painel</Heading>
+      <Topbar>
+        <BotaoSair onPress={sair} />
+      </Topbar>
+      <View
+        className="w-full flex-1 self-center gap-five px-four py-five"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={definirPapelAtivo} />
         {erro ? <ErroAcoesProfessor onTentarNovamente={tentarNovamente} /> : null}
         <ListaDeAcoes acoes={acoesDoPapel(papelAtivo, usuarioId)} />
@@ -159,6 +166,14 @@ export default function PainelScreen() {
         </Link>
       </View>
     </SafeAreaView>
+  );
+}
+
+function BotaoSair({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8}>
+      <Text className="text-sm font-semibold text-text dark:text-dark-text">Sair</Text>
+    </Pressable>
   );
 }
 

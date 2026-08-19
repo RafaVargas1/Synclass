@@ -11,6 +11,7 @@ jest.mock('@/lib/api/regraDeCobranca', () => ({
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ professorId: 'professor-1', matriculaId: 'matricula-1' }),
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
 }));
 
 const definirRegraDeCobrancaMock = definirRegraDeCobranca as jest.Mock;
