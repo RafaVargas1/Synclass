@@ -5,6 +5,7 @@ using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Convites;
+using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
@@ -34,6 +35,7 @@ public sealed class SynclassDbContext : DbContext
     public DbSet<AlocacaoHorario> AlocacoesHorario => Set<AlocacaoHorario>();
     public DbSet<Aula> Aulas => Set<Aula>();
     public DbSet<CancelamentoAula> CancelamentosAula => Set<CancelamentoAula>();
+    public DbSet<RegistroFrequencia> RegistrosFrequencia => Set<RegistroFrequencia>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
