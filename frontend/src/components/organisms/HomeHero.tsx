@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
+import { Paragraph } from '@/components/atoms/Paragraph';
 import { IntroSection } from '@/components/molecules/IntroSection';
 
 export type HomeHeroProps = {
@@ -18,7 +19,7 @@ export function HomeHero({ onGetStarted, onLogin }: HomeHeroProps) {
     <View className="items-center gap-four">
       <IntroSection
         title="Synclass"
-        description="Fundação do projeto pronta: Docker, PostgreSQL, .NET e Expo conectados. Os requisitos funcionais ainda serão implementados."
+        description="Professor organiza horários e frequência dos seus Alunos, Aluno confirma presença e acompanha o que deve, tudo em um só lugar."
       />
       <Button label="Cadastrar como Professor" onPress={onGetStarted} />
       <Pressable accessibilityRole="button" onPress={onLogin}>
@@ -26,6 +27,11 @@ export function HomeHero({ onGetStarted, onLogin }: HomeHeroProps) {
           Já tenho conta, entrar
         </Text>
       </Pressable>
+      <View className="mt-two w-full items-center border-t border-background-selected pt-two dark:border-dark-background-selected">
+        <Paragraph className="text-center text-sm">
+          Aluno entra por convite: peça ao seu Professor o link enviado por WhatsApp.
+        </Paragraph>
+      </View>
     </View>
   );
 }

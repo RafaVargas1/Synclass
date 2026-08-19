@@ -36,7 +36,7 @@ describe('AceiteConviteScreen', () => {
     expect(aceitarConviteMock).toHaveBeenCalledWith({
       token: 'token-1',
       nome: 'João Pedro',
-      contato: '11987654321',
+      contato: '(11) 98765-4321',
     });
   });
 
