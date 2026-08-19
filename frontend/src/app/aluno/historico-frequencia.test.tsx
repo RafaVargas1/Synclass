@@ -4,6 +4,10 @@ import { listarHistoricoFrequenciaDoAluno } from '@/lib/api/historicoFrequencia'
 
 import HistoricoFrequenciaAlunoScreen from './historico-frequencia';
 
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+}));
+
 jest.mock('@/lib/api/historicoFrequencia', () => ({ listarHistoricoFrequenciaDoAluno: jest.fn() }));
 
 const listarHistoricoFrequenciaDoAlunoMock = listarHistoricoFrequenciaDoAluno as jest.Mock;

@@ -3,16 +3,17 @@ import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { SeletorDePeriodo } from '@/components/molecules/SeletorDePeriodo';
 import { HistoricoFrequenciaCard } from '@/components/organisms/HistoricoFrequenciaCard';
+import { Topbar } from '@/components/organisms/Topbar';
 import {
   listarHistoricoFrequenciaDoAluno,
   type HistoricoFrequenciaPorProfessor,
   type ListarHistoricoFrequenciaResultado,
   type PeriodoConsultaInput,
 } from '@/lib/api/historicoFrequencia';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de consulta do histórico de frequência do Aluno autenticado,
@@ -27,8 +28,8 @@ export default function HistoricoFrequenciaAlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1}>Meu histórico de frequência</Heading>
+      <Topbar titulo="Meu histórico de frequência" />
+      <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
         <SeletorDePeriodo
           inicio={estado.inicio}
           fim={estado.fim}
