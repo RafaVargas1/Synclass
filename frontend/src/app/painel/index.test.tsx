@@ -1,17 +1,16 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Text } from 'react-native';
 
 import { useSessao } from '@/lib/auth/contexto-sessao';
 
 import PainelScreen from './index';
 
 const mockRouterReplace = jest.fn();
-jest.mock('expo-router', () => {
-  const { Text } = require('react-native');
-  return {
-    useRouter: () => ({ replace: mockRouterReplace }),
-    Link: ({ children }: { children: React.ReactNode }) => <Text>{children}</Text>,
-  };
-});
+const MockLinkText = Text;
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockRouterReplace }),
+  Link: ({ children }: { children: React.ReactNode }) => <MockLinkText>{children}</MockLinkText>,
+}));
 
 jest.mock('@/lib/auth/contexto-sessao', () => ({
   useSessao: jest.fn(),
