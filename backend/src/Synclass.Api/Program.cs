@@ -12,6 +12,7 @@ using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Common;
 using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Convites;
+using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
@@ -92,6 +93,11 @@ builder.Services.AddScoped<AlocacaoHorarioService>();
 builder.Services.AddScoped<IAulaRepository, AulaRepository>();
 builder.Services.AddScoped<ICancelamentoAulaRepository, CancelamentoAulaRepository>();
 builder.Services.AddScoped<AulaService>();
+
+// Registro de frequência pelo Professor (issue #14) — ver
+// docs/specs/14-registro-frequencia/implementation.md.
+builder.Services.AddScoped<IRegistroFrequenciaRepository, RegistroFrequenciaRepository>();
+builder.Services.AddScoped<FrequenciaService>();
 
 // Login por OTP (issue #18) — ver docs/specs/18-login-otp/implementation.md.
 builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();

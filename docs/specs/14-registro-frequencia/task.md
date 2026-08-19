@@ -31,10 +31,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/14
 - [x] Teste unidade (Domain): `matriculaId` do request que não está alocada
   neste horário → rejeitado (`AlocacaoNaoEncontradaException`, mesma exceção
   já usada pela issue #10 para o mesmo tipo de checagem).
-- [ ] Log estruturado: evento `FrequenciaRegistrada` (Information, contagem
+- [x] Log estruturado: evento `FrequenciaRegistrada` (Information, contagem
   de presentes/ausentes) e `FrequenciaDivergente` (Warning, por linha
   divergente) — ver architecture.md#logs-estruturados-e-track-id.
-- [ ] Teste de fumaça (Api): `POST .../aulas/{data}/frequencias` — 200 com
+- [x] Teste de fumaça (Api): `POST .../aulas/{data}/frequencias` — 200 com
   registro em lote, 400 para `matriculaId` não alocada, 404 horário
   inexistente/não pertence ao Professor.
 - [ ] Componente frontend: `lib/api/frequencias.ts` (contrato já
