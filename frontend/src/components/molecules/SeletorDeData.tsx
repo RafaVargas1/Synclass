@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { CalendarioMensal } from '@/components/molecules/CalendarioMensal';
-import { formatarData } from '@/lib/formatarData';
+import { deDataISO, formatarData } from '@/lib/formatarData';
 
 export type SeletorDeDataProps = {
   label: string;
@@ -17,7 +17,7 @@ export type SeletorDeDataProps = {
  */
 export function SeletorDeData({ label, valor, onSelecionar }: SeletorDeDataProps) {
   const [aberto, setAberto] = useState(false);
-  const [mesReferencia, setMesReferencia] = useState(() => valor ? new Date(valor) : new Date());
+  const [mesReferencia, setMesReferencia] = useState(() => valor ? deDataISO(valor) : new Date());
 
   function selecionar(dataISO: string) {
     onSelecionar(dataISO);

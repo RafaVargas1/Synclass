@@ -23,12 +23,25 @@ export function paraDataISO(data: Date): string {
 }
 
 /**
+ * Converte `yyyy-MM-dd` (contrato de API) para um `Date` local — inverso de
+ * `paraDataISO`. Constrói a partir dos componentes em vez de `new
+ * Date(dataISO)`: esse construtor interpreta uma string `yyyy-MM-dd` como
+ * UTC meia-noite (spec ISO 8601 de data pura), o que em fusos horários
+ * negativos (ex: America/Sao_Paulo, UTC-3) volta um dia ao converter para
+ * hora local — achado de dev-review no `SeletorDeData`, PR #57.
+ */
+export function deDataISO(dataISO: string): Date {
+  const [ano, mes, dia] = dataISO.split('-').map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
+/**
  * Dia seguinte a `dataISO` (`yyyy-MM-dd`) — usado para transformar o
  * último dia INCLUSIVE escolhido no calendário no `fim` EXCLUSIVO que o
  * contrato de período da Api espera (`[inicio, fim)`).
  */
 export function proximoDia(dataISO: string): string {
-  const [ano, mes, dia] = dataISO.split('-').map(Number);
-  const data = new Date(ano, mes - 1, dia + 1);
+  const data = deDataISO(dataISO);
+  data.setDate(data.getDate() + 1);
   return paraDataISO(data);
 }

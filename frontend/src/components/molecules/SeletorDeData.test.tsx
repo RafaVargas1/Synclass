@@ -16,6 +16,14 @@ describe('SeletorDeData', () => {
     expect(screen.getByText('20/08/2026')).toBeTruthy();
   });
 
+  it('opens the calendar on the month of the selected value, not the UTC-shifted previous month', async () => {
+    await render(<SeletorDeData label="Início" valor="2026-08-01" onSelecionar={() => {}} />);
+
+    await fireEvent.press(screen.getByText('01/08/2026'));
+
+    expect(screen.getByText('Agosto de 2026')).toBeTruthy();
+  });
+
   it('opens the calendar when pressed, and closes it after picking a day', async () => {
     const onSelecionar = jest.fn();
     await render(<SeletorDeData label="Início" valor={undefined} onSelecionar={onSelecionar} />);
