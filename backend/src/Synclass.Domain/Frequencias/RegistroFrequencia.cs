@@ -56,6 +56,21 @@ public sealed class RegistroFrequencia
     }
 
     /// <summary>
+    /// <c>internal</c>, visível só para <c>Synclass.Domain.Tests</c> (ver
+    /// <c>InternalsVisibleTo</c> no <c>.csproj</c>) — seeda uma linha com
+    /// <see cref="ConfirmadoPeloAluno"/> já preenchido para os testes de
+    /// reconciliação de <c>FrequenciaService.RegistrarAsync</c> (AC2/AC3).
+    /// Não é o caminho de escrita real da confirmação do Aluno: esse é
+    /// escopo da issue #15, ainda não implementada.
+    /// </summary>
+    internal static RegistroFrequencia CriarComConfirmacaoDoAluno(
+        Guid aulaId, Guid matriculaId, bool confirmadoPeloAluno, IClock clock)
+    {
+        return new RegistroFrequencia(
+            Guid.NewGuid(), aulaId, matriculaId, null, confirmadoPeloAluno, clock.UtcNow, clock.UtcNow);
+    }
+
+    /// <summary>
     /// Marca a presença/ausência decidida pelo Professor — idempotente por
     /// natureza (AC4: chamar de novo sobrescreve, não duplica). Nunca mexe em
     /// <see cref="ConfirmadoPeloAluno"/>, preservando o valor existente

@@ -18,17 +18,17 @@ Card: https://github.com/RafaVargas1/Synclass/issues/14
 - [x] Teste unidade (Domain): registrar para uma `Aula` que ainda não existe
   (mesma data nunca referenciada antes) cria a `Aula` sob demanda antes do
   registro.
-- [ ] Teste unidade (Domain): Aluno já confirmou presença antes (linha
+- [x] Teste unidade (Domain): Aluno já confirmou presença antes (linha
   pré-existente com `ConfirmadoPeloAluno = true`, `StatusProfessor = null`)
   — Professor marca presente → mesma linha é atualizada (`StatusProfessor =
   Presente`), sem criar uma segunda (AC2).
-- [ ] Teste unidade (Domain): divergência — Aluno confirmou presente,
+- [x] Teste unidade (Domain): divergência — Aluno confirmou presente,
   Professor marca ausente → `StatusProfessor = Ausente` e
   `ConfirmadoPeloAluno` permanece `true` na mesma linha (preserva os dois
   valores, AC3).
-- [ ] Teste unidade (Domain): registrar de novo para a mesma `(Aula,
+- [x] Teste unidade (Domain): registrar de novo para a mesma `(Aula,
   Matricula)` sobrescreve `StatusProfessor` anterior (upsert, AC4).
-- [ ] Teste unidade (Domain): `matriculaId` do request que não está alocada
+- [x] Teste unidade (Domain): `matriculaId` do request que não está alocada
   neste horário → rejeitado (`AlocacaoNaoEncontradaException`, mesma exceção
   já usada pela issue #10 para o mesmo tipo de checagem).
 - [ ] Log estruturado: evento `FrequenciaRegistrada` (Information, contagem

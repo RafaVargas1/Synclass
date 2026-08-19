@@ -106,4 +106,110 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
 
         cenario.Aulas.Aulas.Should().ContainSingle(a => a.HorarioId == horario.Id && a.Data == data);
     }
+
+    /// <summary>
+    /// AC2 — o Aluno já confirmou presença (issue #15) antes do Professor
+    /// registrar: marcar o mesmo Aluno como presente reconcilia com a linha
+    /// existente (mesmo fato, duas perspectivas), sem criar uma segunda.
+    /// </summary>
+    [Fact]
+    public async Task RegistrarAsync_AlunoJaConfirmouPresencaEProfessorMarcaPresente_AtualizaAMesmaLinha()
+    {
+        var cenario = CriarCenario();
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
+        var data = new DateOnly(2026, 8, 20);
+        var aula = Aula.Criar(horario.Id, data, Clock);
+        await cenario.Aulas.AdicionarAsync(aula, CancellationToken.None);
+        var confirmacaoDoAluno = RegistroFrequencia.CriarComConfirmacaoDoAluno(aula.Id, matricula.Id, confirmadoPeloAluno: true, Clock);
+        await cenario.Registros.AdicionarAsync(confirmacaoDoAluno, CancellationToken.None);
+        var statusPorMatricula = new Dictionary<Guid, StatusFrequencia> { [matricula.Id] = StatusFrequencia.Presente };
+
+        var registros = await cenario.FrequenciaService.RegistrarAsync(
+            ProfessorId, horario.Id, data, statusPorMatricula, CancellationToken.None);
+
+        cenario.Registros.Registros.Should().ContainSingle(r => r.MatriculaId == matricula.Id);
+        registros.Should().ContainSingle(r => r.Id == confirmacaoDoAluno.Id);
+        var registro = registros.Single();
+        registro.StatusProfessor.Should().Be(StatusFrequencia.Presente);
+        registro.ConfirmadoPeloAluno.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// AC3 — divergência: Aluno confirmou presente, Professor marca ausente.
+    /// Ambos os valores são preservados na mesma linha (auditoria) — o
+    /// Professor decide a "verdade" oficial (`StatusProfessor`), mas
+    /// `ConfirmadoPeloAluno` não é sobrescrito.
+    /// </summary>
+    [Fact]
+    public async Task RegistrarAsync_AlunoConfirmouPresenteEProfessorMarcaAusente_PreservaOsDoisValores()
+    {
+        var cenario = CriarCenario();
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
+        var data = new DateOnly(2026, 8, 20);
+        var aula = Aula.Criar(horario.Id, data, Clock);
+        await cenario.Aulas.AdicionarAsync(aula, CancellationToken.None);
+        var confirmacaoDoAluno = RegistroFrequencia.CriarComConfirmacaoDoAluno(aula.Id, matricula.Id, confirmadoPeloAluno: true, Clock);
+        await cenario.Registros.AdicionarAsync(confirmacaoDoAluno, CancellationToken.None);
+        var statusPorMatricula = new Dictionary<Guid, StatusFrequencia> { [matricula.Id] = StatusFrequencia.Ausente };
+
+        var registros = await cenario.FrequenciaService.RegistrarAsync(
+            ProfessorId, horario.Id, data, statusPorMatricula, CancellationToken.None);
+
+        var registro = registros.Single();
+        registro.StatusProfessor.Should().Be(StatusFrequencia.Ausente);
+        registro.ConfirmadoPeloAluno.Should().BeTrue();
+        cenario.Registros.Registros.Should().ContainSingle(r => r.MatriculaId == matricula.Id);
+    }
+
+    /// <summary>
+    /// AC4 — registrar de novo para a mesma (Aula, Matricula) sobrescreve o
+    /// `StatusProfessor` anterior (upsert), não duplica a linha.
+    /// </summary>
+    [Fact]
+    public async Task RegistrarAsync_RegistrarDeNovoParaMesmaAulaEMatricula_SobrescreveOStatusAnterior()
+    {
+        var cenario = CriarCenario();
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
+        var data = new DateOnly(2026, 8, 20);
+        await cenario.FrequenciaService.RegistrarAsync(
+            ProfessorId, horario.Id, data,
+            new Dictionary<Guid, StatusFrequencia> { [matricula.Id] = StatusFrequencia.Ausente },
+            CancellationToken.None);
+
+        var registros = await cenario.FrequenciaService.RegistrarAsync(
+            ProfessorId, horario.Id, data,
+            new Dictionary<Guid, StatusFrequencia> { [matricula.Id] = StatusFrequencia.Presente },
+            CancellationToken.None);
+
+        registros.Should().ContainSingle();
+        registros.Single().StatusProfessor.Should().Be(StatusFrequencia.Presente);
+        cenario.Registros.Registros.Should().ContainSingle(r => r.MatriculaId == matricula.Id);
+    }
+
+    /// <summary>
+    /// `matriculaId` do request que não está alocada neste horário é
+    /// rejeitada — mesma exceção da issue #10 para o mesmo tipo de checagem.
+    /// </summary>
+    [Fact]
+    public async Task RegistrarAsync_MatriculaNaoAlocadaNesteHorario_RejeitaComAlocacaoNaoEncontradaException()
+    {
+        var cenario = CriarCenario();
+        var horario = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var matriculaNaoAlocada = Matricula.CriarProvisoria(ProfessorId, "Aluno Dois", "aluno-2", Clock);
+        await cenario.Matriculas.AdicionarAsync(matriculaNaoAlocada, CancellationToken.None);
+        var statusPorMatricula = new Dictionary<Guid, StatusFrequencia> { [matriculaNaoAlocada.Id] = StatusFrequencia.Presente };
+
+        var acao = () => cenario.FrequenciaService.RegistrarAsync(
+            ProfessorId, horario.Id, new DateOnly(2026, 8, 20), statusPorMatricula, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<Synclass.Domain.Aulas.AlocacaoNaoEncontradaException>();
+        cenario.Registros.Registros.Should().BeEmpty();
+    }
 }

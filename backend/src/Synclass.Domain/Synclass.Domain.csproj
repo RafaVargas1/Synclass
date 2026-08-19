@@ -6,4 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Permite que os testes de unidade seedem estado interno (ex:
+         RegistroFrequencia com ConfirmadoPeloAluno pré-existente, issue #14)
+         sem expor um construtor/factory público que só faz sentido para
+         fixture de teste. -->
+    <InternalsVisibleTo Include="Synclass.Domain.Tests" />
+  </ItemGroup>
+
 </Project>
