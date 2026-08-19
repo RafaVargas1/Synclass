@@ -43,7 +43,7 @@ export function SolicitarCodigoForm({
       <FormField
         label="Contato"
         value={contato}
-        onChangeText={(texto) => onChangeContato(mascararContato(texto))}
+        onChangeText={(texto) => onChangeContato(mascararContato(texto, contato))}
         placeholder="E-mail ou telefone cadastrado"
         autoCapitalize="none"
         errorMessage={erroContato}

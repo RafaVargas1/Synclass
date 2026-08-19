@@ -73,7 +73,7 @@ export function CadastroProfessorForm({
       <FormField
         label="Contato"
         value={contato}
-        onChangeText={(texto) => onChangeContato(mascararContato(texto))}
+        onChangeText={(texto) => onChangeContato(mascararContato(texto, contato))}
         onBlur={onBlurContato}
         placeholder="E-mail ou telefone"
         errorMessage={erroContato}

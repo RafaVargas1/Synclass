@@ -79,4 +79,22 @@ describe('mascararContato', () => {
   it('mantém string vazia', () => {
     expect(mascararContato('')).toBe('');
   });
+
+  it('não deixa parêntese de máscara sobrar ao digitar, tecla por tecla, um e-mail que começa com dígito', () => {
+    let anterior = '';
+    let atual = mascararContato('3', anterior);
+    expect(atual).toBe('(3');
+    anterior = atual;
+    atual = mascararContato(`${anterior}v`, anterior);
+    expect(atual).toBe('3v');
+    anterior = atual;
+    atual = mascararContato(`${anterior}argas@exemplo.com`, anterior);
+    expect(atual).toBe('3vargas@exemplo.com');
+  });
+
+  it('remove um dígito ao apagar o caractere de máscara logo após ele (backspace não pode travar)', () => {
+    const anterior = '(11) 3322-4455';
+    const apagouSoAParentese = '(11 3322-4455';
+    expect(mascararContato(apagouSoAParentese, anterior)).toBe('(11) 3322-445');
+  });
 });

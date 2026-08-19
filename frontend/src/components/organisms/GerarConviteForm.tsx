@@ -45,7 +45,7 @@ export function GerarConviteForm({
       <FormField
         label="Contato do Aluno"
         value={contato}
-        onChangeText={(texto) => onChangeContato(mascararContato(texto))}
+        onChangeText={(texto) => onChangeContato(mascararContato(texto, contato))}
         placeholder="E-mail ou telefone"
         errorMessage={erroContato}
       />

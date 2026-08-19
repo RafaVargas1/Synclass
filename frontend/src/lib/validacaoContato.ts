@@ -37,19 +37,39 @@ function ehTelefoneValido(contato: string): boolean {
  * digitado sem máscara nenhuma era a lacuna real de usabilidade). Enquanto o
  * valor só tem dígitos, formata como telefone BR — `(99) 9999-9999` até 10
  * dígitos (fixo), reformatando para `(99) 99999-9999` ao 11º dígito
- * (celular). Assim que aparece uma letra (sinal de e-mail em digitação),
- * para de mascarar e devolve o valor cru — inclusive já digitado antes da
- * letra aparecer (ex: contato começando com dígito), então não sobra
- * pontuação de máscara colada num e-mail.
+ * (celular).
+ *
+ * `valorAnterior` (o texto antes desta tecla) resolve dois bugs achados em
+ * revisão:
+ * 1. Ao aparecer uma letra (sinal de e-mail em digitação), só o trecho ANTES
+ *    da letra é limpo de pontuação de máscara — o resto do texto (a partir
+ *    da letra) é preservado intacto, então um e-mail que começa com dígito
+ *    (ex: "3vargas@exemplo.com") não fica com parêntese/traço grudado.
+ * 2. Apagar um caractere de máscara (parêntese/espaço/traço) sozinho não
+ *    muda a contagem de dígitos, e a máscara reconstruída ficaria idêntica à
+ *    anterior — o que trava o backspace visualmente. Quando isso acontece,
+ *    remove também o último dígito, para o backspace sempre ter efeito.
  */
-export function mascararContato(valor: string): string {
-  if (/[a-zA-Z]/.test(valor)) {
-    return valor;
+export function mascararContato(valor: string, valorAnterior = ''): string {
+  const indiceLetra = valor.search(/[a-zA-Z]/);
+  if (indiceLetra !== -1) {
+    const prefixoNumerico = valor.slice(0, indiceLetra).replace(/\D/g, '');
+    return prefixoNumerico + valor.slice(indiceLetra);
   }
 
-  const digitos = valor.replace(/\D/g, '').slice(0, 11);
+  let digitos = valor.replace(/\D/g, '').slice(0, 11);
+  const digitosAnteriores = valorAnterior.replace(/\D/g, '');
+  const apagouCaractere = valor.length < valorAnterior.length;
+  if (apagouCaractere && digitos.length > 0 && digitos.length === digitosAnteriores.length) {
+    digitos = digitos.slice(0, -1);
+  }
+
+  return formatarTelefoneParcial(digitos);
+}
+
+function formatarTelefoneParcial(digitos: string): string {
   if (digitos.length === 0) {
-    return valor;
+    return '';
   }
   if (digitos.length <= 2) {
     return `(${digitos}`;
