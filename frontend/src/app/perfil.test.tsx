@@ -48,6 +48,33 @@ describe('PerfilScreen', () => {
     await waitFor(() => expect(screen.getByDisplayValue('Maria Silva')).toBeTruthy());
   });
 
+  it('exposes "Meu perfil" as an accessible heading', async () => {
+    buscarPerfilMock.mockResolvedValue({ sucesso: true, nome: 'Maria Silva' });
+
+    await render(<PerfilScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('header', { name: 'Meu perfil' })).toBeTruthy(),
+    );
+  });
+
+  it('does not overwrite an in-progress edit when the initial fetch resolves late', async () => {
+    let resolverFetch: (resultado: { sucesso: true; nome: string }) => void = () => {};
+    buscarPerfilMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolverFetch = resolve;
+      }),
+    );
+    await render(<PerfilScreen />);
+    await fireEvent.changeText(screen.getByDisplayValue(''), 'Nome Digitado Pelo Usuário');
+
+    resolverFetch({ sucesso: true, nome: 'Maria Silva' });
+
+    await waitFor(() => expect(buscarPerfilMock).toHaveBeenCalled());
+    expect(screen.getByDisplayValue('Nome Digitado Pelo Usuário')).toBeTruthy();
+    expect(screen.queryByDisplayValue('Maria Silva')).toBeNull();
+  });
+
   it('shows a success message and the updated nome when saving succeeds', async () => {
     buscarPerfilMock.mockResolvedValue({ sucesso: true, nome: 'Maria Silva' });
     atualizarNomeMock.mockResolvedValue({ sucesso: true, nome: 'Maria Souza' });

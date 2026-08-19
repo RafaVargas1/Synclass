@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,23 +11,31 @@ import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 /**
  * Carrega o nome atual do usuário autenticado ao montar (issue #27). Separado
  * de `PerfilScreen` só para caber no limite de 20 linhas por função
- * (`code-style.md`).
+ * (`code-style.md`). `editadoRef` evita que a resposta do fetch inicial
+ * sobrescreva silenciosamente uma edição já iniciada pelo usuário antes
+ * dela chegar (achado de qa-review, PR #40).
  */
-function usePerfilCarregado(token: string | null): [string, (nome: string) => void] {
+function usePerfilCarregado(token: string | null): [string, (nome: string) => void, (nome: string) => void] {
   const [nome, setNome] = useState('');
+  const editadoRef = useRef(false);
 
   useEffect(() => {
     if (!token) {
       return;
     }
     void buscarPerfil().then((resultado) => {
-      if (resultado.sucesso) {
+      if (resultado.sucesso && !editadoRef.current) {
         setNome(resultado.nome);
       }
     });
   }, [token]);
 
-  return [nome, setNome];
+  function onChangeNome(novoNome: string) {
+    editadoRef.current = true;
+    setNome(novoNome);
+  }
+
+  return [nome, onChangeNome, setNome];
 }
 
 /**
@@ -66,8 +74,8 @@ function useSalvarNome(nome: string, atualizarNomeLocal: (nome: string) => void)
 export default function PerfilScreen() {
   const { carregando, token } = useSessao();
   useRedirecionarSemSessao(carregando, token);
-  const [nome, setNome] = usePerfilCarregado(token);
-  const { erro, sucesso, salvando, handleSalvar } = useSalvarNome(nome, setNome);
+  const [nome, onChangeNome, definirNome] = usePerfilCarregado(token);
+  const { erro, sucesso, salvando, handleSalvar } = useSalvarNome(nome, definirNome);
 
   if (carregando || !token) {
     return null;
@@ -76,13 +84,13 @@ export default function PerfilScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <View className="flex-1 items-center justify-center gap-four px-four">
-        <Heading level={1}>Meu perfil</Heading>
+        <Heading level={1} accessibilityRole="header">Meu perfil</Heading>
         <PerfilForm
           nome={nome}
           erro={erro}
           sucesso={sucesso}
           salvando={salvando}
-          onChangeNome={setNome}
+          onChangeNome={onChangeNome}
           onSalvar={handleSalvar}
         />
       </View>
