@@ -68,4 +68,22 @@ public sealed class PeriodoConsulta
 
         return quantidade;
     }
+
+    /// <summary>
+    /// Gera cada <see cref="DateOnly"/> do período cujo dia da semana bate
+    /// com <paramref name="diaSemana"/> — irmão de <see cref="ContarOcorrencias"/>
+    /// (mesmo laço), usado por <c>FrequenciaService.ListarHistoricoAsync</c>
+    /// (issue #16) para converter um <see cref="Horario"/> recorrente nas
+    /// datas concretas do período consultado.
+    /// </summary>
+    public IEnumerable<DateOnly> GerarDatas(DiaSemana diaSemana)
+    {
+        for (var data = Inicio; data < FimExclusivo; data = data.AddDays(1))
+        {
+            if ((int)data.DayOfWeek == (int)diaSemana)
+            {
+                yield return data;
+            }
+        }
+    }
 }
