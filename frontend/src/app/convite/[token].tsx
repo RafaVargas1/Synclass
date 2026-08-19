@@ -65,8 +65,13 @@ export default function AceiteConviteScreen() {
             contato={contato}
             erro={erro}
             enviando={enviando}
+            // O readonly de Nome por identidade já existente (issue #27) é
+            // escopo do cadastro direto de Professor (app/professor/cadastro.tsx)
+            // — o fluxo de aceite de convite não foi coberto por aquele card.
+            nomeReadonly={false}
             onChangeNome={setNome}
             onChangeContato={setContato}
+            onBlurContato={() => {}}
             onSubmit={handleSubmit}
           />
         )}
