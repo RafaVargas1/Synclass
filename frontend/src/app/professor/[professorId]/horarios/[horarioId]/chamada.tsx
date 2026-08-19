@@ -28,10 +28,11 @@ export default function ChamadaScreen() {
   const { horarioId, data } = useLocalSearchParams<{
     professorId: string;
     horarioId: string;
-    data: string;
+    data?: string;
   }>();
+  const dataEfetiva = data ?? dataDeHoje();
   const carregamento = useCarregamentoAlunosAlocados(horarioId);
-  const salvamento = useSalvamentoChamada(horarioId, data, carregamento.alunos);
+  const salvamento = useSalvamentoChamada(horarioId, dataEfetiva, carregamento.alunos);
 
   if (carregamento.status === 'carregando') {
     return <TelaCarregando />;
@@ -68,6 +69,11 @@ export default function ChamadaScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+/** Fallback quando a tela é acessada sem `?data=` — hoje, formato `yyyy-MM-dd` (contrato do backend). */
+function dataDeHoje(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function TelaCarregando() {

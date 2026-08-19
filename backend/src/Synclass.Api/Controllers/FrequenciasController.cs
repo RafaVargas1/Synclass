@@ -61,6 +61,10 @@ public sealed class FrequenciasController : ControllerBase
         {
             return BadRequest(new FrequenciaErrorResponse(ex.Message));
         }
+        catch (ArgumentException)
+        {
+            return BadRequest(new FrequenciaErrorResponse("Cada matriculaId deve aparecer no máximo uma vez em registros."));
+        }
     }
 
     private static RegistroFrequenciaResponse ParaResponse(RegistroFrequencia registro)

@@ -54,6 +54,7 @@ public sealed class FrequenciaService
             registros.Add(registro);
         }
 
+        await _registros.SalvarAsync(cancellationToken);
         return registros;
     }
 
@@ -68,7 +69,6 @@ public sealed class FrequenciaService
         }
 
         registro.RegistrarProfessor(status, _clock);
-        await _registros.SalvarAsync(cancellationToken);
         return registro;
     }
 
