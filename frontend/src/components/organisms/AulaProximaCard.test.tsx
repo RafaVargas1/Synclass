@@ -28,7 +28,7 @@ describe('AulaProximaCard', () => {
 
     expect(screen.getByText(/Quinta/)).toBeTruthy();
     expect(screen.getByText(/18:00/)).toBeTruthy();
-    expect(screen.getByText('2026-08-20')).toBeTruthy();
+    expect(screen.getByText('20/08/2026')).toBeTruthy();
   });
 
   it('calls onCancelar with the horarioId and data when Cancelar is pressed', async () => {
