@@ -20,4 +20,12 @@ describe('HomeHero', () => {
 
     expect(onLogin).toHaveBeenCalled();
   });
+
+  it('explica ao Aluno como entrar, já que não há cadastro de Aluno nesta tela', async () => {
+    await render(<HomeHero onGetStarted={jest.fn()} onLogin={jest.fn()} />);
+
+    expect(
+      screen.getByText('Aluno entra por convite: peça ao seu Professor o link enviado por WhatsApp.'),
+    ).toBeTruthy();
+  });
 });

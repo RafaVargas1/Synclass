@@ -5,7 +5,7 @@ import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { FormField } from '@/components/molecules/FormField';
-import { contatoEhValido, MensagemContatoInvalido } from '@/lib/validacaoContato';
+import { contatoEhValido, mascararContato, MensagemContatoInvalido } from '@/lib/validacaoContato';
 
 export type CadastroProfessorFormProps = {
   nome: string;
@@ -73,7 +73,7 @@ export function CadastroProfessorForm({
       <FormField
         label="Contato"
         value={contato}
-        onChangeText={onChangeContato}
+        onChangeText={(texto) => onChangeContato(mascararContato(texto))}
         onBlur={onBlurContato}
         placeholder="E-mail ou telefone"
         errorMessage={erroContato}

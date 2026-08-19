@@ -41,7 +41,7 @@ describe('GerarConviteScreen', () => {
     expect(screen.getByText(/token-alta-entropia/)).toBeTruthy();
     expect(gerarConviteMock).toHaveBeenCalledWith({
       professorId: 'professor-1',
-      contato: '11987654321',
+      contato: '(11) 98765-4321',
     });
   });
 
@@ -83,7 +83,7 @@ describe('GerarConviteScreen', () => {
     await waitFor(() => expect(screen.getByText('Convite gerado!')).toBeTruthy());
     expect(gerarConviteMock).toHaveBeenCalledWith({
       professorId: 'professor-1',
-      contato: '11987654321',
+      contato: '(11) 98765-4321',
       matriculaId: 'matricula-1',
     });
   });

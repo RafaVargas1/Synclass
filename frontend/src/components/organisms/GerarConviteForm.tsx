@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { FormField } from '@/components/molecules/FormField';
-import { contatoEhValido, MensagemContatoInvalido } from '@/lib/validacaoContato';
+import { contatoEhValido, mascararContato, MensagemContatoInvalido } from '@/lib/validacaoContato';
 
 export type GerarConviteFormProps = {
   contato: string;
@@ -45,7 +45,7 @@ export function GerarConviteForm({
       <FormField
         label="Contato do Aluno"
         value={contato}
-        onChangeText={onChangeContato}
+        onChangeText={(texto) => onChangeContato(mascararContato(texto))}
         placeholder="E-mail ou telefone"
         errorMessage={erroContato}
       />

@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
+import { Paragraph } from '@/components/atoms/Paragraph';
 import { IntroSection } from '@/components/molecules/IntroSection';
 
 export type HomeHeroProps = {
@@ -26,6 +27,11 @@ export function HomeHero({ onGetStarted, onLogin }: HomeHeroProps) {
           Já tenho conta, entrar
         </Text>
       </Pressable>
+      <View className="mt-two w-full items-center border-t border-background-selected pt-two dark:border-dark-background-selected">
+        <Paragraph className="text-center text-sm">
+          Aluno entra por convite: peça ao seu Professor o link enviado por WhatsApp.
+        </Paragraph>
+      </View>
     </View>
   );
 }
