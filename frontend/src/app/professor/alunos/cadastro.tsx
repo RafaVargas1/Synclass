@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlunoProvisorioConfirmado } from '@/components/molecules/AlunoProvisorioConfirmado';
 import { CadastroAlunoProvisorioForm } from '@/components/organisms/CadastroAlunoProvisorioForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarAlunoProvisorio } from '@/lib/api/alunosProvisorios';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de cadastro de Aluno provisório (issue #3), aberta pelo Professor —
@@ -38,7 +40,11 @@ export default function CadastroAlunoProvisorioScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 items-center justify-center px-four">
+      <Topbar titulo="Cadastrar Aluno" />
+      <View
+        className="w-full flex-1 items-center justify-center self-center px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {nomeConfirmado ? (
           <AlunoProvisorioConfirmado nome={nomeConfirmado} />
         ) : (

@@ -5,10 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { HorarioCard } from '@/components/organisms/HorarioCard';
 import { HorarioForm } from '@/components/organisms/HorarioForm';
 import { ModeloAgendamentoForm } from '@/components/organisms/ModeloAgendamentoForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import {
   definirModeloAgendamento,
   obterConfiguracao,
@@ -21,6 +21,7 @@ import {
   type CriarHorarioInput,
   type Horario,
 } from '@/lib/api/horarios';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de horários disponíveis do Professor (issue #6), com gate de modelo
@@ -61,9 +62,15 @@ type TelaCarregadaProps = {
  * conteúdo normal depois que a configuração já carregou.
  */
 function TelaConfiguracaoCarregada({ professorId, carregamento }: TelaCarregadaProps) {
+  const titulo = carregamento.definida ? 'Horários disponíveis' : 'Modelo de agendamento';
+
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
+      <Topbar titulo={titulo} />
+      <View
+        className="w-full flex-1 self-center gap-four px-four py-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {carregamento.definida ? (
           <HorariosConteudo professorId={professorId} />
         ) : (
@@ -167,12 +174,7 @@ function GateModeloAgendamento({
   onDefinido: () => void;
 }) {
   const { definindo, erro, handleSubmit } = useDefinirModelo(professorId, onDefinido);
-  return (
-    <>
-      <Heading level={1}>Modelo de agendamento</Heading>
-      <ModeloAgendamentoForm enviando={definindo} erro={erro} onSubmit={handleSubmit} />
-    </>
-  );
+  return <ModeloAgendamentoForm enviando={definindo} erro={erro} onSubmit={handleSubmit} />;
 }
 
 /**
@@ -203,7 +205,6 @@ function HorariosConteudo({ professorId }: { professorId: string }) {
   const estado = useGerenciamentoHorarios(professorId);
   return (
     <>
-      <Heading level={1}>Horários disponíveis</Heading>
       <HorarioForm
         horariosExistentes={estado.horarios}
         enviando={estado.enviando}
