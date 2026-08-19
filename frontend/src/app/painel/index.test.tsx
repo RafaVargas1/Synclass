@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
@@ -156,6 +156,61 @@ describe('PainelScreen', () => {
 
     expect(screen.queryByText('Gerenciar horários')).toBeNull();
     expect(screen.getByTestId('link-/professor/alunos/cadastro')).toBeTruthy();
+  });
+
+  it('shows an error with a retry button when /usuarios/me fails, and retries on press', async () => {
+    buscarPerfilMock
+      .mockResolvedValueOnce({ sucesso: false, mensagem: 'erro' })
+      .mockResolvedValueOnce({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papeis: ['Professor'],
+      papelAtivo: 'Professor',
+      definirPapelAtivo: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Não foi possível carregar suas ações de Professor. Tente novamente.'),
+      ).toBeTruthy(),
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('link-/professor/prof-1/horarios')).toHaveTextContent(
+        'Gerenciar horários',
+      ),
+    );
+    expect(buscarPerfilMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not refetch usuarioId when toggling away from and back to Professor', async () => {
+    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
+    const definirPapelAtivo = jest.fn();
+    const sessaoBase = {
+      carregando: false,
+      token: 'token-jwt',
+      papeis: ['Professor', 'Aluno'],
+      definirPapelAtivo,
+    };
+    useSessaoMock.mockReturnValue({ ...sessaoBase, papelAtivo: 'Professor' });
+
+    const { rerender } = await render(<PainelScreen />);
+    await waitFor(() => expect(buscarPerfilMock).toHaveBeenCalledTimes(1));
+
+    useSessaoMock.mockReturnValue({ ...sessaoBase, papelAtivo: 'Aluno' });
+    await rerender(<PainelScreen />);
+    useSessaoMock.mockReturnValue({ ...sessaoBase, papelAtivo: 'Professor' });
+    await rerender(<PainelScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('link-/professor/prof-1/horarios')).toBeTruthy(),
+    );
+    expect(buscarPerfilMock).toHaveBeenCalledTimes(1);
   });
 
   it('switches the actions when the papel changes', async () => {

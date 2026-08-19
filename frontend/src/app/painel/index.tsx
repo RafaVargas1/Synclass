@@ -3,11 +3,16 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/atoms/Button';
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
 import { AlternadorDePapel } from '@/components/organisms/AlternadorDePapel';
 import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
+
+const MensagemErroUsuarioId =
+  'Não foi possível carregar suas ações de Professor. Tente novamente.';
 
 type Acao = { label: string; href: string };
 
@@ -59,30 +64,48 @@ function acoesDoPapel(papelAtivo: string | undefined, usuarioId: string | undefi
   return [];
 }
 
+type EstadoUsuarioIdLogado = {
+  usuarioId: string | undefined;
+  erro: boolean;
+  tentarNovamente: () => void;
+};
+
 /**
  * Resolve o `usuarioId` do Professor logado via `GET /usuarios/me` (issue
  * #44) — só busca quando o papel ativo é Professor, já que é a única
- * consumidora hoje (ver `acoesProfessor`).
+ * consumidora hoje (ver `acoesProfessor`). Para de buscar assim que resolve
+ * uma vez (guarda por `usuarioId` já preenchido): sem isso, alternar entre
+ * papéis via `AlternadorDePapel` refaria a chamada a cada troca, mesmo o
+ * Professor não podendo ter um `usuarioId` diferente na mesma sessão
+ * (achado de dev-review, PR #55). Em caso de falha, expõe `erro` e
+ * `tentarNovamente` em vez de deixar as ações do Professor sumirem sem
+ * explicação nem forma de recuperar (mesmo achado).
  */
-function useUsuarioIdLogado(token: string | null, papelAtivo: string | undefined): string | undefined {
+function useUsuarioIdLogado(token: string | null, papelAtivo: string | undefined): EstadoUsuarioIdLogado {
   const [usuarioId, setUsuarioId] = useState<string | undefined>(undefined);
+  const [erro, setErro] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
-    if (!token || papelAtivo !== 'Professor') {
+    if (!token || papelAtivo !== 'Professor' || usuarioId) {
       return;
     }
     let cancelado = false;
     void buscarPerfil().then((resultado) => {
-      if (!cancelado && resultado.sucesso) {
-        setUsuarioId(resultado.usuarioId);
+      if (cancelado) return;
+      if (!resultado.sucesso) {
+        setErro(true);
+        return;
       }
+      setErro(false);
+      setUsuarioId(resultado.usuarioId);
     });
     return () => {
       cancelado = true;
     };
-  }, [token, papelAtivo]);
+  }, [token, papelAtivo, tentativa, usuarioId]);
 
-  return usuarioId;
+  return { usuarioId, erro, tentarNovamente: () => setTentativa((atual) => atual + 1) };
 }
 
 function ListaDeAcoes({ acoes }: { acoes: Acao[] }) {
@@ -118,7 +141,7 @@ function ItemDeAcao({ acao, ultimo }: { acao: Acao; ultimo: boolean }) {
 export default function PainelScreen() {
   const { carregando, token, papeis, papelAtivo, definirPapelAtivo } = useSessao();
   useRedirecionarSemSessao(carregando, token);
-  const usuarioId = useUsuarioIdLogado(token, papelAtivo);
+  const { usuarioId, erro, tentarNovamente } = useUsuarioIdLogado(token, papelAtivo);
 
   if (carregando || !token) {
     return null;
@@ -129,11 +152,21 @@ export default function PainelScreen() {
       <View className="flex-1 gap-four px-four py-four">
         <Heading level={1}>Painel</Heading>
         <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={definirPapelAtivo} />
+        {erro ? <ErroAcoesProfessor onTentarNovamente={tentarNovamente} /> : null}
         <ListaDeAcoes acoes={acoesDoPapel(papelAtivo, usuarioId)} />
         <Link href="/perfil" className="text-primary underline dark:text-dark-primary">
           Meu perfil
         </Link>
       </View>
     </SafeAreaView>
+  );
+}
+
+function ErroAcoesProfessor({ onTentarNovamente }: { onTentarNovamente: () => void }) {
+  return (
+    <View className="gap-two">
+      <ErrorMessage>{MensagemErroUsuarioId}</ErrorMessage>
+      <Button label="Tentar novamente" onPress={onTentarNovamente} />
+    </View>
   );
 }
