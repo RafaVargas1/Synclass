@@ -45,6 +45,27 @@ public sealed class ConfiguracoesController : ControllerBase
         }
     }
 
+    [HttpPut("prazo-cancelamento")]
+    public async Task<IActionResult> DefinirPrazoCancelamento(
+        Guid professorId, [FromBody] DefinirPrazoCancelamentoRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var configuracao = await _configuracaoService.DefinirPrazoCancelamentoAsync(
+                professorId, request.PrazoCancelamentoMinutos, cancellationToken);
+            if (configuracao is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(ParaResponse(configuracao));
+        }
+        catch (PrazoCancelamentoMinutosInvalidoException ex)
+        {
+            return BadRequest(new ConfiguracaoErrorResponse(ex.Message));
+        }
+    }
+
     [HttpGet]
     public async Task<IActionResult> ConsultarConfiguracao(Guid professorId, CancellationToken cancellationToken)
     {
@@ -59,7 +80,7 @@ public sealed class ConfiguracoesController : ControllerBase
 
     private static ConfiguracaoResponse ParaResponse(ConfiguracaoProfessor configuracao)
     {
-        return new ConfiguracaoResponse((int)configuracao.ModeloAgendamento);
+        return new ConfiguracaoResponse((int)configuracao.ModeloAgendamento, configuracao.PrazoCancelamentoMinutos);
     }
 
     private void LogModeloAgendamentoDefinido(
@@ -73,6 +94,8 @@ public sealed class ConfiguracoesController : ControllerBase
 
 public sealed record DefinirModeloAgendamentoRequest(int ModeloAgendamento);
 
-public sealed record ConfiguracaoResponse(int ModeloAgendamento);
+public sealed record DefinirPrazoCancelamentoRequest(int PrazoCancelamentoMinutos);
+
+public sealed record ConfiguracaoResponse(int ModeloAgendamento, int PrazoCancelamentoMinutos);
 
 public sealed record ConfiguracaoErrorResponse(string Mensagem);

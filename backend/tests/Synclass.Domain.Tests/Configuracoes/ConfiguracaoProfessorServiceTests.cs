@@ -46,4 +46,35 @@ public sealed class ConfiguracaoProfessorServiceTests
         configuracaoAlterada.UpdatedAt.Should().Be(relogioDaTroca.UtcNow);
         repositorio.Configuracoes.Should().ContainSingle();
     }
+
+    [Fact]
+    public async Task DefinirPrazoCancelamentoAsync_ComConfiguracaoExistente_AlteraPrazoPreservandoModelo()
+    {
+        var repositorio = new FakeConfiguracaoProfessorRepository();
+        var servico = new ConfiguracaoProfessorService(repositorio, Clock);
+        await servico.DefinirModeloAsync(ProfessorId, ModeloAgendamento.Hibrido, CancellationToken.None);
+        var relogioDaTroca = new FixedClock(Clock.UtcNow.AddDays(1));
+        var servicoDaTroca = new ConfiguracaoProfessorService(repositorio, relogioDaTroca);
+
+        var configuracaoAlterada = await servicoDaTroca.DefinirPrazoCancelamentoAsync(
+            ProfessorId, 48 * 60, CancellationToken.None);
+
+        configuracaoAlterada.Should().NotBeNull();
+        configuracaoAlterada!.PrazoCancelamentoMinutos.Should().Be(48 * 60);
+        configuracaoAlterada.ModeloAgendamento.Should().Be(ModeloAgendamento.Hibrido);
+        configuracaoAlterada.UpdatedAt.Should().Be(relogioDaTroca.UtcNow);
+        repositorio.Configuracoes.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task DefinirPrazoCancelamentoAsync_SemConfiguracaoExistente_RetornaNull()
+    {
+        var repositorio = new FakeConfiguracaoProfessorRepository();
+        var servico = new ConfiguracaoProfessorService(repositorio, Clock);
+
+        var resultado = await servico.DefinirPrazoCancelamentoAsync(ProfessorId, 60, CancellationToken.None);
+
+        resultado.Should().BeNull();
+        repositorio.Configuracoes.Should().BeEmpty();
+    }
 }

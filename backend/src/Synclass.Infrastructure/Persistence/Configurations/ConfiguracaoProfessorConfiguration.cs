@@ -26,6 +26,10 @@ public sealed class ConfiguracaoProfessorConfiguration : IEntityTypeConfiguratio
         // ModeloAgendamento trafega como inteiro (mapeamento padrão de enum
         // do EF Core) — mesma decisão de DiaSemana na issue #6.
         builder.Property(c => c.ModeloAgendamento).IsRequired();
+        // Issue #10 — default 0 ("sem antecedência mínima exigida") cobre
+        // Professores cadastrados antes desta issue, ver
+        // docs/specs/10-cancelamento-aula/implementation.md.
+        builder.Property(c => c.PrazoCancelamentoMinutos).IsRequired().HasDefaultValue(0);
         builder.Property(c => c.CreatedAt).IsRequired();
         builder.Property(c => c.UpdatedAt).IsRequired();
 

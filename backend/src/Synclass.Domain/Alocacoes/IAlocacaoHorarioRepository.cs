@@ -23,11 +23,15 @@ public interface IAlocacaoHorarioRepository
     Task<IReadOnlyCollection<AlocacaoHorario>> ListarPorHorarioAsync(Guid horarioId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Lista todas as alocações de uma <c>Matricula</c> — análogo a
-    /// <see cref="ListarPorHorarioAsync"/> invertendo o lado da busca. Usado
-    /// por <see cref="Synclass.Domain.Cobrancas.ConsultaCobrancaService"/>
+    /// Lista todas as alocações de uma <c>Matricula</c>, em qualquer horário —
+    /// análogo a <see cref="ListarPorHorarioAsync"/> invertendo o lado da
+    /// busca. Usado por
+    /// <see cref="Synclass.Domain.Cobrancas.ConsultaCobrancaService"/>
     /// (issue #12) para chegar nos <c>Horario</c>s alocados a um vínculo e,
-    /// a partir deles, na quantidade de aulas do período.
+    /// a partir deles, na quantidade de aulas do período; e por
+    /// <c>Synclass.Domain.Aulas.AulaService.ListarProximasAsync</c>
+    /// (issue #10) para calcular a próxima ocorrência de cada horário em que
+    /// o Aluno está alocado.
     /// </summary>
     Task<IReadOnlyCollection<AlocacaoHorario>> ListarPorMatriculaAsync(Guid matriculaId, CancellationToken cancellationToken);
 
