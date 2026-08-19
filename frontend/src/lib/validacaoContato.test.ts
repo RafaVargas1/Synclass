@@ -17,6 +17,14 @@ describe('contatoEhValido', () => {
     expect(contatoEhValido('11 98765-4321')).toBe(true);
   });
 
+  it('aceita telefone fixo BR com 10 dígitos (DDD + fixo, sem o 9 do celular)', () => {
+    expect(contatoEhValido('1133224455')).toBe(true);
+  });
+
+  it('aceita contato com espaço em branco no início/fim (autocorrect do teclado)', () => {
+    expect(contatoEhValido(' maria@exemplo.com ')).toBe(true);
+  });
+
   it('rejeita e-mail sem @', () => {
     expect(contatoEhValido('mariaexemplo.com')).toBe(false);
   });
@@ -25,8 +33,8 @@ describe('contatoEhValido', () => {
     expect(contatoEhValido('maria@')).toBe(false);
   });
 
-  it('rejeita telefone com menos de 11 dígitos', () => {
-    expect(contatoEhValido('1198765432')).toBe(false);
+  it('rejeita telefone com menos de 10 dígitos', () => {
+    expect(contatoEhValido('119876543')).toBe(false);
   });
 
   it('rejeita telefone com mais de 11 dígitos', () => {

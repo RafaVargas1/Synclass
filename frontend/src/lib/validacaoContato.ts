@@ -15,11 +15,18 @@ const PadraoEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export const MensagemContatoInvalido = 'Informe um e-mail ou telefone válido.';
 
-export function contatoEhValido(contato: string): boolean {
+/**
+ * Aceita o mesmo formato validado pelo backend (`Contato.NormalizarTelefone`,
+ * `backend/src/Synclass.Domain/Usuarios/Contato.cs`): 10 ou 11 dígitos com
+ * DDD (fixo ou celular) — não só 11, para não bloquear no cliente um contato
+ * que a Api aceitaria.
+ */
+export function contatoEhValido(contatoBruto: string): boolean {
+  const contato = contatoBruto.trim();
   return PadraoEmail.test(contato) || ehTelefoneValido(contato);
 }
 
 function ehTelefoneValido(contato: string): boolean {
   const digitos = contato.replace(/\D/g, '');
-  return digitos.length === 11 && /^[\d\s()-]+$/.test(contato);
+  return (digitos.length === 10 || digitos.length === 11) && /^[\d\s()-]+$/.test(contato);
 }
