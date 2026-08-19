@@ -41,6 +41,7 @@ export function AulaProximaCard({ aulaProxima, onCancelar }: AulaProximaCardProp
       <Button
         label="Cancelar"
         disabled={!aulaProxima.podeCancelar}
+        accessibilityLabel={`Cancelar aula de ${NomesDiaSemana[aulaProxima.diaSemana]} ${horaFormatada} em ${aulaProxima.data}`}
         onPress={() => onCancelar(aulaProxima.horarioId, aulaProxima.data)}
       />
     </View>

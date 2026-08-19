@@ -17,4 +17,14 @@ describe('Button', () => {
 
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  it('renders visually disabled and blocks onPress when disabled', async () => {
+    const onPress = jest.fn();
+    await render(<Button label="Continuar" onPress={onPress} disabled />);
+
+    fireEvent.press(screen.getByText('Continuar'));
+
+    expect(onPress).not.toHaveBeenCalled();
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
 });
