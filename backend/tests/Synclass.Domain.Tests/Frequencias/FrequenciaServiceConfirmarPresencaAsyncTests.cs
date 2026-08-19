@@ -44,8 +44,10 @@ public sealed class FrequenciaServiceConfirmarPresencaAsyncTests
             aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService, Clock);
         var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, configuracoes, horarioService, Clock);
         var registros = new FakeRegistroFrequenciaRepository();
+        var usuarios = new FakeUsuarioRepository();
         var frequenciaService = new FrequenciaService(
-            registros, alocacoes, aulaService, alocacaoHorarioService, cancelamentos, horarioService, Clock);
+            registros, alocacoes, aulaService, alocacaoHorarioService, cancelamentos, horarioService, Clock,
+            matriculas, usuarios, horarios, aulas);
         return new Cenario(frequenciaService, aulas, registros, alocacoes, matriculas, cancelamentos, horarioService);
     }
 
