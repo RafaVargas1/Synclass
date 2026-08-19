@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CadastroConfirmado } from '@/components/molecules/CadastroConfirmado';
 import { CadastroProfessorForm } from '@/components/organisms/CadastroProfessorForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Verifica, ao sair do campo Contato, se ele já pertence a uma identidade
@@ -63,7 +65,11 @@ export default function CadastroProfessorScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 items-center justify-center px-four">
+      <Topbar titulo="Cadastro de Professor" />
+      <View
+        className="w-full flex-1 items-center justify-center self-center px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {concluido ? (
           <CadastroConfirmado />
         ) : (

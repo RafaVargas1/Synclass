@@ -4,6 +4,10 @@ import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/profess
 
 import CadastroProfessorScreen from './cadastro';
 
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+}));
+
 jest.mock('@/lib/api/professores', () => ({
   cadastrarProfessor: jest.fn(),
   verificarContatoProfessor: jest.fn(),
