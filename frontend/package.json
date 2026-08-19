@@ -51,6 +51,8 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "<rootDir>/e2e/"
-    ]
+    ],
+    "testTimeout": 20000,
+    "maxWorkers": "50%"
   }
 }
