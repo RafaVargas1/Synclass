@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { SeletorDeData } from '@/components/molecules/SeletorDeData';
 import { Topbar } from '@/components/organisms/Topbar';
@@ -116,10 +117,6 @@ function ConteudoDaConsulta({ estado }: { estado: EstadoConsulta }) {
     return <ErrorMessage>{estado.erro}</ErrorMessage>;
   }
   return <ListaDeValoresDevidos valoresDevidos={estado.valoresDevidos} />;
-}
-
-function ErrorMessage({ children }: { children: string }) {
-  return <Paragraph className="text-error dark:text-dark-error">{children}</Paragraph>;
 }
 
 function ListaDeValoresDevidos({ valoresDevidos }: { valoresDevidos: ValorDevidoPorMatricula[] }) {
