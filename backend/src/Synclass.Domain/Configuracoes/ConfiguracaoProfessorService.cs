@@ -36,4 +36,27 @@ public sealed class ConfiguracaoProfessorService
         await _configuracoes.SalvarAsync(cancellationToken);
         return configuracao;
     }
+
+    /// <summary>
+    /// Altera <see cref="ConfiguracaoProfessor.PrazoCancelamentoMinutos"/>
+    /// (issue #10, AC5). Diferente de <see cref="DefinirModeloAsync"/>, não
+    /// cria a configuração se ela ainda não existir — retorna
+    /// <see langword="null"/> e o chamador decide como sinalizar (o
+    /// controller espelha o 404 já usado por
+    /// <c>ConfiguracoesController.ConsultarConfiguracao</c>), já que o prazo
+    /// não faz sentido sem um modelo de agendamento já escolhido.
+    /// </summary>
+    public async Task<ConfiguracaoProfessor?> DefinirPrazoCancelamentoAsync(
+        Guid professorId, int prazoCancelamentoMinutos, CancellationToken cancellationToken)
+    {
+        var configuracaoExistente = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
+        if (configuracaoExistente is null)
+        {
+            return null;
+        }
+
+        configuracaoExistente.AlterarPrazoCancelamento(prazoCancelamentoMinutos, _clock);
+        await _configuracoes.SalvarAsync(cancellationToken);
+        return configuracaoExistente;
+    }
 }

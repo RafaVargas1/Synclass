@@ -103,19 +103,11 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
             new CriarAlocacaoHorarioRequest(matriculaId));
     }
 
-    /// <summary>
-    /// Contorna a ausência de endpoint para definir <c>PrazoCancelamentoMinutos</c>
-    /// (fora do escopo do task.md desta issue) escrevendo direto no
-    /// DbContext, mesmo padrão de acesso usado por
-    /// <see cref="AutenticacaoTestHelper"/> via <c>factory.Services</c>.
-    /// </summary>
-    private async Task DefinirPrazoCancelamentoAsync(Guid professorId, int prazoCancelamentoMinutos)
+    private static async Task DefinirPrazoCancelamentoAsync(HttpClient professorClient, Guid professorId, int prazoCancelamentoMinutos)
     {
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
-        var configuracao = await dbContext.ConfiguracoesProfessor.SingleAsync(c => c.ProfessorId == professorId);
-        configuracao.AlterarPrazoCancelamento(prazoCancelamentoMinutos, _clock);
-        await dbContext.SaveChangesAsync();
+        await professorClient.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/prazo-cancelamento",
+            new DefinirPrazoCancelamentoRequest(prazoCancelamentoMinutos));
     }
 
     [Fact]
@@ -128,7 +120,7 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
         var (alunoClient, alunoUsuarioId) = await AutenticacaoTestHelper.ClienteAutenticadoComoAlunoPersistidoAsync(_factory);
         var matriculaId = await VincularAlunoAoProfessorAsync(professorId, alunoUsuarioId);
         await AlocarAsync(professorClient, horarioId, matriculaId);
-        await DefinirPrazoCancelamentoAsync(professorId, prazoCancelamentoMinutos: 24 * 60);
+        await DefinirPrazoCancelamentoAsync(professorClient, professorId, prazoCancelamentoMinutos: 24 * 60);
 
         var response = await alunoClient.PostAsync(
             $"/professores/{professorId}/horarios/{horarioId}/aulas/2026-08-20/cancelamentos", null);
@@ -148,7 +140,7 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
         var (alunoClient, alunoUsuarioId) = await AutenticacaoTestHelper.ClienteAutenticadoComoAlunoPersistidoAsync(_factory);
         var matriculaId = await VincularAlunoAoProfessorAsync(professorId, alunoUsuarioId);
         await AlocarAsync(professorClient, horarioId, matriculaId);
-        await DefinirPrazoCancelamentoAsync(professorId, prazoCancelamentoMinutos: 24 * 60);
+        await DefinirPrazoCancelamentoAsync(professorClient, professorId, prazoCancelamentoMinutos: 24 * 60);
 
         var response = await alunoClient.PostAsync(
             $"/professores/{professorId}/horarios/{horarioId}/aulas/2026-08-18/cancelamentos", null);

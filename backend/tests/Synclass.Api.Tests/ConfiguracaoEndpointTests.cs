@@ -121,6 +121,53 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     }
 
     [Fact]
+    public async Task Put_PrazoCancelamento_ReturnsOk_QuandoConfiguracaoJaExiste()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+        await client.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/modelo-agendamento",
+            new DefinirModeloAgendamentoRequest(ModeloAgendamento: 0));
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/prazo-cancelamento",
+            new DefinirPrazoCancelamentoRequest(PrazoCancelamentoMinutos: 48 * 60));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<ConfiguracaoResponse>();
+        corpo!.PrazoCancelamentoMinutos.Should().Be(48 * 60);
+    }
+
+    [Fact]
+    public async Task Put_PrazoCancelamento_ReturnsNotFound_QuandoProfessorNaoDefiniuModelo()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/prazo-cancelamento",
+            new DefinirPrazoCancelamentoRequest(PrazoCancelamentoMinutos: 60));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Put_PrazoCancelamento_ReturnsBadRequest_QuandoPrazoNegativo()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+        await client.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/modelo-agendamento",
+            new DefinirModeloAgendamentoRequest(ModeloAgendamento: 0));
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/configuracao/prazo-cancelamento",
+            new DefinirPrazoCancelamentoRequest(PrazoCancelamentoMinutos: -1));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoProfessorNaoDefiniuModelo()
     {
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
