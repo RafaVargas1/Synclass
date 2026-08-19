@@ -33,6 +33,6 @@ Card: https://github.com/RafaVargas1/Synclass/issues/15
   horário não existe/Aluno não vinculado.
 - [x] Componente frontend: `lib/api/frequencias.ts` ganha
   `confirmarPresenca` (contrato já estabilizado pelo smoke test acima).
-- [ ] Componente frontend: botão "Confirmar presença" na tela de próximas
+- [x] Componente frontend: botão "Confirmar presença" na tela de próximas
   aulas do Aluno (`minhas-aulas.tsx`, issue #10), com estado visual
   diferenciando "confirmado" de "sem ação".

@@ -6,22 +6,31 @@ import { NomesDiaSemana } from '@/lib/diaSemana';
 
 export type AulaProximaCardProps = {
   aulaProxima: AulaProxima;
+  confirmado: boolean;
   onCancelar: (horarioId: string, data: string) => void;
+  onConfirmar: (horarioId: string, data: string) => void;
 };
 
 const MensagemPrazoExpirado = 'Prazo para cancelar esta aula já passou.';
+const MensagemPresencaConfirmada = 'Presença confirmada.';
 
 /**
  * Organismo: item da lista de próximas aulas do Aluno (issue #10). Mostra
  * dia, hora de início e data da próxima ocorrência, com um botão "Cancelar"
  * — desabilitado com o motivo (prazo já expirado) quando o backend calcula
  * `podeCancelar === false`, mesma responsabilidade de cálculo já
- * centralizada em `AulaService` (não duplicada aqui). Mesma exibição de
- * dia/hora de `HorarioVagoCard`/`HorarioAlocacaoCard` via `NomesDiaSemana`
- * (sem duplicar apresentação, ver docs/spec/code-style.md).
+ * centralizada em `AulaService` (não duplicada aqui) — e um botão
+ * "Confirmar presença" (issue #15). `confirmado` é estado local da tela
+ * (otimista, pós-200 da chamada), não um campo do contrato de
+ * `GET proximas-aulas`: ver
+ * docs/specs/15-aluno-confirma-presenca/implementation.md#decisão-de-implementação.
+ * Mesma exibição de dia/hora de `HorarioVagoCard`/`HorarioAlocacaoCard` via
+ * `NomesDiaSemana` (sem duplicar apresentação, ver
+ * docs/spec/code-style.md).
  */
-export function AulaProximaCard({ aulaProxima, onCancelar }: AulaProximaCardProps) {
+export function AulaProximaCard({ aulaProxima, confirmado, onCancelar, onConfirmar }: AulaProximaCardProps) {
   const horaFormatada = aulaProxima.horaInicio.slice(0, 5);
+  const descricaoAula = `${NomesDiaSemana[aulaProxima.diaSemana]} ${horaFormatada} em ${aulaProxima.data}`;
 
   return (
     <View className="w-full flex-row items-center justify-between rounded-medium border border-background-selected bg-background-element px-four py-three dark:border-dark-background-selected dark:bg-dark-background-element">
@@ -37,13 +46,27 @@ export function AulaProximaCard({ aulaProxima, onCancelar }: AulaProximaCardProp
             {MensagemPrazoExpirado}
           </Text>
         ) : null}
+        {confirmado ? (
+          <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">
+            {MensagemPresencaConfirmada}
+          </Text>
+        ) : null}
       </View>
-      <Button
-        label="Cancelar"
-        disabled={!aulaProxima.podeCancelar}
-        accessibilityLabel={`Cancelar aula de ${NomesDiaSemana[aulaProxima.diaSemana]} ${horaFormatada} em ${aulaProxima.data}`}
-        onPress={() => onCancelar(aulaProxima.horarioId, aulaProxima.data)}
-      />
+      <View className="flex-row gap-two">
+        {!confirmado ? (
+          <Button
+            label="Confirmar presença"
+            accessibilityLabel={`Confirmar presença na aula de ${descricaoAula}`}
+            onPress={() => onConfirmar(aulaProxima.horarioId, aulaProxima.data)}
+          />
+        ) : null}
+        <Button
+          label="Cancelar"
+          disabled={!aulaProxima.podeCancelar}
+          accessibilityLabel={`Cancelar aula de ${descricaoAula}`}
+          onPress={() => onCancelar(aulaProxima.horarioId, aulaProxima.data)}
+        />
+      </View>
     </View>
   );
 }
