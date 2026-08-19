@@ -14,7 +14,7 @@ describe('buscarPerfil', () => {
 
     const resultado = await buscarPerfil();
 
-    expect(resultado).toEqual({ sucesso: true, nome: 'Maria Silva' });
+    expect(resultado).toEqual({ sucesso: true, usuarioId: 'id-1', nome: 'Maria Silva' });
   });
 
   it('returns a connection error message when fetch throws', async () => {

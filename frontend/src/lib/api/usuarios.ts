@@ -1,7 +1,8 @@
 import { fetchComTimeout, MensagemErroConexao } from './httpClient';
 
 export type BuscarPerfilResultado =
-  { sucesso: true; nome: string } | { sucesso: false; mensagem: string };
+  | { sucesso: true; usuarioId: string; nome: string }
+  | { sucesso: false; mensagem: string };
 
 export type AtualizarNomeResultado =
   { sucesso: true; nome: string } | { sucesso: false; mensagem: string };
@@ -27,7 +28,7 @@ export async function buscarPerfil(): Promise<BuscarPerfilResultado> {
     return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
   }
 
-  return { sucesso: true, nome: corpo?.nome ?? '' };
+  return { sucesso: true, usuarioId: corpo?.usuarioId ?? '', nome: corpo?.nome ?? '' };
 }
 
 /**
