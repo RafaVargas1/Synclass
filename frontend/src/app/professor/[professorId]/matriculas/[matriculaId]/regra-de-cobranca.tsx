@@ -14,6 +14,7 @@ import {
   type DefinirRegraDeCobrancaInput,
   type RegraDeCobranca,
 } from '@/lib/api/regraDeCobranca';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de definição da regra de cobrança de uma matrícula (issue #11).
@@ -55,7 +56,10 @@ function TelaComFormulario({
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <Topbar titulo="Regra de cobrança" />
-      <View className="flex-1 items-center justify-center gap-four px-four">
+      <View
+        className="w-full flex-1 self-center items-center justify-center gap-four px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         {salva ? (
           <Paragraph>Regra de cobrança salva!</Paragraph>
         ) : (

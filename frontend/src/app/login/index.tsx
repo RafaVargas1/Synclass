@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SolicitarCodigoForm } from '@/components/organisms/SolicitarCodigoForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import { solicitarCodigo } from '@/lib/api/auth';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de solicitação de login por código (issue #18): pede o contato e, em
@@ -35,7 +36,10 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <Topbar titulo="Entrar" />
-      <View className="flex-1 items-center justify-center px-four">
+      <View
+        className="w-full flex-1 self-center items-center justify-center px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         <SolicitarCodigoForm
           contato={contato}
           erro={erro}
