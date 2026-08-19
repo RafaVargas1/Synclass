@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 const MensagemErroUsuarioId =
   'Não foi possível carregar suas ações de Professor. Tente novamente.';
 
-type Acao = { label: string; href: string };
+type Acao = { label: string; href: Href };
 
 /**
  * Ações do Aluno (issue #44): as duas únicas telas do Aluno sem segmento
@@ -44,10 +44,10 @@ function acoesProfessor(usuarioId: string | undefined): Acao[] {
 
   if (usuarioId) {
     acoes.push(
-      { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` },
-      { label: 'Alocar Aluno em horário', href: `/professor/${usuarioId}/alocacoes` },
-      { label: 'Convidar Aluno', href: `/professor/${usuarioId}/convites/novo` },
-      { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` },
+      { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` as Href },
+      { label: 'Alocar Aluno em horário', href: `/professor/${usuarioId}/alocacoes` as Href },
+      { label: 'Convidar Aluno', href: `/professor/${usuarioId}/convites/novo` as Href },
+      { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href },
     );
   }
 
@@ -116,7 +116,7 @@ function ListaDeAcoes({ acoes }: { acoes: Acao[] }) {
   return (
     <View className="border border-background-selected dark:border-dark-background-selected">
       {acoes.map((acao, indice) => (
-        <ItemDeAcao key={acao.href} acao={acao} ultimo={indice === acoes.length - 1} />
+        <ItemDeAcao key={acao.label} acao={acao} ultimo={indice === acoes.length - 1} />
       ))}
     </View>
   );

@@ -18,7 +18,7 @@ export function HomeHero({ onGetStarted, onLogin }: HomeHeroProps) {
     <View className="items-center gap-four">
       <IntroSection
         title="Synclass"
-        description="Fundação do projeto pronta: Docker, PostgreSQL, .NET e Expo conectados. Os requisitos funcionais ainda serão implementados."
+        description="Professor organiza horários e frequência dos seus Alunos, Aluno confirma presença e acompanha o que deve, tudo em um só lugar."
       />
       <Button label="Cadastrar como Professor" onPress={onGetStarted} />
       <Pressable accessibilityRole="button" onPress={onLogin}>
