@@ -7,7 +7,7 @@ import PerfilScreen from './perfil';
 
 const mockRouterReplace = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockRouterReplace }),
+  useRouter: () => ({ replace: mockRouterReplace, back: jest.fn(), canGoBack: () => false }),
 }));
 
 jest.mock('@/lib/auth/contexto-sessao', () => ({
@@ -48,14 +48,12 @@ describe('PerfilScreen', () => {
     await waitFor(() => expect(screen.getByDisplayValue('Maria Silva')).toBeTruthy());
   });
 
-  it('exposes "Meu perfil" as an accessible heading', async () => {
+  it('shows "Meu perfil" as the screen title', async () => {
     buscarPerfilMock.mockResolvedValue({ sucesso: true, nome: 'Maria Silva' });
 
     await render(<PerfilScreen />);
 
-    await waitFor(() =>
-      expect(screen.getByRole('header', { name: 'Meu perfil' })).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText('Meu perfil')).toBeTruthy());
   });
 
   it('does not overwrite an in-progress edit when the initial fetch resolves late', async () => {

@@ -6,6 +6,7 @@ import HorariosVagosAlunoScreen from './horarios';
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ professorId: 'professor-1' }),
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
 }));
 
 jest.mock('@/lib/api/marcacoes', () => ({

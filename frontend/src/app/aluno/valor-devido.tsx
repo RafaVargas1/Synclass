@@ -3,9 +3,9 @@ import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { Heading } from '@/components/atoms/Heading';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { SeletorDePeriodo } from '@/components/molecules/SeletorDePeriodo';
+import { Topbar } from '@/components/organisms/Topbar';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
 import {
   listarValorDevidoDoAluno,
@@ -13,6 +13,7 @@ import {
   type PeriodoConsultaInput,
   type ValorDevidoPorMatricula,
 } from '@/lib/api/valorDevido';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de consulta do total devido pelo Aluno autenticado, detalhado por
@@ -27,8 +28,8 @@ export default function ValorDevidoAlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 gap-four px-four py-four">
-        <Heading level={1}>Quanto tenho que pagar</Heading>
+      <Topbar titulo="Quanto tenho que pagar" />
+      <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
         <SeletorDePeriodo
           inicio={estado.inicio}
           fim={estado.fim}
