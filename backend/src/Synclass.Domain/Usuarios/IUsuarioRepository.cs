@@ -13,7 +13,9 @@ public interface IUsuarioRepository
     /// Busca um <see cref="Usuario"/> pelo <see cref="Usuario.Id"/> — usado
     /// para resolver o nome de exibição do Professor na consulta de valor
     /// devido do Aluno (issue #13), onde não existe um "nome provisório"
-    /// equivalente ao de <c>Matricula.NomeProvisorio</c>.
+    /// equivalente ao de <c>Matricula.NomeProvisorio</c>, e por
+    /// <see cref="AtualizacaoNomeUsuarioService"/> (issue #27) a partir do
+    /// <c>usuarioId</c> lido do token de sessão.
     /// </summary>
     Task<Usuario?> BuscarPorIdAsync(Guid id, CancellationToken cancellationToken);
 

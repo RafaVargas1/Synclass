@@ -9,11 +9,14 @@ namespace Synclass.Api.Controllers;
 public sealed class ProfessoresController : ControllerBase
 {
     private readonly CadastroProfessorService _cadastroProfessor;
+    private readonly IUsuarioRepository _usuarios;
     private readonly ILogger<ProfessoresController> _logger;
 
-    public ProfessoresController(CadastroProfessorService cadastroProfessor, ILogger<ProfessoresController> logger)
+    public ProfessoresController(
+        CadastroProfessorService cadastroProfessor, IUsuarioRepository usuarios, ILogger<ProfessoresController> logger)
     {
         _cadastroProfessor = cadastroProfessor;
+        _usuarios = usuarios;
         _logger = logger;
     }
 
@@ -32,6 +35,34 @@ public sealed class ProfessoresController : ControllerBase
         {
             return RejeitarCadastro(trackId, request.Contato, ex);
         }
+    }
+
+    /// <summary>
+    /// Alimenta o campo Nome readonly do formulário de cadastro (issue #27)
+    /// quando o contato já pertence a uma identidade existente — sem isso, o
+    /// Professor preencheria um nome que a Api descarta silenciosamente ao
+    /// reaproveitar a identidade (RN da issue #20). Público (roda antes de
+    /// existir sessão) e nunca rejeita: um contato ainda incompleto enquanto
+    /// o usuário digita deve devolver "não existe" silenciosamente, não um
+    /// 400 a cada tecla.
+    /// </summary>
+    [HttpGet("verificar-contato")]
+    public async Task<IActionResult> VerificarContato([FromQuery] string contato, CancellationToken cancellationToken)
+    {
+        Usuario? usuarioExistente;
+        try
+        {
+            var contatoNormalizado = Contato.Normalizar(contato ?? string.Empty);
+            usuarioExistente = await _usuarios.BuscarPorContatoAsync(contatoNormalizado, cancellationToken);
+        }
+        catch (ContatoInvalidoException)
+        {
+            usuarioExistente = null;
+        }
+
+        return Ok(usuarioExistente is null
+            ? new VerificarContatoResponse(false, null)
+            : new VerificarContatoResponse(true, usuarioExistente.Nome));
     }
 
     private void LogCadastroSucesso(string trackId, ResultadoCadastroProfessor resultado)
@@ -64,3 +95,5 @@ public sealed record CadastroProfessorRequest(string Nome, string Contato);
 public sealed record CadastroProfessorResponse(Guid UsuarioId, string Nome);
 
 public sealed record CadastroProfessorErrorResponse(string Mensagem);
+
+public sealed record VerificarContatoResponse(bool IdentidadeExistente, string? Nome);

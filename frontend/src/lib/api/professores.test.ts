@@ -1,4 +1,4 @@
-import { cadastrarProfessor } from '@/lib/api/professores';
+import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -63,5 +63,31 @@ describe('cadastrarProfessor', () => {
 
     expect(resultado.sucesso).toBe(false);
     jest.useRealTimers();
+  });
+});
+
+describe('verificarContatoProfessor', () => {
+  it('returns identidadeExistente com o nome quando o contato já está cadastrado', async () => {
+    mockFetchOnce(200, { identidadeExistente: true, nome: 'Maria Silva' });
+
+    const resultado = await verificarContatoProfessor('maria@exemplo.com');
+
+    expect(resultado).toEqual({ identidadeExistente: true, nome: 'Maria Silva' });
+  });
+
+  it('returns identidadeExistente false quando o contato é novo', async () => {
+    mockFetchOnce(200, { identidadeExistente: false, nome: null });
+
+    const resultado = await verificarContatoProfessor('novo@exemplo.com');
+
+    expect(resultado).toEqual({ identidadeExistente: false, nome: null });
+  });
+
+  it('returns identidadeExistente false quando a requisição falha (fail-open)', async () => {
+    globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
+
+    const resultado = await verificarContatoProfessor('maria@exemplo.com');
+
+    expect(resultado).toEqual({ identidadeExistente: false, nome: null });
   });
 });
