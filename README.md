@@ -44,16 +44,23 @@ synclass/
 
 ## Como rodar (desenvolvimento)
 
-Instruções detalhadas de setup local estão em `backend/README.md` e `frontend/README.md`.
-Resumo rápido:
+Instruções completas em [`backend/README.md`](backend/README.md#setup-local) e
+[`frontend/README.md`](frontend/README.md#setup-local). Resumo:
 
 ```bash
-# Backend + banco de dados via Docker
-docker compose up -d db api
+# Backend: banco no Docker + Api local com hot reload (porta 5005)
+cd backend
+./scripts/dev-up.sh              # sobe o banco e aplica migrations pendentes
+dotnet watch run --project src/Synclass.Api
 
-# Frontend (Expo)
+# Frontend (Expo) — em outro terminal; já aponta para a Api de dev acima por padrão
 cd frontend
 npm install
-npm run web      # versão web
-npm start         # QR code para Expo Go (mobile)
+npm run web       # versão web (http://localhost:8081)
+npm start          # QR code para Expo Go (mobile)
 ```
+
+`docker compose up -d db api` (a Api inteira em container) **não** é o
+comando de dev — é o caminho prod-like usado por QA (ver
+[`scripts/qa-up.sh`](scripts/qa-up.sh)), que builda a imagem e roda migrations
+à parte.

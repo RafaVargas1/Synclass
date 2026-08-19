@@ -12,6 +12,11 @@ npm run web       # versão web (http://localhost:8081)
 npm start          # QR code para abrir no Expo Go (mobile)
 ```
 
+Por padrão aponta para a Api de dev em `http://localhost:5005` (ver
+[`backend/README.md`](../backend/README.md#setup-local)) — sobrescreva com a
+variável `EXPO_PUBLIC_API_URL` se a Api estiver em outro host/porta (ex:
+`:8080` no container do `docker compose`, usado por `scripts/qa-web-static.sh`).
+
 ## Scripts
 
 | Comando | O que faz |

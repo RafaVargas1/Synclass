@@ -5,21 +5,25 @@ API .NET 8 (ASP.NET Core) do Synclass. Ver decisões de arquitetura em
 
 ## Setup local
 
-```bash
-# Sobe apenas o banco via Docker
-docker compose up -d db
+Este é o fluxo padrão do dia a dia: banco no Docker, Api local com hot reload.
 
-# Restaura pacotes e aplica migrations
+```bash
 cd backend
 dotnet restore
-dotnet ef database update --project src/Synclass.Infrastructure --startup-project src/Synclass.Api
-
-# Roda a API
-dotnet run --project src/Synclass.Api
+./scripts/dev-up.sh              # sobe o banco (Docker) e aplica migrations pendentes
+dotnet watch run --project src/Synclass.Api
 ```
 
-A API sobe em `https://localhost:5001` (ou porta configurada) com Swagger em
-`/swagger` (ambiente Development). `GET /health` retorna `{"status":"ok","trackId":"..."}`.
+A Api sobe em `http://localhost:5005` (`https://localhost:7033` no perfil
+`https`, ver `src/Synclass.Api/Properties/launchSettings.json`) com Swagger
+em `/swagger` (ambiente Development). `GET /health` retorna
+`{"status":"ok","trackId":"..."}`.
+
+> Rodar a Api inteira em container (`docker compose up -d db api`) é o
+> caminho usado para QA/prod-like (`scripts/qa-up.sh`, na raiz do repo), não
+> o fluxo de dev — esse container roda `ASPNETCORE_ENVIRONMENT=Production` e
+> não aplica migration sozinho, então builda a imagem e roda as migrations
+> manualmente antes de esperar dado nele.
 
 ## Debug: logs de desenvolvimento e "produção" juntos
 
