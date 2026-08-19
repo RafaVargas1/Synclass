@@ -48,12 +48,14 @@ describe('PerfilScreen', () => {
     await waitFor(() => expect(screen.getByDisplayValue('Maria Silva')).toBeTruthy());
   });
 
-  it('shows "Meu perfil" as the screen title', async () => {
+  it('exposes "Meu perfil" as an accessible heading', async () => {
     buscarPerfilMock.mockResolvedValue({ sucesso: true, nome: 'Maria Silva' });
 
     await render(<PerfilScreen />);
 
-    await waitFor(() => expect(screen.getByText('Meu perfil')).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole('header', { name: 'Meu perfil' })).toBeTruthy(),
+    );
   });
 
   it('does not overwrite an in-progress edit when the initial fetch resolves late', async () => {

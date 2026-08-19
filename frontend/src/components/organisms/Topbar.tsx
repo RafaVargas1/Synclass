@@ -39,6 +39,7 @@ function Marca() {
     <View className="flex-row items-center gap-two">
       <Crown degraus={[10, 16, 20]} />
       <Text
+        accessibilityRole="header"
         className="text-lg font-bold tracking-widest text-text dark:text-dark-text"
         style={{ fontFamily: Fonts.deco }}
       >
@@ -60,7 +61,9 @@ function TituloComVoltar({ titulo }: { titulo: string }) {
           style={{ width: 10, height: 10, transform: [{ rotate: '-45deg' }] }}
         />
       </Pressable>
-      <Text className="text-lg font-bold text-text dark:text-dark-text">{titulo}</Text>
+      <Text accessibilityRole="header" className="text-lg font-bold text-text dark:text-dark-text">
+        {titulo}
+      </Text>
     </View>
   );
 }

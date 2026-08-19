@@ -31,6 +31,18 @@ describe('Topbar', () => {
     expect(screen.queryByText('SYNCLASS')).toBeNull();
   });
 
+  it('exposes the titulo as an accessible heading, for screen-reader heading navigation', async () => {
+    await render(<Topbar titulo="Valor devido por Aluno" />);
+
+    expect(screen.getByRole('header', { name: 'Valor devido por Aluno' })).toBeTruthy();
+  });
+
+  it('exposes the SYNCLASS mark as an accessible heading when no titulo is given', async () => {
+    await render(<Topbar />);
+
+    expect(screen.getByRole('header', { name: 'SYNCLASS' })).toBeTruthy();
+  });
+
   it('goes back when there is history to go back to', async () => {
     mockCanGoBack.mockReturnValue(true);
     await render(<Topbar titulo="Perfil" />);
