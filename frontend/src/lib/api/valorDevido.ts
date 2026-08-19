@@ -1,3 +1,5 @@
+import { paraDataISO } from '@/lib/formatarData';
+
 import { fetchComTimeout, MensagemErroConexao } from './httpClient';
 
 /**
@@ -63,6 +65,21 @@ async function buscarValorDevido(caminho: string): Promise<ListarValorDevidoResu
     return { sucesso: false, mensagem: MensagemErroGenerica };
   }
   return { sucesso: true, valoresDevidos: (corpo as ValorDevidoPorMatricula[] | null) ?? [] };
+}
+
+/**
+ * Período usado pelo filtro "Todos" da tela de valor devido (issue de
+ * usabilidade — antes disso, sem período informado, a Api caía no mês
+ * corrente, dando a falsa impressão de "nenhum Aluno" quando só não havia
+ * cobrança no mês). 5 anos pra trás cobre qualquer relacionamento realista
+ * do produto sem pedir pra Api iterar um intervalo enorme dia a dia (ver
+ * `PeriodoConsulta.GerarDatas` no backend, O(dias do período)). `fim`
+ * exclusivo do dia seguinte a `hoje` inclui o dia de hoje na consulta.
+ */
+export function calcularPeriodoTodos(hoje: Date): PeriodoConsultaInput {
+  const cincoAnosAtras = new Date(hoje.getFullYear() - 5, hoje.getMonth(), hoje.getDate());
+  const amanha = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1);
+  return { inicio: paraDataISO(cincoAnosAtras), fim: paraDataISO(amanha) };
 }
 
 function caminhoComQuery(base: string, periodo?: PeriodoConsultaInput): string {

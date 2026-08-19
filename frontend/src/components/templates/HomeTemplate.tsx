@@ -1,7 +1,8 @@
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeHero } from '@/components/organisms/HomeHero';
+import { Topbar } from '@/components/organisms/Topbar';
 
 export type HomeTemplateProps = {
   onGetStarted: () => void;
@@ -9,13 +10,20 @@ export type HomeTemplateProps = {
 };
 
 /**
- * Template: define o layout da tela (sem dados reais) — aqui, apenas
- * centraliza o organismo HomeHero na área segura da tela.
+ * Template: define o layout da tela (sem dados reais) — `Topbar` sem
+ * `titulo` mostra a marca (é a tela raiz, não tem pra onde voltar). Sem
+ * largura máxima o conteúdo esticava a tela inteira no web, com cara de
+ * app mobile mal adaptado — daí o `items-center` no container do conteúdo.
  */
 export function HomeTemplate({ onGetStarted, onLogin }: HomeTemplateProps) {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 items-center justify-center px-four">
+      <Topbar>
+        <Text onPress={onLogin} className="text-sm font-semibold text-primary dark:text-dark-primary">
+          Já tenho conta, entrar
+        </Text>
+      </Topbar>
+      <View className="flex-1 items-center justify-center px-four py-six">
         <HomeHero onGetStarted={onGetStarted} onLogin={onLogin} />
       </View>
     </SafeAreaView>

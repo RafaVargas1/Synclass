@@ -1,4 +1,4 @@
-import { listarValorDevido, listarValorDevidoDoAluno } from '@/lib/api/valorDevido';
+import { calcularPeriodoTodos, listarValorDevido, listarValorDevidoDoAluno } from '@/lib/api/valorDevido';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -114,5 +114,19 @@ describe('listarValorDevidoDoAluno', () => {
     const resultado = await listarValorDevidoDoAluno();
 
     expect(resultado.sucesso).toBe(false);
+  });
+});
+
+describe('calcularPeriodoTodos', () => {
+  it('spans from 5 years before hoje to the day after hoje (exclusive end includes hoje)', () => {
+    const hoje = new Date(2026, 7, 20);
+
+    expect(calcularPeriodoTodos(hoje)).toEqual({ inicio: '2021-08-20', fim: '2026-08-21' });
+  });
+
+  it('rolls fim over to the next month when hoje is the last day of the month', () => {
+    const hoje = new Date(2026, 7, 31);
+
+    expect(calcularPeriodoTodos(hoje)).toEqual({ inicio: '2021-08-31', fim: '2026-09-01' });
   });
 });

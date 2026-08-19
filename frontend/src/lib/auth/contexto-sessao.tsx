@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-import { lerPapeis, lerToken, salvarPapeis, salvarToken } from '@/lib/auth/sessao';
+import { lerPapeis, lerToken, limparPapeis, limparToken, salvarPapeis, salvarToken } from '@/lib/auth/sessao';
 
 export type SessaoContextValue = {
   carregando: boolean;
@@ -9,6 +9,7 @@ export type SessaoContextValue = {
   papelAtivo: string | undefined;
   definirPapelAtivo: (papel: string) => void;
   definirSessao: (token: string, papeis: string[]) => Promise<void>;
+  sair: () => Promise<void>;
 };
 
 const SessaoContext = createContext<SessaoContextValue | undefined>(undefined);
@@ -16,6 +17,17 @@ const SessaoContext = createContext<SessaoContextValue | undefined>(undefined);
 async function carregarSessaoSalva(): Promise<{ token: string | null; papeis: string[] }> {
   const [tokenSalvo, papeisSalvos] = await Promise.all([lerToken(), lerPapeis()]);
   return { token: tokenSalvo, papeis: papeisSalvos ?? [] };
+}
+
+async function limparSessao(
+  setToken: (token: string | null) => void,
+  setPapeis: (papeis: string[]) => void,
+  setPapelAtivo: (papel: string | undefined) => void,
+): Promise<void> {
+  await Promise.all([limparToken(), limparPapeis()]);
+  setToken(null);
+  setPapeis([]);
+  setPapelAtivo(undefined);
 }
 
 async function aplicarSessaoNova(
@@ -62,7 +74,9 @@ function useSessaoState(): SessaoContextValue {
   const definirSessao = (tokenNovo: string, papeisNovos: string[]) =>
     aplicarSessaoNova(tokenNovo, papeisNovos, setToken, setPapeis, setPapelAtivo);
 
-  return { carregando, token, papeis, papelAtivo, definirPapelAtivo: setPapelAtivo, definirSessao };
+  const sair = () => limparSessao(setToken, setPapeis, setPapelAtivo);
+
+  return { carregando, token, papeis, papelAtivo, definirPapelAtivo: setPapelAtivo, definirSessao, sair };
 }
 
 /** Provider da sessão (issue #4) — ver `useSessaoState` para o comportamento. */

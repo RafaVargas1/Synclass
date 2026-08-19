@@ -13,7 +13,7 @@ export function Button({ label, disabled, ...pressableProps }: ButtonProps) {
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
-      className={`items-center rounded-medium bg-primary px-four py-three active:opacity-80 dark:bg-dark-primary ${
+      className={`items-center border-2 border-text bg-primary px-four py-three active:opacity-80 dark:border-dark-text dark:bg-dark-primary ${
         disabled ? 'opacity-40' : ''
       }`}
       {...pressableProps}

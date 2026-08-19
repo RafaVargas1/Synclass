@@ -242,4 +242,21 @@ describe('PainelScreen', () => {
 
     expect(screen.getByText('Meu perfil')).toBeTruthy();
   });
+
+  it('calls sair when the Sair button is pressed', async () => {
+    const sair = jest.fn();
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papeis: ['Professor'],
+      papelAtivo: 'Professor',
+      definirPapelAtivo: jest.fn(),
+      sair,
+    });
+
+    await render(<PainelScreen />);
+    await fireEvent.press(screen.getByText('Sair'));
+
+    expect(sair).toHaveBeenCalled();
+  });
 });
