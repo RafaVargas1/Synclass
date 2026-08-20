@@ -27,8 +27,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/62
       (quantidade de tentativas).
 - [x] Teste de fumaça (Api): `POST /professores/{professorId}/convites` —
       resposta inclui `codigo` de 5 dígitos.
-- [ ] Frontend: `lib/api/convites.ts` (`GerarConviteResultado`) ganha
+- [x] Frontend: `lib/api/convites.ts` (`GerarConviteResultado`) ganha
       `codigo`.
-- [ ] Frontend: `ConviteGerado.tsx` exibe o código ao lado do link, com teste
+- [x] Frontend: `ConviteGerado.tsx` exibe o código ao lado do link, com teste
       de componente cobrindo o novo prop.
-- [ ] Frontend: `novo.tsx` passa `codigo` para `ConviteGerado`.
+- [x] Frontend: `novo.tsx` passa `codigo` para `ConviteGerado`.

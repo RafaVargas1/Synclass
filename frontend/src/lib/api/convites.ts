@@ -7,7 +7,7 @@ export type GerarConviteInput = {
 };
 
 export type GerarConviteResultado =
-  | { sucesso: true; conviteId: string; token: string; expiraEm: string }
+  | { sucesso: true; conviteId: string; token: string; codigo: string; expiraEm: string }
   | { sucesso: false; mensagem: string };
 
 export type AceitarConviteInput = {
@@ -48,6 +48,7 @@ export async function gerarConvite(input: GerarConviteInput): Promise<GerarConvi
     sucesso: true,
     conviteId: corpo.conviteId,
     token: corpo.token,
+    codigo: corpo.codigo,
     expiraEm: corpo.expiraEm,
   };
 }
