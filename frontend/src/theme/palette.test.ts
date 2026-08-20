@@ -9,4 +9,10 @@ describe('paleta clara', () => {
     expect(razaoDeContraste(background, backgroundSelected)).toBeGreaterThanOrEqual(1.1);
     expect(razaoDeContraste(backgroundElement, backgroundSelected)).toBeGreaterThanOrEqual(1.1);
   });
+
+  it('atende AA (4.5:1) para texto normal sobre o background do modo claro', () => {
+    const { text, textSecondary } = Colors.light;
+    expect(razaoDeContraste(text, background)).toBeGreaterThanOrEqual(4.5);
+    expect(razaoDeContraste(textSecondary, background)).toBeGreaterThanOrEqual(4.5);
+  });
 });

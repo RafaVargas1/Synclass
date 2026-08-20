@@ -18,7 +18,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/67
       importar dele. Rode o teste — ele deve falhar ainda contra o token
       atual (`#F5F6F8`), confirmando que o teste testa o valor certo antes
       de mudar o token.
-- [ ] Teste unidade: adicione ao mesmo arquivo o cenário "Dado texto
+- [x] Teste unidade: adicione ao mesmo arquivo o cenário "Dado texto
       `text`/`text-secondary` sobre o novo `background`, quando o contraste
       é calculado, então é >= 4.5:1" — ainda falhando contra `#F5F6F8`
       atual (ou passando, se já atender — o objetivo é travar a regressão
