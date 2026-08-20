@@ -109,14 +109,14 @@ public sealed class AlocacaoHorarioService
     /// <summary>
     /// Aluno se marca livremente em um horário vago (issue #9) — mesma
     /// orquestração de <see cref="AlocarAsync"/>, mas usando a regra oposta
-    /// de modelo (<see cref="GarantirModeloPermiteMarcacaoAsync"/>) e
+    /// de modelo (<see cref="GarantirModeloPermiteMarcacao"/>) e
     /// gravando <see cref="OrigemAlocacao.Aluno"/>.
     /// </summary>
     public async Task<AlocacaoHorario> MarcarAsync(
         Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
     {
         var horario = await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
-        await GarantirModeloPermiteMarcacaoAsync(professorId, horarioId, cancellationToken);
+        GarantirModeloPermiteMarcacao(horario);
         await GarantirVagaDisponivelAsync(horario, cancellationToken);
         await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
         await GarantirAindaNaoAlocadoAsync(horarioId, matriculaId, cancellationToken);
@@ -128,25 +128,18 @@ public sealed class AlocacaoHorarioService
     }
 
     /// <summary>
-    /// Regra oposta a <see cref="GarantirModeloPermiteAlocacaoAsync"/> —
-    /// Vago sempre permite, Fixo nunca permite, Híbrido só permite quando
-    /// este horário específico não tem atribuição fixa do Professor (issue
-    /// #9). Ausência de configuração é tratada como "não permite",
-    /// defensivamente (oposto do default de #8 — ver
-    /// docs/specs/9-aluno-marca-horario-vago/implementation.md#edge-points).
+    /// Regra oposta a <see cref="GarantirModeloPermiteAlocacao"/> — Livre e
+    /// Híbrido sempre permitem, Fixo nunca permite (issue #74, AC3): o
+    /// Híbrido deixou de olhar se este horário já tem atribuição fixa do
+    /// Professor, aceita as duas coisas simultaneamente até a capacidade
+    /// esgotar. Checagem síncrona — o <see cref="Horario"/> já foi buscado
+    /// por quem chama.
     /// </summary>
-    private async Task GarantirModeloPermiteMarcacaoAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    private static void GarantirModeloPermiteMarcacao(Horario horario)
     {
-        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
-        if (configuracao is null)
+        if (horario.TipoMarcacao == TipoMarcacao.Fixo)
         {
-            throw new ModeloNaoPermiteMarcacaoLivreException(professorId);
-        }
-
-        var horarioPossuiAtribuicaoFixa = await _alocacoes.PossuiAlocacaoOrigemProfessorAsync(horarioId, cancellationToken);
-        if (!configuracao.PermiteMarcacaoLivre(horarioPossuiAtribuicaoFixa))
-        {
-            throw new ModeloNaoPermiteMarcacaoLivreException(professorId);
+            throw new ModeloNaoPermiteMarcacaoLivreException(horario.Id);
         }
     }
 
