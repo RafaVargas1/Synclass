@@ -4,7 +4,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/76
 
 ## Ordem de execução
 
-- [ ] Implementação mínima: `TipoMarcacao` (enum `Livre=0/Fixo=1/Hibrido=2`) + campo `tipoMarcacao` em `Horario`/`CriarHorarioInput` (`frontend/src/lib/api/horarios.ts`), espelhando `Synclass.Domain.Horarios.TipoMarcacao` do backend.
+- [x] Implementação mínima: `TipoMarcacao` (enum `Livre=0/Fixo=1/Hibrido=2`) + campo `tipoMarcacao` em `Horario`/`CriarHorarioInput` (`frontend/src/lib/api/horarios.ts`), espelhando `Synclass.Domain.Horarios.TipoMarcacao` do backend.
 - [ ] Teste (`HorarioForm.test.tsx`): seleciona uma política via `ChipSelector` e `onSubmit` recebe `tipoMarcacao` no input.
 - [ ] Teste (`HorarioForm.test.tsx`): tenta enviar sem escolher política — não chama `onSubmit`, mostra mensagem de campo obrigatório.
 - [ ] Implementação: `HorarioForm.tsx` ganha `ChipSelector` de política, estado inicial sem seleção (`undefined`, diferente do padrão de `diaSemana` que já nasce com default), valida obrigatoriedade em `validar`.
