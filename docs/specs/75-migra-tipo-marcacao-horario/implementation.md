@@ -23,30 +23,41 @@ por `cp."ProfessorId" = h."ProfessorId"`) e `AlocacoesHorario` (`a`, por
 | `Hibrido` (2) | Não | `Livre` (0) |
 | Sem `ConfiguracaoProfessor` (nenhuma linha em `cp`) | — | `Livre` (0) — ver "Edge points" abaixo |
 
-SQL (Postgres, idempotente — só recalcula, sem depender de estado anterior
-da própria coluna):
+SQL (idempotente — só recalcula, sem depender de estado anterior da própria
+coluna). **Ajuste feito na implementação**: a versão original proposta aqui
+usava `UPDATE "Horarios" h SET ... FROM "ConfiguracoesProfessor" cp WHERE
+...` (sintaxe Postgres com alias no alvo do UPDATE) — o SQLite usado no teste
+de integração (ver `MigraTipoMarcacaoHorarioExistenteTests`) não aceita
+alias diretamente após o nome da tabela em `UPDATE`, então a migration usa
+subquery correlacionada em vez de `UPDATE ... FROM`, portável entre Postgres
+(produção) e SQLite (teste):
 
 ```sql
-UPDATE "Horarios" h
-SET "TipoMarcacao" = CASE
-    WHEN cp."ModeloAgendamento" = 0 THEN 0
-    WHEN cp."ModeloAgendamento" = 1 THEN 1
-    WHEN cp."ModeloAgendamento" = 2 THEN
-        CASE WHEN EXISTS (
-            SELECT 1 FROM "AlocacoesHorario" a
-            WHERE a."HorarioId" = h."Id" AND a."OrigemAlocacao" = 0
-        ) THEN 1 ELSE 0 END
-    ELSE 0
-END
-FROM "ConfiguracoesProfessor" cp
-WHERE cp."ProfessorId" = h."ProfessorId";
+UPDATE "Horarios"
+SET "TipoMarcacao" = (
+    SELECT CASE
+        WHEN cp."ModeloAgendamento" = 0 THEN 0
+        WHEN cp."ModeloAgendamento" = 1 THEN 1
+        WHEN cp."ModeloAgendamento" = 2 THEN
+            CASE WHEN EXISTS (
+                SELECT 1 FROM "AlocacoesHorario" a
+                WHERE a."HorarioId" = "Horarios"."Id" AND a."OrigemAlocacao" = 0
+            ) THEN 1 ELSE 0 END
+        ELSE 0
+    END
+    FROM "ConfiguracoesProfessor" cp
+    WHERE cp."ProfessorId" = "Horarios"."ProfessorId"
+)
+WHERE EXISTS (
+    SELECT 1 FROM "ConfiguracoesProfessor" cp WHERE cp."ProfessorId" = "Horarios"."ProfessorId"
+);
 
 -- Horários sem ConfiguracaoProfessor correspondente (cenário defensivo,
 -- inalcançável no fluxo normal — ver Edge points): default Livre.
-UPDATE "Horarios" h
+UPDATE "Horarios"
 SET "TipoMarcacao" = 0
 WHERE NOT EXISTS (
-    SELECT 1 FROM "ConfiguracoesProfessor" cp WHERE cp."ProfessorId" = h."ProfessorId"
+    SELECT 1 FROM "ConfiguracoesProfessor" cp WHERE cp."ProfessorId" = "Horarios"."ProfessorId"
 );
 ```
 
