@@ -49,10 +49,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/63
       já vinculado (mesmos quatro cenários do card).
 - [x] Frontend: `lib/api/convites.ts` — `aceitarConvitePorCodigo(input)`,
       mesmo formato de `aceitarConvite`, apontando para a rota nova.
-- [ ] Frontend: tela `app/aluno/entrar-turma.tsx` — campo de código (5
+- [x] Frontend: tela `app/aluno/entrar-turma.tsx` — campo de código (5
       dígitos) + `CadastroUsuarioForm` (nome/contato), reaproveitando
       `AceiteConviteConfirmado`/`ConviteExpirado` do fluxo por link. Teste
       de tela cobrindo os cenários do card (sucesso, expirado, inválido,
       contato já vinculado).
-- [ ] Edge point: normaliza o código no frontend antes de enviar (mesmo
+- [x] Edge point: normaliza o código no frontend antes de enviar (mesmo
       guardrail do backend, mensagem consistente).
