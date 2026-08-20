@@ -14,7 +14,8 @@ namespace Synclass.Api.Tests;
 /// <summary>
 /// Teste de fumaça dos endpoints de horários disponíveis (issue #6):
 /// criar, listar e remover. Usa EF Core InMemory, mesmo padrão de
-/// <see cref="ProfessorCadastroEndpointTests"/>.
+/// <see cref="ProfessorCadastroEndpointTests"/>. Também cobre o PATCH de
+/// alteração da política de marcação (issue #71).
 /// </summary>
 public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -231,5 +232,73 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
         var response = await client.DeleteAsync($"/professores/{professorId}/horarios/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Patch_Horario_TipoMarcacao_ReturnsOkComHorarioAtualizado_QuandoPoliticaMuda()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+        var criado = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
+        var horario = await criado.Content.ReadFromJsonAsync<HorarioResponse>();
+
+        var response = await client.PatchAsJsonAsync(
+            $"/professores/{professorId}/horarios/{horario!.Id}",
+            new AlterarPoliticaHorarioRequest(TipoMarcacao: 1));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
+        corpo!.TipoMarcacao.Should().Be(1);
+        corpo.Id.Should().Be(horario.Id);
+    }
+
+    [Fact]
+    public async Task Patch_Horario_TipoMarcacao_ReturnsNotFound_QuandoHorarioNaoExiste()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PatchAsJsonAsync(
+            $"/professores/{professorId}/horarios/{Guid.NewGuid()}",
+            new AlterarPoliticaHorarioRequest(TipoMarcacao: 1));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Patch_Horario_TipoMarcacao_ReturnsNotFound_QuandoHorarioDeOutroProfessor()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+        var criado = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
+        var horario = await criado.Content.ReadFromJsonAsync<HorarioResponse>();
+        var outroProfessorId = await CriarProfessorAsync(client);
+
+        var response = await client.PatchAsJsonAsync(
+            $"/professores/{outroProfessorId}/horarios/{horario!.Id}",
+            new AlterarPoliticaHorarioRequest(TipoMarcacao: 1));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Patch_Horario_TipoMarcacao_ReturnsBadRequest_QuandoTipoMarcacaoForaDoEnum()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+        var criado = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
+        var horario = await criado.Content.ReadFromJsonAsync<HorarioResponse>();
+
+        var response = await client.PatchAsJsonAsync(
+            $"/professores/{professorId}/horarios/{horario!.Id}",
+            new AlterarPoliticaHorarioRequest(TipoMarcacao: 99));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }
