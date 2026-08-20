@@ -61,11 +61,15 @@ convites finalizados podem compartilhar código).
 
 ## Edge points (não cobertos por Gherkin)
 
-- Loop de geração com tentativas: não há teto explícito no card, mas o
-  espaço de 100.000 combinações e o volume esperado de convites simultâneos
-  tornam colisões repetidas extremamente raras — sem necessidade de um
-  limite de tentativas com fallback de erro. Se dev-review apontar isso como
-  risco, um teto alto (ex: 20 tentativas → erro) é aceitável como ajuste.
+- Loop de geração com tentativas: teto de 20 tentativas
+  (`ConviteService.LimiteDeTentativasDeCodigo`) — acima disso,
+  `LimiteDeTentativasDeCodigoConviteExcedidoException` (não é
+  `ConviteRejeitadoException`: é falha de capacidade do sistema, não rejeição
+  de entrada do usuário, e por isso não é capturada pelo `catch` de
+  `ConvitesController.Gerar`, retornando 500). O espaço de 100.000
+  combinações e o volume esperado de convites simultâneos tornam esse teto
+  praticamente inatingível em operação normal — existe só como guardrail
+  contra loop indefinido (achado do `dev-review` da Task #62).
 - `AceitarAsync` (aceite por link) não muda nesta Task — o código só é
   consumido pela Task #63 ("Aluno usa o código"), que reaproveita o mesmo
   `Convite`/`MarcarUsado`, não duplica a regra de expiração/uso único.

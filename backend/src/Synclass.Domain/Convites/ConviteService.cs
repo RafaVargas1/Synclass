@@ -19,6 +19,15 @@ public sealed class ConviteService
     private readonly IClock _clock;
     private readonly int _diasValidade;
 
+    /// <summary>
+    /// Teto do loop de <see cref="GerarCodigoUnicoAsync"/> — o espaço de
+    /// 100.000 combinações torna colisões repetidas extremamente raras (ver
+    /// docs/specs/62-codigo-convite-curto/implementation.md), então este
+    /// valor é só um guardrail contra loop indefinido, não um limite
+    /// esperado em operação normal.
+    /// </summary>
+    private const int LimiteDeTentativasDeCodigo = 20;
+
     public ConviteService(
         IConviteRepository convites,
         IMatriculaRepository matriculas,
@@ -80,6 +89,11 @@ public sealed class ConviteService
         bool codigoAtivo;
         do
         {
+            if (tentativas >= LimiteDeTentativasDeCodigo)
+            {
+                throw new LimiteDeTentativasDeCodigoConviteExcedidoException(LimiteDeTentativasDeCodigo);
+            }
+
             codigo = _geradorDeCodigo.Gerar();
             tentativas++;
             codigoAtivo = await _convites.ExisteCodigoAtivoAsync(codigo, _clock.UtcNow, cancellationToken);

@@ -175,6 +175,27 @@ public sealed class ConviteServiceTests
         resultado.Tentativas.Should().Be(1);
     }
 
+    /// <summary>
+    /// Teto de tentativas do loop de geração de código único (edge point de
+    /// docs/specs/62-codigo-convite-curto/implementation.md): sem ele, uma
+    /// colisão persistente prenderia a requisição num loop indefinido.
+    /// </summary>
+    [Fact]
+    public async Task GerarAsync_CodigoColideSempre_RejeitaComLimiteDeTentativasDeCodigoConviteExcedidoAposVinteTentativas()
+    {
+        var contexto = NovoContexto();
+        var codigosSempreColidindo = Enumerable.Repeat("11111", 21).ToArray();
+        var geradorDeCodigo = new FakeGeradorDeCodigoConvite(codigosSempreColidindo);
+        var servico = NovoServico(contexto, geradorDeCodigo);
+        var professorId = await AdicionarProfessorAsync(contexto.Usuarios, "professor@exemplo.com");
+        await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+
+        var acao = () => servico.GerarAsync(professorId, "11900000000", null, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<LimiteDeTentativasDeCodigoConviteExcedidoException>();
+        geradorDeCodigo.VezesChamado.Should().Be(21);
+    }
+
     [Fact]
     public async Task AceitarAsync_TokenInexistente_RejeitaComConviteInvalidoException()
     {
