@@ -12,7 +12,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/67
       falhar contra o valor atual do token (que ainda não existe até o
       próximo item, então o teste deve falhar por o arquivo de teste
       importar um util que ainda não existe — ver próximo item).
-- [ ] Implementação mínima: crie `frontend/src/theme/contraste.ts` (util
+- [x] Implementação mínima: crie `frontend/src/theme/contraste.ts` (util
       puro, sem dependência de terceiro — `luminanciaRelativa`/
       `razaoDeContraste`, fórmula WCAG 2.x) e o teste acima passando a
       importar dele. Rode o teste — ele deve falhar ainda contra o token
