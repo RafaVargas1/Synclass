@@ -29,7 +29,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/67
       outro token (`backgroundElement`, `backgroundSelected`, `border`,
       `text`, `textSecondary`, `primary`, `error`, modo `dark` inteiro).
       Rode o teste — os dois cenários acima devem passar agora.
-- [ ] Atualizar a tabela de cor em `docs/spec/design-system.md#cor`: troque
+- [x] Atualizar a tabela de cor em `docs/spec/design-system.md#cor`: troque
       o valor de `background`/Light de `#F5F6F8` para `#F9FAFB` e adicione
       uma frase à nota "Mudanças em relação ao `palette.js` atual"
       explicando que o novo valor foi validado por teste automatizado
