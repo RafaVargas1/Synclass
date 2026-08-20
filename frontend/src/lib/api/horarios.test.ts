@@ -1,4 +1,4 @@
-import { criarHorario, listarHorarios, removerHorario } from '@/lib/api/horarios';
+import { criarHorario, listarHorarios, removerHorario, TipoMarcacao } from '@/lib/api/horarios';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -17,6 +17,7 @@ describe('criarHorario', () => {
       horaInicio: '10:00:00',
       duracaoMinutos: 60,
       limiteAlunos: 1,
+      tipoMarcacao: TipoMarcacao.Livre,
     });
 
     expect(resultado).toEqual({
@@ -33,6 +34,7 @@ describe('criarHorario', () => {
       horaInicio: '10:30:00',
       duracaoMinutos: 60,
       limiteAlunos: 1,
+      tipoMarcacao: TipoMarcacao.Livre,
     });
 
     expect(resultado).toEqual({
@@ -49,6 +51,7 @@ describe('criarHorario', () => {
       horaInicio: '10:00:00',
       duracaoMinutos: 60,
       limiteAlunos: 1,
+      tipoMarcacao: TipoMarcacao.Livre,
     });
 
     expect(resultado.sucesso).toBe(false);

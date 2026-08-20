@@ -1,8 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import { TipoMarcacao } from '@/lib/api/horarios';
+
 import { HorarioAlocacaoCard } from './HorarioAlocacaoCard';
 
-const horario = { id: 'h1', diaSemana: 2, horaInicio: '10:00:00', duracaoMinutos: 60, limiteAlunos: 2 };
+const horario = {
+  id: 'h1',
+  diaSemana: 2,
+  horaInicio: '10:00:00',
+  duracaoMinutos: 60,
+  limiteAlunos: 2,
+  tipoMarcacao: TipoMarcacao.Livre,
+};
 
 const alunos = [
   { matriculaId: 'a1', nome: 'Ana', identificador: 'ana@x.com' },

@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
-import { TipoMarcacao } from '@/lib/api/horarios';
-import { criarHorario, listarHorarios, removerHorario } from '@/lib/api/horarios';
+import { criarHorario, listarHorarios, removerHorario, TipoMarcacao } from '@/lib/api/horarios';
 
 import HorariosProfessorScreen from './horarios';
 
