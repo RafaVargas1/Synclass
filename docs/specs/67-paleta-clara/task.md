@@ -23,7 +23,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/67
       é calculado, então é >= 4.5:1" — ainda falhando contra `#F5F6F8`
       atual (ou passando, se já atender — o objetivo é travar a regressão
       para o valor novo, não provar que o antigo falha).
-- [ ] Implementação: edite `Colors.light.background` em
+- [x] Implementação: edite `Colors.light.background` em
       `frontend/src/theme/palette.js` de `'#F5F6F8'` para `'#F9FAFB'` (ver
       `implementation.md` para o racional do valor). Não toque em nenhum
       outro token (`backgroundElement`, `backgroundSelected`, `border`,
