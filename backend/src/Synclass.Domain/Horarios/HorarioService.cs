@@ -1,25 +1,28 @@
 using Synclass.Domain.Common;
-using Synclass.Domain.Configuracoes;
 
 namespace Synclass.Domain.Horarios;
 
 /// <summary>
 /// Orquestra os 3 casos de uso do card (issue #6): cadastrar, listar e
-/// remover horários disponíveis de um Professor. Cadastro exige que o
-/// Professor já tenha definido um modelo de agendamento (issue #7), valida
-/// duração e rejeita sobreposição com horários já existentes no mesmo dia;
-/// remoção rejeita quando existem Alunos alocados (ver implementation.md).
+/// remover horários disponíveis de um Professor. Cadastro valida duração e
+/// rejeita sobreposição com horários já existentes no mesmo dia; remoção
+/// rejeita quando existem Alunos alocados (ver implementation.md). Não exige
+/// mais nenhuma configuração prévia do Professor — cada horário carrega sua
+/// própria política de marcação (issue #73, <see cref="TipoMarcacao"/>);
+/// a exigência de <c>ConfiguracaoProfessor</c> definida antes do cadastro
+/// (issue #7) ficou obsoleta com isso e foi removida na issue #76, achado do
+/// dev-review no PR #85 (sem essa remoção, um Professor sem configuração
+/// prévia não conseguia mais cadastrar horário nenhum, já que a Tela deixou
+/// de oferecer como defini-la).
 /// </summary>
 public sealed class HorarioService
 {
     private readonly IHorarioRepository _horarios;
-    private readonly IConfiguracaoProfessorRepository _configuracoes;
     private readonly IClock _clock;
 
-    public HorarioService(IHorarioRepository horarios, IConfiguracaoProfessorRepository configuracoes, IClock clock)
+    public HorarioService(IHorarioRepository horarios, IClock clock)
     {
         _horarios = horarios;
-        _configuracoes = configuracoes;
         _clock = clock;
     }
 
@@ -32,8 +35,6 @@ public sealed class HorarioService
         CancellationToken cancellationToken,
         int? limiteAlunos = null)
     {
-        await GarantirConfiguracaoDefinidaAsync(professorId, cancellationToken);
-
         var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, _clock, limiteAlunos);
         var horariosDoDia = await _horarios.ListarPorProfessorEDiaAsync(professorId, diaSemana, cancellationToken);
         var conflitante = horariosDoDia.FirstOrDefault(existente => horario.Sobrepoe(existente));
@@ -83,19 +84,5 @@ public sealed class HorarioService
         }
 
         return horario;
-    }
-
-    /// <summary>
-    /// Exige configuração definida só no cadastro (issue #7) — <see cref="ListarAsync"/>
-    /// e <see cref="RemoverAsync"/> não checam, conforme Critérios técnicos do
-    /// card (ver implementation.md#edge-points).
-    /// </summary>
-    private async Task GarantirConfiguracaoDefinidaAsync(Guid professorId, CancellationToken cancellationToken)
-    {
-        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
-        if (configuracao is null)
-        {
-            throw new ModeloAgendamentoNaoDefinidoException(professorId);
-        }
     }
 }
