@@ -39,7 +39,7 @@ public sealed class AlocacaoHorarioService
         Guid professorId, Guid horarioId, Guid matriculaId, CancellationToken cancellationToken)
     {
         var horario = await _horarioService.BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
-        await GarantirModeloPermiteAlocacaoAsync(professorId, cancellationToken);
+        GarantirModeloPermiteAlocacao(horario);
         await GarantirVagaDisponivelAsync(horario, cancellationToken);
         await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
         await GarantirAindaNaoAlocadoAsync(horarioId, matriculaId, cancellationToken);
@@ -66,17 +66,16 @@ public sealed class AlocacaoHorarioService
     }
 
     /// <summary>
-    /// Modelo Vago não usa atribuição fixa pelo Professor (AC2) — qualquer
-    /// outro modelo (Fixo ou Híbrido) permite. Ausência de configuração é
-    /// tratada como Vago, defensivamente (ver
-    /// docs/specs/8-aluno-horario/implementation.md#edge-points).
+    /// TipoMarcacao Livre não usa atribuição fixa pelo Professor (AC2) —
+    /// Fixo ou Híbrido permitem. Checagem síncrona (issue #74): o
+    /// <see cref="Horario"/> já foi buscado por quem chama, decisão passou a
+    /// ser por horário, não mais por <c>ConfiguracaoProfessor</c>.
     /// </summary>
-    private async Task GarantirModeloPermiteAlocacaoAsync(Guid professorId, CancellationToken cancellationToken)
+    private static void GarantirModeloPermiteAlocacao(Horario horario)
     {
-        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
-        if (configuracao is null || configuracao.ModeloAgendamento == ModeloAgendamento.Vago)
+        if (horario.TipoMarcacao == TipoMarcacao.Livre)
         {
-            throw new ModeloNaoPermiteAlocacaoException(professorId);
+            throw new ModeloNaoPermiteAlocacaoException(horario.Id);
         }
     }
 
