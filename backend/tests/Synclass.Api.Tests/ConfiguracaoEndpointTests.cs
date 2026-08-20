@@ -42,8 +42,8 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     {
         var response = await client.PostAsJsonAsync(
             "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
+            new CadastroUsuarioRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroUsuarioResponse>();
         return corpo!.UsuarioId;
     }
 

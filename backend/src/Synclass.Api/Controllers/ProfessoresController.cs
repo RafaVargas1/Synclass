@@ -8,32 +8,30 @@ namespace Synclass.Api.Controllers;
 [Route("professores")]
 public sealed class ProfessoresController : ControllerBase
 {
-    private readonly CadastroProfessorService _cadastroProfessor;
-    private readonly IUsuarioRepository _usuarios;
+    private readonly CadastroUsuarioService _cadastroUsuario;
     private readonly ILogger<ProfessoresController> _logger;
 
-    public ProfessoresController(
-        CadastroProfessorService cadastroProfessor, IUsuarioRepository usuarios, ILogger<ProfessoresController> logger)
+    public ProfessoresController(CadastroUsuarioService cadastroUsuario, ILogger<ProfessoresController> logger)
     {
-        _cadastroProfessor = cadastroProfessor;
-        _usuarios = usuarios;
+        _cadastroUsuario = cadastroUsuario;
         _logger = logger;
     }
 
     [HttpPost("cadastro")]
-    public async Task<IActionResult> Cadastrar([FromBody] CadastroProfessorRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Cadastrar([FromBody] CadastroUsuarioRequest request, CancellationToken cancellationToken)
     {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
 
         try
         {
-            var resultado = await _cadastroProfessor.CadastrarProfessorAsync(request.Nome, request.Contato, cancellationToken);
-            LogCadastroSucesso(trackId, resultado);
-            return Ok(new CadastroProfessorResponse(resultado.Usuario.Id, resultado.Usuario.Nome));
+            var resultado = await _cadastroUsuario.CadastrarAsync(PapelUsuario.Professor, request.Nome, request.Contato, cancellationToken);
+            CadastroUsuarioLogging.LogCadastroSucesso(_logger, trackId, resultado);
+            return Ok(new CadastroUsuarioResponse(resultado.Usuario.Id, resultado.Usuario.Nome));
         }
-        catch (CadastroProfessorRejeitadoException ex)
+        catch (CadastroRejeitadoException ex)
         {
-            return RejeitarCadastro(trackId, request.Contato, ex);
+            CadastroUsuarioLogging.LogCadastroRejeitado(_logger, trackId, request.Contato, ex);
+            return BadRequest(new CadastroUsuarioErrorResponse(ex.Message));
         }
     }
 
@@ -49,51 +47,7 @@ public sealed class ProfessoresController : ControllerBase
     [HttpGet("verificar-contato")]
     public async Task<IActionResult> VerificarContato([FromQuery] string contato, CancellationToken cancellationToken)
     {
-        Usuario? usuarioExistente;
-        try
-        {
-            var contatoNormalizado = Contato.Normalizar(contato ?? string.Empty);
-            usuarioExistente = await _usuarios.BuscarPorContatoAsync(contatoNormalizado, cancellationToken);
-        }
-        catch (ContatoInvalidoException)
-        {
-            usuarioExistente = null;
-        }
-
-        return Ok(usuarioExistente is null
-            ? new VerificarContatoResponse(false, null)
-            : new VerificarContatoResponse(true, usuarioExistente.Nome));
-    }
-
-    private void LogCadastroSucesso(string trackId, ResultadoCadastroProfessor resultado)
-    {
-        if (resultado.UsuarioReaproveitado)
-        {
-            _logger.LogInformation(
-                "PapelAdicionado {TrackId} {UsuarioId} {Papel}",
-                trackId, resultado.Usuario.Id, PapelUsuario.Professor);
-            return;
-        }
-
-        _logger.LogInformation(
-            "UsuarioCadastrado {TrackId} {UsuarioId} {Papel}",
-            trackId, resultado.Usuario.Id, PapelUsuario.Professor);
-    }
-
-    private IActionResult RejeitarCadastro(string trackId, string? contatoBruto, CadastroProfessorRejeitadoException ex)
-    {
-        var contatoMascarado = MascaradorDeContato.Mascarar(contatoBruto ?? string.Empty);
-        _logger.LogWarning(
-            "CadastroRejeitado {TrackId} {Motivo} {ContatoMascarado}",
-            trackId, ex.GetType().Name, contatoMascarado);
-        return BadRequest(new CadastroProfessorErrorResponse(ex.Message));
+        var resultado = await _cadastroUsuario.VerificarContatoAsync(contato ?? string.Empty, cancellationToken);
+        return Ok(new VerificarContatoResponse(resultado.IdentidadeExistente, resultado.Nome));
     }
 }
-
-public sealed record CadastroProfessorRequest(string Nome, string Contato);
-
-public sealed record CadastroProfessorResponse(Guid UsuarioId, string Nome);
-
-public sealed record CadastroProfessorErrorResponse(string Mensagem);
-
-public sealed record VerificarContatoResponse(bool IdentidadeExistente, string? Nome);

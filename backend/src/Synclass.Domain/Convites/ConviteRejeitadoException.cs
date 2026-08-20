@@ -6,7 +6,7 @@ namespace Synclass.Domain.Convites;
 /// inválida). Permite à Api tratar qualquer rejeição de forma uniforme
 /// (HTTP 400 + log de <c>ConviteRejeitado</c>) sem conhecer cada subtipo
 /// individualmente — mesmo padrão de
-/// <c>Synclass.Domain.Usuarios.CadastroProfessorRejeitadoException</c>.
+/// <c>Synclass.Domain.Usuarios.CadastroRejeitadoException</c>.
 /// </summary>
 public abstract class ConviteRejeitadoException : Exception
 {

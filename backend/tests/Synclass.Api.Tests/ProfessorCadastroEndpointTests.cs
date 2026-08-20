@@ -49,10 +49,10 @@ public sealed class ProfessorCadastroEndpointTests : IClassFixture<WebApplicatio
 
         var response = await client.PostAsJsonAsync(
             "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", "maria@exemplo.com"));
+            new CadastroUsuarioRequest("Maria Silva", "maria@exemplo.com"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroUsuarioResponse>();
         corpo!.Nome.Should().Be("Maria Silva");
     }
 
@@ -63,10 +63,10 @@ public sealed class ProfessorCadastroEndpointTests : IClassFixture<WebApplicatio
 
         var response = await client.PostAsJsonAsync(
             "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", "nao-e-um-contato-valido"));
+            new CadastroUsuarioRequest("Maria Silva", "nao-e-um-contato-valido"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorErrorResponse>();
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroUsuarioErrorResponse>();
         corpo!.Mensagem.Should().Contain("Contato inválido");
     }
 
@@ -74,13 +74,13 @@ public sealed class ProfessorCadastroEndpointTests : IClassFixture<WebApplicatio
     public async Task Post_Cadastro_ReturnsBadRequest_QuandoContatoJaCadastradoComoProfessor()
     {
         var client = _factory.CreateClient();
-        var request = new CadastroProfessorRequest("Maria Silva", "duplicada@exemplo.com");
+        var request = new CadastroUsuarioRequest("Maria Silva", "duplicada@exemplo.com");
         await client.PostAsJsonAsync("/professores/cadastro", request);
 
         var response = await client.PostAsJsonAsync("/professores/cadastro", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorErrorResponse>();
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroUsuarioErrorResponse>();
         corpo!.Mensagem.Should().Contain("Professor");
     }
 }

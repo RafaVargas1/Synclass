@@ -7,7 +7,7 @@ namespace Synclass.Domain.Matriculas;
 /// Orquestra o cadastro de Aluno provisório: valida nome e identificador,
 /// garante unicidade do identificador por Professor, e cria a
 /// <see cref="Matricula"/> (issue #3). Nunca exige contato/login do Aluno —
-/// diferente de <c>CadastroProfessorService</c> (issue #1), que cria
+/// diferente de <c>CadastroUsuarioService</c> (issue #1), que cria
 /// identidade de usuário plena.
 /// </summary>
 public sealed class CadastroAlunoProvisorioService
