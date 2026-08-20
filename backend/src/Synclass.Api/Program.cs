@@ -117,11 +117,15 @@ builder.Services.AddScoped<LoginService>();
 // docs/specs/2-convite-whatsapp/implementation.md.
 builder.Services.AddScoped<IConviteRepository, ConviteRepository>();
 builder.Services.AddSingleton<IGeradorDeTokenConvite, GeradorDeTokenConvite>();
+// Código curto de convite (issue #62) — ver
+// docs/specs/62-codigo-convite-curto/implementation.md.
+builder.Services.AddSingleton<IGeradorDeCodigoConvite, GeradorDeCodigoConvite>();
 builder.Services.AddScoped(sp => new ConviteService(
     sp.GetRequiredService<IConviteRepository>(),
     sp.GetRequiredService<IMatriculaRepository>(),
     sp.GetRequiredService<IUsuarioRepository>(),
     sp.GetRequiredService<IGeradorDeTokenConvite>(),
+    sp.GetRequiredService<IGeradorDeCodigoConvite>(),
     sp.GetRequiredService<IClock>(),
     LerDiasValidadeConviteObrigatoria(builder.Configuration)));
 

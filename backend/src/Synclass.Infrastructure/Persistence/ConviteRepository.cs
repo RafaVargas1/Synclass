@@ -20,6 +20,12 @@ public sealed class ConviteRepository : IConviteRepository
         return _dbContext.Convites.FirstOrDefaultAsync(c => c.Token == token, cancellationToken);
     }
 
+    public Task<bool> ExisteCodigoAtivoAsync(string codigo, DateTimeOffset agora, CancellationToken cancellationToken)
+    {
+        return _dbContext.Convites.AnyAsync(
+            c => c.Codigo == codigo && c.UsadoEm == null && c.ExpiraEm > agora, cancellationToken);
+    }
+
     public async Task AdicionarAsync(Convite convite, CancellationToken cancellationToken)
     {
         await _dbContext.Convites.AddAsync(convite, cancellationToken);

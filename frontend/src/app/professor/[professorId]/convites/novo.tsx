@@ -35,6 +35,7 @@ export default function GerarConviteScreen() {
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
   const [linkConvite, setLinkConvite] = useState<string | undefined>(undefined);
+  const [codigoConvite, setCodigoConvite] = useState<string | undefined>(undefined);
 
   async function handleSubmit() {
     setEnviando(true);
@@ -48,6 +49,7 @@ export default function GerarConviteScreen() {
       return;
     }
     setLinkConvite(`${AppBaseUrl}/convite/${resultado.token}`);
+    setCodigoConvite(resultado.codigo);
   }
 
   function handleEnviarWhatsApp() {
@@ -65,8 +67,12 @@ export default function GerarConviteScreen() {
         className="w-full flex-1 self-center items-center justify-center px-four"
         style={{ maxWidth: MaxContentWidth }}
       >
-        {linkConvite ? (
-          <ConviteGerado linkConvite={linkConvite} onEnviarWhatsApp={handleEnviarWhatsApp} />
+        {linkConvite && codigoConvite ? (
+          <ConviteGerado
+            linkConvite={linkConvite}
+            codigo={codigoConvite}
+            onEnviarWhatsApp={handleEnviarWhatsApp}
+          />
         ) : (
           <GerarConviteForm
             contato={contato}

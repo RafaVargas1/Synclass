@@ -22,12 +22,13 @@ public sealed class ConviteServiceTests
     {
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
 
-        var convite = await servico.GerarAsync(professorId, "11987654321", matriculaId: null, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", matriculaId: null, CancellationToken.None)).Convite;
 
         convite.ProfessorId.Should().Be(professorId);
         convite.Contato.Should().Be("11987654321");
         convite.ContatoTipo.Should().Be(TipoContato.Telefone);
         convite.Token.Should().Be("token-1");
+        convite.Codigo.Should().Be("00001");
         convite.ExpiraEm.Should().Be(Clock.UtcNow.AddDays(DiasValidade));
         contexto.Convites.Convites.Should().ContainSingle();
     }
@@ -90,7 +91,7 @@ public sealed class ConviteServiceTests
         var matricula = Matricula.CriarProvisoria(professorId, "João Pedro", "2024-013", Clock);
         await contexto.Matriculas.AdicionarAsync(matricula, CancellationToken.None);
 
-        var convite = await servico.GerarAsync(professorId, "11987654321", matricula.Id, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", matricula.Id, CancellationToken.None)).Convite;
 
         convite.MatriculaId.Should().Be(matricula.Id);
     }
@@ -110,6 +111,91 @@ public sealed class ConviteServiceTests
         contexto.Convites.Convites.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Colisão de código contra convite ainda válido (não usado, não
+    /// expirado): o gerador é chamado de novo até achar um código livre —
+    /// item 3 da ordem de execução da issue #62.
+    /// </summary>
+    [Fact]
+    public async Task GerarAsync_CodigoColideComConviteAtivo_ChamaGeradorNovamenteAteAcharCodigoLivre()
+    {
+        var contexto = NovoContexto();
+        var geradorDeCodigo = new FakeGeradorDeCodigoConvite("11111", "11111", "22222");
+        var servico = NovoServico(contexto, geradorDeCodigo);
+        var professorId = await AdicionarProfessorAsync(contexto.Usuarios, "professor@exemplo.com");
+        await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+
+        var resultado = await servico.GerarAsync(professorId, "11900000000", null, CancellationToken.None);
+
+        resultado.Convite.Codigo.Should().Be("22222");
+        resultado.Tentativas.Should().Be(2);
+        geradorDeCodigo.VezesChamado.Should().Be(3);
+    }
+
+    /// <summary>
+    /// Código de um convite já usado ou expirado pode ser reaproveitado por
+    /// um novo convite: a checagem de unicidade ignora convites finalizados
+    /// — item 4 da ordem de execução da issue #62.
+    /// </summary>
+    [Fact]
+    public async Task GerarAsync_CodigoPertenceAConviteUsado_ReaproveitaCodigoSemRetry()
+    {
+        var contexto = NovoContexto();
+        var geradorDeCodigo = new FakeGeradorDeCodigoConvite("11111", "11111");
+        var servico = NovoServico(contexto, geradorDeCodigo);
+        var professorId = await AdicionarProfessorAsync(contexto.Usuarios, "professor@exemplo.com");
+        var conviteAntigo = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
+        conviteAntigo.MarcarUsado(Clock);
+
+        var resultado = await servico.GerarAsync(professorId, "11900000000", null, CancellationToken.None);
+
+        resultado.Convite.Codigo.Should().Be("11111");
+        resultado.Tentativas.Should().Be(1);
+    }
+
+    /// <summary>
+    /// Mesma reutilização acima, mas para um convite expirado em vez de
+    /// usado — item 4 da ordem de execução da issue #62.
+    /// </summary>
+    [Fact]
+    public async Task GerarAsync_CodigoPertenceAConviteExpirado_ReaproveitaCodigoSemRetry()
+    {
+        var contexto = NovoContexto();
+        var geradorDeCodigo = new FakeGeradorDeCodigoConvite("11111", "11111");
+        var servico = NovoServico(contexto, geradorDeCodigo);
+        var professorId = await AdicionarProfessorAsync(contexto.Usuarios, "professor@exemplo.com");
+        await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+        var servicoAposExpirar = new ConviteService(
+            contexto.Convites, contexto.Matriculas, contexto.Usuarios, new FakeGeradorDeTokenConvite(),
+            geradorDeCodigo, new FixedClock(Clock.UtcNow.AddDays(DiasValidade + 1)), DiasValidade);
+
+        var resultado = await servicoAposExpirar.GerarAsync(professorId, "11900000000", null, CancellationToken.None);
+
+        resultado.Convite.Codigo.Should().Be("11111");
+        resultado.Tentativas.Should().Be(1);
+    }
+
+    /// <summary>
+    /// Teto de tentativas do loop de geração de código único (edge point de
+    /// docs/specs/62-codigo-convite-curto/implementation.md): sem ele, uma
+    /// colisão persistente prenderia a requisição num loop indefinido.
+    /// </summary>
+    [Fact]
+    public async Task GerarAsync_CodigoColideSempre_RejeitaComLimiteDeTentativasDeCodigoConviteExcedidoAposVinteTentativas()
+    {
+        var contexto = NovoContexto();
+        var codigosSempreColidindo = Enumerable.Repeat("11111", 21).ToArray();
+        var geradorDeCodigo = new FakeGeradorDeCodigoConvite(codigosSempreColidindo);
+        var servico = NovoServico(contexto, geradorDeCodigo);
+        var professorId = await AdicionarProfessorAsync(contexto.Usuarios, "professor@exemplo.com");
+        await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+
+        var acao = () => servico.GerarAsync(professorId, "11900000000", null, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<LimiteDeTentativasDeCodigoConviteExcedidoException>();
+        geradorDeCodigo.VezesChamado.Should().Be(21);
+    }
+
     [Fact]
     public async Task AceitarAsync_TokenInexistente_RejeitaComConviteInvalidoException()
     {
@@ -125,7 +211,7 @@ public sealed class ConviteServiceTests
     public async Task AceitarAsync_ContatoDivergenteDoConvite_RejeitaComConviteContatoDivergenteException()
     {
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
-        var convite = await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
 
         var acao = () => servico.AceitarAsync(convite.Token, "João Pedro", "11900000000", CancellationToken.None);
 
@@ -137,7 +223,7 @@ public sealed class ConviteServiceTests
     public async Task AceitarAsync_SemMatriculaIdDeOrigemEContatoNovo_CriaUsuarioAlunoEMatriculaVinculadaNova()
     {
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
-        var convite = await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
 
         var resultado = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
 
@@ -157,7 +243,7 @@ public sealed class ConviteServiceTests
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
         var professorConvidado = Usuario.Cadastrar("Maria Professora", "maria@exemplo.com", PapelUsuario.Professor, Clock);
         await contexto.Usuarios.AdicionarAsync(professorConvidado, CancellationToken.None);
-        var convite = await servico.GerarAsync(professorId, "maria@exemplo.com", null, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "maria@exemplo.com", null, CancellationToken.None)).Convite;
 
         var resultado = await servico.AceitarAsync(convite.Token, "Maria Professora", "maria@exemplo.com", CancellationToken.None);
 
@@ -176,7 +262,7 @@ public sealed class ConviteServiceTests
         await contexto.Usuarios.AdicionarAsync(alunoExistente, CancellationToken.None);
         var matriculaOrigem = Matricula.CriarProvisoria(professorId, "João Pedro", "2024-013", Clock);
         await contexto.Matriculas.AdicionarAsync(matriculaOrigem, CancellationToken.None);
-        var convite = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None)).Convite;
 
         var resultado = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
 
@@ -192,7 +278,7 @@ public sealed class ConviteServiceTests
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
         var matriculaOrigem = Matricula.CriarProvisoria(professorId, "João Pedro", "2024-013", Clock);
         await contexto.Matriculas.AdicionarAsync(matriculaOrigem, CancellationToken.None);
-        var convite = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None)).Convite;
 
         var resultado = await servico.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
 
@@ -207,10 +293,10 @@ public sealed class ConviteServiceTests
     public async Task AceitarAsync_ConviteExpirado_RejeitaSemCriarOuAlterarNada()
     {
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
-        var convite = await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
         var servicoAposExpirar = new ConviteService(
             contexto.Convites, contexto.Matriculas, contexto.Usuarios, new FakeGeradorDeTokenConvite(),
-            new FixedClock(Clock.UtcNow.AddDays(DiasValidade + 1)), DiasValidade);
+            new FakeGeradorDeCodigoConvite(), new FixedClock(Clock.UtcNow.AddDays(DiasValidade + 1)), DiasValidade);
 
         var acao = () => servicoAposExpirar.AceitarAsync(convite.Token, "João Pedro", "11987654321", CancellationToken.None);
 
@@ -237,8 +323,8 @@ public sealed class ConviteServiceTests
         var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
         var matriculaOrigem = Matricula.CriarProvisoria(professorId, "João Pedro", "2024-013", Clock);
         await contexto.Matriculas.AdicionarAsync(matriculaOrigem, CancellationToken.None);
-        var conviteA = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
-        var conviteB = await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None);
+        var conviteA = (await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None)).Convite;
+        var conviteB = (await servico.GerarAsync(professorId, "11987654321", matriculaOrigem.Id, CancellationToken.None)).Convite;
         await servico.AceitarAsync(conviteA.Token, "João Pedro", "11987654321", CancellationToken.None);
 
         var acao = () => servico.AceitarAsync(conviteB.Token, "João Pedro", "11987654321", CancellationToken.None);
@@ -264,7 +350,7 @@ public sealed class ConviteServiceTests
         await contexto.Usuarios.AdicionarAsync(alunoExistente, CancellationToken.None);
         var matriculaComA = Matricula.CriarVinculada(professorAId, alunoExistente.Id, Clock);
         await contexto.Matriculas.AdicionarAsync(matriculaComA, CancellationToken.None);
-        var conviteDoB = await servico.GerarAsync(professorBId, "11987654321", null, CancellationToken.None);
+        var conviteDoB = (await servico.GerarAsync(professorBId, "11987654321", null, CancellationToken.None)).Convite;
 
         var resultado = await servico.AceitarAsync(conviteDoB.Token, "João Pedro", "11987654321", CancellationToken.None);
 
@@ -294,7 +380,7 @@ public sealed class ConviteServiceTests
         var professorBId = await AdicionarProfessorAsync(contexto.Usuarios, "professor-b@exemplo.com");
         var matriculaProvisoriaComA = Matricula.CriarProvisoria(professorAId, "João Pedro", "2024-013", Clock);
         await contexto.Matriculas.AdicionarAsync(matriculaProvisoriaComA, CancellationToken.None);
-        var conviteDoB = await servico.GerarAsync(professorBId, "11987654321", null, CancellationToken.None);
+        var conviteDoB = (await servico.GerarAsync(professorBId, "11987654321", null, CancellationToken.None)).Convite;
 
         var resultado = await servico.AceitarAsync(conviteDoB.Token, "João Pedro", "11987654321", CancellationToken.None);
 
@@ -320,10 +406,11 @@ public sealed class ConviteServiceTests
         return new Contexto(new FakeConviteRepository(), new FakeMatriculaRepository(), new FakeUsuarioRepository());
     }
 
-    private static ConviteService NovoServico(Contexto contexto)
+    private static ConviteService NovoServico(Contexto contexto, IGeradorDeCodigoConvite? geradorDeCodigo = null)
     {
         return new ConviteService(
-            contexto.Convites, contexto.Matriculas, contexto.Usuarios, new FakeGeradorDeTokenConvite(), Clock, DiasValidade);
+            contexto.Convites, contexto.Matriculas, contexto.Usuarios, new FakeGeradorDeTokenConvite(),
+            geradorDeCodigo ?? new FakeGeradorDeCodigoConvite(), Clock, DiasValidade);
     }
 
     private static async Task<Guid> AdicionarProfessorAsync(FakeUsuarioRepository usuarios, string contato)

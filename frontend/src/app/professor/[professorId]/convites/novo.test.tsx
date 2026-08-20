@@ -31,6 +31,7 @@ describe('GerarConviteScreen', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-alta-entropia',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
     await render(<GerarConviteScreen />);
@@ -40,6 +41,7 @@ describe('GerarConviteScreen', () => {
 
     await waitFor(() => expect(screen.getByText('Convite gerado!')).toBeTruthy());
     expect(screen.getByText(/token-alta-entropia/)).toBeTruthy();
+    expect(screen.getByText(/12345/)).toBeTruthy();
     expect(gerarConviteMock).toHaveBeenCalledWith({
       professorId: 'professor-1',
       contato: '(11) 98765-4321',
@@ -51,6 +53,7 @@ describe('GerarConviteScreen', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-1',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
     await render(<GerarConviteScreen />);
@@ -74,6 +77,7 @@ describe('GerarConviteScreen', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-1',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
     await render(<GerarConviteScreen />);

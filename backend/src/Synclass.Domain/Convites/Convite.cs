@@ -19,6 +19,7 @@ public sealed class Convite
         TipoContato contatoTipo,
         Guid? matriculaId,
         string token,
+        string codigo,
         DateTimeOffset expiraEm,
         DateTimeOffset createdAt)
     {
@@ -28,6 +29,7 @@ public sealed class Convite
         ContatoTipo = contatoTipo;
         MatriculaId = matriculaId;
         Token = token;
+        Codigo = codigo;
         ExpiraEm = expiraEm;
         CreatedAt = createdAt;
     }
@@ -49,6 +51,14 @@ public sealed class Convite
 
     public string Token { get; private set; }
 
+    /// <summary>
+    /// Código curto de 5 dígitos numéricos (issue #62), alternativa ao link
+    /// para o Aluno entrar na turma digitando o código em vez de abrir a URL
+    /// — já validado/gerado por <see cref="IGeradorDeCodigoConvite"/>, mesmo
+    /// racional de <see cref="Token"/>.
+    /// </summary>
+    public string Codigo { get; private set; }
+
     public DateTimeOffset ExpiraEm { get; private set; }
 
     public DateTimeOffset? UsadoEm { get; private set; }
@@ -68,12 +78,13 @@ public sealed class Convite
         TipoContato contatoTipo,
         Guid? matriculaId,
         string token,
+        string codigo,
         int diasValidade,
         IClock clock)
     {
         var agora = clock.UtcNow;
         return new Convite(
-            Guid.NewGuid(), professorId, contatoNormalizado, contatoTipo, matriculaId, token, agora.AddDays(diasValidade), agora);
+            Guid.NewGuid(), professorId, contatoNormalizado, contatoTipo, matriculaId, token, codigo, agora.AddDays(diasValidade), agora);
     }
 
     /// <summary>

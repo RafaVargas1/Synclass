@@ -9,10 +9,11 @@ function mockFetchOnce(status: number, body: unknown) {
 }
 
 describe('gerarConvite', () => {
-  it('returns sucesso with token and expiraEm when the Api responds with 200', async () => {
+  it('returns sucesso with token, codigo and expiraEm when the Api responds with 200', async () => {
     mockFetchOnce(200, {
       conviteId: 'convite-1',
       token: 'token-alta-entropia',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
 
@@ -22,6 +23,7 @@ describe('gerarConvite', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-alta-entropia',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
   });

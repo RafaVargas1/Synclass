@@ -15,14 +15,25 @@ public sealed class ConviteService
     private readonly IMatriculaRepository _matriculas;
     private readonly IUsuarioRepository _usuarios;
     private readonly IGeradorDeTokenConvite _geradorDeToken;
+    private readonly IGeradorDeCodigoConvite _geradorDeCodigo;
     private readonly IClock _clock;
     private readonly int _diasValidade;
+
+    /// <summary>
+    /// Teto do loop de <see cref="GerarCodigoUnicoAsync"/> — o espaço de
+    /// 100.000 combinações torna colisões repetidas extremamente raras (ver
+    /// docs/specs/62-codigo-convite-curto/implementation.md), então este
+    /// valor é só um guardrail contra loop indefinido, não um limite
+    /// esperado em operação normal.
+    /// </summary>
+    private const int LimiteDeTentativasDeCodigo = 20;
 
     public ConviteService(
         IConviteRepository convites,
         IMatriculaRepository matriculas,
         IUsuarioRepository usuarios,
         IGeradorDeTokenConvite geradorDeToken,
+        IGeradorDeCodigoConvite geradorDeCodigo,
         IClock clock,
         int diasValidade)
     {
@@ -30,6 +41,7 @@ public sealed class ConviteService
         _matriculas = matriculas;
         _usuarios = usuarios;
         _geradorDeToken = geradorDeToken;
+        _geradorDeCodigo = geradorDeCodigo;
         _clock = clock;
         _diasValidade = diasValidade;
     }
@@ -40,7 +52,7 @@ public sealed class ConviteService
     /// origem inválida (edge point) e contato já vinculado como Aluno pleno
     /// a este Professor (critério de aceite 4).
     /// </summary>
-    public async Task<Convite> GerarAsync(
+    public async Task<ResultadoGeracaoConvite> GerarAsync(
         Guid professorId, string contatoBruto, Guid? matriculaId, CancellationToken cancellationToken)
     {
         var contatoNormalizado = Contato.Normalizar(contatoBruto);
@@ -55,10 +67,40 @@ public sealed class ConviteService
         await GarantirContatoNaoVinculadoAsync(professorId, contatoNormalizado, cancellationToken);
 
         var token = _geradorDeToken.Gerar();
-        var convite = Convite.Gerar(professorId, contatoNormalizado, contatoTipo, matriculaId, token, _diasValidade, _clock);
+        var (codigo, tentativas) = await GerarCodigoUnicoAsync(cancellationToken);
+        var convite = Convite.Gerar(professorId, contatoNormalizado, contatoTipo, matriculaId, token, codigo, _diasValidade, _clock);
         await _convites.AdicionarAsync(convite, cancellationToken);
         await _convites.SalvarAsync(cancellationToken);
-        return convite;
+        return new ResultadoGeracaoConvite(convite, tentativas);
+    }
+
+    /// <summary>
+    /// Gera um código único entre os convites ativos (não usados, não
+    /// expirados) — colisão com um convite finalizado (usado ou expirado)
+    /// não conta como colisão, pois esse código pode ser reaproveitado (ver
+    /// edge points de docs/specs/62-codigo-convite-curto/implementation.md).
+    /// Devolve também quantas tentativas foram necessárias, usado pelo log
+    /// estruturado <c>ConviteGerado</c> (Critérios técnicos da issue #62).
+    /// </summary>
+    private async Task<(string Codigo, int Tentativas)> GerarCodigoUnicoAsync(CancellationToken cancellationToken)
+    {
+        var tentativas = 0;
+        string codigo;
+        bool codigoAtivo;
+        do
+        {
+            if (tentativas >= LimiteDeTentativasDeCodigo)
+            {
+                throw new LimiteDeTentativasDeCodigoConviteExcedidoException(LimiteDeTentativasDeCodigo);
+            }
+
+            codigo = _geradorDeCodigo.Gerar();
+            tentativas++;
+            codigoAtivo = await _convites.ExisteCodigoAtivoAsync(codigo, _clock.UtcNow, cancellationToken);
+        }
+        while (codigoAtivo);
+
+        return (codigo, tentativas);
     }
 
     private async Task GarantirProfessorExisteAsync(Guid professorId, CancellationToken cancellationToken)
@@ -224,3 +266,11 @@ public sealed class ConviteService
 /// técnicos da issue #4).
 /// </summary>
 public sealed record ResultadoAceiteConvite(Usuario Usuario, Guid ConviteId, bool MatriculaPromovida, bool PapelAdicionado);
+
+/// <summary>
+/// Resultado da geração de convite: o <see cref="Convite"/> criado e quantas
+/// <see cref="Tentativas"/> o gerador de código precisou até achar um código
+/// livre entre os convites ativos — logado como <c>ConviteGerado</c> pela Api
+/// (Critérios técnicos da issue #62).
+/// </summary>
+public sealed record ResultadoGeracaoConvite(Convite Convite, int Tentativas);

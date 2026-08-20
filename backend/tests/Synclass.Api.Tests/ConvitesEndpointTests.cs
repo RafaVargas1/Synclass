@@ -59,6 +59,7 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<GerarConviteResponse>();
         corpo!.Token.Should().NotBeNullOrWhiteSpace();
+        corpo.Codigo.Should().MatchRegex("^[0-9]{5}$");
         corpo.ExpiraEm.Should().BeAfter(_clock.UtcNow);
     }
 
