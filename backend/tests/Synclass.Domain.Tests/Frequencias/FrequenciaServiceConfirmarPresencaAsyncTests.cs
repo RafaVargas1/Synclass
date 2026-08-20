@@ -42,7 +42,7 @@ public sealed class FrequenciaServiceConfirmarPresencaAsyncTests
         var matriculas = new FakeMatriculaRepository();
         var aulaService = new AulaService(
             aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService, Clock);
-        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, configuracoes, horarioService, Clock);
+        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);
         var registros = new FakeRegistroFrequenciaRepository();
         var usuarios = new FakeUsuarioRepository();
         var frequenciaService = new FrequenciaService(

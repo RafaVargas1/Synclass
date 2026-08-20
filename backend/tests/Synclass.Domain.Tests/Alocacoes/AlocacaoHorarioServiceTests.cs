@@ -38,7 +38,7 @@ public sealed class AlocacaoHorarioServiceTests
         var horarioService = new HorarioService(horarios, configuracoes, Clock);
         var alocacoes = new FakeAlocacaoHorarioRepository();
         var matriculas = new FakeMatriculaRepository();
-        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, configuracoes, horarioService, Clock);
+        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);
         return new Cenario(horarioService, alocacaoHorarioService, alocacoes, matriculas, configuracoes);
     }
 

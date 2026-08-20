@@ -11,8 +11,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/74
 - [x] Teste unidade (Domain): `AlocacaoHorarioService.MarcarAsync` — horário `Hibrido` **já com atribuição do Professor**, Aluno se marca livremente no mesmo horário, aceita (comportamento novo — o Híbrido por Professor de hoje bloqueava esse caso, o Híbrido por horário não bloqueia mais).
 - [x] Teste unidade (Domain): `AlocacaoHorarioService.MarcarAsync` — horário `Livre`, Aluno se marca livremente, aceita.
 - [x] Implementação mínima: `GarantirModeloPermiteMarcacaoAsync` vira checagem síncrona sobre `Horario.TipoMarcacao`, sem o parâmetro `horarioPossuiAtribuicaoFixa` (deixa de ser relevante).
-- [ ] Teste unidade (Domain): `AlocacaoHorarioService.ListarVagosAsync` — só retorna horários `Livre`/`Hibrido` com vaga, não retorna `Fixo`.
-- [ ] Implementação: `ListarVagosAsync`/`ParaHorarioVagoSeElegivelAsync` decidem por `horario.TipoMarcacao`, removendo a dependência de `ConfiguracaoProfessor` nesta classe.
-- [ ] Remoção: campo `_configuracoes`/`IConfiguracaoProfessorRepository` do construtor de `AlocacaoHorarioService` (nada mais na classe usa).
+- [x] Teste unidade (Domain): `AlocacaoHorarioService.ListarVagosAsync` — só retorna horários `Livre`/`Hibrido` com vaga, não retorna `Fixo`.
+- [x] Implementação: `ListarVagosAsync`/`ParaHorarioVagoSeElegivelAsync` decidem por `horario.TipoMarcacao`, removendo a dependência de `ConfiguracaoProfessor` nesta classe.
+- [x] Remoção: campo `_configuracoes`/`IConfiguracaoProfessorRepository` do construtor de `AlocacaoHorarioService` (nada mais na classe usa).
 - [ ] Ajuste dos testes de fumaça (Api) em `AlocacaoHorarioEndpointTests`/`MarcacaoHorarioEndpointTests` que hoje configuram `ModeloAgendamento` do Professor para controlar o cenário — passam a cadastrar o `Horario` já com o `TipoMarcacao` desejado.
 - [ ] Checks finais: `dotnet format && dotnet test`.

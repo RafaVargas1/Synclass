@@ -1,5 +1,4 @@
 using Synclass.Domain.Common;
-using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 
@@ -17,20 +16,17 @@ public sealed class AlocacaoHorarioService
 {
     private readonly IAlocacaoHorarioRepository _alocacoes;
     private readonly IMatriculaRepository _matriculas;
-    private readonly IConfiguracaoProfessorRepository _configuracoes;
     private readonly HorarioService _horarioService;
     private readonly IClock _clock;
 
     public AlocacaoHorarioService(
         IAlocacaoHorarioRepository alocacoes,
         IMatriculaRepository matriculas,
-        IConfiguracaoProfessorRepository configuracoes,
         HorarioService horarioService,
         IClock clock)
     {
         _alocacoes = alocacoes;
         _matriculas = matriculas;
-        _configuracoes = configuracoes;
         _horarioService = horarioService;
         _clock = clock;
     }
@@ -144,28 +140,24 @@ public sealed class AlocacaoHorarioService
     }
 
     /// <summary>
-    /// Lista os horários do Professor que este Aluno pode marcar livremente
-    /// agora (issue #9) — GET é consulta, não ação: modelo Fixo ou ausência
-    /// de configuração devolvem lista vazia, sem lançar (diferente de
+    /// Lista os horários deste Professor que o Aluno pode marcar livremente
+    /// agora (issue #9) — GET é consulta, não ação: horário `Fixo` só
+    /// devolve lista vazia (filtrado), sem lançar (diferente de
     /// <see cref="MarcarAsync"/>, que rejeita com exceção porque é uma
-    /// tentativa de ação).
+    /// tentativa de ação). Decisão passou a ser por
+    /// <see cref="Horario.TipoMarcacao"/>, não mais por
+    /// <c>ConfiguracaoProfessor</c> (issue #74).
     /// </summary>
     public async Task<IReadOnlyCollection<HorarioVago>> ListarVagosAsync(
         Guid professorId, Guid matriculaId, CancellationToken cancellationToken)
     {
         await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
 
-        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
-        if (configuracao is null)
-        {
-            return Array.Empty<HorarioVago>();
-        }
-
         var horarios = await _horarioService.ListarAsync(professorId, cancellationToken);
         var vagos = new List<HorarioVago>();
         foreach (var horario in horarios)
         {
-            var horarioVago = await ParaHorarioVagoSeElegivelAsync(configuracao, horario, matriculaId, cancellationToken);
+            var horarioVago = await ParaHorarioVagoSeElegivelAsync(horario, matriculaId, cancellationToken);
             if (horarioVago is not null)
             {
                 vagos.Add(horarioVago);
@@ -176,7 +168,7 @@ public sealed class AlocacaoHorarioService
     }
 
     private async Task<HorarioVago?> ParaHorarioVagoSeElegivelAsync(
-        ConfiguracaoProfessor configuracao, Horario horario, Guid matriculaId, CancellationToken cancellationToken)
+        Horario horario, Guid matriculaId, CancellationToken cancellationToken)
     {
         var alocacaoExistente = await _alocacoes.BuscarAsync(horario.Id, matriculaId, cancellationToken);
         if (alocacaoExistente is not null)
@@ -186,8 +178,7 @@ public sealed class AlocacaoHorarioService
 
         var quantidadeAlocada = await _alocacoes.ContarPorHorarioAsync(horario.Id, cancellationToken);
         var vagasRestantes = horario.LimiteAlunos - quantidadeAlocada;
-        var horarioPossuiAtribuicaoFixa = await _alocacoes.PossuiAlocacaoOrigemProfessorAsync(horario.Id, cancellationToken);
-        var elegivel = configuracao.PermiteMarcacaoLivre(horarioPossuiAtribuicaoFixa) && vagasRestantes > 0;
+        var elegivel = horario.TipoMarcacao is TipoMarcacao.Livre or TipoMarcacao.Hibrido && vagasRestantes > 0;
         return elegivel ? new HorarioVago(horario, vagasRestantes) : null;
     }
 
