@@ -20,6 +20,14 @@ public sealed class ConviteRepository : IConviteRepository
         return _dbContext.Convites.FirstOrDefaultAsync(c => c.Token == token, cancellationToken);
     }
 
+    public Task<Convite?> BuscarPorCodigoAsync(string codigo, CancellationToken cancellationToken)
+    {
+        return _dbContext.Convites
+            .Where(c => c.Codigo == codigo)
+            .OrderByDescending(c => c.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public Task<bool> ExisteCodigoAtivoAsync(string codigo, DateTimeOffset agora, CancellationToken cancellationToken)
     {
         return _dbContext.Convites.AnyAsync(

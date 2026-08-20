@@ -147,6 +147,43 @@ public sealed class ConviteService
         string token, string nome, string contatoBruto, CancellationToken cancellationToken)
     {
         var convite = await _convites.BuscarPorTokenAsync(token, cancellationToken) ?? throw new ConviteInvalidoException();
+        return await AceitarResolvidoAsync(convite, nome, contatoBruto, rejeitarVinculoExistente: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Aceita um convite pelo código curto de 5 dígitos (issue #63), mesma
+    /// regra de negócio de <see cref="AceitarAsync"/>, mas rejeitando (em vez
+    /// de reaproveitar silenciosamente) um vínculo já existente entre o
+    /// contato e o Professor — critério de aceite 5 da issue #63, ver
+    /// desenho em docs/specs/63-entrar-turma-codigo/implementation.md.
+    /// </summary>
+    public async Task<ResultadoAceiteConvite> AceitarPorCodigoAsync(
+        string codigoBruto, string nome, string contatoBruto, CancellationToken cancellationToken)
+    {
+        var codigoNormalizado = NormalizarCodigo(codigoBruto);
+        var convite = await _convites.BuscarPorCodigoAsync(codigoNormalizado, cancellationToken) ?? throw new ConviteInvalidoException();
+        return await AceitarResolvidoAsync(convite, nome, contatoBruto, rejeitarVinculoExistente: true, cancellationToken);
+    }
+
+    /// <summary>
+    /// Corpo comum de <see cref="AceitarAsync"/> (token) e
+    /// <see cref="AceitarPorCodigoAsync"/> (código): valida o contato
+    /// submetido contra o do convite, marca o convite como usado antes de
+    /// qualquer mutação de Usuario/Matricula (uso único), e então
+    /// cria/reaproveita a identidade e promove ou cria o vínculo.
+    /// <paramref name="rejeitarVinculoExistente"/> distingue os dois fluxos:
+    /// o fluxo por link reaproveita silenciosamente um vínculo já existente
+    /// (decisão documentada em docs/specs/2-convite-whatsapp/implementation.md),
+    /// enquanto o fluxo por código rejeita com
+    /// <see cref="ContatoJaVinculadoException"/> (critério de aceite 5 da
+    /// issue #63) — a checagem roda antes de <see cref="Convite.MarcarUsado"/>,
+    /// preservando o edge point "rejeição não altera nada" já estabelecido
+    /// para <see cref="ObterMatriculaOrigemValidaAsync"/> (achado de
+    /// code-review do PR #29).
+    /// </summary>
+    private async Task<ResultadoAceiteConvite> AceitarResolvidoAsync(
+        Convite convite, string nome, string contatoBruto, bool rejeitarVinculoExistente, CancellationToken cancellationToken)
+    {
         var contatoNormalizado = Contato.Normalizar(contatoBruto);
         if (contatoNormalizado != convite.Contato)
         {
@@ -155,6 +192,11 @@ public sealed class ConviteService
 
         var nomeValidado = NomeUsuario.Validar(nome);
         var matriculaOrigem = await ObterMatriculaOrigemValidaAsync(convite, cancellationToken);
+        if (rejeitarVinculoExistente)
+        {
+            await GarantirContatoNaoVinculadoAsync(convite.ProfessorId, contatoNormalizado, cancellationToken);
+        }
+
         convite.MarcarUsado(_clock);
 
         var (usuario, papelAdicionado) = await ObterOuCriarUsuarioAsync(nomeValidado, convite.Contato, cancellationToken);
@@ -164,6 +206,18 @@ public sealed class ConviteService
         await _matriculas.SalvarAsync(cancellationToken);
         await _convites.SalvarAsync(cancellationToken);
         return new ResultadoAceiteConvite(usuario, convite.Id, matriculaPromovida, papelAdicionado);
+    }
+
+    /// <summary>
+    /// Normaliza o código informado pelo Aluno para só dígitos, tolerando
+    /// espaços/máscara (ex: "12 345" ou "1-2-3-4-5" viram "12345") — mesmo
+    /// racional de <see cref="Contato.Normalizar"/>. Validação de entrada do
+    /// caller, não invariante de <see cref="Convite"/> (ver edge points de
+    /// docs/specs/63-entrar-turma-codigo/implementation.md).
+    /// </summary>
+    private static string NormalizarCodigo(string codigoBruto)
+    {
+        return new string(codigoBruto.Where(char.IsDigit).ToArray());
     }
 
     private async Task<(Usuario Usuario, bool PapelAdicionado)> ObterOuCriarUsuarioAsync(

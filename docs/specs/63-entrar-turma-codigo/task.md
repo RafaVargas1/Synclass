@@ -4,12 +4,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/63
 
 ## Ordem de execução
 
-- [ ] `IConviteRepository`: adiciona `BuscarPorCodigoAsync(codigo, ct)` (mais
+- [x] `IConviteRepository`: adiciona `BuscarPorCodigoAsync(codigo, ct)` (mais
       recente por `CreatedAt` entre convites com aquele código — um código
       finalizado pode ter sido reaproveitado por um convite mais novo, ver
       `implementation.md#edge-points`), implementa em `ConviteRepository`
       (EF Core) e em `FakeConviteRepository` (testes).
-- [ ] `ConviteService`: extrai `AceitarResolvidoAsync(convite, nome,
+- [x] `ConviteService`: extrai `AceitarResolvidoAsync(convite, nome,
       contatoBruto, rejeitarVinculoExistente, ct)` do corpo atual de
       `AceitarAsync`, sem mudar nenhum teste existente de `AceitarAsync`
       (refactor puro).
