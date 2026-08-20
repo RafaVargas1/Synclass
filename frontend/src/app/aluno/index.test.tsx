@@ -163,6 +163,12 @@ describe('AlunoScreen', () => {
     expect(screen.getByDisplayValue('João Souza').props.editable).toBe(false);
   });
 
+  it('mostra o botão de voltar da Topbar', async () => {
+    await render(<AlunoScreen />);
+
+    expect(screen.getByText('Entrar como Aluno')).toBeTruthy();
+  });
+
   it('sempre mostra o texto explicando que o vínculo com o Professor é feito depois', async () => {
     await render(<AlunoScreen />);
 

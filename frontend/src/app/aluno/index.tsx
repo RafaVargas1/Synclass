@@ -8,6 +8,7 @@ import { ConviteExpirado } from '@/components/molecules/ConviteExpirado';
 import { FormField } from '@/components/molecules/FormField';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm';
+import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarAluno, verificarContatoAluno } from '@/lib/api/alunos';
 import { aceitarConvitePorCodigo } from '@/lib/api/convites';
 import { normalizarCodigoConvite } from '@/lib/normalizarCodigoConvite';
@@ -80,6 +81,7 @@ export default function AlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
+      <Topbar titulo="Entrar como Aluno" />
       <View className="w-full flex-1 items-center justify-center self-center px-four gap-four">
         {expirado ? (
           <ConviteExpirado />
