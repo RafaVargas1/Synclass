@@ -4,7 +4,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/67
 
 ## Ordem de execução
 
-- [ ] Teste unidade (frontend, `frontend/src/theme/palette.test.ts`, novo arquivo):
+- [x] Teste unidade (frontend, `frontend/src/theme/palette.test.ts`, novo arquivo):
       cenário "Dado o novo `Colors.light.background`, quando comparado a
       `backgroundElement`/`backgroundSelected`, então a razão de contraste
       (WCAG) entre os três permanece >= 1.10 par a par" — ver função de
