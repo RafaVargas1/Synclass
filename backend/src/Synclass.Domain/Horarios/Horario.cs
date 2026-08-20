@@ -7,7 +7,8 @@ namespace Synclass.Domain.Horarios;
 /// hora + duração) — não uma ocorrência datada (ver Regra de Negócio da
 /// issue #6 e a seção "Notas de modelagem" de requisitos-funcionais.md). A
 /// duração é definida uma única vez na criação e nunca é alterável depois
-/// (sem endpoint de update, só create/delete).
+/// (sem endpoint de update, só create/delete) — a única exceção é a política
+/// de marcação, editável via <see cref="AlterarTipoMarcacao"/> (issue #71).
 /// </summary>
 public sealed class Horario
 {
@@ -43,7 +44,8 @@ public sealed class Horario
 
     /// <summary>
     /// Política de marcação deste Horário específico (issue #73), obrigatória
-    /// na criação — ver <see cref="TipoMarcacao"/>.
+    /// na criação — ver <see cref="TipoMarcacao"/>. Editável depois da
+    /// criação via <see cref="AlterarTipoMarcacao"/> (issue #71).
     /// </summary>
     public TipoMarcacao TipoMarcacao { get; private set; }
 
@@ -105,6 +107,20 @@ public sealed class Horario
         }
 
         LimiteAlunos = novoLimite;
+    }
+
+    /// <summary>
+    /// Altera <see cref="TipoMarcacao"/> de um horário já cadastrado (issue
+    /// #71) — a única propriedade editável de um horário; duração, dia da
+    /// semana, hora de início e <see cref="LimiteAlunos"/> permanecem
+    /// imutáveis (ver docs/spec/business-rules.md#horários-e-política-de-marcação).
+    /// Rejeita valor fora do enum com a mesma exceção usada na criação
+    /// (<see cref="TipoMarcacaoInvalidoException"/>).
+    /// </summary>
+    public void AlterarTipoMarcacao(TipoMarcacao novoTipo)
+    {
+        ValidarTipoMarcacao(novoTipo);
+        TipoMarcacao = novoTipo;
     }
 
     /// <summary>
