@@ -18,7 +18,7 @@ public sealed class HorarioTests
     [Fact]
     public void Criar_DadosValidos_CriaHorarioComCamposInformados()
     {
-        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
 
         horario.ProfessorId.Should().Be(ProfessorId);
         horario.DiaSemana.Should().Be(DiaSemana.Terca);
@@ -26,6 +26,28 @@ public sealed class HorarioTests
         horario.DuracaoMinutos.Should().Be(60);
         horario.HoraFim.Should().Be(new TimeOnly(11, 0));
         horario.CreatedAt.Should().Be(Clock.UtcNow);
+    }
+
+    [Theory]
+    [InlineData(TipoMarcacao.Livre)]
+    [InlineData(TipoMarcacao.Fixo)]
+    [InlineData(TipoMarcacao.Hibrido)]
+    public void Criar_ComTipoMarcacaoInformado_CarregaOTipoInformado(TipoMarcacao tipoMarcacao)
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, tipoMarcacao, Clock);
+
+        horario.TipoMarcacao.Should().Be(tipoMarcacao);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(3)]
+    [InlineData(99)]
+    public void Criar_TipoMarcacaoForaDoIntervalo_RejeitaComTipoMarcacaoInvalidoException(int tipoMarcacao)
+    {
+        var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, (TipoMarcacao)tipoMarcacao, Clock);
+
+        acao.Should().Throw<TipoMarcacaoInvalidoException>();
     }
 
     [Theory]
