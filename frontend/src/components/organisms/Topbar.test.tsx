@@ -63,6 +63,13 @@ describe('Topbar', () => {
     expect(mockBack).not.toHaveBeenCalled();
   });
 
+  it('gives the back button a touch target of at least 44x44 (Fitts/HIG), not just the small visual chevron', async () => {
+    await render(<Topbar titulo="Perfil" />);
+
+    const botaoVoltar = screen.getByLabelText('Voltar');
+    expect(botaoVoltar).toHaveStyle({ minWidth: 44, minHeight: 44 });
+  });
+
   it('renders the right-side slot when children are given', async () => {
     await render(
       <Topbar>
