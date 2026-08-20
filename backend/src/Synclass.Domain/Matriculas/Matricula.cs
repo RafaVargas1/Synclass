@@ -28,6 +28,7 @@ public sealed class Matricula
         Guid? alunoUsuarioId,
         string? nomeProvisorio,
         string? identificadorProvisorio,
+        string? identificadorAluno,
         DateTimeOffset createdAt)
     {
         Id = id;
@@ -35,6 +36,7 @@ public sealed class Matricula
         AlunoUsuarioId = alunoUsuarioId;
         NomeProvisorio = nomeProvisorio;
         IdentificadorProvisorio = identificadorProvisorio;
+        IdentificadorAluno = identificadorAluno;
         CreatedAt = createdAt;
     }
 
@@ -52,16 +54,30 @@ public sealed class Matricula
 
     public string? IdentificadorProvisorio { get; private set; }
 
+    /// <summary>
+    /// Identificador único e human-readable do Aluno (issue #70, formato
+    /// <c>ALU-XXXX</c>), gravado uma única vez na criação da matrícula
+    /// provisória e imutável depois — independente de
+    /// <see cref="IdentificadorProvisorio"/> (o identificador escolhido pelo
+    /// Professor, não o gerado pelo sistema). Sem setter público: só
+    /// definido em <see cref="CriarProvisoria"/>.
+    /// </summary>
+    public string? IdentificadorAluno { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     /// <summary>
     /// Cria uma matrícula provisória — sem exigir contato, e-mail, telefone
     /// ou login do Aluno (Regra de Negócio da issue #3).
+    /// <paramref name="identificadorAluno"/> é o identificador único gerado
+    /// pelo sistema (issue #70), gravado independente de
+    /// <paramref name="identificadorProvisorio"/>.
     /// </summary>
     public static Matricula CriarProvisoria(
-        Guid professorId, string nomeValidado, string identificadorValidado, IClock clock)
+        Guid professorId, string nomeValidado, string identificadorProvisorio, string? identificadorAluno, IClock clock)
     {
-        return new Matricula(Guid.NewGuid(), professorId, null, nomeValidado, identificadorValidado, clock.UtcNow);
+        return new Matricula(
+            Guid.NewGuid(), professorId, null, nomeValidado, identificadorProvisorio, identificadorAluno, clock.UtcNow);
     }
 
     /// <summary>
@@ -73,7 +89,7 @@ public sealed class Matricula
     /// </summary>
     public static Matricula CriarVinculada(Guid professorId, Guid alunoUsuarioId, IClock clock)
     {
-        return new Matricula(Guid.NewGuid(), professorId, alunoUsuarioId, null, null, clock.UtcNow);
+        return new Matricula(Guid.NewGuid(), professorId, alunoUsuarioId, null, null, null, clock.UtcNow);
     }
 
     /// <summary>

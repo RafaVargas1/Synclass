@@ -41,10 +41,13 @@ public static class AutenticacaoTestHelper
         using var scope = factory.Services.CreateScope();
         var gerador = scope.ServiceProvider.GetRequiredService<IGeradorDeTokenSessao>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
-        var usuarioAssinante = Usuario.Cadastrar("Usuário de Teste", $"{Guid.NewGuid()}@teste.exemplo", papeis[0], clock);
+        // Assinante de teste (issue #4/#23): o IdentificadorAluno do papel
+        // Aluno (issue #70) não participa de nenhum contrato validado por
+        // estes testes — a autorização só checa a claim `role` do token.
+        var usuarioAssinante = Usuario.Cadastrar("Usuário de Teste", $"{Guid.NewGuid()}@teste.exemplo", papeis[0], null, clock);
         foreach (var papel in papeis.Skip(1))
         {
-            usuarioAssinante.AdicionarPapel(papel, clock);
+            usuarioAssinante.AdicionarPapel(papel, null, clock);
         }
 
         return gerador.Gerar(usuarioAssinante);
@@ -80,7 +83,10 @@ public static class AutenticacaoTestHelper
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
         var gerador = scope.ServiceProvider.GetRequiredService<IGeradorDeTokenSessao>();
 
-        var usuario = Usuario.Cadastrar("Usuário de Teste", $"{Guid.NewGuid()}@teste.exemplo", papel, clock);
+        // Assinante de teste (issue #4/#23): o IdentificadorAluno do papel
+        // Aluno (issue #70) não participa de nenhum contrato validado por
+        // estes testes — a autorização só checa a claim `role` do token.
+        var usuario = Usuario.Cadastrar("Usuário de Teste", $"{Guid.NewGuid()}@teste.exemplo", papel, null, clock);
         dbContext.Usuarios.Add(usuario);
         await dbContext.SaveChangesAsync();
 

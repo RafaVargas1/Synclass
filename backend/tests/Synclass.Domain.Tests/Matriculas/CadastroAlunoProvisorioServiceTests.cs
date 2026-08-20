@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Tests.Fakes;
+using Synclass.Domain.Tests.Usuarios;
 using Synclass.Domain.Usuarios;
 
 namespace Synclass.Domain.Tests.Matriculas;
@@ -69,7 +70,7 @@ public sealed class CadastroAlunoProvisorioServiceTests
     {
         var usuarios = new FakeUsuarioRepository();
         var repositorio = new FakeMatriculaRepository();
-        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock);
+        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock, new IdentificadorAlunoFake().Servico);
         var professorId = await AdicionarProfessorAsync(usuarios, "professor1@exemplo.com");
         await servico.CadastrarAsync(professorId, "João Pedro", "2024-013", CancellationToken.None);
 
@@ -92,7 +93,7 @@ public sealed class CadastroAlunoProvisorioServiceTests
     {
         var usuarios = new FakeUsuarioRepository();
         var repositorio = new FakeMatriculaRepository();
-        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock);
+        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock, new IdentificadorAlunoFake().Servico);
         var professorIdInexistente = Guid.NewGuid();
 
         var acao = () => servico.CadastrarAsync(professorIdInexistente, "João Pedro", "2024-013", CancellationToken.None);
@@ -102,19 +103,53 @@ public sealed class CadastroAlunoProvisorioServiceTests
         repositorio.Matriculas.Should().BeEmpty();
     }
 
+    // Cenário específico da issue #70: o cadastro de Aluno provisório gera
+    // um IdentificadorAluno único via IdentificadorAlunoService e o grava na
+    // Matricula provisória, independente do IdentificadorProvisorio escolhido
+    // pelo Professor.
+
+    [Fact]
+    public async Task CadastrarAsync_GeraIdentificadorAlunoNaMatriculaProvisoria()
+    {
+        var (servico, identificadorAluno, repositorio, professorId) = await CriarServicoComProfessorEIdentificadorAsync();
+
+        var matricula = await servico.CadastrarAsync(professorId, "João Pedro", "2024-013", CancellationToken.None);
+
+        identificadorAluno.VezesGerado.Should().Be(1);
+        matricula.IdentificadorAluno.Should().NotBeNull();
+        repositorio.Matriculas.Should().ContainSingle();
+    }
+
     private static async Task<(CadastroAlunoProvisorioService Servico, FakeMatriculaRepository Matriculas, Guid ProfessorId)>
         CriarServicoComProfessorExistenteAsync()
     {
         var usuarios = new FakeUsuarioRepository();
         var repositorio = new FakeMatriculaRepository();
-        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock);
+        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock, new IdentificadorAlunoFake().Servico);
         var professorId = await AdicionarProfessorAsync(usuarios, "professor@exemplo.com");
         return (servico, repositorio, professorId);
     }
 
+    /// <summary>
+    /// Monta um <see cref="CadastroAlunoProvisorioService"/> com Professor já
+    /// existente e um <see cref="IdentificadorAlunoService"/> real (fakes de
+    /// gerador e checador), devolvendo junto o fake para que o teste da issue
+    /// #70 prove que o identificador é gerado na Matricula provisória.
+    /// </summary>
+    private static async Task<(CadastroAlunoProvisorioService Servico, IdentificadorAlunoFake IdentificadorAluno, FakeMatriculaRepository Matriculas, Guid ProfessorId)>
+        CriarServicoComProfessorEIdentificadorAsync()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var repositorio = new FakeMatriculaRepository();
+        var identificadorAluno = new IdentificadorAlunoFake();
+        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock, identificadorAluno.Servico);
+        var professorId = await AdicionarProfessorAsync(usuarios, "professor@exemplo.com");
+        return (servico, identificadorAluno, repositorio, professorId);
+    }
+
     private static async Task<Guid> AdicionarProfessorAsync(FakeUsuarioRepository usuarios, string contato)
     {
-        var professor = Usuario.Cadastrar("Professor Teste", contato, PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Professor Teste", contato, PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
         return professor.Id;
     }

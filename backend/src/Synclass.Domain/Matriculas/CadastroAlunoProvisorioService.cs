@@ -1,3 +1,4 @@
+using Synclass.Domain.Alunos;
 using Synclass.Domain.Common;
 using Synclass.Domain.Usuarios;
 
@@ -5,7 +6,8 @@ namespace Synclass.Domain.Matriculas;
 
 /// <summary>
 /// Orquestra o cadastro de Aluno provisório: valida nome e identificador,
-/// garante unicidade do identificador por Professor, e cria a
+/// garante unicidade do identificador por Professor, gera o
+/// <see cref="Matricula.IdentificadorAluno"/> único (issue #70) e cria a
 /// <see cref="Matricula"/> (issue #3). Nunca exige contato/login do Aluno —
 /// diferente de <c>CadastroUsuarioService</c> (issue #1), que cria
 /// identidade de usuário plena.
@@ -15,12 +17,14 @@ public sealed class CadastroAlunoProvisorioService
     private readonly IMatriculaRepository _matriculas;
     private readonly IUsuarioRepository _usuarios;
     private readonly IClock _clock;
+    private readonly IdentificadorAlunoService _identificadorAluno;
 
-    public CadastroAlunoProvisorioService(IMatriculaRepository matriculas, IUsuarioRepository usuarios, IClock clock)
+    public CadastroAlunoProvisorioService(IMatriculaRepository matriculas, IUsuarioRepository usuarios, IClock clock, IdentificadorAlunoService identificadorAluno)
     {
         _matriculas = matriculas;
         _usuarios = usuarios;
         _clock = clock;
+        _identificadorAluno = identificadorAluno;
     }
 
     public async Task<Matricula> CadastrarAsync(
@@ -32,7 +36,8 @@ public sealed class CadastroAlunoProvisorioService
         await GarantirProfessorExisteAsync(professorId, cancellationToken);
         await GarantirIdentificadorDisponivelAsync(professorId, identificadorValidado, cancellationToken);
 
-        var matricula = Matricula.CriarProvisoria(professorId, nomeValidado, identificadorValidado, _clock);
+        var identificadorAluno = await _identificadorAluno.GerarUnicoAsync(cancellationToken);
+        var matricula = Matricula.CriarProvisoria(professorId, nomeValidado, identificadorValidado, identificadorAluno, _clock);
         await _matriculas.AdicionarAsync(matricula, cancellationToken);
         await _matriculas.SalvarAsync(cancellationToken);
         return matricula;

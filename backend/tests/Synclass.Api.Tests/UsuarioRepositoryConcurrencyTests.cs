@@ -43,7 +43,7 @@ public sealed class UsuarioRepositoryConcurrencyTests
 
         await using (var dbContextDaPrimeiraRequisicao = new SynclassDbContext(options))
         {
-            var primeiroUsuario = Usuario.Cadastrar("Maria Silva", "concorrente@exemplo.com", PapelUsuario.Professor, clock);
+            var primeiroUsuario = Usuario.Cadastrar("Maria Silva", "concorrente@exemplo.com", PapelUsuario.Professor, null, clock);
             dbContextDaPrimeiraRequisicao.Usuarios.Add(primeiroUsuario);
             await dbContextDaPrimeiraRequisicao.SaveChangesAsync();
         }
@@ -53,7 +53,7 @@ public sealed class UsuarioRepositoryConcurrencyTests
         // então tenta inserir outra identidade com o mesmo contato.
         await using var dbContextDaSegundaRequisicao = new SynclassDbContext(options);
         var repositorio = new UsuarioRepository(dbContextDaSegundaRequisicao);
-        var usuarioConcorrente = Usuario.Cadastrar("Outra Maria", "concorrente@exemplo.com", PapelUsuario.Professor, clock);
+        var usuarioConcorrente = Usuario.Cadastrar("Outra Maria", "concorrente@exemplo.com", PapelUsuario.Professor, null, clock);
         await repositorio.AdicionarAsync(usuarioConcorrente, CancellationToken.None);
 
         var acao = () => repositorio.SalvarAsync(CancellationToken.None);

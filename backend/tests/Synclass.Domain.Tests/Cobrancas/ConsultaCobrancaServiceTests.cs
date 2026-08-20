@@ -36,7 +36,7 @@ public sealed class ConsultaCobrancaServiceTests
 
     private static Matricula CriarMatriculaDoProfessor(FakeMatriculaRepository matriculas, Guid professorId)
     {
-        var matricula = Matricula.CriarProvisoria(professorId, "Aluno Teste", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(professorId, "Aluno Teste", $"aluno-{Guid.NewGuid()}", null, Clock);
         matriculas.AdicionarAsync(matricula, CancellationToken.None).GetAwaiter().GetResult();
         return matricula;
     }
@@ -222,7 +222,7 @@ public sealed class ConsultaCobrancaServiceTests
 
     private static Usuario CriarProfessor(string nome)
     {
-        return Usuario.Cadastrar(nome, $"{Guid.NewGuid()}@exemplo.com", PapelUsuario.Professor, Clock);
+        return Usuario.Cadastrar(nome, $"{Guid.NewGuid()}@exemplo.com", PapelUsuario.Professor, null, Clock);
     }
 
     private static FakeUsuarioRepository CriarRepositorioUsuarios(params Usuario[] usuarios)

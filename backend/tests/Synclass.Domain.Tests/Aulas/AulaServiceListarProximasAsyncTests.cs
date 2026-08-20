@@ -48,7 +48,7 @@ public sealed class AulaServiceListarProximasAsyncTests
 
     private static async Task<Matricula> CriarMatriculaAlocadaAsync(Cenario cenario, Guid horarioId)
     {
-        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matricula, CancellationToken.None);
         var alocacao = AlocacaoHorario.Criar(horarioId, matricula.Id, OrigemAlocacao.Aluno, Clock);
         await cenario.Alocacoes.AdicionarAsync(alocacao, CancellationToken.None);
@@ -109,7 +109,7 @@ public sealed class AulaServiceListarProximasAsyncTests
             ProfessorId, DiaSemana.Terca, new TimeOnly(18, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var segundoHorario = await cenario.HorarioService.CadastrarAsync(
             ProfessorId, DiaSemana.Quarta, new TimeOnly(9, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
-        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matricula, CancellationToken.None);
         await cenario.Alocacoes.AdicionarAsync(
             AlocacaoHorario.Criar(primeiroHorario.Id, matricula.Id, OrigemAlocacao.Aluno, Clock), CancellationToken.None);
