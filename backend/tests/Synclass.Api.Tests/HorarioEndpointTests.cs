@@ -68,11 +68,42 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         corpo!.DuracaoMinutos.Should().Be(60);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task Post_Horario_ReturnsOk_QuandoTipoMarcacaoValido(int tipoMarcacao)
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: tipoMarcacao));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
+        corpo!.TipoMarcacao.Should().Be(tipoMarcacao);
+    }
+
+    [Fact]
+    public async Task Post_Horario_ReturnsBadRequest_QuandoTipoMarcacaoInvalido()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 99));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -83,7 +114,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         corpo!.LimiteAlunos.Should().Be(1);
@@ -97,7 +128,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, LimiteAlunos: 4));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0, LimiteAlunos: 4));
 
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         corpo!.LimiteAlunos.Should().Be(4);
@@ -111,7 +142,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, LimiteAlunos: 0));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0, LimiteAlunos: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -124,7 +155,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 0));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 0, TipoMarcacao: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -137,7 +168,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 99, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 99, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -149,11 +180,11 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
         var professorId = await CriarProfessorAsync(client);
         await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 30), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 30), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var corpo = await response.Content.ReadFromJsonAsync<HorarioErrorResponse>();
@@ -167,7 +198,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
         var professorId = await CriarProfessorAsync(client);
         await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         var response = await client.GetAsync($"/professores/{professorId}/horarios");
 
@@ -183,7 +214,7 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
         var professorId = await CriarProfessorAsync(client);
         var criado = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
         var horario = await criado.Content.ReadFromJsonAsync<HorarioResponse>();
 
         var response = await client.DeleteAsync($"/professores/{professorId}/horarios/{horario!.Id}");

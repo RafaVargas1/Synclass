@@ -27,7 +27,13 @@ public sealed class HorariosController : ControllerBase
         try
         {
             var horario = await _horarioService.CadastrarAsync(
-                professorId, (DiaSemana)request.DiaSemana, request.HoraInicio, request.DuracaoMinutos, cancellationToken, request.LimiteAlunos);
+                professorId,
+                (DiaSemana)request.DiaSemana,
+                request.HoraInicio,
+                request.DuracaoMinutos,
+                (TipoMarcacao)request.TipoMarcacao,
+                cancellationToken,
+                request.LimiteAlunos);
             LogHorarioCriado(trackId, horario);
             LogLimiteAlunosAlterado(trackId, horario);
             return Ok(ParaResponse(horario));
@@ -76,7 +82,8 @@ public sealed class HorariosController : ControllerBase
 
     private static HorarioResponse ParaResponse(Horario horario)
     {
-        return new HorarioResponse(horario.Id, (int)horario.DiaSemana, horario.HoraInicio, horario.DuracaoMinutos, horario.LimiteAlunos);
+        return new HorarioResponse(
+            horario.Id, (int)horario.DiaSemana, horario.HoraInicio, horario.DuracaoMinutos, (int)horario.TipoMarcacao, horario.LimiteAlunos);
     }
 
     private void LogHorarioCriado(string trackId, Horario horario)
@@ -113,8 +120,8 @@ public sealed class HorariosController : ControllerBase
     }
 }
 
-public sealed record CriarHorarioRequest(int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int? LimiteAlunos = null);
+public sealed record CriarHorarioRequest(int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int? LimiteAlunos = null);
 
-public sealed record HorarioResponse(Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int LimiteAlunos);
+public sealed record HorarioResponse(Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int LimiteAlunos);
 
 public sealed record HorarioErrorResponse(string Mensagem);

@@ -39,7 +39,7 @@ public sealed class HorarioServiceTests
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
 
-        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         horario.DiaSemana.Should().Be(DiaSemana.Terca);
         repositorio.Horarios.Should().ContainSingle(h => h.Id == horario.Id);
@@ -50,9 +50,9 @@ public sealed class HorarioServiceTests
     {
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
-        await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
-        var acao = () => servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 30), 60, CancellationToken.None);
+        var acao = () => servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 30), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         await acao.Should().ThrowAsync<HorarioConflitanteException>();
         repositorio.Horarios.Should().ContainSingle();
@@ -64,7 +64,7 @@ public sealed class HorarioServiceTests
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
 
-        var acao = () => servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 0, CancellationToken.None);
+        var acao = () => servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 0, TipoMarcacao.Livre, CancellationToken.None);
 
         await acao.Should().ThrowAsync<DuracaoInvalidaException>();
         repositorio.Horarios.Should().BeEmpty();
@@ -76,7 +76,7 @@ public sealed class HorarioServiceTests
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
 
-        var acao = () => servico.CadastrarAsync(ProfessorId, (DiaSemana)99, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var acao = () => servico.CadastrarAsync(ProfessorId, (DiaSemana)99, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         await acao.Should().ThrowAsync<DiaSemanaInvalidoException>();
         repositorio.Horarios.Should().BeEmpty();
@@ -88,7 +88,7 @@ public sealed class HorarioServiceTests
         var repositorio = new FakeHorarioRepository();
         var servico = new HorarioService(repositorio, new FakeConfiguracaoProfessorRepository(), Clock);
 
-        var acao = () => servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var acao = () => servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         await acao.Should().ThrowAsync<ModeloAgendamentoNaoDefinidoException>();
         repositorio.Horarios.Should().BeEmpty();
@@ -105,7 +105,7 @@ public sealed class HorarioServiceTests
         configuracoes.Configuracoes.Add(ConfiguracaoProfessor.Criar(ProfessorId, modelo, Clock));
         var servico = new HorarioService(repositorio, configuracoes, Clock);
 
-        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         repositorio.Horarios.Should().ContainSingle(h => h.Id == horario.Id);
     }
@@ -116,7 +116,7 @@ public sealed class HorarioServiceTests
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
 
-        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         horario.LimiteAlunos.Should().Be(1);
     }
@@ -128,7 +128,7 @@ public sealed class HorarioServiceTests
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
 
         var horario = await servico.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 4);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 4);
 
         horario.LimiteAlunos.Should().Be(4);
     }
@@ -140,7 +140,7 @@ public sealed class HorarioServiceTests
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
 
         var acao = () => servico.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 0);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 0);
 
         await acao.Should().ThrowAsync<LimiteAlunosInvalidoException>();
         repositorio.Horarios.Should().BeEmpty();
@@ -152,8 +152,8 @@ public sealed class HorarioServiceTests
         var repositorio = new FakeHorarioRepository();
         var outroProfessorId = Guid.NewGuid();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId, outroProfessorId);
-        await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
-        await servico.CadastrarAsync(outroProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+        await servico.CadastrarAsync(outroProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         var horarios = await servico.ListarAsync(ProfessorId, CancellationToken.None);
 
@@ -165,7 +165,7 @@ public sealed class HorarioServiceTests
     {
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
-        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         await servico.RemoverAsync(ProfessorId, horario.Id, CancellationToken.None);
 
@@ -177,7 +177,7 @@ public sealed class HorarioServiceTests
     {
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
-        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         repositorio.AlunosAlocadosPorHorario.Add(horario.Id);
 
         var acao = () => servico.RemoverAsync(ProfessorId, horario.Id, CancellationToken.None);
@@ -202,7 +202,7 @@ public sealed class HorarioServiceTests
     {
         var repositorio = new FakeHorarioRepository();
         var servico = CriarServicoComConfiguracao(repositorio, ProfessorId);
-        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         var acao = () => servico.RemoverAsync(Guid.NewGuid(), horario.Id, CancellationToken.None);
 

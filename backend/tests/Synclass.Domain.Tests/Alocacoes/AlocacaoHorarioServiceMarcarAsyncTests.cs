@@ -56,7 +56,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 1);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 1);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var alocacao = await cenario.AlocacaoHorarioService.MarcarAsync(
@@ -72,7 +72,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Fixo);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var acao = () => cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
@@ -86,7 +86,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Hibrido);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 1);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 1);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var alocacao = await cenario.AlocacaoHorarioService.MarcarAsync(
@@ -100,7 +100,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Hibrido);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
         var matriculaFixa = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, matriculaFixa.Id, CancellationToken.None);
         var matriculaAluno = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
@@ -117,7 +117,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 1);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 1);
         var primeiraMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horario.Id, primeiraMatricula.Id, CancellationToken.None);
         var segundaMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
@@ -134,7 +134,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
 
         var acao = () => cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horario.Id, Guid.NewGuid(), CancellationToken.None);
 
@@ -146,7 +146,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
 
@@ -161,9 +161,9 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var primeiroHorario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var segundoHorario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var vagos = await cenario.AlocacaoHorarioService.ListarVagosAsync(ProfessorId, matricula.Id, CancellationToken.None);
@@ -178,9 +178,9 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Hibrido);
         var horarioFixado = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
         var horarioLivre = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matriculaFixa = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horarioFixado.Id, matriculaFixa.Id, CancellationToken.None);
         var matriculaAluno = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
@@ -195,7 +195,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Fixo);
         await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var vagos = await cenario.AlocacaoHorarioService.ListarVagosAsync(ProfessorId, matricula.Id, CancellationToken.None);
@@ -219,9 +219,9 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var horarioLotado = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 1);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 1);
         var horarioComVaga = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var primeiraMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horarioLotado.Id, primeiraMatricula.Id, CancellationToken.None);
         var segundaMatricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
@@ -236,7 +236,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
 

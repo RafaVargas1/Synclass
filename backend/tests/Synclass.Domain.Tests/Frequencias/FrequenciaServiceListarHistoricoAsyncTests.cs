@@ -57,7 +57,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
 
     private static async Task<Horario> CriarHorarioAsync(Cenario cenario, DiaSemana diaSemana)
     {
-        var horario = Horario.Criar(ProfessorId, diaSemana, new TimeOnly(10, 0), 60, Clock);
+        var horario = Horario.Criar(ProfessorId, diaSemana, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
         await cenario.Horarios.AdicionarAsync(horario, CancellationToken.None);
         return horario;
     }
@@ -194,7 +194,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
         var cenario = CriarCenario();
         var professorDois = Guid.NewGuid();
         var horarioUm = await CriarHorarioAsync(cenario, DiaSemana.Terca);
-        var horarioDois = Horario.Criar(professorDois, DiaSemana.Quarta, new TimeOnly(11, 0), 60, Clock);
+        var horarioDois = Horario.Criar(professorDois, DiaSemana.Quarta, new TimeOnly(11, 0), 60, TipoMarcacao.Livre, Clock);
         await cenario.Horarios.AdicionarAsync(horarioDois, CancellationToken.None);
         await CriarMatriculaVinculadaAlocadaAsync(cenario, horarioUm.Id, AlunoUsuarioId);
 

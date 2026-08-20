@@ -27,6 +27,10 @@ public sealed class HorarioConfiguration : IEntityTypeConfiguration<Horario>
         builder.Property(h => h.DiaSemana).IsRequired();
         builder.Property(h => h.HoraInicio).IsRequired();
         builder.Property(h => h.DuracaoMinutos).IsRequired();
+        // TipoMarcacao trafega como inteiro (mesmo mapeamento padrão de enum
+        // do EF Core usado em DiaSemana), sem default no banco — issue #73
+        // exige o valor explícito da aplicação em toda criação nova.
+        builder.Property(h => h.TipoMarcacao).IsRequired();
         builder.Property(h => h.CreatedAt).IsRequired();
         // Default 1 no banco (issue #17) cobre linhas existentes de antes
         // deste card, que nascem como aula individual — mesmo default já
