@@ -38,13 +38,13 @@ Card: https://github.com/RafaVargas1/Synclass/issues/63
       `ObterMatriculaOrigemValidaAsync`).
 - [x] Teste unidade (Domain): normalização do código aceita espaços/máscara
       (ex: "12 345" ou "1-2-3-4-5") equivalente a "12345".
-- [ ] `AceitarConviteRequest` (Api): reaproveitado tal como está (mesmo
+- [x] `AceitarConviteRequest` (Api): reaproveitado tal como está (mesmo
       formato `Nome`/`Contato`).
-- [ ] `ConvitesController`: `POST /convites/codigo/{codigo}/aceite`
+- [x] `ConvitesController`: `POST /convites/codigo/{codigo}/aceite`
       (`AllowAnonymous`), espelhando `Aceitar(token, ...)` — mesmo
       tratamento de exceções, mesmo log `ConviteAceito`/`PapelAdicionado`/
       `ConviteRejeitado`.
-- [ ] Teste de fumaça (Api): `POST /convites/codigo/{codigo}/aceite` —
+- [x] Teste de fumaça (Api): `POST /convites/codigo/{codigo}/aceite` —
       sucesso (Aluno novo), código expirado, código inválido/usado, contato
       já vinculado (mesmos quatro cenários do card).
 - [ ] Frontend: `lib/api/convites.ts` — `aceitarConvitePorCodigo(input)`,
