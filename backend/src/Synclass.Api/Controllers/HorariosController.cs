@@ -55,6 +55,35 @@ public sealed class HorariosController : ControllerBase
         return Ok(horarios.Select(ParaResponse));
     }
 
+    /// <summary>
+    /// Altera a política de marcação (<c>tipoMarcacao</c>) de um horário já
+    /// cadastrado (issue #71). Lê o valor anterior primeiro para registrar no
+    /// log estruturado — mesmo padrão de "ler antes para logar o antes" de
+    /// <see cref="ConfiguracoesController"/> (<c>modeloAnterior</c>). Rejeita
+    /// com 404 quando o horário não existe ou é de outro Professor e com 400
+    /// quando o valor está fora do enum.
+    /// </summary>
+    [HttpPatch("{horarioId:guid}")]
+    public async Task<IActionResult> AlterarPolitica(Guid professorId, Guid horarioId, [FromBody] AlterarPoliticaHorarioRequest request, CancellationToken cancellationToken)
+    {
+        var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        try
+        {
+            var tipoAnterior = await _horarioService.BuscarTipoMarcacaoAsync(professorId, horarioId, cancellationToken);
+            var horario = await _horarioService.AlterarPoliticaAsync(professorId, horarioId, (TipoMarcacao)request.TipoMarcacao, cancellationToken);
+            LogHorarioTipoMarcacaoAlterado(trackId, horario, tipoAnterior);
+            return Ok(ParaResponse(horario));
+        }
+        catch (HorarioNaoEncontradoException)
+        {
+            return NotFound();
+        }
+        catch (HorarioRejeitadoException ex)
+        {
+            return BadRequest(new HorarioErrorResponse(ex.Message));
+        }
+    }
+
     [HttpDelete("{horarioId:guid}")]
     public async Task<IActionResult> Remover(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
     {
@@ -100,6 +129,13 @@ public sealed class HorariosController : ControllerBase
             trackId, horario.ProfessorId, horario.Id, null, horario.LimiteAlunos);
     }
 
+    private void LogHorarioTipoMarcacaoAlterado(string trackId, Horario horario, TipoMarcacao tipoAnterior)
+    {
+        _logger.LogInformation(
+            "HorarioTipoMarcacaoAlterado {TrackId} {ProfessorId} {HorarioId} {TipoMarcacaoAnterior} {TipoMarcacaoNovo}",
+            trackId, horario.ProfessorId, horario.Id, (int)tipoAnterior, (int)horario.TipoMarcacao);
+    }
+
     private void LogRejeicaoPorConflito(string trackId, Guid professorId, HorarioConflitanteException ex)
     {
         _logger.LogWarning(
@@ -116,6 +152,8 @@ public sealed class HorariosController : ControllerBase
 }
 
 public sealed record CriarHorarioRequest(int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int? LimiteAlunos = null);
+
+public sealed record AlterarPoliticaHorarioRequest(int TipoMarcacao);
 
 public sealed record HorarioResponse(Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int LimiteAlunos);
 

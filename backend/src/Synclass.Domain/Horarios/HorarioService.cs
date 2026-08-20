@@ -55,6 +55,22 @@ public sealed class HorarioService
     }
 
     /// <summary>
+    /// Devolve a política de marcação atual de um horário do Professor
+    /// (issue #71). Usado pelo controller para registrar o valor anterior no
+    /// log <c>HorarioTipoMarcacaoAlterado</c> junto com o valor novo já
+    /// alterado — mesmo padrão de "ler antes para logar o antes" de
+    /// <see cref="Synclass.Api.Controllers.ConfiguracoesController"/>.
+    /// Reutiliza <see cref="BuscarDoProfessorAsync"/> para a checagem de
+    /// posse, lançando <see cref="HorarioNaoEncontradoException"/> quando o
+    /// horário não existe ou é de outro Professor.
+    /// </summary>
+    public async Task<TipoMarcacao> BuscarTipoMarcacaoAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    {
+        var horario = await BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        return horario.TipoMarcacao;
+    }
+
+    /// <summary>
     /// Altera a política de marcação (<see cref="TipoMarcacao"/>) de um
     /// horário já cadastrado do Professor (issue #71), persistindo a mudança
     /// quando o horário pertence a ele — rejeita com
