@@ -5,7 +5,8 @@ import { HomeHero } from '@/components/organisms/HomeHero';
 import { Topbar } from '@/components/organisms/Topbar';
 
 export type HomeTemplateProps = {
-  onGetStarted: () => void;
+  onEntrarComoProfessor: () => void;
+  onEntrarComoAluno: () => void;
   onLogin: () => void;
 };
 
@@ -15,7 +16,11 @@ export type HomeTemplateProps = {
  * largura máxima o conteúdo esticava a tela inteira no web, com cara de
  * app mobile mal adaptado — daí o `items-center` no container do conteúdo.
  */
-export function HomeTemplate({ onGetStarted, onLogin }: HomeTemplateProps) {
+export function HomeTemplate({
+  onEntrarComoProfessor,
+  onEntrarComoAluno,
+  onLogin,
+}: HomeTemplateProps) {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <Topbar>
@@ -24,7 +29,11 @@ export function HomeTemplate({ onGetStarted, onLogin }: HomeTemplateProps) {
         </Text>
       </Topbar>
       <View className="flex-1 items-center justify-center px-four py-six">
-        <HomeHero onGetStarted={onGetStarted} onLogin={onLogin} />
+        <HomeHero
+          onEntrarComoProfessor={onEntrarComoProfessor}
+          onEntrarComoAluno={onEntrarComoAluno}
+          onLogin={onLogin}
+        />
       </View>
     </SafeAreaView>
   );
