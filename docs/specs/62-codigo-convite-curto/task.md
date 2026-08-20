@@ -4,14 +4,14 @@ Card: https://github.com/RafaVargas1/Synclass/issues/62
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain): `Convite.Gerar` recebe também um código de 5
+- [x] Teste unidade (Domain): `Convite.Gerar` recebe também um código de 5
       dígitos e o expõe em `Codigo`.
-- [ ] Teste unidade (Domain): `ConviteService.GerarAsync` pede um código ao
+- [x] Teste unidade (Domain): `ConviteService.GerarAsync` pede um código ao
       novo gerador e persiste junto com o convite.
-- [ ] Teste unidade (Domain): colisão de código contra convite ainda válido
+- [x] Teste unidade (Domain): colisão de código contra convite ainda válido
       (não usado, não expirado) → gerador é chamado de novo até achar um
       código livre.
-- [ ] Teste unidade (Domain): código de um convite já usado ou expirado pode
+- [x] Teste unidade (Domain): código de um convite já usado ou expirado pode
       ser reaproveitado por um novo convite (checagem de unicidade ignora
       convites finalizados).
 - [ ] `GeradorDeCodigoConvite` (Infrastructure) + `IGeradorDeCodigoConvite`
