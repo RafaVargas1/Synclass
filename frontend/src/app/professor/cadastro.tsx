@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CadastroConfirmado } from '@/components/molecules/CadastroConfirmado';
-import { CadastroProfessorForm } from '@/components/organisms/CadastroProfessorForm';
+import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
 import { MaxContentWidth } from '@/theme/tokens';
@@ -71,9 +71,9 @@ export default function CadastroProfessorScreen() {
         style={{ maxWidth: MaxContentWidth }}
       >
         {concluido ? (
-          <CadastroConfirmado />
+          <CadastroConfirmado papel="Professor" />
         ) : (
-          <CadastroProfessorForm
+          <CadastroUsuarioForm
             nome={nome}
             contato={contato}
             erro={erro}
