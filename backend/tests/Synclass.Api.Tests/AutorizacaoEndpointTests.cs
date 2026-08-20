@@ -47,7 +47,7 @@ public sealed class AutorizacaoEndpointTests : IClassFixture<WebApplicationFacto
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -61,7 +61,7 @@ public sealed class AutorizacaoEndpointTests : IClassFixture<WebApplicationFacto
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -75,7 +75,7 @@ public sealed class AutorizacaoEndpointTests : IClassFixture<WebApplicationFacto
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

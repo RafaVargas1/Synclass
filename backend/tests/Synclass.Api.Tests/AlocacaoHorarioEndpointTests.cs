@@ -59,7 +59,7 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     {
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, LimiteAlunos: limiteAlunos));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0, LimiteAlunos: limiteAlunos));
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         return corpo!.Id;
     }
