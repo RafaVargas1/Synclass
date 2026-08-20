@@ -40,7 +40,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
         var horarioService = new HorarioService(horarios, configuracoes, Clock);
         var alocacoes = new FakeAlocacaoHorarioRepository();
         var matriculas = new FakeMatriculaRepository();
-        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, configuracoes, horarioService, Clock);
+        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);
         return new Cenario(horarioService, alocacaoHorarioService, alocacoes, matriculas, configuracoes);
     }
 
@@ -52,7 +52,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     }
 
     [Fact]
-    public async Task MarcarAsync_ModeloVagoComVagaDisponivel_CriaAAlocacaoComOrigemAluno()
+    public async Task MarcarAsync_HorarioLivreComVagaDisponivel_CriaAAlocacaoComOrigemAluno()
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
         var horario = await cenario.HorarioService.CadastrarAsync(
@@ -68,11 +68,11 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     }
 
     [Fact]
-    public async Task MarcarAsync_ModeloFixo_RejeitaComModeloNaoPermiteMarcacaoLivreException()
+    public async Task MarcarAsync_HorarioFixo_RejeitaComModeloNaoPermiteMarcacaoLivreException()
     {
         var cenario = CriarCenario(ModeloAgendamento.Fixo);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Fixo, CancellationToken.None);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var acao = () => cenario.AlocacaoHorarioService.MarcarAsync(ProfessorId, horario.Id, matricula.Id, CancellationToken.None);
@@ -82,11 +82,11 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     }
 
     [Fact]
-    public async Task MarcarAsync_ModeloHibridoSemAtribuicaoFixa_CriaAAlocacao()
+    public async Task MarcarAsync_HorarioHibridoSemAtribuicaoFixa_CriaAAlocacao()
     {
         var cenario = CriarCenario(ModeloAgendamento.Hibrido);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 1);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Hibrido, CancellationToken.None, limiteAlunos: 1);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var alocacao = await cenario.AlocacaoHorarioService.MarcarAsync(
@@ -95,21 +95,27 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
         alocacao.MatriculaId.Should().Be(matricula.Id);
     }
 
+    /// <summary>
+    /// Comportamento novo da issue #74 (AC3) — o Híbrido por Professor de
+    /// hoje bloqueava a marcação livre quando já havia atribuição fixa no
+    /// mesmo horário; o Híbrido por horário aceita as duas coisas sempre,
+    /// até a capacidade esgotar.
+    /// </summary>
     [Fact]
-    public async Task MarcarAsync_ModeloHibridoComAtribuicaoFixaDoProfessor_RejeitaComModeloNaoPermiteMarcacaoLivreException()
+    public async Task MarcarAsync_HorarioHibridoComAtribuicaoFixaDoProfessor_CriaAAlocacao()
     {
         var cenario = CriarCenario(ModeloAgendamento.Hibrido);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Hibrido, CancellationToken.None, limiteAlunos: 2);
         var matriculaFixa = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, matriculaFixa.Id, CancellationToken.None);
         var matriculaAluno = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
-        var acao = () => cenario.AlocacaoHorarioService.MarcarAsync(
+        var alocacao = await cenario.AlocacaoHorarioService.MarcarAsync(
             ProfessorId, horario.Id, matriculaAluno.Id, CancellationToken.None);
 
-        await acao.Should().ThrowAsync<ModeloNaoPermiteMarcacaoLivreException>();
-        cenario.Alocacoes.Alocacoes.Should().ContainSingle();
+        alocacao.MatriculaId.Should().Be(matriculaAluno.Id);
+        cenario.Alocacoes.Alocacoes.Should().HaveCount(2);
     }
 
     [Fact]
@@ -157,56 +163,49 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
     }
 
     [Fact]
-    public async Task ListarVagosAsync_ModeloVago_RetornaTodosOsHorariosComVaga()
+    public async Task ListarVagosAsync_HorariosLivreEHibridoComVaga_RetornaAmbos()
     {
         var cenario = CriarCenario(ModeloAgendamento.Vago);
-        var primeiroHorario = await cenario.HorarioService.CadastrarAsync(
+        var horarioLivre = await cenario.HorarioService.CadastrarAsync(
             ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
-        var segundoHorario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+        var horarioHibrido = await cenario.HorarioService.CadastrarAsync(
+            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, TipoMarcacao.Hibrido, CancellationToken.None);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var vagos = await cenario.AlocacaoHorarioService.ListarVagosAsync(ProfessorId, matricula.Id, CancellationToken.None);
 
         vagos.Should().HaveCount(2);
-        vagos.Should().Contain(h => h.Horario.Id == primeiroHorario.Id);
-        vagos.Should().Contain(h => h.Horario.Id == segundoHorario.Id);
+        vagos.Should().Contain(h => h.Horario.Id == horarioLivre.Id);
+        vagos.Should().Contain(h => h.Horario.Id == horarioHibrido.Id);
     }
 
+    /// <summary>
+    /// Comportamento novo da issue #74 (AC3) — diferente do Híbrido por
+    /// Professor de hoje, um horário Híbrido já atribuído fixamente pelo
+    /// Professor continua aparecendo na listagem de vagos do Aluno enquanto
+    /// sobrar capacidade.
+    /// </summary>
     [Fact]
-    public async Task ListarVagosAsync_ModeloHibrido_FiltraOsHorariosComAtribuicaoFixaDoProfessor()
+    public async Task ListarVagosAsync_HorarioHibridoComAtribuicaoFixaDoProfessor_AindaApareceSeHouverVaga()
     {
         var cenario = CriarCenario(ModeloAgendamento.Hibrido);
         var horarioFixado = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
-        var horarioLivre = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Hibrido, CancellationToken.None, limiteAlunos: 2);
         var matriculaFixa = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
         await cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horarioFixado.Id, matriculaFixa.Id, CancellationToken.None);
         var matriculaAluno = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var vagos = await cenario.AlocacaoHorarioService.ListarVagosAsync(ProfessorId, matriculaAluno.Id, CancellationToken.None);
 
-        vagos.Should().ContainSingle(h => h.Horario.Id == horarioLivre.Id);
+        vagos.Should().ContainSingle(h => h.Horario.Id == horarioFixado.Id && h.VagasRestantes == 1);
     }
 
     [Fact]
-    public async Task ListarVagosAsync_ModeloFixo_RetornaListaVaziaSemLancar()
+    public async Task ListarVagosAsync_HorarioFixo_NaoAparece()
     {
         var cenario = CriarCenario(ModeloAgendamento.Fixo);
         await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
-        var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
-
-        var vagos = await cenario.AlocacaoHorarioService.ListarVagosAsync(ProfessorId, matricula.Id, CancellationToken.None);
-
-        vagos.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ListarVagosAsync_SemConfiguracaoProfessor_RetornaListaVaziaSemLancar()
-    {
-        var cenario = CriarCenario(modelo: null);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Fixo, CancellationToken.None);
         var matricula = await CriarMatriculaAsync(cenario.Matriculas, ProfessorId);
 
         var vagos = await cenario.AlocacaoHorarioService.ListarVagosAsync(ProfessorId, matricula.Id, CancellationToken.None);

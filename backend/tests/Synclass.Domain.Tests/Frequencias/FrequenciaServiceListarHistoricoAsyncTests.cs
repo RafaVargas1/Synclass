@@ -47,7 +47,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
         var usuarios = new FakeUsuarioRepository();
         var aulaService = new AulaService(
             aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService, Clock);
-        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, configuracoes, horarioService, Clock);
+        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);
         var registros = new FakeRegistroFrequenciaRepository();
         var frequenciaService = new FrequenciaService(
             registros, alocacoes, aulaService, alocacaoHorarioService, cancelamentos, horarioService, Clock,
