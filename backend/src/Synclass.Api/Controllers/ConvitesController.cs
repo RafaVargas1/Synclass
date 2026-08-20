@@ -33,9 +33,10 @@ public sealed class ConvitesController : ControllerBase
 
         try
         {
-            var convite = await _convites.GerarAsync(professorId, request.Contato, request.MatriculaId, cancellationToken);
-            LogConviteGerado(trackId, convite);
-            return Ok(new GerarConviteResponse(convite.Id, convite.Token, convite.ExpiraEm));
+            var resultado = await _convites.GerarAsync(professorId, request.Contato, request.MatriculaId, cancellationToken);
+            LogConviteGerado(trackId, resultado);
+            var convite = resultado.Convite;
+            return Ok(new GerarConviteResponse(convite.Id, convite.Token, convite.Codigo, convite.ExpiraEm));
         }
         catch (ProfessorNaoEncontradoException ex)
         {
@@ -73,14 +74,18 @@ public sealed class ConvitesController : ControllerBase
 
     /// <summary>
     /// Inclui <c>ExpiraEm</c> e o contato mascarado (nunca em texto puro em
-    /// log) — Critérios técnicos da issue #2.
+    /// log) — Critérios técnicos da issue #2 — e <c>Tentativas</c>, quantas
+    /// vezes o gerador de código precisou rodar até achar um código livre
+    /// entre os convites ativos (colisão/retry) — Critérios técnicos da
+    /// issue #62.
     /// </summary>
-    private void LogConviteGerado(string trackId, Convite convite)
+    private void LogConviteGerado(string trackId, ResultadoGeracaoConvite resultado)
     {
+        var convite = resultado.Convite;
         var contatoMascarado = MascaradorDeContato.Mascarar(convite.Contato);
         _logger.LogInformation(
-            "ConviteGerado {TrackId} {ProfessorId} {ExpiraEm} {ContatoMascarado}",
-            trackId, convite.ProfessorId, convite.ExpiraEm, contatoMascarado);
+            "ConviteGerado {TrackId} {ProfessorId} {ExpiraEm} {ContatoMascarado} {Tentativas}",
+            trackId, convite.ProfessorId, convite.ExpiraEm, contatoMascarado, resultado.Tentativas);
     }
 
     /// <summary>
@@ -119,7 +124,7 @@ public sealed class ConvitesController : ControllerBase
 
 public sealed record GerarConviteRequest(string Contato, Guid? MatriculaId);
 
-public sealed record GerarConviteResponse(Guid ConviteId, string Token, DateTimeOffset ExpiraEm);
+public sealed record GerarConviteResponse(Guid ConviteId, string Token, string Codigo, DateTimeOffset ExpiraEm);
 
 public sealed record AceitarConviteRequest(string Nome, string Contato);
 

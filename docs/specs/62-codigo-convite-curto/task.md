@@ -14,18 +14,18 @@ Card: https://github.com/RafaVargas1/Synclass/issues/62
 - [x] Teste unidade (Domain): código de um convite já usado ou expirado pode
       ser reaproveitado por um novo convite (checagem de unicidade ignora
       convites finalizados).
-- [ ] `GeradorDeCodigoConvite` (Infrastructure) + `IGeradorDeCodigoConvite`
+- [x] `GeradorDeCodigoConvite` (Infrastructure) + `IGeradorDeCodigoConvite`
       (Domain): gera 5 dígitos numéricos, aleatoriedade criptográfica (mesmo
       padrão de `GeradorDeCodigoOtp`/`GeradorDeTokenConvite`).
-- [ ] `IConviteRepository.ExisteCodigoAtivoAsync(codigo)`: novo método,
+- [x] `IConviteRepository.ExisteCodigoAtivoAsync(codigo)`: novo método,
       implementado em `ConviteRepository` (EF Core) e em
       `FakeConviteRepository` (testes).
-- [ ] Migration: coluna `Codigo` (string, 5 chars) em `Convites`, índice não
+- [x] Migration: coluna `Codigo` (string, 5 chars) em `Convites`, índice não
       único (unicidade é só entre convites ativos, validada em domínio/serviço,
       não no banco).
-- [ ] Log estruturado: `ConviteGerado` passa a incluir se houve colisão/retry
+- [x] Log estruturado: `ConviteGerado` passa a incluir se houve colisão/retry
       (quantidade de tentativas).
-- [ ] Teste de fumaça (Api): `POST /professores/{professorId}/convites` —
+- [x] Teste de fumaça (Api): `POST /professores/{professorId}/convites` —
       resposta inclui `codigo` de 5 dígitos.
 - [ ] Frontend: `lib/api/convites.ts` (`GerarConviteResultado`) ganha
       `codigo`.
