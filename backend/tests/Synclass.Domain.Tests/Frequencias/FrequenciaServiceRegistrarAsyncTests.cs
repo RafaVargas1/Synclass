@@ -35,7 +35,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
             ConfiguracaoProfessor.Criar(ProfessorId, ModeloAgendamento.Vago, Clock));
 
         var horarios = new FakeHorarioRepository();
-        var horarioService = new HorarioService(horarios, configuracoes, Clock);
+        var horarioService = new HorarioService(horarios, Clock);
         var aulas = new FakeAulaRepository();
         var cancelamentos = new FakeCancelamentoAulaRepository();
         var alocacoes = new FakeAlocacaoHorarioRepository();

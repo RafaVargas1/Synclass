@@ -35,7 +35,7 @@ public sealed class AlocacaoHorarioServiceTests
         var configuracoes = new FakeConfiguracaoProfessorRepository();
         configuracoes.Configuracoes.Add(ConfiguracaoProfessor.Criar(professor, modelo, Clock));
         var horarios = new FakeHorarioRepository();
-        var horarioService = new HorarioService(horarios, configuracoes, Clock);
+        var horarioService = new HorarioService(horarios, Clock);
         var alocacoes = new FakeAlocacaoHorarioRepository();
         var matriculas = new FakeMatriculaRepository();
         var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);

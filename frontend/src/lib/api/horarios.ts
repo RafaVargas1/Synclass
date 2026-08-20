@@ -1,11 +1,23 @@
 import { fetchComTimeout, MensagemErroConexao } from './httpClient';
 
+/**
+ * Espelha `Synclass.Domain.Horarios.TipoMarcacao` do backend — trafega como
+ * inteiro (issue #76, mesmo padrão de `ModeloAgendamento` em
+ * `lib/api/configuracao.ts`).
+ */
+export enum TipoMarcacao {
+  Livre = 0,
+  Fixo = 1,
+  Hibrido = 2,
+}
+
 export type Horario = {
   id: string;
   diaSemana: number;
   horaInicio: string;
   duracaoMinutos: number;
   limiteAlunos: number;
+  tipoMarcacao: TipoMarcacao;
 };
 
 export type CriarHorarioInput = {
@@ -13,6 +25,7 @@ export type CriarHorarioInput = {
   horaInicio: string;
   duracaoMinutos: number;
   limiteAlunos: number;
+  tipoMarcacao: TipoMarcacao;
 };
 
 export type CriarHorarioResultado =

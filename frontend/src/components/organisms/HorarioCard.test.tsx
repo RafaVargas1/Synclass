@@ -1,8 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import { TipoMarcacao } from '@/lib/api/horarios';
+
 import { HorarioCard } from './HorarioCard';
 
-const horario = { id: 'h1', diaSemana: 2, horaInicio: '10:00:00', duracaoMinutos: 60, limiteAlunos: 1 };
+const horario = {
+  id: 'h1',
+  diaSemana: 2,
+  horaInicio: '10:00:00',
+  duracaoMinutos: 60,
+  limiteAlunos: 1,
+  tipoMarcacao: TipoMarcacao.Livre,
+};
 
 describe('HorarioCard', () => {
   it('shows the day, start time and duration', async () => {
@@ -24,6 +33,17 @@ describe('HorarioCard', () => {
     await render(<HorarioCard horario={horarioEmGrupo} onRemover={jest.fn()} />);
 
     expect(screen.getByText(/Grupo até 4/)).toBeTruthy();
+  });
+
+  it.each([
+    [TipoMarcacao.Livre, 'Livre'],
+    [TipoMarcacao.Fixo, 'Fixo'],
+    [TipoMarcacao.Hibrido, 'Híbrido'],
+  ])('shows the rótulo of tipoMarcacao %s as %s', async (tipoMarcacao, rotulo) => {
+    const horarioComPolitica = { ...horario, tipoMarcacao };
+    await render(<HorarioCard horario={horarioComPolitica} onRemover={jest.fn()} />);
+
+    expect(screen.getByText(rotulo)).toBeTruthy();
   });
 
   it('calls onRemover with the horario id when the remove button is pressed', async () => {
