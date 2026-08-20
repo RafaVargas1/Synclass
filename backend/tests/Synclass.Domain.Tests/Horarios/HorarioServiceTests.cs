@@ -9,7 +9,8 @@ namespace Synclass.Domain.Tests.Horarios;
 /// (issue #6): cadastro com checagem de conflito, listagem e remoção com
 /// bloqueio por Alunos alocados. Não exige mais nenhuma <c>ConfiguracaoProfessor</c>
 /// prévia (issue #76, achado do dev-review no PR #85 — ver docstring de
-/// <see cref="HorarioService"/>).
+/// <see cref="HorarioService"/>). Também cobre a alteração da política de
+/// marcação de um horário já cadastrado (issue #71).
 /// </summary>
 public sealed class HorarioServiceTests
 {
@@ -174,5 +175,42 @@ public sealed class HorarioServiceTests
 
         await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
         repositorio.Horarios.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task AlterarPoliticaAsync_QuandoHorarioPertenceAoProfessor_PersisteANovaPolitica()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = new HorarioService(repositorio, Clock);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+
+        var atualizado = await servico.AlterarPoliticaAsync(ProfessorId, horario.Id, TipoMarcacao.Fixo, CancellationToken.None);
+
+        atualizado.TipoMarcacao.Should().Be(TipoMarcacao.Fixo);
+        repositorio.Horarios.Should().ContainSingle(h => h.Id == horario.Id && h.TipoMarcacao == TipoMarcacao.Fixo);
+    }
+
+    [Fact]
+    public async Task AlterarPoliticaAsync_HorarioInexistente_RejeitaComHorarioNaoEncontradoException()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = new HorarioService(repositorio, Clock);
+
+        var acao = () => servico.AlterarPoliticaAsync(ProfessorId, Guid.NewGuid(), TipoMarcacao.Fixo, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
+    }
+
+    [Fact]
+    public async Task AlterarPoliticaAsync_HorarioDeOutroProfessor_RejeitaComHorarioNaoEncontradoException()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = new HorarioService(repositorio, Clock);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+
+        var acao = () => servico.AlterarPoliticaAsync(Guid.NewGuid(), horario.Id, TipoMarcacao.Fixo, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
+        repositorio.Horarios.Should().ContainSingle(h => h.Id == horario.Id && h.TipoMarcacao == TipoMarcacao.Livre);
     }
 }
