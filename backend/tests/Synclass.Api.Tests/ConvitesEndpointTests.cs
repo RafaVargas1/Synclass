@@ -123,6 +123,70 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
         corpo!.Mensagem.Should().Contain("expirou");
     }
 
+    [Fact]
+    public async Task Post_AceitePorCodigo_ReturnsOk_QuandoCodigoValidoEAlunoNovo()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CadastrarProfessorAsync(client, "professor5@exemplo.com");
+        var convite = await GerarConviteAsync(client, professorId, "11987654321");
+
+        var response = await client.PostAsJsonAsync(
+            $"/convites/codigo/{convite.Codigo}/aceite", new AceitarConviteRequest("João Pedro", "11987654321"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<AceitarConviteResponse>();
+        corpo!.Nome.Should().Be("João Pedro");
+        corpo.Papeis.Should().Contain("Aluno");
+    }
+
+    [Fact]
+    public async Task Post_AceitePorCodigo_ReturnsBadRequest_QuandoCodigoExpirado()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CadastrarProfessorAsync(client, "professor6@exemplo.com");
+        var convite = await GerarConviteAsync(client, professorId, "11987654321");
+        _clock.UtcNow = _clock.UtcNow.AddDays(8);
+
+        var response = await client.PostAsJsonAsync(
+            $"/convites/codigo/{convite.Codigo}/aceite", new AceitarConviteRequest("João Pedro", "11987654321"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var corpo = await response.Content.ReadFromJsonAsync<ConviteErrorResponse>();
+        corpo!.Mensagem.Should().Contain("expirou");
+    }
+
+    [Fact]
+    public async Task Post_AceitePorCodigo_ReturnsBadRequest_QuandoCodigoInvalidoOuUsado()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        await CadastrarProfessorAsync(client, "professor7@exemplo.com");
+
+        var response = await client.PostAsJsonAsync(
+            "/convites/codigo/99999/aceite", new AceitarConviteRequest("João Pedro", "11987654321"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var corpo = await response.Content.ReadFromJsonAsync<ConviteErrorResponse>();
+        corpo!.Mensagem.Should().Contain("inválido");
+    }
+
+    [Fact]
+    public async Task Post_AceitePorCodigo_ReturnsBadRequest_QuandoContatoJaVinculado()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CadastrarProfessorAsync(client, "professor8@exemplo.com");
+        var conviteA = await GerarConviteAsync(client, professorId, "11987654321");
+        var conviteB = await GerarConviteAsync(client, professorId, "11987654321");
+        await client.PostAsJsonAsync(
+            $"/convites/{conviteA.Token}/aceite", new AceitarConviteRequest("João Pedro", "11987654321"));
+
+        var response = await client.PostAsJsonAsync(
+            $"/convites/codigo/{conviteB.Codigo}/aceite", new AceitarConviteRequest("João Pedro", "11987654321"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var corpo = await response.Content.ReadFromJsonAsync<ConviteErrorResponse>();
+        corpo!.Mensagem.Should().Contain("já está vinculado");
+    }
+
     private static async Task<GerarConviteResponse> GerarConviteAsync(HttpClient client, Guid professorId, string contato)
     {
         var response = await client.PostAsJsonAsync(

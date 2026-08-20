@@ -66,6 +66,29 @@ public sealed class ConvitesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Aceita um convite pelo código curto de 5 dígitos (issue #63) — mesmo
+    /// contrato de resposta e tratamento de exceções de
+    /// <see cref="Aceitar"/>, reaproveitando <see cref="AceitarConviteRequest"/>.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("convites/codigo/{codigo}/aceite")]
+    public async Task<IActionResult> AceitarPorCodigo(string codigo, [FromBody] AceitarConviteRequest request, CancellationToken cancellationToken)
+    {
+        var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+
+        try
+        {
+            var resultado = await _convites.AceitarPorCodigoAsync(codigo, request.Nome, request.Contato, cancellationToken);
+            LogConviteAceito(trackId, resultado);
+            return Ok(ParaResponse(resultado.Usuario));
+        }
+        catch (Exception ex) when (ex is ConviteRejeitadoException or ContatoInvalidoException or NomeInvalidoException)
+        {
+            return Rejeitar(trackId, ex);
+        }
+    }
+
     private static AceitarConviteResponse ParaResponse(Usuario usuario)
     {
         var papeis = usuario.Papeis.Select(p => p.Papel.ToString()).ToArray();

@@ -19,6 +19,15 @@ public sealed class FakeConviteRepository : IConviteRepository
         return Task.FromResult(convite);
     }
 
+    public Task<Convite?> BuscarPorCodigoAsync(string codigo, CancellationToken cancellationToken)
+    {
+        var convite = _convites
+            .Where(c => c.Codigo == codigo)
+            .OrderByDescending(c => c.CreatedAt)
+            .FirstOrDefault();
+        return Task.FromResult(convite);
+    }
+
     public Task<bool> ExisteCodigoAtivoAsync(string codigo, DateTimeOffset agora, CancellationToken cancellationToken)
     {
         var existe = _convites.Any(c => c.Codigo == codigo && c.UsadoEm is null && c.ExpiraEm > agora);
