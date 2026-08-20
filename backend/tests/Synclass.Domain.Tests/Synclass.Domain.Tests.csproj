@@ -23,6 +23,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Synclass.Domain\Synclass.Domain.csproj" />
+    <!-- Referência a Infrastructure para testar o GeradorDeIdentificadorAluno
+         (classe concreta de Infrastructure, interface no Domain) — item 1 da
+         ordem de execução de docs/specs/70-identificador-aluno/task.md. -->
+    <ProjectReference Include="..\..\src\Synclass.Infrastructure\Synclass.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

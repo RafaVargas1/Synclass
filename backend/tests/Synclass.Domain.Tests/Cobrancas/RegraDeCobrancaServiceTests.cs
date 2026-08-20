@@ -16,7 +16,7 @@ public sealed class RegraDeCobrancaServiceTests
 
     private static Matricula CriarMatriculaExistente(FakeMatriculaRepository matriculas)
     {
-        var matricula = Matricula.CriarProvisoria(Guid.NewGuid(), "Aluno Teste", "aluno-teste", Clock);
+        var matricula = Matricula.CriarProvisoria(Guid.NewGuid(), "Aluno Teste", "aluno-teste", null, Clock);
         matriculas.AdicionarAsync(matricula, CancellationToken.None).GetAwaiter().GetResult();
         return matricula;
     }

@@ -39,7 +39,7 @@ public sealed class UsuarioRepositoryReaproveitamentoTests
         await using (var dbContextDoCadastroInicial = new SynclassDbContext(options))
         {
             var repositorioInicial = new UsuarioRepository(dbContextDoCadastroInicial);
-            var usuario = Usuario.Cadastrar("Joao Aluno", "joao@exemplo.com", PapelUsuario.Aluno, clock);
+            var usuario = Usuario.Cadastrar("Joao Aluno", "joao@exemplo.com", PapelUsuario.Aluno, null, clock);
             usuarioId = usuario.Id;
             await repositorioInicial.AdicionarAsync(usuario, CancellationToken.None);
             await repositorioInicial.SalvarAsync(CancellationToken.None);
@@ -52,7 +52,7 @@ public sealed class UsuarioRepositoryReaproveitamentoTests
         await using var dbContextDoNovoCadastro = new SynclassDbContext(options);
         var repositorio = new UsuarioRepository(dbContextDoNovoCadastro);
         var usuarioExistente = await repositorio.BuscarPorContatoAsync("joao@exemplo.com", CancellationToken.None);
-        usuarioExistente!.AdicionarPapel(PapelUsuario.Professor, clock);
+        usuarioExistente!.AdicionarPapel(PapelUsuario.Professor, null, clock);
 
         var acao = () => repositorio.SalvarAsync(CancellationToken.None);
 

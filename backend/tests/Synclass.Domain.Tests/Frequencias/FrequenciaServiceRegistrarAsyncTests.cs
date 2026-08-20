@@ -53,7 +53,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
 
     private static async Task<Matricula> CriarMatriculaAlocadaAsync(Cenario cenario, Guid horarioId)
     {
-        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matricula, CancellationToken.None);
         var alocacao = AlocacaoHorario.Criar(horarioId, matricula.Id, OrigemAlocacao.Aluno, Clock);
         await cenario.Alocacoes.AdicionarAsync(alocacao, CancellationToken.None);
@@ -206,7 +206,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
             ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
-        var matriculaNaoAlocada = Matricula.CriarProvisoria(ProfessorId, "Aluno Dois", "aluno-2", Clock);
+        var matriculaNaoAlocada = Matricula.CriarProvisoria(ProfessorId, "Aluno Dois", "aluno-2", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matriculaNaoAlocada, CancellationToken.None);
         var statusPorMatricula = new Dictionary<Guid, StatusFrequencia> { [matriculaNaoAlocada.Id] = StatusFrequencia.Presente };
 

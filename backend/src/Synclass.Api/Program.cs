@@ -6,6 +6,7 @@ using Serilog;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Alocacoes;
+using Synclass.Domain.Alunos;
 using Synclass.Domain.Aulas;
 using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Cobrancas;
@@ -16,6 +17,7 @@ using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
+using Synclass.Infrastructure.Alunos;
 using Synclass.Infrastructure.Autenticacao;
 using Synclass.Infrastructure.Common;
 using Synclass.Infrastructure.Convites;
@@ -69,6 +71,15 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroUsuarioService>();
+
+// Identificador único e human-readable de Aluno (issue #70) — gerado em
+// tres pontos (cadastro de Aluno #61, aceite de convite #63 e cadastro de
+// Aluno provisório, via Matriculas), com unicidade permanente checada contra
+// Usuario.IdentificadorAluno e Matricula.IdentificadorAluno. Ver
+// docs/specs/70-identificador-aluno/implementation.md.
+builder.Services.AddSingleton<IGeradorDeIdentificadorAluno, GeradorDeIdentificadorAluno>();
+builder.Services.AddScoped<IIdentificadorAlunoUnicidadeChecker, IdentificadorAlunoUnicidadeChecker>();
+builder.Services.AddScoped<IdentificadorAlunoService>();
 builder.Services.AddScoped<AtualizacaoNomeUsuarioService>();
 builder.Services.AddScoped<IConfiguracaoProfessorRepository, ConfiguracaoProfessorRepository>();
 builder.Services.AddScoped<ConfiguracaoProfessorService>();
@@ -127,7 +138,8 @@ builder.Services.AddScoped(sp => new ConviteService(
     sp.GetRequiredService<IGeradorDeTokenConvite>(),
     sp.GetRequiredService<IGeradorDeCodigoConvite>(),
     sp.GetRequiredService<IClock>(),
-    LerDiasValidadeConviteObrigatoria(builder.Configuration)));
+    LerDiasValidadeConviteObrigatoria(builder.Configuration),
+    sp.GetRequiredService<IdentificadorAlunoService>()));
 
 var app = builder.Build();
 
