@@ -47,7 +47,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/63
 - [x] Teste de fumaça (Api): `POST /convites/codigo/{codigo}/aceite` —
       sucesso (Aluno novo), código expirado, código inválido/usado, contato
       já vinculado (mesmos quatro cenários do card).
-- [ ] Frontend: `lib/api/convites.ts` — `aceitarConvitePorCodigo(input)`,
+- [x] Frontend: `lib/api/convites.ts` — `aceitarConvitePorCodigo(input)`,
       mesmo formato de `aceitarConvite`, apontando para a rota nova.
 - [ ] Frontend: tela `app/aluno/entrar-turma.tsx` — campo de código (5
       dígitos) + `CadastroUsuarioForm` (nome/contato), reaproveitando
