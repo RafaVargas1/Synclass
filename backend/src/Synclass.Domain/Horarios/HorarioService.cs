@@ -28,12 +28,13 @@ public sealed class HorarioService
         DiaSemana diaSemana,
         TimeOnly horaInicio,
         int duracaoMinutos,
+        TipoMarcacao tipoMarcacao,
         CancellationToken cancellationToken,
         int? limiteAlunos = null)
     {
         await GarantirConfiguracaoDefinidaAsync(professorId, cancellationToken);
 
-        var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, _clock, limiteAlunos);
+        var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, _clock, limiteAlunos);
         var horariosDoDia = await _horarios.ListarPorProfessorEDiaAsync(professorId, diaSemana, cancellationToken);
         var conflitante = horariosDoDia.FirstOrDefault(existente => horario.Sobrepoe(existente));
         if (conflitante is not null)

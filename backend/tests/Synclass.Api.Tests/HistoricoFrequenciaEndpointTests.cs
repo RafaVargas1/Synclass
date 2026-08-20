@@ -61,7 +61,7 @@ public sealed class HistoricoFrequenciaEndpointTests : IClassFixture<WebApplicat
         var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
         var matricula = Matricula.CriarVinculada(professorId, alunoUsuarioId, clock);
-        var horario = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, clock);
+        var horario = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, clock);
         var alocacao = AlocacaoHorario.Criar(horario.Id, matricula.Id, OrigemAlocacao.Aluno, clock);
         dbContext.Matriculas.Add(matricula);
         dbContext.Horarios.Add(horario);

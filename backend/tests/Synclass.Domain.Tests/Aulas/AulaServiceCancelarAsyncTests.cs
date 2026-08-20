@@ -59,7 +59,7 @@ public sealed class AulaServiceCancelarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
 
@@ -78,7 +78,7 @@ public sealed class AulaServiceCancelarAsyncTests
         var cenario = CriarCenario(prazoCancelamentoMinutos: 24 * 60);
         // Relógio fixo em 18/08 12:00; aula em 20/08 18:00 = 30h de antecedência.
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quinta, new TimeOnly(18, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Quinta, new TimeOnly(18, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
 
@@ -100,7 +100,7 @@ public sealed class AulaServiceCancelarAsyncTests
         var cenario = CriarCenario(prazoCancelamentoMinutos: 24 * 60);
         // Relógio fixo em 18/08 12:00; aula em 18/08 22:00 = 10h de antecedência.
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(22, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(22, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 18);
 
@@ -120,7 +120,7 @@ public sealed class AulaServiceCancelarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
 
         await cenario.AulaService.CancelarAsync(
@@ -138,7 +138,7 @@ public sealed class AulaServiceCancelarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
         var matriculaQueCancela = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var outraMatricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
@@ -160,7 +160,7 @@ public sealed class AulaServiceCancelarAsyncTests
         var cenario = CriarCenario(prazoCancelamentoMinutos: 24 * 60);
         // Aula em 20/08 14:00 = 26h de antecedência: dentro dos 24h vigentes.
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quinta, new TimeOnly(14, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Quinta, new TimeOnly(14, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
         await cenario.AulaService.CancelarAsync(ProfessorId, horario.Id, data, matricula.Id, CancellationToken.None);
@@ -181,7 +181,7 @@ public sealed class AulaServiceCancelarAsyncTests
     {
         var cenario = CriarCenario(prazoCancelamentoMinutos: 24 * 60);
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quinta, new TimeOnly(18, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Quinta, new TimeOnly(18, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
         var primeiroCancelamento = await cenario.AulaService.CancelarAsync(
@@ -203,7 +203,7 @@ public sealed class AulaServiceCancelarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matriculaNaoAlocada = Matricula.CriarProvisoria(ProfessorId, "Aluno Dois", "aluno-2", Clock);
         await cenario.Matriculas.AdicionarAsync(matriculaNaoAlocada, CancellationToken.None);
 

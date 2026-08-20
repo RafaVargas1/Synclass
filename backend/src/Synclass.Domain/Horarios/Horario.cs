@@ -12,13 +12,21 @@ namespace Synclass.Domain.Horarios;
 public sealed class Horario
 {
     private Horario(
-        Guid id, Guid professorId, DiaSemana diaSemana, TimeOnly horaInicio, int duracaoMinutos, DateTimeOffset createdAt, int limiteAlunos)
+        Guid id,
+        Guid professorId,
+        DiaSemana diaSemana,
+        TimeOnly horaInicio,
+        int duracaoMinutos,
+        TipoMarcacao tipoMarcacao,
+        DateTimeOffset createdAt,
+        int limiteAlunos)
     {
         Id = id;
         ProfessorId = professorId;
         DiaSemana = diaSemana;
         HoraInicio = horaInicio;
         DuracaoMinutos = duracaoMinutos;
+        TipoMarcacao = tipoMarcacao;
         CreatedAt = createdAt;
         LimiteAlunos = limiteAlunos;
     }
@@ -32,6 +40,12 @@ public sealed class Horario
     public TimeOnly HoraInicio { get; private set; }
 
     public int DuracaoMinutos { get; private set; }
+
+    /// <summary>
+    /// Política de marcação deste Horário específico (issue #73), obrigatória
+    /// na criação — ver <see cref="TipoMarcacao"/>.
+    /// </summary>
+    public TipoMarcacao TipoMarcacao { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -56,13 +70,21 @@ public sealed class Horario
     /// como aula individual.
     /// </summary>
     public static Horario Criar(
-        Guid professorId, DiaSemana diaSemana, TimeOnly horaInicio, int duracaoMinutos, IClock clock, int? limiteAlunos = null)
+        Guid professorId,
+        DiaSemana diaSemana,
+        TimeOnly horaInicio,
+        int duracaoMinutos,
+        TipoMarcacao tipoMarcacao,
+        IClock clock,
+        int? limiteAlunos = null)
     {
         ValidarDiaSemana(diaSemana);
         DuracaoAula.Validar(duracaoMinutos);
+        ValidarTipoMarcacao(tipoMarcacao);
         var limiteAlunosResolvido = limiteAlunos ?? LimiteAlunosHorario.Padrao;
         LimiteAlunosHorario.Validar(limiteAlunosResolvido);
-        return new Horario(Guid.NewGuid(), professorId, diaSemana, horaInicio, duracaoMinutos, clock.UtcNow, limiteAlunosResolvido);
+        return new Horario(
+            Guid.NewGuid(), professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, clock.UtcNow, limiteAlunosResolvido);
     }
 
     /// <summary>
@@ -96,6 +118,18 @@ public sealed class Horario
         if (!Enum.IsDefined(diaSemana))
         {
             throw new DiaSemanaInvalidoException((int)diaSemana);
+        }
+    }
+
+    /// <summary>
+    /// Garante que <paramref name="tipoMarcacao"/> é um dos valores nomeados
+    /// do enum, pelo mesmo motivo de <see cref="ValidarDiaSemana"/>.
+    /// </summary>
+    private static void ValidarTipoMarcacao(TipoMarcacao tipoMarcacao)
+    {
+        if (!Enum.IsDefined(tipoMarcacao))
+        {
+            throw new TipoMarcacaoInvalidoException((int)tipoMarcacao);
         }
     }
 
