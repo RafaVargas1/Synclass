@@ -57,7 +57,7 @@ public sealed class AulaConfirmacaoPresencaEndpointTests : IClassFixture<WebAppl
     {
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: diaSemana, HoraInicio: horaInicio, DuracaoMinutos: 60, TipoMarcacao: 0, LimiteAlunos: 2));
+            new CriarHorarioRequest(DiaSemana: diaSemana, HoraInicio: horaInicio, DuracaoMinutos: 60, TipoMarcacao: 1, LimiteAlunos: 2));
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         return corpo!.Id;
     }

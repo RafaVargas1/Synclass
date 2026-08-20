@@ -14,5 +14,5 @@ Card: https://github.com/RafaVargas1/Synclass/issues/74
 - [x] Teste unidade (Domain): `AlocacaoHorarioService.ListarVagosAsync` — só retorna horários `Livre`/`Hibrido` com vaga, não retorna `Fixo`.
 - [x] Implementação: `ListarVagosAsync`/`ParaHorarioVagoSeElegivelAsync` decidem por `horario.TipoMarcacao`, removendo a dependência de `ConfiguracaoProfessor` nesta classe.
 - [x] Remoção: campo `_configuracoes`/`IConfiguracaoProfessorRepository` do construtor de `AlocacaoHorarioService` (nada mais na classe usa).
-- [ ] Ajuste dos testes de fumaça (Api) em `AlocacaoHorarioEndpointTests`/`MarcacaoHorarioEndpointTests` que hoje configuram `ModeloAgendamento` do Professor para controlar o cenário — passam a cadastrar o `Horario` já com o `TipoMarcacao` desejado.
-- [ ] Checks finais: `dotnet format && dotnet test`.
+- [x] Ajuste dos testes de fumaça (Api) em `AlocacaoHorarioEndpointTests`/`MarcacaoHorarioEndpointTests` que hoje configuram `ModeloAgendamento` do Professor para controlar o cenário — passam a cadastrar o `Horario` já com o `TipoMarcacao` desejado.
+- [x] Checks finais: `dotnet format && dotnet test`.
