@@ -7,7 +7,7 @@ import { Paragraph } from '@/components/atoms/Paragraph';
 import { FormField } from '@/components/molecules/FormField';
 import { contatoEhValido, mascararContato, MensagemContatoInvalido } from '@/lib/validacaoContato';
 
-export type CadastroProfessorFormProps = {
+export type CadastroUsuarioFormProps = {
   nome: string;
   contato: string;
   erro?: string;
@@ -27,16 +27,19 @@ export type CadastroProfessorFormProps = {
 };
 
 /**
- * Organismo: formulário de cadastro de Professor (nome + contato). Não
- * conhece a Api — apenas emite os callbacks recebidos por prop, para que a
- * tela (que conhece a Api) controle o fluxo de envio.
+ * Organismo: formulário de cadastro de usuário (nome + contato) — os campos
+ * são idênticos entre Professor (issue #1) e Aluno (issue #61), então as
+ * duas telas compartilham este único componente em vez de duplicá-lo (ver
+ * Critérios técnicos da issue #61). Não conhece a Api — apenas emite os
+ * callbacks recebidos por prop, para que a tela (que conhece a Api)
+ * controle o fluxo de envio.
  *
  * `erro` é exibido como mensagem geral do formulário (não anexada a um
  * campo específico): a Api devolve só uma mensagem de texto, sem indicar a
  * qual campo ela se refere (pode ser sobre o nome, o contato, ou a conexão),
  * então anexá-la a um campo fixo induziria o usuário a erro.
  */
-export function CadastroProfessorForm({
+export function CadastroUsuarioForm({
   nome,
   contato,
   erro,
@@ -46,7 +49,7 @@ export function CadastroProfessorForm({
   onChangeContato,
   onBlurContato,
   onSubmit,
-}: CadastroProfessorFormProps) {
+}: CadastroUsuarioFormProps) {
   const [erroContato, setErroContato] = useState<string | undefined>(undefined);
 
   function handleSubmit() {

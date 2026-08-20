@@ -42,7 +42,7 @@ public sealed class VerificarContatoEndpointTests : IClassFixture<WebApplication
     public async Task Get_VerificarContato_ContatoJaCadastrado_RetornaIdentidadeExistenteComNome()
     {
         var client = _factory.CreateClient();
-        await client.PostAsJsonAsync("/professores/cadastro", new CadastroProfessorRequest("Maria Silva", "maria@exemplo.com"));
+        await client.PostAsJsonAsync("/professores/cadastro", new CadastroUsuarioRequest("Maria Silva", "maria@exemplo.com"));
 
         var response = await client.GetAsync("/professores/verificar-contato?contato=maria@exemplo.com");
 

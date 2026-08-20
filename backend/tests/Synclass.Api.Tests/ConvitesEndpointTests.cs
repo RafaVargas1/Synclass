@@ -142,8 +142,8 @@ public sealed class ConvitesEndpointTests : IClassFixture<WebApplicationFactory<
     private static async Task<Guid> CadastrarProfessorAsync(HttpClient client, string contato)
     {
         var response = await client.PostAsJsonAsync(
-            "/professores/cadastro", new CadastroProfessorRequest("Professor Teste", contato));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
+            "/professores/cadastro", new CadastroUsuarioRequest("Professor Teste", contato));
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroUsuarioResponse>();
         return corpo!.UsuarioId;
     }
 }

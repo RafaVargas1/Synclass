@@ -53,7 +53,7 @@ public sealed class AutenticacaoEndpointTests : IClassFixture<WebApplicationFact
     private async Task<HttpClient> CriarClienteComProfessorCadastradoAsync(string contato)
     {
         var client = _factory.CreateClient();
-        await client.PostAsJsonAsync("/professores/cadastro", new CadastroProfessorRequest("Maria Silva", contato));
+        await client.PostAsJsonAsync("/professores/cadastro", new CadastroUsuarioRequest("Maria Silva", contato));
         return client;
     }
 

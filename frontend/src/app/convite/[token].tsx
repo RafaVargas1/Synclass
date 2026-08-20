@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AceiteConviteConfirmado } from '@/components/molecules/AceiteConviteConfirmado';
 import { ConviteExpirado } from '@/components/molecules/ConviteExpirado';
-import { CadastroProfessorForm } from '@/components/organisms/CadastroProfessorForm';
+import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm';
 import { aceitarConvite } from '@/lib/api/convites';
 
 /**
@@ -21,7 +21,7 @@ function ehConviteExpirado(mensagem: string): boolean {
 
 /**
  * Rota pública de aceite de convite (issue #2), reaproveitando
- * `CadastroProfessorForm` (nome + contato) tal como pedido pelo card — ver
+ * `CadastroUsuarioForm` (nome + contato) tal como pedido pelo card — ver
  * decisão documentada em docs/specs/2-convite-whatsapp/implementation.md.
  * `token` vem da rota dinâmica (`[token]`).
  */
@@ -60,7 +60,7 @@ export default function AceiteConviteScreen() {
         ) : nomeConfirmado ? (
           <AceiteConviteConfirmado nome={nomeConfirmado} />
         ) : (
-          <CadastroProfessorForm
+          <CadastroUsuarioForm
             nome={nome}
             contato={contato}
             erro={erro}

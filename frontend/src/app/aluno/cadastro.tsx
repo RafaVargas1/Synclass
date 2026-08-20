@@ -4,15 +4,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CadastroConfirmado } from '@/components/molecules/CadastroConfirmado';
 import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm';
 import { Topbar } from '@/components/organisms/Topbar';
-import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
+import { cadastrarAluno, verificarContatoAluno } from '@/lib/api/alunos';
 import { useCadastroUsuario } from '@/lib/useCadastroUsuario';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
- * Tela de cadastro de Professor (issue #1). Após sucesso, mostra uma
- * confirmação inline — não há área logada ainda para navegar (issue #18).
+ * Tela de cadastro independente de Aluno (issue #61): cria (ou reaproveita,
+ * ver RN da issue) uma identidade de usuário com o papel Aluno, sem
+ * nenhum vínculo com um Professor ainda — o vínculo nasce depois, no fluxo
+ * de código de convite. Após sucesso, mostra uma confirmação inline — não
+ * há área logada ainda para navegar (issue #18).
  */
-export default function CadastroProfessorScreen() {
+export default function CadastroAlunoScreen() {
   const {
     nome,
     contato,
@@ -24,17 +27,17 @@ export default function CadastroProfessorScreen() {
     handleChangeContato,
     handleBlurContato,
     handleSubmit,
-  } = useCadastroUsuario({ cadastrar: cadastrarProfessor, verificarContato: verificarContatoProfessor });
+  } = useCadastroUsuario({ cadastrar: cadastrarAluno, verificarContato: verificarContatoAluno });
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Cadastro de Professor" />
+      <Topbar titulo="Cadastro de Aluno" />
       <View
         className="w-full flex-1 items-center justify-center self-center px-four"
         style={{ maxWidth: MaxContentWidth }}
       >
         {concluido ? (
-          <CadastroConfirmado papel="Professor" />
+          <CadastroConfirmado papel="Aluno" />
         ) : (
           <CadastroUsuarioForm
             nome={nome}

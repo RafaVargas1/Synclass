@@ -6,7 +6,7 @@ namespace Synclass.Domain.Usuarios;
 /// de silenciosamente ignorado, para não mascarar um possível bug de reenvio
 /// no cliente (ver Regra de Negócio da issue #1).
 /// </summary>
-public sealed class PapelJaAtribuidoException : CadastroProfessorRejeitadoException
+public sealed class PapelJaAtribuidoException : CadastroRejeitadoException
 {
     public PapelJaAtribuidoException(PapelUsuario papel)
         : base($"O contato já está cadastrado como {papel}.")

@@ -126,8 +126,8 @@ public sealed class AutorizacaoEndpointTests : IClassFixture<WebApplicationFacto
     {
         var response = await client.PostAsJsonAsync(
             "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
+            new CadastroUsuarioRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroUsuarioResponse>();
         var professorId = corpo!.UsuarioId;
 
         var clienteProfessor = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);

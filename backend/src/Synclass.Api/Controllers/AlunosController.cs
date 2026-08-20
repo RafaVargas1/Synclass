@@ -4,14 +4,20 @@ using Synclass.Domain.Usuarios;
 
 namespace Synclass.Api.Controllers;
 
+/// <summary>
+/// Cadastro independente de Aluno (issue #61) — espelha
+/// <see cref="ProfessoresController"/> trocando o papel atribuído. O Aluno
+/// nasce sem nenhum vínculo com um Professor; o vínculo é criado depois, no
+/// fluxo de código de convite (próxima Task do épico #60).
+/// </summary>
 [ApiController]
-[Route("professores")]
-public sealed class ProfessoresController : ControllerBase
+[Route("alunos")]
+public sealed class AlunosController : ControllerBase
 {
     private readonly CadastroUsuarioService _cadastroUsuario;
-    private readonly ILogger<ProfessoresController> _logger;
+    private readonly ILogger<AlunosController> _logger;
 
-    public ProfessoresController(CadastroUsuarioService cadastroUsuario, ILogger<ProfessoresController> logger)
+    public AlunosController(CadastroUsuarioService cadastroUsuario, ILogger<AlunosController> logger)
     {
         _cadastroUsuario = cadastroUsuario;
         _logger = logger;
@@ -24,7 +30,7 @@ public sealed class ProfessoresController : ControllerBase
 
         try
         {
-            var resultado = await _cadastroUsuario.CadastrarAsync(PapelUsuario.Professor, request.Nome, request.Contato, cancellationToken);
+            var resultado = await _cadastroUsuario.CadastrarAsync(PapelUsuario.Aluno, request.Nome, request.Contato, cancellationToken);
             CadastroUsuarioLogging.LogCadastroSucesso(_logger, trackId, resultado);
             return Ok(new CadastroUsuarioResponse(resultado.Usuario.Id, resultado.Usuario.Nome));
         }
@@ -36,13 +42,8 @@ public sealed class ProfessoresController : ControllerBase
     }
 
     /// <summary>
-    /// Alimenta o campo Nome readonly do formulário de cadastro (issue #27)
-    /// quando o contato já pertence a uma identidade existente — sem isso, o
-    /// Professor preencheria um nome que a Api descarta silenciosamente ao
-    /// reaproveitar a identidade (RN da issue #20). Público (roda antes de
-    /// existir sessão) e nunca rejeita: um contato ainda incompleto enquanto
-    /// o usuário digita deve devolver "não existe" silenciosamente, não um
-    /// 400 a cada tecla.
+    /// Mesmo propósito de <see cref="ProfessoresController.VerificarContato"/>
+    /// (issue #27), reaproveitado pelo formulário de cadastro de Aluno.
     /// </summary>
     [HttpGet("verificar-contato")]
     public async Task<IActionResult> VerificarContato([FromQuery] string contato, CancellationToken cancellationToken)
