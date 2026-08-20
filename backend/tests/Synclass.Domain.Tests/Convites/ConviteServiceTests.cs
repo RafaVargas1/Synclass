@@ -393,6 +393,134 @@ public sealed class ConviteServiceTests
         matriculaComB.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
     }
 
+    [Fact]
+    public async Task AceitarPorCodigoAsync_CodigoValidoEAlunoJaAutenticado_CriaVinculoEMarcaConviteComoUsado()
+    {
+        var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
+        var alunoExistente = Usuario.Cadastrar("João Pedro", "11987654321", PapelUsuario.Aluno, Clock);
+        await contexto.Usuarios.AdicionarAsync(alunoExistente, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
+
+        var resultado = await servico.AceitarPorCodigoAsync(convite.Codigo, "João Pedro", "11987654321", CancellationToken.None);
+
+        resultado.Usuario.Id.Should().Be(alunoExistente.Id);
+        var vinculoCriado = contexto.Matriculas.Matriculas.Should()
+            .ContainSingle(m => m.ProfessorId == professorId && m.AlunoUsuarioId == alunoExistente.Id).Subject;
+        vinculoCriado.Should().NotBeNull();
+        convite.UsadoEm.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task AceitarPorCodigoAsync_CodigoExpirado_RejeitaComConviteExpiradoException()
+    {
+        var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
+        var servicoAposExpirar = new ConviteService(
+            contexto.Convites, contexto.Matriculas, contexto.Usuarios, new FakeGeradorDeTokenConvite(),
+            new FakeGeradorDeCodigoConvite(), new FixedClock(Clock.UtcNow.AddDays(DiasValidade + 1)), DiasValidade);
+
+        var acao = () => servicoAposExpirar.AceitarPorCodigoAsync(convite.Codigo, "João Pedro", "11987654321", CancellationToken.None);
+
+        await acao.Should().ThrowAsync<ConviteExpiradoException>();
+        convite.UsadoEm.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AceitarPorCodigoAsync_CodigoJaUsado_RejeitaComConviteInvalidoException()
+    {
+        var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
+        convite.MarcarUsado(Clock);
+
+        var acao = () => servico.AceitarPorCodigoAsync(convite.Codigo, "João Pedro", "11987654321", CancellationToken.None);
+
+        await acao.Should().ThrowAsync<ConviteInvalidoException>();
+        contexto.Convites.Convites.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task AceitarPorCodigoAsync_CodigoInexistente_RejeitaComConviteInvalidoException()
+    {
+        var contexto = NovoContexto();
+        var servico = NovoServico(contexto);
+
+        var acao = () => servico.AceitarPorCodigoAsync("99999", "João Pedro", "11987654321", CancellationToken.None);
+
+        await acao.Should().ThrowAsync<ConviteInvalidoException>();
+    }
+
+    [Fact]
+    public async Task AceitarPorCodigoAsync_AlunoSemContaComCodigoValido_CriaUsuarioAlunoVinculadoAoProfessor()
+    {
+        var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
+
+        var resultado = await servico.AceitarPorCodigoAsync(convite.Codigo, "João Pedro", "11987654321", CancellationToken.None);
+
+        resultado.Usuario.Nome.Should().Be("João Pedro");
+        resultado.Usuario.Papeis.Should().ContainSingle(p => p.Papel == PapelUsuario.Aluno);
+        var matriculaCriada = contexto.Matriculas.Matriculas.Should().ContainSingle().Subject;
+        matriculaCriada.ProfessorId.Should().Be(professorId);
+        matriculaCriada.AlunoUsuarioId.Should().Be(resultado.Usuario.Id);
+    }
+
+    [Fact]
+    public async Task AceitarPorCodigoAsync_ContatoJaExistenteComoProfessor_AdicionaPapelAlunoNaMesmaConta()
+    {
+        var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
+        var professorConvidado = Usuario.Cadastrar("Maria Professora", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        await contexto.Usuarios.AdicionarAsync(professorConvidado, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "maria@exemplo.com", null, CancellationToken.None)).Convite;
+
+        var resultado = await servico.AceitarPorCodigoAsync(convite.Codigo, "Maria Professora", "maria@exemplo.com", CancellationToken.None);
+
+        resultado.Usuario.Id.Should().Be(professorConvidado.Id);
+        resultado.Usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Professor);
+        resultado.Usuario.Papeis.Should().Contain(p => p.Papel == PapelUsuario.Aluno);
+        resultado.PapelAdicionado.Should().BeTrue();
+        contexto.Usuarios.Usuarios.Should().HaveCount(2);
+    }
+
+    /// <summary>
+    /// Critério de aceite 5 da issue #63: diferente do fluxo por link, o
+    /// fluxo por código rejeita um vínculo já existente em vez de o
+    /// reaproveitar silenciosamente — o convite não deve ser marcado como
+    /// usado na rejeição (mesma garantia de "rejeição não muda nada" de
+    /// <see cref="ConviteService"/>).
+    /// </summary>
+    [Fact]
+    public async Task AceitarPorCodigoAsync_AlunoJaVinculadoAoProfessor_RejeitaComContatoJaVinculadoExceptionSemMarcarConviteComoUsado()
+    {
+        var (servico, contexto, professorId) = await CriarServicoComProfessorExistenteAsync();
+        var alunoExistente = Usuario.Cadastrar("João Pedro", "11987654321", PapelUsuario.Aluno, Clock);
+        await contexto.Usuarios.AdicionarAsync(alunoExistente, CancellationToken.None);
+        var convite = (await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None)).Convite;
+        var vinculo = Matricula.CriarVinculada(professorId, alunoExistente.Id, Clock);
+        await contexto.Matriculas.AdicionarAsync(vinculo, CancellationToken.None);
+
+        var acao = () => servico.AceitarPorCodigoAsync(convite.Codigo, "João Pedro", "11987654321", CancellationToken.None);
+
+        await acao.Should().ThrowAsync<ContatoJaVinculadoException>();
+        convite.UsadoEm.Should().BeNull();
+        contexto.Matriculas.Matriculas.Should().ContainSingle();
+    }
+
+    [Theory]
+    [InlineData("12 345")]
+    [InlineData("1-2-3-4-5")]
+    public async Task AceitarPorCodigoAsync_CodigoComEspacosOuMascara_NormalizaEquivalenteASoDigitos(string codigoComMascara)
+    {
+        var contexto = NovoContexto();
+        var geradorDeCodigo = new FakeGeradorDeCodigoConvite("12345");
+        var servico = NovoServico(contexto, geradorDeCodigo);
+        var professorId = await AdicionarProfessorAsync(contexto.Usuarios, "professor@exemplo.com");
+        await servico.GerarAsync(professorId, "11987654321", null, CancellationToken.None);
+
+        var resultado = await servico.AceitarPorCodigoAsync(codigoComMascara, "João Pedro", "11987654321", CancellationToken.None);
+
+        resultado.Usuario.Contato.Should().Be("11987654321");
+    }
+
     private static async Task<(ConviteService Servico, Contexto Contexto, Guid ProfessorId)> CriarServicoComProfessorExistenteAsync()
     {
         var contexto = NovoContexto();

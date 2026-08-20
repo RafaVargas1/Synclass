@@ -13,30 +13,30 @@ Card: https://github.com/RafaVargas1/Synclass/issues/63
       contatoBruto, rejeitarVinculoExistente, ct)` do corpo atual de
       `AceitarAsync`, sem mudar nenhum teste existente de `AceitarAsync`
       (refactor puro).
-- [ ] Teste unidade (Domain): código válido e não usado, Aluno já
+- [x] Teste unidade (Domain): código válido e não usado, Aluno já
       autenticado (identidade já existente com papel Aluno) → cria vínculo
       com o Professor, convite marcado como usado.
-- [ ] `ConviteService.AceitarPorCodigoAsync(codigoBruto, nome, contatoBruto,
+- [x] `ConviteService.AceitarPorCodigoAsync(codigoBruto, nome, contatoBruto,
       ct)`: normaliza o código (só dígitos), busca via
       `BuscarPorCodigoAsync`, delega a `AceitarResolvidoAsync` com
       `rejeitarVinculoExistente: true`.
-- [ ] Teste unidade (Domain): código expirado → `ConviteExpiradoException`
+- [x] Teste unidade (Domain): código expirado → `ConviteExpiradoException`
       (mesma mensagem do fluxo por link).
-- [ ] Teste unidade (Domain): código já usado ou inexistente →
+- [x] Teste unidade (Domain): código já usado ou inexistente →
       `ConviteInvalidoException`.
-- [ ] Teste unidade (Domain): Aluno sem conta que informa código válido +
+- [x] Teste unidade (Domain): Aluno sem conta que informa código válido +
       nome/contato → cria usuário com papel Aluno já vinculado ao Professor
       do convite.
-- [ ] Teste unidade (Domain): contato já existe como Professor → papel
+- [x] Teste unidade (Domain): contato já existe como Professor → papel
       Aluno é adicionado à mesma conta (reaproveita
       `AdicionarPapelAlunoIdempotente`, já coberto indiretamente, mas cubra
       o caminho via código explicitamente).
-- [ ] Teste unidade (Domain): Aluno que já tem vínculo com aquele Professor
+- [x] Teste unidade (Domain): Aluno que já tem vínculo com aquele Professor
       informa o código de novo → `ContatoJaVinculadoException` (reaproveita
       a exception já usada em `GerarAsync`), convite **não** é marcado como
       usado (mesma garantia de "rejeição não muda nada" de
       `ObterMatriculaOrigemValidaAsync`).
-- [ ] Teste unidade (Domain): normalização do código aceita espaços/máscara
+- [x] Teste unidade (Domain): normalização do código aceita espaços/máscara
       (ex: "12 345" ou "1-2-3-4-5") equivalente a "12345".
 - [ ] `AceitarConviteRequest` (Api): reaproveitado tal como está (mesmo
       formato `Nome`/`Contato`).
