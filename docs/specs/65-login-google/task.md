@@ -4,37 +4,40 @@ Card: https://github.com/RafaVargas1/Synclass/issues/65
 
 ## Ordem de execução
 
-- [ ] `IValidadorDeIdTokenGoogle` (Domain, `Synclass.Domain.Autenticacao`):
+- [x] `IValidadorDeIdTokenGoogle` (Domain, `Synclass.Domain.Autenticacao`):
       interface fina (`Task<InformacoesIdTokenGoogle?> ValidarAsync(string idToken, CancellationToken)`),
       mesmo padrão de `IGeradorDeTokenSessao`/`IClock` (wrapper de terceiro).
       `InformacoesIdTokenGoogle` é um `record` com `Email` e `EmailVerificado`.
       Retorna `null` quando a assinatura/issuer não valida (nunca lança para
       esse caso — token malformado é esperado vindo de um client não
       confiável).
-- [ ] `EmailGoogleNaoVerificadoException` (Domain): herda `LoginRejeitadoException`,
+- [x] `EmailGoogleNaoVerificadoException` (Domain): herda `LoginRejeitadoException`,
       mesma família de `ContatoSemIdentidadePlenaException`.
-- [ ] Teste unidade (Domain): `LoginComGoogleService` — token válido, e-mail
+- [x] Teste unidade (Domain): `LoginComGoogleService` — token válido, e-mail
       corresponde a usuário existente → retorna `ResultadoLoginGoogle` com
       `Login` preenchido (mesmo `IGeradorDeTokenSessao.Gerar` do login OTP).
-- [ ] Teste unidade (Domain): token válido, e-mail não corresponde a
+- [x] Teste unidade (Domain): token válido, e-mail não corresponde a
       nenhum usuário → retorna `ResultadoLoginGoogle` com
       `CadastroPendente = true` e `EmailNormalizado` preenchido, `Login = null`
       (nunca cria conta implicitamente).
-- [ ] Teste unidade (Domain): `EmailVerificado = false` → lança
+- [x] Teste unidade (Domain): `EmailVerificado = false` → lança
       `EmailGoogleNaoVerificadoException`.
-- [ ] Teste unidade (Domain): token inválido (`ValidarAsync` retorna `null`)
+- [x] Teste unidade (Domain): token inválido (`ValidarAsync` retorna `null`)
       → lança `TokenGoogleInvalidoException` (nova, mesma família).
-- [ ] `LoginComGoogleService` (Domain): orquestra os 4 cenários acima,
+- [x] `LoginComGoogleService` (Domain): orquestra os 4 cenários acima,
       reaproveitando `Contato.Normalizar` (e-mail sempre bate no mesmo
       formato salvo em `Usuario.Contato`) e `IUsuarioRepository.BuscarPorContatoAsync`
       — sem tocar `LoginService` existente (fluxo paralelo, não substitui OTP).
-- [ ] `ValidadorDeIdTokenGoogle` (Infrastructure, `Synclass.Infrastructure.Autenticacao`):
+- [x] `ValidadorDeIdTokenGoogle` (Infrastructure, `Synclass.Infrastructure.Autenticacao`):
       implementa `IValidadorDeIdTokenGoogle` envolvendo
       `Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync` (pacote NuGet
       `Google.Apis.Auth`), validando `Audience` contra `GoogleClientId`
       (config, ver `.env.example`). Retorna `null` em
       `InvalidJwtException` (não deixa a exceção do SDK vazar pro domínio).
-- [ ] `Program.cs`: registra `IValidadorDeIdTokenGoogle` e
+      Correção pós-harness: método era `Task<T> ValidarAsync(...)` bloqueando
+      com `.GetAwaiter().GetResult()` sobre a chamada async do SDK (sync-over-async);
+      trocado por `async`/`await` direto.
+- [x] `Program.cs`: registra `IValidadorDeIdTokenGoogle` e
       `LoginComGoogleService`; lê `GoogleClientId` de configuração (nova
       variável em `.env.example`, valor vazio).
 - [ ] Teste de fumaça (Api): `POST /auth/google` — token válido de usuário
