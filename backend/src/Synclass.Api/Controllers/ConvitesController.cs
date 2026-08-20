@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Convites;
 using Synclass.Domain.Matriculas;
@@ -48,7 +49,13 @@ public sealed class ConvitesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Aceita um convite pela URL longa (token). Endpoint anônimo sujeito a
+    /// rate limit por IP (<c>EnableRateLimiting("ConvitesAnonimos")</c>,
+    /// issue #89) — freia enumeração automatizada do keyspace do token.
+    /// </summary>
     [AllowAnonymous]
+    [EnableRateLimiting("ConvitesAnonimos")]
     [HttpPost("convites/{token}/aceite")]
     public async Task<IActionResult> Aceitar(string token, [FromBody] AceitarConviteRequest request, CancellationToken cancellationToken)
     {
