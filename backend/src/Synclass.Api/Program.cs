@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -129,6 +131,26 @@ builder.Services.AddScoped(sp => new ConviteService(
     sp.GetRequiredService<IClock>(),
     LerDiasValidadeConviteObrigatoria(builder.Configuration)));
 
+// Rate limiting dos endpoints anônimos de aceite de convite (issue #89) —
+// ver docs/specs/89-rate-limit-convites/implementation.md. Política
+// "ConvitesAnonimos" fixa janela fixa (fixed window) particionada por IP de
+// origem, configurada em RateLimiting:ConvitesAnonimos.
+var (permissoesPorJanela, janelaEmSegundos) = LerConfiguracaoRateLimitConvitesObrigatoria(builder.Configuration);
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("ConvitesAnonimos", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = permissoesPorJanela,
+                QueueLimit = 0,
+                Window = TimeSpan.FromSeconds(janelaEmSegundos),
+            }));
+});
+
 var app = builder.Build();
 
 // Falha explícita no startup, mesmo padrão de Jwt:SigningKey acima — sem
@@ -160,6 +182,30 @@ static int LerDiasValidadeConviteObrigatoria(IConfiguration configuration)
     return dias;
 }
 
+// Mesmo padrão (falha explícita no startup) das funções acima — sem isso,
+// GetValue<int> devolveria 0 silenciosamente quando o limite estivesse
+// ausente/mal formatado, e a política de rate limit aceitaria 0 requisições.
+// Ver docs/specs/89-rate-limit-convites/implementation.md.
+static (int PermissoesPorJanela, int JanelaEmSegundos) LerConfiguracaoRateLimitConvitesObrigatoria(IConfiguration configuration)
+{
+    var permissoesBruto = configuration["RateLimiting:ConvitesAnonimos:PermissoesPorJanela"];
+    var janelaBruto = configuration["RateLimiting:ConvitesAnonimos:JanelaEmSegundos"];
+
+    if (!int.TryParse(permissoesBruto, out var permissoes) || permissoes <= 0)
+    {
+        throw new InvalidOperationException(
+            $"Configuração inválida: RateLimiting:ConvitesAnonimos:PermissoesPorJanela = \"{permissoesBruto}\". Esperado um inteiro positivo.");
+    }
+
+    if (!int.TryParse(janelaBruto, out var janela) || janela <= 0)
+    {
+        throw new InvalidOperationException(
+            $"Configuração inválida: RateLimiting:ConvitesAnonimos:JanelaEmSegundos = \"{janelaBruto}\". Esperado um inteiro positivo.");
+    }
+
+    return (permissoes, janela);
+}
+
 if (app.Configuration.GetValue<bool>("RunMigrationsOnStartup"))
 {
     app.Services.ApplyPendingMigrations();
@@ -176,6 +222,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
+// Rate limiter antes de MapControllers — middleware mapeado por policy
+// aplica RejectionStatusCode (429) quando a contagem da janela é excedida
+// (issue #89).
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 
