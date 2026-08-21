@@ -1,6 +1,6 @@
 import { Link, usePathname } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 
 import { AlternadorDePapel, type AlternadorDePapelProps } from '@/components/organisms/AlternadorDePapel';
 import { useSessao } from '@/lib/auth/contexto-sessao';
@@ -61,30 +61,50 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
   const temVariosPapeis = papeis.length > 1;
 
   return (
-    <View className={telaLarga ? 'w-full' : 'relative'}>
+    <View testID="menu-navegacao-raiz" className={telaLarga ? '' : 'relative'}>
       {telaLarga ? null : (
         <BotaoAlternarMenu aberto={aberto} aoAlternar={() => setAberto((atual) => !atual)} />
       )}
+      {!telaLarga && aberto && Platform.OS === 'web' ? (
+        // Fundo escurecido cobrindo o resto da tela enquanto o menu mobile
+        // está aberto — sem isso, o corpo do Painel (que mostra as MESMAS
+        // ações como cards, ver `app/painel/index.tsx`) fica visível ao
+        // redor do dropdown, e a coincidência de texto idêntico passa a
+        // impressão de "menu quebrado, sem fundo" mesmo com o dropdown
+        // corretamente desenhado (achado de dev-review, PR #125/#129).
+        // `position: fixed` (só existe como valor de CSS — daí o guard de
+        // `Platform.OS`, React Native nativo só aceita `absolute`/
+        // `relative`/`static`) cobre o viewport inteiro, não só a área do
+        // cabeçalho. Toque fora do menu fecha (convenção de dropdown/menu
+        // overlay, Nielsen #3 — controle e liberdade do usuário).
+        <Pressable
+          testID="fundo-menu-navegacao"
+          accessibilityLabel="Fechar menu"
+          onPress={() => setAberto(false)}
+          className="z-10 bg-black/40"
+          style={{ position: 'fixed' as 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+      ) : null}
       {exibirSeccoes ? (
         <View
+          testID="dropdown-menu-navegacao"
           className={
             telaLarga
-              ? 'w-full flex-row flex-wrap items-center gap-three border-t border-border py-two dark:border-dark-border'
-              : 'absolute left-0 top-full z-10 min-w-[220px] gap-two rounded-medium border border-border bg-background p-three shadow-md dark:border-dark-border dark:bg-dark-background'
+              ? 'flex-row flex-wrap items-center gap-three border-t border-border py-two dark:border-dark-border'
+              : 'absolute left-0 top-full z-20 min-w-[220px] gap-two rounded-medium border border-border bg-background p-three shadow-md dark:border-dark-border dark:bg-dark-background'
           }
         >
           {temVariosPapeis ? (
             <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={onSelecionarPapel} />
           ) : null}
-          <View className={telaLarga ? 'flex-row flex-wrap items-center gap-three' : 'gap-one'}>
-            {todasSecoes.map((secao) => (
-              <ItemDeSecao
-                key={secao.label}
-                secao={secao}
-                ativo={secao.label === secaoAtiva?.label}
-              />
-            ))}
-          </View>
+          {todasSecoes.map((secao) => (
+            <ItemDeSecao
+              key={secao.label}
+              secao={secao}
+              ativo={secao.label === secaoAtiva?.label}
+              largoTotal={!telaLarga}
+            />
+          ))}
         </View>
       ) : null}
     </View>
@@ -128,16 +148,41 @@ function IconeHamburguer({ aberto }: { aberto: boolean }) {
   );
 }
 
-function ItemDeSecao({ secao, ativo }: { secao: Secao; ativo: boolean }) {
+/**
+ * `Link` do expo-router renderiza um `<a>` no web — sem um `View` de
+ * fora garantindo o box model, o navegador pode tratar o `<a>` como
+ * elemento inline e não participar do layout de coluna do dropdown do
+ * jeito esperado, deixando o item "escapar" do fundo opaco do menu
+ * (achado visual do dev-review, PR #125/#129: com várias seções, os
+ * últimos itens apareciam sem o fundo da caixa, sobrepostos ao conteúdo
+ * da tela por trás). O `View` aqui é quem carrega borda/padding/fundo —
+ * o `Link` fica só com o comportamento de navegação.
+ */
+function ItemDeSecao({
+  secao,
+  ativo,
+  largoTotal,
+}: {
+  secao: Secao;
+  ativo: boolean;
+  /** Dropdown mobile: cada item ocupa a largura toda da caixa (coluna).
+   *  Faixa desktop: os itens ficam lado a lado (`flex-row flex-wrap` do
+   *  pai), então não podem forçar `w-full` sob pena de empilhar um por
+   *  linha (achado ao verificar visualmente esta correção — a primeira
+   *  versão do fix de #129 aplicava `w-full` sempre e quebrou o desktop). */
+  largoTotal: boolean;
+}) {
   const destaque = ativo ? 'bg-background-selected dark:bg-dark-background-selected' : '';
   return (
-    <Link
-      href={secao.href}
-      accessibilityRole="link"
-      accessibilityState={{ selected: ativo }}
-      className={`border-b border-border px-four py-three dark:border-dark-border ${destaque}`}
-    >
-      <Text>{secao.label}</Text>
-    </Link>
+    <View className={`${largoTotal ? 'w-full' : ''} border-b border-border dark:border-dark-border ${destaque}`}>
+      <Link
+        href={secao.href}
+        accessibilityRole="link"
+        accessibilityState={{ selected: ativo }}
+        className="px-four py-three"
+      >
+        <Text>{secao.label}</Text>
+      </Link>
+    </View>
   );
 }

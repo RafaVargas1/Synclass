@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 
 import { MenuNavegacao } from './MenuNavegacao';
 
@@ -189,5 +189,58 @@ describe('MenuNavegacao (issue #77)', () => {
 
     expect(screen.getByTestId('secao-link-/aluno/valor-devido')).toBeTruthy();
     expect(screen.queryByTestId('secao-link-/professor/abc-123/horarios')).toBeNull();
+  });
+
+  it('em modo mobile aberto, todos os 6 itens são filhos diretos do dropdown com fundo opaco (issue #129)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(false);
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+
+    await render(
+      <MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Abrir menu'));
+
+    // O container do dropdown é marcado com testID e é o único elemento com
+    // a classe de fundo de superfície + sombra. RNTL não mede pixel: este
+    // teste garante que os 6 itens (5 seções de Professor + "Meu perfil")
+    // são descendentes desse mesmo container — nenhum item fica de fora da
+    // caixa com fundo opaco. `within` em vez de andar em `.children`
+    // diretamente: a estrutura interna (Link envolto num View, achado de
+    // dev-review do PR #129 — Link sozinho não participava do box model
+    // do dropdown no navegador) pode aninhar mais um nível sem quebrar
+    // este teste.
+    const dropdown = screen.getByTestId('dropdown-menu-navegacao');
+    const itens = within(dropdown).getAllByTestId(/^secao-link-/);
+
+    const etiquetas = itens.map((item) => item.props.testID);
+
+    expect(etiquetas).toEqual([
+      'secao-link-/professor/alunos/cadastro',
+      'secao-link-/professor/abc-123/horarios',
+      'secao-link-/professor/abc-123/alocacoes',
+      'secao-link-/professor/abc-123/convites/novo',
+      'secao-link-/professor/abc-123/valor-devido',
+      'secao-link-/perfil',
+    ]);
+  });
+
+  it('em modo desktop, a raiz do MenuNavegacao não força largura total sozinha (issue #129)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(true);
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+
+    await render(
+      <MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    // A raiz do menu (view externa que também abriga o botão de alternar em
+    // mobile) não pode carregar `w-full`/`flex-1` diretamente — isso faria a
+    // faixa de seções de largura total competir no mesmo `flex-row` do
+    // cabeçalho com `Logotipo`, empurrando a marca para longe do canto.
+    const raiz = screen.getByTestId('menu-navegacao-raiz');
+    const classeDaRaiz: string = raiz.props.className;
+
+    expect(classeDaRaiz).not.toContain('w-full');
+    expect(classeDaRaiz).not.toContain('flex-1');
   });
 });
