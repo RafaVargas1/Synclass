@@ -35,9 +35,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/67
       explicando que o novo valor foi validado por teste automatizado
       (ratio contra `backgroundElement`/`backgroundSelected` e contraste de
       texto).
-- [ ] Validação visual (captura de tela): rode o app web (`npm run web` ou
+- [x] Validação visual (captura de tela): rode o app web (`npm run web` ou
       equivalente já documentado no README do frontend) e capture uma tela
       com cards empilhados (Painel do Professor ou do Aluno) no modo claro,
       confirmando visualmente que a escada `background` → `background-
       element` → `background-selected` continua perceptível. Anexe a
       captura como comentário no PR (não precisa virar arquivo commitado).
+      Feito em 2026-08-21 (Etapa B) — captura em
+      `docs/specs/67-paleta-clara/evidencias/painel-modo-claro.png`, escada
+      `#F9FAFB` → elemento → selecionado visivelmente perceptível.
