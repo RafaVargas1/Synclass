@@ -4,10 +4,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/68
 
 ## Ordem de execução
 
-- [ ] Teste de componente: `Topbar` — não referencia mais `ZigzagDivider` (remove o teste/import legado se existir; o `border-b border-border` do container externo já é a única linha divisória)
-- [ ] Implementação: remove `<ZigzagDivider />` de `Topbar.tsx` e o import correspondente
-- [ ] Implementação: remove `frontend/src/components/atoms/ZigzagDivider.tsx` (sem outros usos no repo)
-- [ ] Docs: nenhuma atualização necessária em `design-system.md` — o divisor passa a ser só o padrão de borda já documentado em "Forma e elevação", não introduz técnica nova
+- [x] Teste de componente: `Topbar` — não referencia mais `ZigzagDivider` (remove o teste/import legado se existir; o `border-b border-border` do container externo já é a única linha divisória)
+- [x] Implementação: remove `<ZigzagDivider />` de `Topbar.tsx` e o import correspondente
+- [x] Implementação: remove `frontend/src/components/atoms/ZigzagDivider.tsx` (sem outros usos no repo)
+- [x] Docs: nenhuma atualização necessária em `design-system.md` — o divisor passa a ser só o padrão de borda já documentado em "Forma e elevação", não introduz técnica nova
 
 ### Inconsistências encontradas
 
