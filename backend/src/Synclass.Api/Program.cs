@@ -129,6 +129,11 @@ builder.Services.AddSingleton<IGeradorDeTokenSessao>(sp => new GeradorDeTokenSes
     sp.GetRequiredService<IClock>()));
 builder.Services.AddScoped<LoginService>();
 
+// Login via idToken do Google (issue #65) — fluxo paralelo ao login OTP,
+// não o substitui. Ver docs/specs/65-login-google/implementation.md.
+builder.Services.AddScoped<IValidadorDeIdTokenGoogle, ValidadorDeIdTokenGoogle>();
+builder.Services.AddScoped<LoginComGoogleService>();
+
 // Convite de Aluno via WhatsApp (issue #2) — ver
 // docs/specs/2-convite-whatsapp/implementation.md.
 builder.Services.AddScoped<IConviteRepository, ConviteRepository>();

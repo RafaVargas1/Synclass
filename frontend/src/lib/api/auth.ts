@@ -13,6 +13,11 @@ export type ConfirmarCodigoResultado =
   | { sucesso: true; token: string; nome: string; papeis: string[] }
   | { sucesso: false; mensagem: string };
 
+export type LoginGoogleResultado =
+  | { sucesso: true; token: string; nome: string; papeis: string[] }
+  | { sucesso: false; cadastroPendente: true; email: string }
+  | { sucesso: false; mensagem: string };
+
 type CorpoResposta = Record<string, unknown> | null;
 
 type RespostaComando = { ok: true; corpo: CorpoResposta } | { ok: false; mensagem: string };
@@ -52,6 +57,36 @@ export async function confirmarCodigo(input: ConfirmarCodigoInput): Promise<Conf
   const resposta = await enviarComando('/auth/confirmacao', input);
   if (!resposta.ok) {
     return { sucesso: false, mensagem: resposta.mensagem };
+  }
+
+  return {
+    sucesso: true,
+    token: (resposta.corpo?.token as string) ?? '',
+    nome: (resposta.corpo?.nome as string) ?? '',
+    papeis: (resposta.corpo?.papeis as string[]) ?? [],
+  };
+}
+
+/**
+ * Envolve o `fetch` de POST /auth/google (issue #65): idToken do Google já
+ * validado na Api. Mesmo contrato tipado de `solicitarCodigo`/
+ * `confirmarCodigo` — nunca lança — acrescido do desfecho de cadastro
+ * pendente, quando o e-mail do idToken ainda não corresponde a nenhum
+ * usuário (a Api não cria conta implicitamente; ver
+ * docs/spec/business-rules.md#identidade-de-usuário).
+ */
+export async function loginComGoogle(idToken: string): Promise<LoginGoogleResultado> {
+  const resposta = await enviarComando('/auth/google', { idToken });
+  if (!resposta.ok) {
+    return { sucesso: false, mensagem: resposta.mensagem };
+  }
+
+  if (resposta.corpo?.cadastroPendente === true) {
+    return {
+      sucesso: false,
+      cadastroPendente: true,
+      email: (resposta.corpo.email as string) ?? '',
+    };
   }
 
   return {
