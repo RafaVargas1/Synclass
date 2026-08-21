@@ -5,11 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
+import { Heading } from '@/components/atoms/Heading';
 import { AlternadorDePapel } from '@/components/organisms/AlternadorDePapel';
 import { Topbar } from '@/components/organisms/Topbar';
 import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
+import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
 import { MaxContentWidth } from '@/theme/tokens';
 
 const MensagemErroUsuarioId =
@@ -139,6 +141,17 @@ function ItemDeAcao({ acao }: { acao: Acao }) {
 }
 
 /**
+ * Saudação de topo do Painel (issue #69): `"{Saudação}, {nome}"`, com o
+ * período derivado da hora atual via `periodoDoDia`. Só renderiza quando o
+ * `nome` do perfil resolve via `GET /usuarios/me` — antes disso não há o
+ * que cumprimentar.
+ */
+function Saudacao({ nome }: { nome: string }) {
+  const saudacao = saudacaoPorPeriodo[periodoDoDia(new Date().getHours())];
+  return <Heading>{`${saudacao}, ${nome}`}</Heading>;
+}
+
+/**
  * Tela pós-login (issue #4): landing após confirmar o código OTP
  * (app/login/verificar.tsx). Alterna o conteúdo conforme o papel ativo
  * quando o usuário acumula mais de um papel. Ações por papel viram
@@ -162,6 +175,7 @@ export default function PainelScreen() {
         className="w-full flex-1 self-center gap-five px-four py-five"
         style={{ maxWidth: MaxContentWidth }}
       >
+        {nome ? <Saudacao nome={nome} /> : null}
         <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={definirPapelAtivo} />
         {erro ? <ErroAcoesProfessor onTentarNovamente={tentarNovamente} /> : null}
         <ListaDeAcoes acoes={acoesDoPapel(papelAtivo, usuarioId)} />

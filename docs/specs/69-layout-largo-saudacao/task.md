@@ -19,11 +19,11 @@ Card: https://github.com/RafaVargas1/Synclass/issues/69
       Professor continua recebendo `usuarioId` como antes; erro de rede
       continua marcando `erro`/`tentarNovamente` do jeito que já existe.
 - [x] Implementação mínima do item acima.
-- [ ] Teste de componente: `PainelScreen` exibe `"{Saudação}, {nome}"` no
+- [x] Teste de componente: `PainelScreen` exibe `"{Saudação}, {nome}"` no
       topo (acima de `AlternadorDePapel`) usando `periodoDoDia(new
       Date().getHours())` — mock de `Date` pra cobrir os 3 períodos (ou
       mock direto de `periodoDoDia`, o que for mais simples de manter).
-- [ ] Implementação mínima: adiciona o texto de saudação em
+- [x] Implementação mínima: adiciona o texto de saudação em
       `PainelScreen`, usando `Heading` (ou `Text` com o mesmo estilo de
       título já usado nas outras telas) — sem novo componente/molecule
       dedicado, é um `Heading` + `periodoDoDia`.
