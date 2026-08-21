@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
-import { periodoDoDia } from '@/lib/periodoDoDia';
 
 import PainelScreen from './index';
 
@@ -17,6 +16,17 @@ jest.mock('expo-router', () => {
   };
 });
 
+// TopbarAutenticada (#77) monta o MenuNavegacao real, que já tem sua
+// própria suíte (MenuNavegacao.test.tsx). Mockado aqui pra manter este
+// arquivo focado no contrato do próprio Painel (conteúdo do corpo), sem
+// duplicar as seções da ListaDeAcoes com testID colidindo com o menu.
+jest.mock('@/components/organisms/TopbarAutenticada', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    TopbarAutenticada: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+  };
+});
+
 jest.mock('@/lib/auth/contexto-sessao', () => ({
   useSessao: jest.fn(),
 }));
@@ -25,14 +35,8 @@ jest.mock('@/lib/api/usuarios', () => ({
   buscarPerfil: jest.fn(),
 }));
 
-jest.mock('@/lib/periodoDoDia', () => {
-  const actual = jest.requireActual('@/lib/periodoDoDia');
-  return { ...actual, periodoDoDia: jest.fn() };
-});
-
 const useSessaoMock = useSessao as jest.Mock;
 const buscarPerfilMock = buscarPerfil as jest.Mock;
-const periodoDoDiaMock = periodoDoDia as jest.Mock;
 
 describe('PainelScreen', () => {
   beforeEach(() => {
@@ -40,7 +44,6 @@ describe('PainelScreen', () => {
     useSessaoMock.mockReset();
     buscarPerfilMock.mockReset();
     buscarPerfilMock.mockResolvedValue({ sucesso: false, mensagem: 'erro' });
-    periodoDoDiaMock.mockReturnValue('manha');
   });
 
   it('redirects to /login when there is no saved session', async () => {
@@ -100,8 +103,7 @@ describe('PainelScreen', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
-  it('links the Aluno actions to their real screens and still fetches the perfil for the name', async () => {
-    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'aluno-1', nome: 'Bia' });
+  it('links the Aluno actions to their real screens, without a papel switch', async () => {
     useSessaoMock.mockReturnValue({
       carregando: false,
       token: 'token-jwt',
@@ -116,7 +118,7 @@ describe('PainelScreen', () => {
       'Ver histórico de frequência',
     );
     expect(screen.getByTestId('link-/aluno/valor-devido')).toHaveTextContent('Ver valor devido');
-    await waitFor(() => expect(buscarPerfilMock).toHaveBeenCalledTimes(1));
+    expect(buscarPerfilMock).not.toHaveBeenCalled();
   });
 
   it('links the Professor actions that need the own usuarioId, resolved from /usuarios/me', async () => {
@@ -167,7 +169,7 @@ describe('PainelScreen', () => {
     expect(screen.getByTestId('link-/professor/alunos/cadastro')).toBeTruthy();
   });
 
-  it('marks erro/tentarNovamente when /usuarios/me fails, and recovers on retry', async () => {
+  it('shows an error with a retry button when /usuarios/me fails, and retries on press', async () => {
     buscarPerfilMock
       .mockResolvedValueOnce({ sucesso: false, mensagem: 'erro' })
       .mockResolvedValueOnce({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
@@ -238,7 +240,7 @@ describe('PainelScreen', () => {
     expect(screen.queryByTestId('link-/professor/alunos/cadastro')).toBeNull();
   });
 
-  it('shows a link to the perfil screen', async () => {
+  it('shows a button (not a text link) to the perfil screen', async () => {
     useSessaoMock.mockReturnValue({
       carregando: false,
       token: 'token-jwt',
@@ -249,7 +251,8 @@ describe('PainelScreen', () => {
 
     await render(<PainelScreen />);
 
-    expect(screen.getByText('Meu perfil')).toBeTruthy();
+    expect(screen.getByTestId('link-/perfil')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Meu perfil' })).toBeTruthy();
   });
 
   it('calls sair when the Sair button is pressed', async () => {
@@ -267,49 +270,5 @@ describe('PainelScreen', () => {
     await fireEvent.press(screen.getByText('Sair'));
 
     expect(sair).toHaveBeenCalled();
-  });
-});
-
-describe('PainelScreen saudação', () => {
-  beforeEach(() => {
-    mockRouterReplace.mockReset();
-    useSessaoMock.mockReset();
-    buscarPerfilMock.mockReset();
-    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
-  });
-
-  it.each([
-    ['manha', 'Bom dia'],
-    ['tarde', 'Boa tarde'],
-    ['noite', 'Boa noite'],
-  ])('exibe "{saudacao}, Ana" para o período %s', async (periodo, saudacao) => {
-    periodoDoDiaMock.mockReturnValue(periodo);
-    useSessaoMock.mockReturnValue({
-      carregando: false,
-      token: 'token-jwt',
-      papeis: ['Professor'],
-      papelAtivo: 'Professor',
-      definirPapelAtivo: jest.fn(),
-    });
-
-    await render(<PainelScreen />);
-
-    await waitFor(() => expect(screen.getByText(`${saudacao}, Ana`)).toBeTruthy());
-  });
-
-  it('mostra a saudação junto com o AlternadorDePapel quando o perfil resolve', async () => {
-    periodoDoDiaMock.mockReturnValue('tarde');
-    useSessaoMock.mockReturnValue({
-      carregando: false,
-      token: 'token-jwt',
-      papeis: ['Professor', 'Aluno'],
-      papelAtivo: 'Professor',
-      definirPapelAtivo: jest.fn(),
-    });
-
-    await render(<PainelScreen />);
-
-    expect(screen.getByText('Boa tarde, Ana')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Professor', selected: true })).toBeTruthy();
   });
 });
