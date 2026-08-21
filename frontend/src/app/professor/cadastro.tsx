@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,7 +7,7 @@ import { CadastroConfirmado } from '@/components/molecules/CadastroConfirmado';
 import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
-import { useSessao } from '@/lib/auth/contexto-sessao';
+import { useAutenticadoGoogle } from '@/lib/auth/useAutenticadoGoogle';
 import { useCadastroUsuario } from '@/lib/useCadastroUsuario';
 import { MaxContentWidth } from '@/theme/tokens';
 
@@ -19,14 +19,15 @@ import { MaxContentWidth } from '@/theme/tokens';
  * (vindo do login quando o cadastro está pendente) pré-preenche o campo de
  * contato via `contatoInicial` — sem sobrescrever o que o usuário digitar
  * depois. Quando o `BotaoLoginGoogle` bem-sucedido encontra um usuário já
- * existente, persiste a sessão e vai para `/painel`; quando o e-mail ainda
- * não tem conta, o próprio cadastro é o destino, então só pré-preenche o
- * contato com o e-mail do Google.
+ * existente, `useAutenticadoGoogle` (compartilhado com Home/Login, issue
+ * #121) persiste a sessão e navega pra `/painel`, com o mesmo tratamento de
+ * falha ao gravar no dispositivo; quando o e-mail ainda não tem conta, o
+ * próprio cadastro é o destino, então só pré-preenche o contato com o
+ * e-mail do Google.
  */
 export default function CadastroProfessorScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
-  const router = useRouter();
-  const { definirSessao } = useSessao();
+  const { handleAutenticadoGoogle, erroGoogle } = useAutenticadoGoogle();
   const {
     nome,
     contato,
@@ -44,17 +45,6 @@ export default function CadastroProfessorScreen() {
     { contatoInicial: email },
   );
 
-  async function handleAutenticado({
-    token,
-    papeis,
-  }: {
-    token: string;
-    papeis: string[];
-  }) {
-    await definirSessao(token, papeis);
-    router.replace('/painel');
-  }
-
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <Topbar titulo="Cadastro de Professor" />
@@ -69,7 +59,7 @@ export default function CadastroProfessorScreen() {
             <CadastroUsuarioForm
               nome={nome}
               contato={contato}
-              erro={erro}
+              erro={erro ?? erroGoogle}
               enviando={enviando}
               nomeReadonly={nomeReadonly}
               onChangeNome={setNome}
@@ -78,7 +68,7 @@ export default function CadastroProfessorScreen() {
               onSubmit={handleSubmit}
             />
             <BotaoLoginGoogle
-              onAutenticado={handleAutenticado}
+              onAutenticado={handleAutenticadoGoogle}
               onCadastroPendente={setContato}
             />
           </>

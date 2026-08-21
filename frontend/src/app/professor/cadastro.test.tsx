@@ -142,6 +142,20 @@ describe('CadastroProfessorScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith('/painel');
   });
 
+  it('shows an inline error and does not navigate when persisting the session fails (issue #121)', async () => {
+    definirSessaoMock.mockRejectedValue(new Error('falha ao gravar no dispositivo'));
+    await render(<CadastroProfessorScreen />);
+
+    await act(async () => {
+      botaoProps.onAutenticado({ token: 'token-google', nome: 'Maria Silva', papeis: ['Professor'] });
+    });
+
+    expect(
+      screen.getByText('Não foi possível concluir o login neste dispositivo. Tente novamente.'),
+    ).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it('pre-fills the contact field with the Google e-mail when the account has no user yet', async () => {
     await render(<CadastroProfessorScreen />);
 
