@@ -69,6 +69,24 @@ describe('HorarioAlocacaoCard', () => {
     expect(onDesalocar).toHaveBeenCalledWith('h1', 'a1');
   });
 
+  it('gives the Remover button a touch target of at least 44x44 (issue #115)', async () => {
+    await render(
+      <HorarioAlocacaoCard
+        horario={{ ...horario, limiteAlunos: 1 }}
+        alunos={[alunos[0]]}
+        alocacoes={alocacoes}
+        onAlocar={jest.fn()}
+        onDesalocar={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Remover')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remover' })).toHaveStyle({
+      minWidth: 44,
+      minHeight: 44,
+    });
+  });
+
   it('offers only alunos not yet allocated in the selector', async () => {
     await render(
       <HorarioAlocacaoCard

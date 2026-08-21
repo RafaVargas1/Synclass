@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { AlvoDeToqueMinimo } from '@/theme/tokens';
+
 export type ChipSelectorOption<T> = {
   valor: T;
   rotulo: string;
@@ -51,7 +53,8 @@ function Chip({ rotulo, selecionado, onPress }: ChipProps) {
       accessibilityRole="button"
       accessibilityState={{ selected: selecionado }}
       onPress={onPress}
-      className={`rounded-small border px-two py-one ${corDeFundo}`}
+      className={`rounded-small border px-two py-one items-center justify-center ${corDeFundo}`}
+      style={AlvoDeToqueMinimo}
     >
       <Text className={corDoTexto}>{rotulo}</Text>
     </Pressable>

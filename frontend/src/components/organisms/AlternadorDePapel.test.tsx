@@ -46,4 +46,18 @@ describe('AlternadorDePapel', () => {
 
     expect(toJSON()).toBeNull();
   });
+
+  it('gives every aba a touch target of at least 44x44 (Fitts/HIG), not just the small visual tab', async () => {
+    const papeis = ['Professor', 'Aluno'];
+    await render(
+      <AlternadorDePapel papeis={papeis} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    for (const papel of papeis) {
+      expect(screen.getByRole('button', { name: papel })).toHaveStyle({
+        minWidth: 44,
+        minHeight: 44,
+      });
+    }
+  });
 });

@@ -66,6 +66,13 @@ describe('HorarioCard', () => {
     expect(onRemover).toHaveBeenCalledWith('h1');
   });
 
+  it('gives the Remover and Editar política buttons a touch target of at least 44x44 (Fitts/HIG)', async () => {
+    await renderComCard();
+
+    expect(screen.getByText('Remover').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
+    expect(screen.getByText('Editar política').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
+  });
+
   describe('modo de edição de política (issue #71)', () => {
     it('switches to edit mode with a ChipSelector when "Editar política" is pressed', async () => {
       await renderComCard();
@@ -75,6 +82,15 @@ describe('HorarioCard', () => {
       expect(screen.getByText('Política de marcação')).toBeTruthy();
       expect(screen.getByText('Salvar')).toBeTruthy();
       expect(screen.getByText('Cancelar')).toBeTruthy();
+    });
+
+    it('gives the Cancelar and Salvar buttons a touch target of at least 44x44 (Fitts/HIG)', async () => {
+      await renderComCard();
+
+      await fireEvent.press(screen.getByText('Editar política'));
+
+      expect(screen.getByText('Cancelar').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
+      expect(screen.getByText('Salvar').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
     });
 
     it('calls onAlterarPolitica with the horario id and the selected tipo when saved', async () => {

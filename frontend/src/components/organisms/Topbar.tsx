@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Marca } from '@/components/atoms/Marca';
 import { useTituloDaAba } from '@/lib/useTituloDaAba';
-import { Fonts, MaxContentWidth } from '@/theme/tokens';
+import { AlvoDeToqueMinimo, Fonts, MaxContentWidth } from '@/theme/tokens';
 
 export type TopbarProps = {
   /** Quando presente, mostra seta de voltar + este título em vez da marca. */
@@ -70,7 +70,7 @@ function TituloComVoltar({ titulo }: { titulo: string }) {
         accessibilityLabel="Voltar"
         onPress={voltar}
         className="items-center justify-center"
-        style={{ minWidth: 44, minHeight: 44 }}
+        style={AlvoDeToqueMinimo}
       >
         <View
           className="border-l-2 border-t-2 border-text dark:border-dark-text"

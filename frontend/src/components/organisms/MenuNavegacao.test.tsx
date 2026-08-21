@@ -108,6 +108,15 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(screen.getByLabelText('Fechar menu')).toBeTruthy();
   });
 
+  it('gives the abrir/fechar menu button a touch target of at least 44x44 (issue #115)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(false);
+    mockUsePathname.mockReturnValue('/aluno/valor-devido');
+
+    await render(<MenuNavegacao papeis={['Aluno']} papelAtivo="Aluno" onSelecionarPapel={jest.fn()} />);
+
+    expect(screen.getByLabelText('Abrir menu')).toHaveStyle({ minWidth: 44, minHeight: 44 });
+  });
+
   it('em viewport estreita e menu fechado, o AlternadorDePapel não aparece solto (só junto das seções)', async () => {
     mockUseIsTelaLarga.mockReturnValue(false);
     mockUsePathname.mockReturnValue('/professor/abc-123/horarios');

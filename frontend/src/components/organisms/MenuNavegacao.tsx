@@ -7,6 +7,7 @@ import { useSessao } from '@/lib/auth/contexto-sessao';
 import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
 import { useIsTelaLarga } from '@/lib/useIsTelaLarga';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
+import { AlvoDeToqueMinimo } from '@/theme/tokens';
 
 /**
  * Devolve a primeira seção cuja rota (já com o segmento dinâmico resolvido
@@ -74,7 +75,13 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
 function BotaoAlternarMenu({ aberto, aoAlternar }: { aberto: boolean; aoAlternar: () => void }) {
   const rotulo = aberto ? 'Fechar menu' : 'Abrir menu';
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={rotulo} onPress={aoAlternar}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={rotulo}
+      onPress={aoAlternar}
+      className="items-center justify-center"
+      style={AlvoDeToqueMinimo}
+    >
       <Text>{rotulo}</Text>
     </Pressable>
   );

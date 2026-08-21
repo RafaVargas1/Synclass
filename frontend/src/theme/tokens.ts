@@ -3,7 +3,7 @@
  * Os valores em si vivem em ./palette.js (fonte única também consumida por
  * tailwind.config.js). Ver docs/spec/architecture.md#frontend-atomic-design.
  */
-import { Platform } from 'react-native';
+import { Platform, type ViewStyle } from 'react-native';
 
 import palette from './palette.js';
 
@@ -61,3 +61,13 @@ export const MaxContentWidth = 800;
  * confundido com o token genérico de formulário.
  */
 export const MaxContentWidthPainel = 1120;
+
+/**
+ * Área de toque mínima (Fitts/WCAG 2.5.8/HIG/Material —
+ * docs/spec/ux-heuristics.md#alvos-de-toque): 44×44pt, aplicada via
+ * `style` (não `className`) em todo `Pressable` cujo desenho visual é
+ * menor que isso. Constante única em vez do literal `{ minWidth: 44,
+ * minHeight: 44 }` repetido em cada componente (achado de dev-review,
+ * PR #122).
+ */
+export const AlvoDeToqueMinimo: ViewStyle = { minWidth: 44, minHeight: 44 };

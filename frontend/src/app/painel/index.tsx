@@ -9,7 +9,7 @@ import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
-import { MaxContentWidthPainel } from '@/theme/tokens';
+import { AlvoDeToqueMinimo, MaxContentWidthPainel } from '@/theme/tokens';
 
 /**
  * Saudação de topo do Painel (issue #69): `"{Saudação}, {nome}"`, com o
@@ -62,7 +62,12 @@ export default function PainelScreen() {
 
 function BotaoSair({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className="items-center justify-center"
+      style={AlvoDeToqueMinimo}
+    >
       <Text className="text-sm font-semibold text-text dark:text-dark-text">Sair</Text>
     </Pressable>
   );

@@ -43,6 +43,8 @@ const valorDevidoSemRegra = {
   semRegraDefinida: true,
 };
 
+const modos = ['Todos', 'Este mês', 'Personalizado'];
+
 describe('ValorDevidoScreen', () => {
   beforeEach(() => {
     listarValorDevidoMock.mockReset();
@@ -126,5 +128,17 @@ describe('ValorDevidoScreen', () => {
     expect(ultimaChamada[0]).toBe('professor-1');
     expect(ultimaChamada[1].inicio.endsWith('-01')).toBe(true);
     expect(ultimaChamada[1].fim.endsWith('-06')).toBe(true);
+  });
+
+  it('gives every filter chip (Todos/Este mês/Personalizado) a touch target of at least 44x44 (Fitts/HIG)', async () => {
+    listarValorDevidoMock.mockResolvedValue({ sucesso: true, valoresDevidos: [] });
+    await render(<ValorDevidoScreen />);
+
+    for (const modo of modos) {
+      expect(screen.getByRole('button', { name: modo })).toHaveStyle({
+        minWidth: 44,
+        minHeight: 44,
+      });
+    }
   });
 });
