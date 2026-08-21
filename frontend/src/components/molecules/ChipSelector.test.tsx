@@ -26,4 +26,15 @@ describe('ChipSelector', () => {
 
     expect(onChange).toHaveBeenCalledWith(3);
   });
+
+  it('gives every chip a touch target of at least 44x44 (Fitts/HIG), not just the small visual chip', async () => {
+    await render(<ChipSelector label="Escolha" opcoes={opcoes} valor={2} onChange={jest.fn()} />);
+
+    for (const opcao of opcoes) {
+      expect(screen.getByRole('button', { name: opcao.rotulo })).toHaveStyle({
+        minWidth: 44,
+        minHeight: 44,
+      });
+    }
+  });
 });
