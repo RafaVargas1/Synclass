@@ -28,4 +28,4 @@ Card: https://github.com/RafaVargas1/Synclass/issues/9
 - [x] `src/lib/api/marcacoes.ts` (`listarHorariosVagos`, `marcarHorario`)
 - [x] Componente frontend: `HorarioVagoCard` (organism) + tela `aluno/[matriculaId]/professores/[professorId]/horarios.tsx`
 - [x] `npm run lint && npm run typecheck && npm test` verde
-- [ ] Editar issue `#23` (ou abrir nova) para incluir débito de sessão real também nas rotas do Aluno criadas aqui
+- [x] Editar issue `#23` (ou abrir nova) para incluir débito de sessão real também nas rotas do Aluno criadas aqui. Issue #23 já existia e foi fechada pelo PR #36 (sessão real ligada nos endpoints de #3/#8/#9).

@@ -92,7 +92,10 @@ function CardCorpo({ horario, onRemover }: { horario: Horario; onRemover: (id: s
         <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">
           {horario.duracaoMinutos} min · {rotuloLimiteAlunos}
         </Text>
-        <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">
+        <Text
+          testID="horario-politica-atual"
+          className="text-sm text-text-secondary dark:text-dark-text-secondary"
+        >
           {rotuloPolitica}
         </Text>
       </View>
