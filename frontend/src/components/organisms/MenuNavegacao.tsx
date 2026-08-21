@@ -1,9 +1,11 @@
 import { Link, usePathname } from 'expo-router';
-import { Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
 import type { AlternadorDePapelProps } from '@/components/organisms/AlternadorDePapel';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
+import { useIsTelaLarga } from '@/lib/useIsTelaLarga';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
 
 /**
@@ -23,27 +25,52 @@ function encontrarSecaoAtiva(secoes: Secao[], pathname: string): Secao | undefin
  * (mesma assinatura de props de `AlternadorDePapel` — decisão do task.md),
  * deriva a lista de seções via `secoesDoPapel` e destaca a seção ativa com
  * base em `usePathname` (match por segmento dinâmico).
+ *
+ * Dois modos de exibição conforme `useIsTelaLarga`: em viewport larga as
+ * seções ficam sempre visíveis; em estreita o menu começa fechado e só
+ * aparece ao acionar o botão de abrir (e volta a esconder-se com o de
+ * fechar).
  */
 export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: AlternadorDePapelProps) {
   const { token } = useSessao();
   const { usuarioId } = usePerfilLogado(token);
   const pathname = usePathname();
+  const telaLarga = useIsTelaLarga();
+  const [aberto, setAberto] = useState(false);
   const secoes = secoesDoPapel(papelAtivo, usuarioId);
   const secaoAtiva = encontrarSecaoAtiva(secoes, pathname);
 
   void papeis;
   void onSelecionarPapel;
 
+  const exibirSeccoes = telaLarga || aberto;
+
   return (
     <View>
-      {secoes.map((secao) => (
-        <ItemDeSecao
-          key={secao.label}
-          secao={secao}
-          ativo={secao.label === secaoAtiva?.label}
-        />
-      ))}
+      {telaLarga ? null : (
+        <BotaoAlternarMenu aberto={aberto} aoAlternar={() => setAberto((atual) => !atual)} />
+      )}
+      {exibirSeccoes ? (
+        <View>
+          {secoes.map((secao) => (
+            <ItemDeSecao
+              key={secao.label}
+              secao={secao}
+              ativo={secao.label === secaoAtiva?.label}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
+  );
+}
+
+function BotaoAlternarMenu({ aberto, aoAlternar }: { aberto: boolean; aoAlternar: () => void }) {
+  const rotulo = aberto ? 'Fechar menu' : 'Abrir menu';
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={rotulo} onPress={aoAlternar}>
+      <Text>{rotulo}</Text>
+    </Pressable>
   );
 }
 
