@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Marca } from '@/components/atoms/Marca';
+import { useTituloDaAba } from '@/lib/useTituloDaAba';
 import { Fonts, MaxContentWidth } from '@/theme/tokens';
 
 export type TopbarProps = {
@@ -25,6 +26,8 @@ export type TopbarProps = {
  * autenticado, sem alterar a API existente (`titulo`/`children`).
  */
 export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
+  useTituloDaAba(titulo ?? 'Synclass');
+
   return (
     <View className="border-b border-border bg-background dark:border-dark-border dark:bg-dark-background">
       <View

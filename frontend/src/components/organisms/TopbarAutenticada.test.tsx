@@ -10,6 +10,7 @@ jest.mock('@/lib/auth/contexto-sessao', () => ({
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+  useNavigation: () => ({ setOptions: jest.fn() }),
 }));
 
 // Espião do MenuNavegacao: a integração (item 15) só precisa que o wrapper

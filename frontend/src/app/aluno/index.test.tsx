@@ -32,6 +32,7 @@ const mockRouteParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
   useLocalSearchParams: () => ({ ...mockRouteParams }),
+  useNavigation: () => ({ setOptions: jest.fn() }),
 }));
 
 const aceitarConvitePorCodigoMock = aceitarConvitePorCodigo as jest.Mock;
