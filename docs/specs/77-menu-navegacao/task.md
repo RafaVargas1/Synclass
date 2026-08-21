@@ -23,4 +23,16 @@ Card: https://github.com/RafaVargas1/Synclass/issues/77
 
 ### Inconsistências encontradas
 
-_(Nenhuma até o momento — preencher durante a implementação se houver.)_
+1. **`MenuNavegacao` não recebe `usuarioId`, mas as seções de Professor com segmento dinâmico dependem dele.**
+
+   O item 6 diz que `MenuNavegacao` recebe só `papeis`, `papelAtivo` e `onSelecionarPapel` ("mesmas props de `AlternadorDePapel`"), derivando a lista via `secoesPorPapel`; o item 11 confirmaria isso ao integrar só com `papeis`/`papelAtivo`/`definirPapelAtivo` do `useSessao()`. Porém `secoesProfessor(usuarioId)` exige `usuarioId` para montar os hrefs das seções dinâmicas (`/professor/{usuarioId}/horarios`, `/alocacoes`, `/convites/novo`, `/valor-devido`). Sem essa prop, o menu de Professor renderiza só "Cadastrar Aluno" — nunca "Gerenciar horários" nem as demais seções, e o teste do item 5 não pode ser satisfeito.
+
+2. **"Match por segmento dinâmico" (item 5) exige hrefs-com-templates, contradizendo `secoesProfessor` (items 1-2) que produz hrefs concretos.**
+
+   O exemplo do item 5 (rota `/professor/abc-123/horarios` casa com `[professorId]`) indica que a seção carrega o segmento literal `[professorId]`. Mas `secoesProfessor` já retorna hrefs concretos com o id real substituído (e `secoesPorPapel.test.ts`, aprovado nos items 1-2, valida exatamente isso). Ou seja: para o match do item 5 funcionar, ou `secoesProfessor` passa a emitir o template `[professorId]` (quebrando o teste existente e exigindo outra forma de montar o link navegável), ou o `MenuNavegacao` precisa do `usuarioId` e o "match por segmento" vira igualdade exata de rota contra o href concreto.
+
+   **Como resolver (duas direções mutuamente exclusivas):**
+   - **(A)** adicionar prop `usuarioId` ao `MenuNavegacao` (e passá-la na integração do item 11), mantendo `secoesProfessor` como está; o "match" passa a ser por igualdade da rota com o href já resolvido — e a menção a `[professorId]` no item 5 seria só ilustrativa da natureza dinâmica do segmento, não do formato literal da seção.
+   - **(B)** fazer `secoesProfessor`/`secoesPorPapel` emitirem hrefs com o literal `[professorId]` (exigindo atualizar `secoesPorPapel.test.ts` dos items 1-2) e o `MenuNavegacao` casar rota×template segmento a segmento; o link navegável precisaria de resolução extra do id (via `useLocalSearchParams`/`useSessao`), o que reintroduz a necessidade de contexto/parâmetro não previsto nas props do item 6.
+
+   Bloqueia o item 5 (e consequentemente toda a implementação do `MenuNavegacao`). Sem decisão do mantenedor entre (A) e (B), não há como seguir sem adivinhar.
