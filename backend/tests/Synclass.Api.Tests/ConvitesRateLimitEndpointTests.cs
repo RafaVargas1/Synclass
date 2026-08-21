@@ -70,4 +70,15 @@ public sealed class ConvitesRateLimitEndpointTests
 
         resposta.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
     }
+
+    [Fact]
+    public async Task Post_AceitePorCodigo_ReturnsTooManyRequests_AoExcederLimiteNaMesmaJanela()
+    {
+        using var factory = CriarFactory();
+        var client = factory.CreateClient();
+
+        var resposta = await FazerTentativasDeAceiteAsync(client, "/convites/codigo/99999/aceite", PermissoesPorJanela + 1);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+    }
 }

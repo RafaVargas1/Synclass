@@ -77,8 +77,12 @@ public sealed class ConvitesController : ControllerBase
     /// Aceita um convite pelo código curto de 5 dígitos (issue #63) — mesmo
     /// contrato de resposta e tratamento de exceções de
     /// <see cref="Aceitar"/>, reaproveitando <see cref="AceitarConviteRequest"/>.
+    /// Endpoint anônimo sujeito ao mesmo rate limit por IP de
+    /// <see cref="Aceitar"/> (issue #89) — o keyspace de 5 dígitos (issue #62)
+    /// é o alvo da enumeração automatizada que o limite freia.
     /// </summary>
     [AllowAnonymous]
+    [EnableRateLimiting("ConvitesAnonimos")]
     [HttpPost("convites/codigo/{codigo}/aceite")]
     public async Task<IActionResult> AceitarPorCodigo(string codigo, [FromBody] AceitarConviteRequest request, CancellationToken cancellationToken)
     {
