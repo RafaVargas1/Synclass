@@ -43,7 +43,8 @@ function Aba({ papel, selecionado, onPress }: AbaProps) {
       accessibilityRole="button"
       accessibilityState={{ selected: selecionado }}
       onPress={onPress}
-      className={`rounded-small border px-two py-one ${corDeFundo}`}
+      className={`rounded-small border px-two py-one items-center justify-center ${corDeFundo}`}
+      style={{ minWidth: 44, minHeight: 44 }}
     >
       <Text className={corDoTexto}>{papel}</Text>
     </Pressable>
