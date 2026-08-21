@@ -92,7 +92,8 @@ describe('PainelScreen', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
-  it('links the Aluno actions to their real screens, without a papel switch', async () => {
+  it('links the Aluno actions to their real screens and still fetches the perfil for the name', async () => {
+    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'aluno-1', nome: 'Bia' });
     useSessaoMock.mockReturnValue({
       carregando: false,
       token: 'token-jwt',
@@ -107,7 +108,7 @@ describe('PainelScreen', () => {
       'Ver histórico de frequência',
     );
     expect(screen.getByTestId('link-/aluno/valor-devido')).toHaveTextContent('Ver valor devido');
-    expect(buscarPerfilMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(buscarPerfilMock).toHaveBeenCalledTimes(1));
   });
 
   it('links the Professor actions that need the own usuarioId, resolved from /usuarios/me', async () => {
@@ -158,7 +159,7 @@ describe('PainelScreen', () => {
     expect(screen.getByTestId('link-/professor/alunos/cadastro')).toBeTruthy();
   });
 
-  it('shows an error with a retry button when /usuarios/me fails, and retries on press', async () => {
+  it('marks erro/tentarNovamente when /usuarios/me fails, and recovers on retry', async () => {
     buscarPerfilMock
       .mockResolvedValueOnce({ sucesso: false, mensagem: 'erro' })
       .mockResolvedValueOnce({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });

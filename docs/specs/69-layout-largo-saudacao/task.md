@@ -10,7 +10,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/69
 - [x] Implementação mínima: `lib/periodoDoDia.ts`, exporta `periodoDoDia` e
       `saudacaoPorPeriodo: Record<'manha' | 'tarde' | 'noite', string>`
       (`'Bom dia'` / `'Boa tarde'` / `'Boa noite'`).
-- [ ] Teste unidade: `app/painel/index.tsx` — generaliza
+- [x] Teste unidade: `app/painel/index.tsx` — generaliza
       `useUsuarioIdLogado` (renomeia para `usePerfilLogado`) pra buscar
       `buscarPerfil()` sempre que houver `token` (não mais só quando
       `papelAtivo === 'Professor'`), expondo `usuarioId` (continua só
@@ -18,7 +18,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/69
       também recebe `nome` preenchido (hoje só Professor buscava);
       Professor continua recebendo `usuarioId` como antes; erro de rede
       continua marcando `erro`/`tentarNovamente` do jeito que já existe.
-- [ ] Implementação mínima do item acima.
+- [x] Implementação mínima do item acima.
 - [ ] Teste de componente: `PainelScreen` exibe `"{Saudação}, {nome}"` no
       topo (acima de `AlternadorDePapel`) usando `periodoDoDia(new
       Date().getHours())` — mock de `Date` pra cobrir os 3 períodos (ou
