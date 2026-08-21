@@ -206,7 +206,7 @@ harness sozinho).
 - **Disparo do harness**:
   ```bash
   node scripts/deepseek-agent.mjs --task docs/specs/<n>-<slug>/task.md \
-    --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md
+    --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md
   ```
   O harness segue **TDD estrito** por conta própria (mesma ordem do
   `task.md`: teste primeiro, vendo-o falhar, implementação mínima,

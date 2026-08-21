@@ -19,14 +19,19 @@ Leia, nesta ordem:
    validação, autorização, segredos, dados sensíveis em log.
 5. [`docs/spec/testing-standards.md`](docs/spec/testing-standards.md) —
    TDD, testes escopados vs. suíte completa, cobertura por camada.
-6. [`docs/backlog/padrao-de-issue.md`](docs/backlog/padrao-de-issue.md) —
+6. [`docs/spec/ux-heuristics.md`](docs/spec/ux-heuristics.md) — hierarquia
+   visual, alvo de toque, agrupamento, número de opções simultâneas —
+   regras de usabilidade com referência (Nielsen, Fitts, Hick, Norman
+   etc.), não opinião de estilo. Toda tela nova ou tocada por uma Task
+   passa por essas regras antes de considerar a UI pronta.
+7. [`docs/backlog/padrao-de-issue.md`](docs/backlog/padrao-de-issue.md) —
    como uma issue é estruturada; a issue do GitHub é o contrato funcional
    da tarefa.
-7. [`docs/spec/fluxo-de-feature.md`](docs/spec/fluxo-de-feature.md) — o
+8. [`docs/spec/fluxo-de-feature.md`](docs/spec/fluxo-de-feature.md) — o
    pipeline completo (ideia → merge → relatório), níveis de rigor, e a
    divisão Claude/DeepSeek por fase.
 
-Esses seis/sete arquivos, junto com
+Esses sete/oito arquivos, junto com
 [`docs/spec/decisions/`](docs/spec/decisions/) (ADRs), são o Quality
 Contract do projeto — não existe uma pasta `.ai/` separada, este conjunto
 já cumpre esse papel.
