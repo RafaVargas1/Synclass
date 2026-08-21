@@ -4,10 +4,10 @@ Card: https://github.com/RafaVargas1/Synclass/issues/69
 
 ## Ordem de execução
 
-- [ ] Teste unidade: `lib/periodoDoDia.ts` (`periodoDoDia(hora: number)`) —
+- [x] Teste unidade: `lib/periodoDoDia.ts` (`periodoDoDia(hora: number)`) —
       `0-11` retorna `'manha'`, `12-17` retorna `'tarde'`, `18-23` retorna
       `'noite'` (cobrir os limites 0, 11, 12, 17, 18, 23).
-- [ ] Implementação mínima: `lib/periodoDoDia.ts`, exporta `periodoDoDia` e
+- [x] Implementação mínima: `lib/periodoDoDia.ts`, exporta `periodoDoDia` e
       `saudacaoPorPeriodo: Record<'manha' | 'tarde' | 'noite', string>`
       (`'Bom dia'` / `'Boa tarde'` / `'Boa noite'`).
 - [ ] Teste unidade: `app/painel/index.tsx` — generaliza
