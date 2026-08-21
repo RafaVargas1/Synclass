@@ -13,8 +13,8 @@ as duas telas do Aluno pro mesmo padrão, em vez de manter
 
 - [x] Teste de componente: `aluno/historico-frequencia.tsx` — seleciona início/fim via `SeletorDeData`/`CalendarioMensal` (mock), sem simular digitação de texto; a consulta dispara ao selecionar as duas datas
 - [x] Implementação: `aluno/historico-frequencia.tsx` — troca `SeletorDePeriodo` por dois `SeletorDeData` (labels "Início"/"Fim"), removendo o botão "Consultar" explícito se a tela adotar o padrão reativo do Professor (confirmar olhando `useConsultaHistoricoFrequenciaDoAluno`/hook equivalente — ajustar pra disparar a consulta quando `inicio`/`fim` mudarem, mesmo padrão da tela do Professor)
-- [ ] Teste de componente: `aluno/valor-devido.tsx` — mesmo padrão de teste acima
-- [ ] Implementação: `aluno/valor-devido.tsx` — mesma migração
+- [x] Teste de componente: `aluno/valor-devido.tsx` — mesmo padrão de teste acima
+- [x] Implementação: `aluno/valor-devido.tsx` — mesma migração
 - [ ] Implementação: remove `frontend/src/components/molecules/SeletorDePeriodo.tsx` se, após a migração das duas telas, não houver mais nenhum import dele no repo (`grep -rn "SeletorDePeriodo" frontend/src` deve retornar só o próprio arquivo antes de apagar — confirmar zero código morto)
 
 ### Inconsistências encontradas
