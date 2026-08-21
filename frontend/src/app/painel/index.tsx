@@ -1,4 +1,4 @@
-import { Link, type Href } from 'expo-router';
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,60 +12,11 @@ import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
+import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
 import { MaxContentWidthPainel } from '@/theme/tokens';
 
 const MensagemErroUsuarioId =
   'Não foi possível carregar suas ações de Professor. Tente novamente.';
-
-type Acao = { label: string; href: Href };
-
-/**
- * Ações do Aluno (issue #44): as duas únicas telas do Aluno sem segmento
- * dinâmico na rota — `/aluno/professores/[professorId]/horarios` e
- * `.../minhas-aulas` continuam fora daqui porque `professorId`, nesse caso,
- * identifica o Professor da matrícula do Aluno, não o próprio Aluno
- * logado, e a sessão (`useSessao`) não carrega esse vínculo hoje — ver nota
- * de limitação conhecida no PR.
- */
-function acoesAluno(): Acao[] {
-  return [
-    { label: 'Ver histórico de frequência', href: '/aluno/historico-frequencia' },
-    { label: 'Ver valor devido', href: '/aluno/valor-devido' },
-  ];
-}
-
-/**
- * Ações do Professor (issue #44). `Cadastrar Aluno` não depende de
- * `usuarioId` (a Api deriva o Professor autenticado do token, issue #23).
- * As demais usam `/professor/{professorId}/...` — `professorId` é o mesmo
- * `Usuario.Id` do Professor logado (não existe uma entidade `Professor`
- * separada, ver `ProfessoresController.Cadastrar`), por isso só aparecem
- * depois que `usuarioId` resolve via `GET /usuarios/me`.
- */
-function acoesProfessor(usuarioId: string | undefined): Acao[] {
-  const acoes: Acao[] = [{ label: 'Cadastrar Aluno', href: '/professor/alunos/cadastro' }];
-
-  if (usuarioId) {
-    acoes.push(
-      { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` as Href },
-      { label: 'Alocar Aluno em horário', href: `/professor/${usuarioId}/alocacoes` as Href },
-      { label: 'Convidar Aluno', href: `/professor/${usuarioId}/convites/novo` as Href },
-      { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href },
-    );
-  }
-
-  return acoes;
-}
-
-function acoesDoPapel(papelAtivo: string | undefined, usuarioId: string | undefined): Acao[] {
-  if (papelAtivo === 'Professor') {
-    return acoesProfessor(usuarioId);
-  }
-  if (papelAtivo === 'Aluno') {
-    return acoesAluno();
-  }
-  return [];
-}
 
 type EstadoPerfilLogado = {
   usuarioId: string | undefined;
@@ -78,7 +29,7 @@ type EstadoPerfilLogado = {
  * Resolve o perfil do usuário logado via `GET /usuarios/me` (issue #44 e
  * #69): qualquer papel com `token` busca, já que `nome` alimenta a saudação
  * do Painel (Professor e Aluno) e `usuarioId` só é relevante pros links de
- * Professor (ver `acoesProfessor`). Para de buscar assim que resolve uma
+ * Professor (ver `secoesProfessor`). Para de buscar assim que resolve uma
  * vez (guarda por `usuarioId` já preenchido): sem isso, alternar entre
  * papéis via `AlternadorDePapel` refaria a chamada a cada troca, mesmo o
  * Professor não podendo ter um `usuarioId` diferente na mesma sessão
@@ -115,7 +66,7 @@ function usePerfilLogado(token: string | null): EstadoPerfilLogado {
   return { usuarioId, nome, erro, tentarNovamente: () => setTentativa((atual) => atual + 1) };
 }
 
-function ListaDeAcoes({ acoes }: { acoes: Acao[] }) {
+function ListaDeAcoes({ acoes }: { acoes: Secao[] }) {
   if (acoes.length === 0) {
     return null;
   }
@@ -129,7 +80,7 @@ function ListaDeAcoes({ acoes }: { acoes: Acao[] }) {
   );
 }
 
-function ItemDeAcao({ acao }: { acao: Acao }) {
+function ItemDeAcao({ acao }: { acao: Secao }) {
   return (
     <Link
       href={acao.href}
@@ -155,7 +106,7 @@ function Saudacao({ nome }: { nome: string }) {
  * Tela pós-login (issue #4): landing após confirmar o código OTP
  * (app/login/verificar.tsx). Alterna o conteúdo conforme o papel ativo
  * quando o usuário acumula mais de um papel. Ações por papel viram
- * navegação real (issue #44) — ver `acoesDoPapel`.
+ * navegação real (issue #44) — ver `secoesDoPapel`.
  */
 export default function PainelScreen() {
   const { carregando, token, papeis, papelAtivo, definirPapelAtivo, sair } = useSessao();
@@ -178,7 +129,7 @@ export default function PainelScreen() {
         {nome ? <Saudacao nome={nome} /> : null}
         <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={definirPapelAtivo} />
         {erro ? <ErroAcoesProfessor onTentarNovamente={tentarNovamente} /> : null}
-        <ListaDeAcoes acoes={acoesDoPapel(papelAtivo, usuarioId)} />
+        <ListaDeAcoes acoes={secoesDoPapel(papelAtivo, usuarioId)} />
         <Link href="/perfil" className="text-primary underline dark:text-dark-primary">
           Meu perfil
         </Link>
