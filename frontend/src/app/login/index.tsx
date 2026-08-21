@@ -1,9 +1,10 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
+import { Divisor } from '@/components/atoms/Divisor';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { BotaoLoginGoogle } from '@/components/molecules/BotaoLoginGoogle';
 import { SolicitarCodigoForm } from '@/components/organisms/SolicitarCodigoForm';
@@ -27,11 +28,12 @@ import { MaxContentWidth } from '@/theme/tokens';
  */
 export default function LoginScreen() {
   const router = useRouter();
+  const { email } = useLocalSearchParams<{ email?: string }>();
   const { definirSessao } = useSessao();
   const [contato, setContato] = useState('');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
-  const [emailPendente, setEmailPendente] = useState<string | undefined>(undefined);
+  const [emailPendente, setEmailPendente] = useState<string | undefined>(email);
 
   async function handleSubmit() {
     setEnviando(true);
@@ -106,7 +108,7 @@ export default function LoginScreen() {
             />
           </View>
         ) : (
-          <>
+          <View className="w-full gap-four">
             <SolicitarCodigoForm
               contato={contato}
               erro={erro}
@@ -114,11 +116,12 @@ export default function LoginScreen() {
               onChangeContato={setContato}
               onSubmit={handleSubmit}
             />
+            <Divisor texto="ou" />
             <BotaoLoginGoogle
               onAutenticado={handleAutenticado}
               onCadastroPendente={handleCadastroPendente}
             />
-          </>
+          </View>
         )}
       </View>
     </SafeAreaView>

@@ -16,9 +16,11 @@ jest.mock('@/lib/auth/contexto-sessao', () => ({
 
 const mockPush = jest.fn();
 const mockRouterReplace = jest.fn();
+const mockSearchParams = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: mockRouterReplace, back: jest.fn(), canGoBack: () => false }),
   useNavigation: () => ({ setOptions: jest.fn() }),
+  useLocalSearchParams: () => mockSearchParams(),
 }));
 
 jest.mock('@/components/molecules/BotaoLoginGoogle', () => {
@@ -37,6 +39,8 @@ describe('LoginScreen', () => {
     solicitarCodigoMock.mockReset();
     mockPush.mockReset();
     mockRouterReplace.mockReset();
+    mockSearchParams.mockReset();
+    mockSearchParams.mockReturnValue({});
     definirSessaoMock.mockReset();
     definirSessaoMock.mockResolvedValue(undefined);
     useSessaoMock.mockReset();
@@ -95,6 +99,12 @@ describe('LoginScreen', () => {
     expect(solicitarCodigoMock).not.toHaveBeenCalled();
   });
 
+  it('shows a divider between the code form and the Google button (issue #113)', async () => {
+    await render(<LoginScreen />);
+
+    expect(screen.getByText('ou')).toBeTruthy();
+  });
+
   it('persists the session and navigates to /painel when the Google login succeeds', async () => {
     await render(<LoginScreen />);
 
@@ -120,6 +130,22 @@ describe('LoginScreen', () => {
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/professor/cadastro',
       params: { email: 'nao.cadastrado@gmail.com' },
+    });
+  });
+
+  it('shows the two cadastro choices right away when an email arrives via ?email= (issue #114)', async () => {
+    mockSearchParams.mockReturnValue({ email: 'vindo.do.google@exemplo.com' });
+
+    await render(<LoginScreen />);
+
+    expect(
+      screen.getByText('Seu e-mail ainda não tem uma conta. Continue o cadastro como:'),
+    ).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('sou Professor'));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/professor/cadastro',
+      params: { email: 'vindo.do.google@exemplo.com' },
     });
   });
 
