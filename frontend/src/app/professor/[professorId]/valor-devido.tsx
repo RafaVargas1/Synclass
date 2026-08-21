@@ -76,7 +76,8 @@ function ChipDeModo({ label, selecionado, onPress }: { label: string; selecionad
       accessibilityRole="button"
       accessibilityState={{ selected: selecionado }}
       onPress={onPress}
-      className={`px-three py-two ${fundo}`}
+      className={`px-three py-two items-center justify-center ${fundo}`}
+      style={{ minWidth: 44, minHeight: 44 }}
     >
       <Text className={`text-sm font-semibold ${texto}`}>{label}</Text>
     </Pressable>
