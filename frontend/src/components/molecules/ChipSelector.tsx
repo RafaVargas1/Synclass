@@ -9,6 +9,10 @@ export type ChipSelectorOption<T> = {
 
 export type ChipSelectorProps<T> = {
   label: string;
+  /** Texto de apoio abaixo do label — explica o que cada opção significa,
+   *  quando o rótulo sozinho é jargão insuficiente (Nielsen #10, ver
+   *  `docs/spec/ux-heuristics.md`). Opcional: nem todo seletor precisa. */
+  descricao?: string;
   opcoes: readonly ChipSelectorOption<T>[];
   valor: T;
   onChange: (valor: T) => void;
@@ -22,10 +26,13 @@ export type ChipSelectorProps<T> = {
  * selecionado/não selecionado entre os dois organismos (ver
  * docs/spec/code-style.md#estilo-de-código — "sem duplicação de código").
  */
-export function ChipSelector<T>({ label, opcoes, valor, onChange }: ChipSelectorProps<T>) {
+export function ChipSelector<T>({ label, descricao, opcoes, valor, onChange }: ChipSelectorProps<T>) {
   return (
     <View className="w-full gap-one">
       <Text className="text-sm font-medium text-text dark:text-dark-text">{label}</Text>
+      {descricao ? (
+        <Text className="text-xs text-text-secondary dark:text-dark-text-secondary">{descricao}</Text>
+      ) : null}
       <View className="flex-row flex-wrap gap-one">
         {opcoes.map((opcao) => (
           <Chip

@@ -2,12 +2,12 @@ import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/atoms/Button';
 import { Heading } from '@/components/atoms/Heading';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
+import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
 import { AlvoDeToqueMinimo, MaxContentWidthPainel } from '@/theme/tokens';
 
@@ -24,19 +24,23 @@ function Saudacao({ nome }: { nome: string }) {
 
 /**
  * Tela pós-login (issue #4): landing após confirmar o código OTP
- * (app/login/verificar.tsx). Issue #77: os cards de ação por papel
- * (`ListaDeAcoes`) e o `AlternadorDePapel` que viviam aqui migraram para o
- * `MenuNavegacao` do `TopbarAutenticada` — agora disponível em toda tela
- * autenticada, não só no Painel. Renderizá-los aqui também duplicaria a
- * mesma navegação na mesma tela (achado de dev-review, PR #107: dois
- * `AlternadorDePapel`/pares de link com o mesmo nome acessível visíveis ao
- * mesmo tempo). O corpo do Painel fica só com saudação e atalho pro
- * perfil — a navegação por seção é responsabilidade do menu.
+ * (app/login/verificar.tsx). O corpo mostra as ações do papel ativo como
+ * cards — o objetivo real do app pro usuário que acabou de entrar é agir
+ * (marcar horário, ver frequência, ver quanto vai receber), não navegar até
+ * um menu escondido pra descobrir o que dá pra fazer (Nielsen #1,
+ * visibilidade do que o sistema oferece). `MenuNavegacao` (na
+ * `TopbarAutenticada`) continua disponível em toda tela pra navegar embora
+ * daqui, mas o Painel não depende dele pra mostrar as próprias ações —
+ * evita a tela ficar vazia com só uma saudação e um botão solto (achado de
+ * UX reportado pelo usuário: um CTA de "Meu perfil" do tamanho de ação
+ * primária numa tela sem mais nada, quando o próprio menu já tem esse link
+ * — ver `SecaoMeuPerfil` em `MenuNavegacao.tsx`).
  */
 export default function PainelScreen() {
-  const { carregando, token, sair } = useSessao();
+  const { carregando, token, papelAtivo, sair } = useSessao();
   useRedirecionarSemSessao(carregando, token);
-  const { nome } = usePerfilLogado(token);
+  const { usuarioId, nome } = usePerfilLogado(token);
+  const acoes = secoesDoPapel(papelAtivo, usuarioId);
 
   if (carregando || !token) {
     return null;
@@ -52,11 +56,27 @@ export default function PainelScreen() {
         style={{ maxWidth: MaxContentWidthPainel }}
       >
         {nome ? <Saudacao nome={nome} /> : null}
-        <Link href="/perfil" asChild>
-          <Button label="Meu perfil" />
-        </Link>
+        <View className="w-full flex-row flex-wrap gap-three">
+          {acoes.map((acao) => (
+            <CardDeAcao key={acao.label} acao={acao} />
+          ))}
+        </View>
       </View>
     </SafeAreaView>
+  );
+}
+
+function CardDeAcao({ acao }: { acao: Secao }) {
+  return (
+    <Link href={acao.href} asChild>
+      <Pressable
+        accessibilityRole="button"
+        className="min-w-[160px] flex-1 items-start justify-center gap-one rounded-medium border border-background-selected bg-background-element px-four py-four active:opacity-80 dark:border-dark-background-selected dark:bg-dark-background-element"
+        style={{ minHeight: 72 }}
+      >
+        <Text className="text-base font-semibold text-text dark:text-dark-text">{acao.label}</Text>
+      </Pressable>
+    </Link>
   );
 }
 

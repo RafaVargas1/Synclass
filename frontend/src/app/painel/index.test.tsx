@@ -78,17 +78,20 @@ describe('PainelScreen', () => {
     expect(mockRouterReplace).not.toHaveBeenCalled();
   });
 
-  it('shows a button (not a text link) to the perfil screen', async () => {
+  it('shows an action card for each seção of the papel ativo, not a lone "Meu perfil" CTA', async () => {
     useSessaoMock.mockReturnValue({
       carregando: false,
       token: 'token-jwt',
+      papelAtivo: 'Aluno',
       sair: jest.fn(),
     });
 
     await render(<PainelScreen />);
 
-    expect(screen.getByTestId('link-/perfil')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Meu perfil' })).toBeTruthy();
+    expect(screen.getByTestId('link-/aluno/historico-frequencia')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ver histórico de frequência' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ver valor devido' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Meu perfil' })).toBeNull();
   });
 
   it('calls sair when the Sair button is pressed', async () => {
