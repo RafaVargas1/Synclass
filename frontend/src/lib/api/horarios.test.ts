@@ -1,4 +1,10 @@
-import { criarHorario, listarHorarios, removerHorario, TipoMarcacao } from '@/lib/api/horarios';
+import {
+  alterarTipoMarcacaoHorario,
+  criarHorario,
+  listarHorarios,
+  removerHorario,
+  TipoMarcacao,
+} from '@/lib/api/horarios';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -103,6 +109,76 @@ describe('removerHorario', () => {
     mockFetchOnce(404, null);
 
     const resultado = await removerHorario('professor-1', 'h1');
+
+    expect(resultado.sucesso).toBe(false);
+  });
+});
+
+describe('alterarTipoMarcacaoHorario', () => {
+  it('returns sucesso with the updated horario when the Api responds with 200', async () => {
+    mockFetchOnce(200, {
+      id: 'h1',
+      diaSemana: 2,
+      horaInicio: '10:00:00',
+      duracaoMinutos: 60,
+      limiteAlunos: 1,
+      tipoMarcacao: TipoMarcacao.Fixo,
+    });
+
+    const resultado = await alterarTipoMarcacaoHorario(
+      'professor-1',
+      'h1',
+      TipoMarcacao.Fixo,
+    );
+
+    expect(resultado).toEqual({
+      sucesso: true,
+      horario: {
+        id: 'h1',
+        diaSemana: 2,
+        horaInicio: '10:00:00',
+        duracaoMinutos: 60,
+        limiteAlunos: 1,
+        tipoMarcacao: TipoMarcacao.Fixo,
+      },
+    });
+  });
+
+  it('returns the Api error message when the Api rejects with 400 (tipo fora do enum)', async () => {
+    mockFetchOnce(400, { mensagem: 'Tipo de marcação inválido: 9. Esperado Livre, Fixo ou Híbrido.' });
+
+    const resultado = await alterarTipoMarcacaoHorario(
+      'professor-1',
+      'h1',
+      TipoMarcacao.Fixo,
+    );
+
+    expect(resultado).toEqual({
+      sucesso: false,
+      mensagem: 'Tipo de marcação inválido: 9. Esperado Livre, Fixo ou Híbrido.',
+    });
+  });
+
+  it('returns sucesso false when the Api responds with 404', async () => {
+    mockFetchOnce(404, { mensagem: 'Horário não encontrado.' });
+
+    const resultado = await alterarTipoMarcacaoHorario(
+      'professor-1',
+      'h1',
+      TipoMarcacao.Fixo,
+    );
+
+    expect(resultado.sucesso).toBe(false);
+  });
+
+  it('returns a connection error message when fetch throws', async () => {
+    globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
+
+    const resultado = await alterarTipoMarcacaoHorario(
+      'professor-1',
+      'h1',
+      TipoMarcacao.Fixo,
+    );
 
     expect(resultado.sucesso).toBe(false);
   });
