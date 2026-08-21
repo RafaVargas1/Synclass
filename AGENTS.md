@@ -24,14 +24,19 @@ Leia, nesta ordem:
    regras de usabilidade com referência (Nielsen, Fitts, Hick, Norman
    etc.), não opinião de estilo. Toda tela nova ou tocada por uma Task
    passa por essas regras antes de considerar a UI pronta.
-7. [`docs/backlog/padrao-de-issue.md`](docs/backlog/padrao-de-issue.md) —
+7. [`docs/spec/engenharia-de-qualidade.md`](docs/spec/engenharia-de-qualidade.md)
+   — método, não forma: métricas de qualidade pra pensar durante o
+   desenho (complexidade, acoplamento, coesão), reflexão de causa raiz
+   antes da segunda tentativa de correção, e mapear o grafo de impacto
+   (quem usa/do que depende) antes de editar algo compartilhado.
+8. [`docs/backlog/padrao-de-issue.md`](docs/backlog/padrao-de-issue.md) —
    como uma issue é estruturada; a issue do GitHub é o contrato funcional
    da tarefa.
-8. [`docs/spec/fluxo-de-feature.md`](docs/spec/fluxo-de-feature.md) — o
+9. [`docs/spec/fluxo-de-feature.md`](docs/spec/fluxo-de-feature.md) — o
    pipeline completo (ideia → merge → relatório), níveis de rigor, e a
    divisão Claude/DeepSeek por fase.
 
-Esses sete/oito arquivos, junto com
+Esses oito/nove arquivos, junto com
 [`docs/spec/decisions/`](docs/spec/decisions/) (ADRs), são o Quality
 Contract do projeto — não existe uma pasta `.ai/` separada, este conjunto
 já cumpre esse papel.

@@ -127,7 +127,7 @@ orquestra, não implementa linha a linha por padrão.
 2. Dispare o harness na worktree:
    ```bash
    node scripts/deepseek-agent.mjs --task docs/specs/<n>-<slug>/task.md \
-     --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md
+     --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md,docs/spec/engenharia-de-qualidade.md
    ```
    Ele segue a ordem do `task.md` (teste → implementação mínima →
    refatora → commit → marca o item) por conta própria, com testes

@@ -1,17 +1,35 @@
 /**
- * Event tracker — estado e eventos da execução do pipeline, compartilhados
- * entre o dashboard (scripts/dashboard-server.mjs) e o harness
- * (scripts/deepseek-agent.mjs).
+ * Event tracker — cliente usado pelo harness (scripts/deepseek-agent.mjs).
  *
- * Mantém em memória: execução atual (ou última, quando IDLE), estágios e
- * fila de eventos. Nada de secrets, prompts completos ou respostas
- * completas — apenas metadados de observabilidade.
+ * Mantém estado local (execução atual, histórico, fila de eventos) pra
+ * funcionar sozinho mesmo sem nenhum dashboard rodando — nada aqui depende
+ * de rede pra operar. Além disso, cada mudança de estado é também
+ * reportada via HTTP POST fire-and-forget pra
+ * scripts/dashboard-server.mjs (se estiver rodando em algum terminal),
+ * que mantém o estado real de N execuções concorrentes (uma por
+ * worktree/Task rodando em paralelo — ver scripts/dashboard-store.mjs).
+ *
+ * Isso é client + servidor rodando em processos `node` separados: o
+ * harness não sabe (nem precisa saber) se alguém está olhando o
+ * dashboard. Se `notificarDashboard` falhar (dashboard não está de pé,
+ * porta ocupada por outra coisa, etc.) o erro é engolido silenciosamente
+ * — isso nunca pode atrasar nem quebrar uma execução do harness.
+ *
+ * Nada de secrets, prompts completos ou respostas completas — apenas
+ * metadados de observabilidade.
  */
+
+import { randomUUID } from 'node:crypto';
+import { hostname } from 'node:os';
 
 let execucaoAtual = null;
 let ultimasExecucoes = [];
 const MAX_HISTORICO = 10;
 const ouvintes = new Set();
+
+const DASHBOARD_PORT = Number(process.env.DASHBOARD_PORT ?? 8085);
+const DASHBOARD_URL = `http://localhost:${DASHBOARD_PORT}/api/ingest`;
+const TIMEOUT_NOTIFICACAO_MS = 800;
 
 const ETAPAS_PIPELINE = [
   'GitHub Issue',
@@ -28,6 +46,25 @@ function agora() {
   return new Date().toISOString();
 }
 
+/**
+ * POST fire-and-forget pro dashboard-server, se ele estiver de pé. Nunca
+ * `await`ado pelos chamadores (ver cada função abaixo) — não pode
+ * adicionar latência real ao harness só porque alguém abriu o dashboard.
+ * `AbortSignal.timeout` evita que uma porta que aceita conexão mas nunca
+ * responde prenda o processo até o Node encerrar.
+ */
+function notificarDashboard(payload) {
+  fetch(DASHBOARD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(TIMEOUT_NOTIFICACAO_MS),
+  }).catch(() => {
+    // Dashboard não está rodando, ou não está acessível — sem problema,
+    // o tracker local continua funcionando normalmente.
+  });
+}
+
 function registrarEventoInterno(type, stage, provider, model, metadata = {}) {
   const evento = {
     timestamp: agora(),
@@ -40,6 +77,7 @@ function registrarEventoInterno(type, stage, provider, model, metadata = {}) {
   if (execucaoAtual) {
     execucaoAtual.events.push(evento);
     if (execucaoAtual.events.length > 2000) execucaoAtual.events.shift();
+    notificarDashboard({ type: 'event', executionId: execucaoAtual.id, evento });
   }
   emitirParaOuvintes({ type: 'event', evento });
   emitirParaOuvintes({ type: 'state' });
@@ -49,7 +87,9 @@ function registrarEventoInterno(type, stage, provider, model, metadata = {}) {
 function novaExecucao({ feature, taskPath, cwd } = {}) {
   finalizarExecucaoAtualSeExistir('aborted');
 
+  const id = randomUUID();
   execucaoAtual = {
+    id,
     status: 'running',
     feature: feature ?? null,
     taskPath: taskPath ?? null,
@@ -65,6 +105,15 @@ function novaExecucao({ feature, taskPath, cwd } = {}) {
     events: [],
   };
 
+  notificarDashboard({
+    type: 'execution.started',
+    executionId: id,
+    feature: feature ?? null,
+    taskPath: taskPath ?? null,
+    cwd: cwd ?? process.cwd(),
+    pid: process.pid,
+    hostname: hostname(),
+  });
   registrarEventoInterno('execution.started', null, null, null, { taskPath, cwd });
   return execucaoAtual;
 }
@@ -84,6 +133,7 @@ function finalizarExecucaoAtualSeExistir(status) {
 function concluirExecucao({ status = 'success', error = null } = {}) {
   if (!execucaoAtual) return null;
   const stageAtual = execucaoAtual.currentStage;
+  const id = execucaoAtual.id;
 
   // Registra o evento final antes de arquivar — assim ele entra no
   // histórico da última execução.
@@ -95,6 +145,7 @@ function concluirExecucao({ status = 'success', error = null } = {}) {
 
   finalizarExecucaoAtualSeExistir(status);
   execucaoAtual = null;
+  notificarDashboard({ type: 'execution.finished', executionId: id, status });
   emitirParaOuvintes({ type: 'state' });
   return ultimasExecucoes[0] ?? null;
 }
@@ -126,6 +177,7 @@ function iniciarEtapa(nome, provider, model) {
   execucaoAtual.currentModel = model ?? null;
   execucaoAtual.currentTool = null;
 
+  notificarDashboard({ type: 'stage.started', executionId: execucaoAtual.id, nome, provider, model });
   registrarEventoInterno('stage.started', nome, provider, model);
   return etapa;
 }
@@ -138,6 +190,7 @@ function concluirEtapa(nome, { status = 'completed', error = null } = {}) {
   etapa.finishedAt = agora();
   etapa.duration = Date.parse(etapa.finishedAt) - Date.parse(etapa.startedAt);
   if (error) etapa.error = error;
+  notificarDashboard({ type: 'stage.finished', executionId: execucaoAtual.id, nome, status, error });
   registrarEventoInterno('stage.finished', nome, etapa.provider, etapa.model, { status, duration: etapa.duration });
   return etapa;
 }
@@ -155,6 +208,13 @@ function atualizarEstadoAtual({ status = null, currentTool = null, model = null,
   if (currentTool !== null) execucaoAtual.currentTool = currentTool;
   if (model !== null) execucaoAtual.currentModel = model;
   if (currentStatus !== null) execucaoAtual.currentStatus = currentStatus;
+  notificarDashboard({
+    type: 'state.updated',
+    executionId: execucaoAtual.id,
+    currentTool: execucaoAtual.currentTool,
+    currentStatus: execucaoAtual.currentStatus,
+    model: execucaoAtual.currentModel,
+  });
   emitirParaOuvintes({ type: 'state' });
   return execucaoAtual;
 }

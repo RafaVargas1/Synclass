@@ -2,26 +2,31 @@
 /**
  * Dashboard local de observabilidade do pipeline Synclass.
  *
- * Serve a página web estática e mantém uma conexão SSE para cada navegador
- * aberto, transmitindo eventos do event-tracker em tempo real.
+ * Serve a página web estática, aceita POST /api/ingest (é assim que cada
+ * processo `deepseek-agent.mjs` — potencialmente vários em paralelo, um
+ * por worktree — reporta o que está fazendo, ver scripts/event-tracker.mjs
+ * `notificarDashboard` e scripts/dashboard-store.mjs) e mantém uma conexão
+ * SSE por navegador aberto, transmitindo o estado de todas as execuções
+ * ativas em tempo real.
  *
  * Uso:
  *   node scripts/dashboard-server.mjs [porta]
+ *   npm run dashboard
  *
- * Apenas observacional — não aceita nenhum comando, não expõe secrets.
+ * Só observacional a partir do navegador — a única entrada de escrita é
+ * o POST /api/ingest, que só os processos locais do harness conhecem
+ * (não expõe nenhum comando, não expõe secrets).
  */
 
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  pegarEstado,
-  inscreverOuvinte,
-} from './event-tracker.mjs';
+import { ingerir, pegarEstado, inscreverOuvinte } from './dashboard-store.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.argv[2] ?? process.env.DASHBOARD_PORT ?? 8085);
+const LIMITE_CORPO_BYTES = 200_000;
 
 let paginaHtml = '';
 try {
@@ -40,8 +45,52 @@ function enviarEstadoCompleto(cliente) {
   enviarParaCliente(cliente, { type: 'snapshot', ...pegarEstado() });
 }
 
+function lerCorpoJson(req) {
+  return new Promise((resolveCorpo, rejectCorpo) => {
+    let bytes = 0;
+    const partes = [];
+    req.on('data', (chunk) => {
+      bytes += chunk.length;
+      if (bytes > LIMITE_CORPO_BYTES) {
+        rejectCorpo(new Error('corpo grande demais'));
+        req.destroy();
+        return;
+      }
+      partes.push(chunk);
+    });
+    req.on('end', () => {
+      try {
+        resolveCorpo(partes.length ? JSON.parse(Buffer.concat(partes).toString('utf8')) : {});
+      } catch (erro) {
+        rejectCorpo(erro);
+      }
+    });
+    req.on('error', rejectCorpo);
+  });
+}
+
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
+
+  if (url.pathname === '/api/ingest' && req.method === 'POST') {
+    lerCorpoJson(req)
+      .then((payload) => {
+        ingerir(payload);
+        res.writeHead(204);
+        res.end();
+      })
+      .catch(() => {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end('payload inválido');
+      });
+    return;
+  }
+
+  if (url.pathname === '/api/state' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(pegarEstado()));
+    return;
+  }
 
   if (url.pathname === '/events') {
     res.writeHead(200, {
@@ -72,11 +121,13 @@ const server = createServer((req, res) => {
   res.end('Not Found');
 });
 
-// Encaminha eventos do tracker para todos os clientes SSE.
-// - { type: 'event', evento } → encaminha diretamente.
-// - { type: 'state' } → envia um snapshot completo (frontend re-renderiza).
+// Encaminha eventos do store para todos os clientes SSE.
+// - { type: 'snapshot' } → busca o estado completo (todas execuções
+//   ativas + histórico) e manda pra cada cliente conectado.
+// - { type: 'event', executionId, evento } → encaminha direto, o
+//   frontend decide em qual card renderizar pelo executionId.
 const removerOuvinte = inscreverOuvinte((payload) => {
-  if (payload.type === 'state') {
+  if (payload.type === 'snapshot') {
     const snapshot = { type: 'snapshot', ...pegarEstado() };
     for (const cliente of sseClientes) {
       try {
@@ -87,7 +138,6 @@ const removerOuvinte = inscreverOuvinte((payload) => {
     }
     return;
   }
-  // 'event' — encaminha do jeito que veio.
   for (const cliente of sseClientes) {
     try {
       enviarParaCliente(cliente, payload);

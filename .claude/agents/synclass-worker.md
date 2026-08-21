@@ -19,7 +19,7 @@ tentativas, ou a Task foi marcada complexa demais pro harness sozinho).
   número do PR (revisão). Leia esses arquivos em vez de pedir o desenho
   técnico reexplicado.
 - **Implementação**: dispare `node scripts/deepseek-agent.mjs --task
-  docs/specs/<n>-<slug>/task.md --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md`
+  docs/specs/<n>-<slug>/task.md --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md,docs/spec/engenharia-de-qualidade.md`
   na worktree. Confira o código de saída antes de decidir o que fazer —
   não trate toda saída não-zero igual (ADR-0002,
   [`ADR-0002-continuidade-cruzada-limites.md`](../../docs/spec/decisions/ADR-0002-continuidade-cruzada-limites.md)):
