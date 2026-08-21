@@ -226,6 +226,20 @@ describe('AlunoScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith('/painel');
   });
 
+  it('mostra um erro inline e não navega quando falha ao persistir a sessão (issue #121)', async () => {
+    definirSessaoMock.mockRejectedValue(new Error('falha ao gravar no dispositivo'));
+    await render(<AlunoScreen />);
+
+    await act(async () => {
+      botaoProps.onAutenticado({ token: 'token-google', nome: 'João Souza', papeis: ['Aluno'] });
+    });
+
+    expect(
+      screen.getByText('Não foi possível concluir o login neste dispositivo. Tente novamente.'),
+    ).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it('pré-preenche o contato com o e-mail do Google quando a conta ainda é nova', async () => {
     await render(<AlunoScreen />);
 
