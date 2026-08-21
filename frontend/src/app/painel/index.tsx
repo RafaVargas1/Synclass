@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,63 +8,15 @@ import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
 import { AlternadorDePapel } from '@/components/organisms/AlternadorDePapel';
 import { Topbar } from '@/components/organisms/Topbar';
-import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
 import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
+import { usePerfilLogado } from '@/lib/usePerfilLogado';
 import { MaxContentWidthPainel } from '@/theme/tokens';
 
 const MensagemErroUsuarioId =
   'Não foi possível carregar suas ações de Professor. Tente novamente.';
-
-type EstadoPerfilLogado = {
-  usuarioId: string | undefined;
-  nome: string | undefined;
-  erro: boolean;
-  tentarNovamente: () => void;
-};
-
-/**
- * Resolve o perfil do usuário logado via `GET /usuarios/me` (issue #44 e
- * #69): qualquer papel com `token` busca, já que `nome` alimenta a saudação
- * do Painel (Professor e Aluno) e `usuarioId` só é relevante pros links de
- * Professor (ver `secoesProfessor`). Para de buscar assim que resolve uma
- * vez (guarda por `usuarioId` já preenchido): sem isso, alternar entre
- * papéis via `AlternadorDePapel` refaria a chamada a cada troca, mesmo o
- * Professor não podendo ter um `usuarioId` diferente na mesma sessão
- * (achado de dev-review, PR #55). Em caso de falha, expõe `erro` e
- * `tentarNovamente` em vez de deixar as ações do Professor sumirem sem
- * explicação nem forma de recuperar (mesmo achado).
- */
-function usePerfilLogado(token: string | null): EstadoPerfilLogado {
-  const [usuarioId, setUsuarioId] = useState<string | undefined>(undefined);
-  const [nome, setNome] = useState<string | undefined>(undefined);
-  const [erro, setErro] = useState(false);
-  const [tentativa, setTentativa] = useState(0);
-
-  useEffect(() => {
-    if (!token || usuarioId) {
-      return;
-    }
-    let cancelado = false;
-    void buscarPerfil().then((resultado) => {
-      if (cancelado) return;
-      if (!resultado.sucesso) {
-        setErro(true);
-        return;
-      }
-      setErro(false);
-      setUsuarioId(resultado.usuarioId);
-      setNome(resultado.nome);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [token, tentativa, usuarioId]);
-
-  return { usuarioId, nome, erro, tentarNovamente: () => setTentativa((atual) => atual + 1) };
-}
 
 function ListaDeAcoes({ acoes }: { acoes: Secao[] }) {
   if (acoes.length === 0) {
