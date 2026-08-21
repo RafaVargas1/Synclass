@@ -238,7 +238,7 @@ describe('PainelScreen', () => {
     expect(screen.queryByTestId('link-/professor/alunos/cadastro')).toBeNull();
   });
 
-  it('shows a link to the perfil screen', async () => {
+  it('shows a button (not a text link) to the perfil screen', async () => {
     useSessaoMock.mockReturnValue({
       carregando: false,
       token: 'token-jwt',
@@ -249,7 +249,8 @@ describe('PainelScreen', () => {
 
     await render(<PainelScreen />);
 
-    expect(screen.getByText('Meu perfil')).toBeTruthy();
+    expect(screen.getByTestId('link-/perfil')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Meu perfil' })).toBeTruthy();
   });
 
   it('calls sair when the Sair button is pressed', async () => {

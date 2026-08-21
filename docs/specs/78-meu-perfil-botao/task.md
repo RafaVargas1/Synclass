@@ -4,9 +4,9 @@ Card: https://github.com/RafaVargas1/Synclass/issues/78
 
 ## Ordem de execução
 
-- [ ] Teste de componente: `painel/index.tsx` — "Meu perfil" é exposto com `accessibilityRole="button"` (não mais como link sublinhado) e navega para `/perfil` ao ser pressionado
-- [ ] Implementação: troca `<Link href="/perfil" className="...underline...">Meu perfil</Link>` por `<Link href="/perfil" asChild><Button label="Meu perfil" /></Link>` em `frontend/src/app/painel/index.tsx`
-- [ ] Ajustar teste existente de `painel/index.test.tsx` que fizer asserção sobre o `Link`/texto sublinhado de "Meu perfil", se houver
+- [x] Teste de componente: `painel/index.tsx` — "Meu perfil" é exposto com `accessibilityRole="button"` (não mais como link sublinhado) e navega para `/perfil` ao ser pressionado
+- [x] Implementação: troca `<Link href="/perfil" className="...underline...">Meu perfil</Link>` por `<Link href="/perfil" asChild><Button label="Meu perfil" /></Link>` em `frontend/src/app/painel/index.tsx`
+- [x] Ajustar teste existente de `painel/index.test.tsx` que fizer asserção sobre o `Link`/texto sublinhado de "Meu perfil", se houver
 
 ### Inconsistências encontradas
 
