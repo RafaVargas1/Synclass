@@ -65,6 +65,19 @@ assinatura de `AlternadorDePapel`) e inclui esse componente internamente
 quando `papeis.length > 1` — não duplica a lógica de troca de papel, só
 reaproveita o organism já existente.
 
+### Como resolve `usuarioId` (decisão do mantenedor, ver `task.md` §
+Inconsistências encontradas)
+
+`MenuNavegacao` **não** recebe `usuarioId` como prop. Internamente chama
+`useSessao()` (para `token`) e `usePerfilLogado(token)` — hook extraído de
+`app/painel/index.tsx` para `lib/usePerfilLogado.ts` nesta mesma Task,
+mesmo padrão de `secoesPorPapel.ts`. Isso evita que cada tela/wrapper que
+monta `MenuNavegacao` (item 15: várias telas além do Painel) precise
+resolver `GET /usuarios/me` só para repassar o valor — a resolução fica
+centralizada no hook, reaproveitada por `Painel` e `MenuNavegacao` sem
+duplicar a chamada de rede nem estourar a assinatura de props especificada
+acima.
+
 ## Onde entra no layout
 
 - **Desktop** (`useIsTelaLarga() === true`): `MenuNavegacao` fica
