@@ -152,6 +152,16 @@ Elevação sem sombra é feita só por dois recursos, combináveis:
    card/input sem precisar de sombra. Estado de foco usa borda de 1–2px na
    cor `primary`, não glow.
 
+## Largura máxima de conteúdo
+
+Tokens de layout em `theme/tokens.ts` para a largura máxima do container de
+uma tela quando ela sobra espaço em monitores web largos.
+
+| Token | Valor | Quando usar |
+|---|---|---|
+| `MaxContentWidth` | `800` | container de formulários (telas de cadastro/editar) |
+| `MaxContentWidthPainel` *(novo)* | `1120` | container do Painel (tela pós-login, issue #69) — mais largo porque distribui ações lado a lado; nome explícito para não confundir com o token genérico de formulário |
+
 ## Ícones
 
 Lucide está fora. Recomendo **Phosphor** (`phosphor-react-native`, MIT,

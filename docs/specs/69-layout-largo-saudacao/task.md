@@ -32,6 +32,6 @@ Card: https://github.com/RafaVargas1/Synclass/issues/69
       `MaxContentWidth` genérico de formulário); `PainelScreen` passa a
       usar esse valor em vez de `MaxContentWidth` no `style={{ maxWidth
       }}` do container.
-- [ ] Docs: `docs/spec/design-system.md` — nova entrada na tabela de
+- [x] Docs: `docs/spec/design-system.md` — nova entrada na tabela de
       tokens de layout documentando `MaxContentWidthPainel` (valor, quando
       usar) ao lado de `MaxContentWidth`.
