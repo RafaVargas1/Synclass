@@ -15,12 +15,12 @@ Mecanismo escolhido: `useNavigation().setOptions({ title })` — chamado uma
 
 ## Ordem de execução
 
-- [ ] Teste unidade: `useTituloDaAba(titulo)` — chama `navigation.setOptions({ title: titulo })` (mock de `useNavigation` do `expo-router`)
-- [ ] Teste unidade: `useTituloDaAba` — reage a mudança do argumento entre renders, chamando `setOptions` de novo com o novo título
-- [ ] Implementação mínima: hook `frontend/src/lib/useTituloDaAba.ts`
-- [ ] Teste de componente: `Topbar` — com `titulo`, chama `setOptions({ title: <o mesmo texto do titulo> })`
-- [ ] Teste de componente: `Topbar` — sem `titulo` (variante marca), chama `setOptions({ title: 'Synclass' })`
-- [ ] Implementação: `Topbar.tsx` usa `useTituloDaAba(titulo ?? 'Synclass')`
+- [x] Teste unidade: `useTituloDaAba(titulo)` — chama `navigation.setOptions({ title: titulo })` (mock de `useNavigation` do `expo-router`)
+- [x] Teste unidade: `useTituloDaAba` — reage a mudança do argumento entre renders, chamando `setOptions` de novo com o novo título
+- [x] Implementação mínima: hook `frontend/src/lib/useTituloDaAba.ts`
+- [x] Teste de componente: `Topbar` — com `titulo`, chama `setOptions({ title: <o mesmo texto do titulo> })`
+- [x] Teste de componente: `Topbar` — sem `titulo` (variante marca), chama `setOptions({ title: 'Synclass' })`
+- [x] Implementação: `Topbar.tsx` usa `useTituloDaAba(titulo ?? 'Synclass')`
 
 ### Inconsistências encontradas
 

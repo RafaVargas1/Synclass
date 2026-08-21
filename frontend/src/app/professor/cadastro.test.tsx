@@ -9,6 +9,7 @@ import CadastroProfessorScreen from './cadastro';
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), replace: mockReplace, canGoBack: () => false }),
   useLocalSearchParams: () => ({ ...mockRouteParams }),
+  useNavigation: () => ({ setOptions: jest.fn() }),
 }));
 
 jest.mock('@/lib/auth/contexto-sessao', () => ({

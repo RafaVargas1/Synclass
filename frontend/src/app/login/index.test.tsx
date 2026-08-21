@@ -18,6 +18,7 @@ const mockPush = jest.fn();
 const mockRouterReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: mockRouterReplace, back: jest.fn(), canGoBack: () => false }),
+  useNavigation: () => ({ setOptions: jest.fn() }),
 }));
 
 jest.mock('@/components/molecules/BotaoLoginGoogle', () => {

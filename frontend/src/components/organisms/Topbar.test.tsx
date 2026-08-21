@@ -6,9 +6,11 @@ import { Topbar } from './Topbar';
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 const mockCanGoBack = jest.fn();
+const mockSetOptions = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: mockCanGoBack }),
+  useNavigation: () => ({ setOptions: mockSetOptions }),
 }));
 
 describe('Topbar', () => {
@@ -16,6 +18,7 @@ describe('Topbar', () => {
     mockBack.mockReset();
     mockReplace.mockReset();
     mockCanGoBack.mockReset();
+    mockSetOptions.mockReset();
   });
 
   it('shows the SYNCLASS mark when no titulo is given', async () => {
@@ -96,5 +99,17 @@ describe('Topbar', () => {
     expect(screen.getByRole('header', { name: 'Meu perfil' })).toBeTruthy();
     expect(screen.getByText('Abrir menu')).toBeTruthy();
     expect(screen.getByText('Sair')).toBeTruthy();
+  });
+
+  it('sets the browser tab title to the titulo, when given (issue #81)', async () => {
+    await render(<Topbar titulo="Valor devido por Aluno" />);
+
+    expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Valor devido por Aluno' });
+  });
+
+  it('sets the browser tab title to Synclass when no titulo is given (issue #81)', async () => {
+    await render(<Topbar />);
+
+    expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Synclass' });
   });
 });
