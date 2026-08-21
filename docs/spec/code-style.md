@@ -31,15 +31,11 @@ na dúvida, favorecer clareza sobre concisão.
 
 ## Testes
 
-- Os testes rodam com um único comando por projeto:
-  - Backend: `dotnet test` (a partir de `backend/`).
-  - Frontend: `npm test` (a partir de `frontend/`).
-- Toda função nova ganha um teste. Correção de bug ganha teste de regressão.
-- Mocke I/O externo (API, banco de dados, sistema de arquivos) com classes fake
-  nomeadas, não com stubs inline.
-- Testes devem seguir F.I.R.S.T: rápidos (*fast*), independentes (*independent*),
-  repetíveis (*repeatable*), que se autovalidam (*self-validating*) e oportunos
-  (*timely* — escritos junto com o código, não depois).
+Ver [`testing-standards.md`](testing-standards.md) — princípios F.I.R.S.T,
+ordem do TDD, regra de teste escopado durante o loop vs. suíte completa
+antes do PR, cobertura por camada e mocks. Comandos rápidos:
+Backend `dotnet test` (a partir de `backend/`), Frontend `npm test` (a
+partir de `frontend/`).
 
 ## Dependências
 

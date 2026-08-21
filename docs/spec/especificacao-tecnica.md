@@ -89,6 +89,30 @@ Prosa curta + bullets, direcionado a quem vai ler o código, não o card:
 Não duplique a Regra de Negócio do card — este arquivo assume que quem lê já
 leu o card e está perguntando "como", não "por quê".
 
+## Quem escreve, e a aprovação do plano (ADR-0001)
+
+Desde [ADR-0001](decisions/ADR-0001-pipeline-claude-deepseek.md), autoria e
+revisão dependem do [nível de rigor](fluxo-de-feature.md#níveis-de-rigor)
+da Task:
+
+- **Trivial**: Claude escreve um `task.md` mínimo (checklist mecânico
+  derivado direto dos Critérios de aceite/técnicos do card) — sem
+  `implementation.md`, sem rodada de aprovação.
+- **Média/complexa**: a DeepSeek rascunha `task.md` **e**
+  `implementation.md` (uma chamada de `scripts/deepseek-call.sh`, não o
+  harness completo — é geração de texto a partir do card, não edição de
+  arquivo/execução de comando). Claude revisa o rascunho antes de
+  qualquer commit e responde com exatamente uma destas duas palavras no
+  início da revisão:
+  - `APPROVED` — a implementação (via `scripts/deepseek-agent.mjs`) pode
+    começar a partir do plano como está.
+  - `CHANGES_REQUESTED` — seguido dos pontos a corrigir; a DeepSeek
+    atualiza o plano e Claude revisa de novo antes de liberar a
+    implementação.
+  - Para **complexa**, some-se a isso uma revisão de arquitetura do
+    Claude (mesmo raciocínio da Fase 2, não uma segunda aprovação
+    burocrática) antes do `APPROVED` valer.
+
 ## Ciclo de vida
 
 - Escrita na **Fase 2.5** do fluxo de feature, como parte da branch/worktree
@@ -97,11 +121,16 @@ leu o card e está perguntando "como", não "por quê".
 - Atualizada durante a Fase 3 se a implementação revelar que o desenho
   mudou (ex: um edge point novo apareceu só ao codar) — mantenha o arquivo
   fiel ao que foi de fato implementado, não ao plano inicial se ele mudou.
+  Ambiguidade encontrada pela DeepSeek durante a implementação vira uma
+  seção `## Inconsistências encontradas` neste `task.md`, resolvida pelo
+  Claude antes de a implementação continuar (a DeepSeek não decide sozinha
+  — ver `AGENTS.md#antes-de-modificar-código`).
 - **Não é descartada após o merge** (diferente dos prints de
   `qa-review`): fica em `docs/specs/` como documentação técnica de
   referência — útil para quem for tocar aquele código depois e quiser saber
   a decisão sem escavar o histórico de commits.
-- Um agente de swarm (Fase 3) recebe o caminho da pasta de spec como parte
-  do prompt de delegação, em vez de ter o desenho técnico reexplicado
-  inline — reduz o custo de montar o prompt e mantém uma única fonte de
-  verdade.
+- A implementação (Fase 3) recebe o caminho da pasta de spec como
+  argumento de `scripts/deepseek-agent.mjs` (`--task
+  docs/specs/<n>-<slug>/task.md`), em vez de ter o desenho técnico
+  reexplicado inline — reduz o custo de montar o prompt e mantém uma
+  única fonte de verdade.

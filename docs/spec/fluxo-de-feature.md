@@ -58,6 +58,33 @@ revisão a `Agent`s separados (ver Fase 3 e Fase 4 abaixo) não é só sobre
 paralelismo — é o que mantém a sessão supervisora com contexto plano ao
 longo das 6 fases, recebendo só o resultado compacto de cada uma.
 
+## Níveis de rigor
+
+Nem toda Task exige o mesmo overhead de processo — ver
+[ADR-0001](decisions/ADR-0001-pipeline-claude-deepseek.md). Três níveis:
+
+**Trivial**: `Issue → DeepSeek (harness) → Quality Gates`. Sem
+`implementation.md`, sem rodada de aprovação de plano, `dev-review` ainda
+roda (não é dispensado, só o plano prévio é).
+
+**Média**: `Issue → DeepSeek rascunha implementation.md → Claude revisa
+(APPROVED/CHANGES_REQUESTED) → DeepSeek implementa (harness) → Quality
+Gates → Claude revisão final (dev-review)`.
+
+**Complexa/crítica**: `Issue → DeepSeek rascunha implementation.md →
+Claude revisão de arquitetura → DeepSeek implementa (harness) → Quality
+Gates → DeepSeek depura falhas → Claude revisão final (dev-review) →
+DeepSeek corrige → Quality Gates`.
+
+Trate como complexa/crítica qualquer Task que envolva: autenticação/
+autorização, pagamento, dado sensível, migration, mudança estrutural de
+banco, API pública, concorrência, ou mudança grande em código legado. Na
+dúvida entre média e complexa, trate como complexa — o custo de uma
+rodada extra de revisão é bem menor que o custo de um bug nessas áreas.
+
+Ver [`especificacao-tecnica.md#quem-escreve-e-a-aprovação-do-plano-adr-0001`](especificacao-tecnica.md#quem-escreve-e-a-aprovação-do-plano-adr-0001)
+para o detalhe de quem escreve/aprova cada artefato em cada nível.
+
 ## Fase 1 — Issue semente
 
 Se o usuário referenciar uma issue já existente (número, URL, ou "roda o
@@ -137,6 +164,20 @@ Reescreva a issue semente (`gh issue edit`) com o resultado final (card
 (`priority:P0`..`P3`, default `P2` se o usuário não opinar) em cada Task e
 mova o(s) card(s) para a coluna certa do board.
 
+## Issue como contrato
+
+A partir daqui (Fase 2.5 em diante), a issue do GitHub é o **contrato
+funcional** da Task — vale para quem quer que implemente, DeepSeek
+incluída. Isso significa: não expandir escopo por iniciativa própria, não
+fazer refatoração não relacionada, não alterar regra de negócio sem
+justificativa registrada, não mudar arquitetura sem necessidade, não
+ignorar critério de aceite. Uma inconsistência ou requisito ambíguo
+encontrado durante a implementação vira uma seção
+`## Inconsistências encontradas` no `task.md` daquela Task — registrada
+antes de continuar, resolvida pelo Claude (não decidida pela DeepSeek
+sozinha), como qualquer outra decisão de produto (mesmo espírito da Fase
+2, "não adivinhe" — ver `AGENTS.md#antes-de-modificar-código`).
+
 ## Fase 2.5 — Spec técnica
 
 Só depois do(s) card(s) finalizados no GitHub: para cada Task (ou para o
@@ -151,67 +192,68 @@ swarm. Commit desses dois arquivos é o primeiro commit da branch da Task
 
 ## Fase 3 — Implementação
 
+Desde [ADR-0001](decisions/ADR-0001-pipeline-claude-deepseek.md), quem
+implementa é a **DeepSeek**, via `scripts/deepseek-agent.mjs` — não o
+modelo principal da sessão. O agente `synclass-worker` (Claude, Sonnet)
+**orquestra**: cria a worktree, dispara o harness, monitora o resultado,
+roda o gate de CI, e só implementa diretamente como fallback explícito
+(harness esgotou as tentativas, ou a Task foi marcada complexa demais pro
+harness sozinho).
+
 - Branch por card: `feature/<escopo-curto>` (ou `fix/...`), conforme
   [`CONTRIBUTING.md`](../../CONTRIBUTING.md#branches-e-worktrees). Primeiro
   commit da branch é a pasta `docs/specs/<n>-<slug>/` gerada na Fase 2.5.
-- **TDD estrito**: siga a ordem do `task.md` da spec técnica — para cada item
-  da checklist, escreva o teste primeiro (vendo-o falhar), implemente o
-  mínimo para passar, then refatore. Não escreva produção sem um
-  teste vermelho guiando. Marque o item como concluído no `task.md` a cada
-  commit (é o rastro de progresso da Task, mais granular que a coluna do
-  board).
-- **Logs de dev como guardrail**: rode `backend/scripts/watch.sh` durante o
-  desenvolvimento de qualquer mudança de backend e acompanhe o log
-  estruturado (JSON com `TrackId`, decodificado por `pretty-log.sh`) enquanto
-  exercita o fluxo manualmente ou via teste — use o log real, não só o
-  resultado do teste, para confirmar que o comportamento observado bate com
-  o esperado pelo card (ex: um evento que devia ser logado e não apareceu é
-  sinal de bug antes mesmo do teste apontar).
+- **Disparo do harness**:
+  ```bash
+  node scripts/deepseek-agent.mjs --task docs/specs/<n>-<slug>/task.md \
+    --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md
+  ```
+  O harness segue **TDD estrito** por conta própria (mesma ordem do
+  `task.md`: teste primeiro, vendo-o falhar, implementação mínima,
+  refatora, marca o item, commit — orientado pelo Quality Contract passado
+  em `--system`) e usa testes escopados durante o loop
+  (`docs/spec/testing-standards.md#testes-escopados-durante-o-loop-suíte-completa-antes-do-pr`).
+  `synclass-worker` acompanha a saída e o `deepseek-run.log` gerado ao lado
+  do `task.md`.
+- **Ambiguidade/inconsistência**: se o harness parar com uma seção
+  `## Inconsistências encontradas` no `task.md` (em vez de concluir), não
+  é a DeepSeek quem decide — Claude resolve a ambiguidade (pode envolver
+  `AskUserQuestion` se for decisão de produto) e só então o harness roda
+  de novo a partir dali.
+- **Logs de dev como guardrail**: para mudanças de backend, confira o log
+  estruturado (JSON com `TrackId`, `backend/scripts/watch.sh` +
+  `pretty-log.sh`) depois que o harness terminar — o comportamento
+  observado precisa bater com o esperado pelo card, não só o teste passar.
 - **Commits**: Conventional Commits, um commit por mudança coesa com
-  build+testes passando naquele commit (`CONTRIBUTING.md#commits`). Não
-  acumule um commit gigante no fim.
-- **Agentes em swarm — quando compensa**:
-  - Se a Fase 2 gerou mais de um card **independente** (sem migration ou
-    módulo compartilhado entre eles), rode um agente por card em paralelo,
-    cada um em sua própria `git worktree`
-    (`CONTRIBUTING.md#branches-e-worktrees). Não paralelize cards que tocam
-    a mesma tabela/migration ou o mesmo componente — o custo de resolver
-    conflito supera o ganho. Tasks de um mesmo Épico (ver
-    [`padrao-de-issue.md#épico-e-task-features-grandes-ou-fullstack`](../backlog/padrao-de-issue.md#épico-e-task-features-grandes-ou-fullstack))
-    seguem essa mesma regra — não ganham swarm automático só por
-    pertencerem ao mesmo épico; o padrão para elas é rodar espaçadas, uma
-    execução do fluxo por Task.
-  - Dentro de um card que toca backend e frontend: implemente o backend
-    primeiro até o contrato da API (rotas, DTOs) estabilizar; só então vale
-    paralelizar — um agente fecha os testes/edge cases restantes do backend
-    enquanto outro implementa o frontend contra o contrato já definido, em
-    worktrees separadas.
-  - Regra de bolso: só vale abrir agente(s) extra(s) quando a fatia de
-    trabalho é grande o bastante (ordem de 20+ minutos de trabalho
-    sequencial) e genuinamente isolada. Um CRUD pequeno de um card só roda
-    sequencial, num único agente — swarm nesse caso custa mais em tokens e
-    coordenação do que economiza em tempo.
-  - Ao delegar, passe o caminho de `docs/specs/<n>-<slug>/` no prompt do
-    agente em vez de reexplicar o desenho técnico inline — o agente lê
-    `task.md`/`implementation.md` como fonte única de verdade.
-- Antes de abrir o PR, rode os checks mecânicos de
+  build+testes passando naquele commit (`CONTRIBUTING.md#commits`) — o
+  harness já commita a cada item do `task.md`; não acumule um commit
+  gigante por cima disso.
+- **Tasks independentes em paralelo**: mesmo critério de antes — Tasks sem
+  migration/módulo compartilhado entre si rodam em worktrees separadas,
+  cada uma com seu próprio disparo do harness (não paralelize as que tocam
+  a mesma tabela/migration ou o mesmo componente). Tasks de um mesmo Épico
+  seguem essa mesma regra — não ganham paralelismo automático só por
+  pertencerem ao mesmo épico.
+- Antes de abrir o PR, `synclass-worker` roda os checks mecânicos de
   `CONTRIBUTING.md#antes-de-abrir-um-pr` (`dotnet format && dotnet test` /
-  `npm run lint && npm run typecheck && npm test`) e só abra o PR
+  `npm run lint && npm run typecheck && npm test` — suíte **completa**,
+  diferente dos testes escopados do harness) e só abre o PR
   (`gh pr create --body "Closes #N"`) se estiverem verdes.
 
 ## Fase 4 — Revisão (até 3 rodadas)
 
-Cada rodada:
+Desde [ADR-0001](decisions/ADR-0001-pipeline-claude-deepseek.md), **só
+`dev-review` roda por padrão** neste fluxo automático — `qa-review`
+(Playwright/UX no navegador) sai do par de agentes paralelos e só entra
+sob pedido explícito do usuário ("testar o PR", "fazer QA do PR #N"),
+fora deste pipeline. Cada rodada:
 
-1. Delegue `dev-review` e `qa-review` **em paralelo** a dois `Agent`s
-   separados (`subagent_type: "synclass-worker"`, um para cada skill — uma
-   é checklist mecânico sobre o diff, a outra é navegador real via
-   Playwright; não têm dependência entre si) sobre o PR aberto na Fase 3, em
-   vez de chamar `Skill()` direto na sessão supervisora: as duas geram
-   output bruto (docker, `dotnet test`/`npm test`, traces do Playwright)
-   grande o bastante para estourar o contexto se acumulado por até 3
-   rodadas. Avise cada agente de que está "rodando como subagente" — as
-   skills já sabem responder só com a tabela de achados nesse modo.
+1. Delegue `dev-review` a um `Agent` (`subagent_type: "synclass-worker"`)
+   sobre o PR aberto na Fase 3, em vez de chamar `Skill()` direto na
+   sessão supervisora: a skill gera output bruto (`dotnet test`/`npm
+   test`) grande o bastante para estourar o contexto se acumulado por até
+   3 rodadas. Avise o agente de que está "rodando como subagente" — a
+   skill já sabe responder só com a tabela de achados nesse modo.
 2. Corrija tudo que voltou como bloqueante/falhou, um commit por correção
    coerente, na sessão supervisora (que só recebeu a tabela compacta de
    volta, não o log bruto).
@@ -225,11 +267,11 @@ Cada rodada:
    severidade baixa (não bloqueante), registre-o no relatório final (Fase 6)
    como débito conhecido em vez de travar o fluxo indefinidamente.
 
-Os prints, checagens de acessibilidade/responsividade e resultados Gherkin
-da **rodada final** de `qa-review` são a "comprovação de qualidade do fluxo"
-usada no relatório da Fase 6 — preserve o diretório de screenshots gerado
-(`frontend/e2e/.qa-review/screenshots/<slug-do-pr>/`) até compor o relatório,
-mesmo que o `.spec.ts` seja apagado ao final da skill.
+Se a Task tocou UI e alguém pedir `qa-review` depois (fora deste fluxo),
+os prints/checagens de acessibilidade/responsividade/Gherkin dessa rodada
+avulsa seguem o mesmo padrão de preservação de evidência descrito na
+skill — não há mais uma "rodada final de qa-review" garantida dentro do
+fluxo automático para alimentar o relatório da Fase 6.
 
 ## Fase 5 — Merge
 
@@ -247,10 +289,12 @@ Mova o(s) card(s) para a coluna "Concluído" no board
 
 Compile um relatório único cobrindo: link da issue original (e do épico e
 das Tasks-irmãs, se houve quebra), link do PR mergeado, resumo do que foi
-implementado, veredito da rodada final de `dev-review`, tabela de critérios
-Gherkin x resultado da rodada final de `qa-review`, e os screenshots dessa
+implementado, veredito da rodada final de `dev-review`. Se `qa-review`
+rodou nesta Task (sob pedido explícito, fora do padrão da Fase 4), inclua
+também a tabela de critérios Gherkin x resultado e os screenshots dessa
 rodada (embutidos como `data:` URI, já que o relatório é publicado como
-Artifact autocontido).
+Artifact autocontido) — caso contrário, o relatório segue só com o
+veredito de `dev-review`.
 
 Publique com a ferramenta `Artifact` (carregando a skill `artifact-design`
 antes de escrever o HTML) e envie uma notificação (`PushNotification`) com o
@@ -261,17 +305,20 @@ se ainda não tiverem sido removidos pela `qa-review`.
 
 ## Divisão de modelo/agente por fase
 
+Atualizada por [ADR-0001](decisions/ADR-0001-pipeline-claude-deepseek.md)
+— substitui a versão anterior, que pinava a Fase 3 no modelo principal.
+
 | Fase | Quem executa | Por quê |
 |---|---|---|
 | 1 (issue semente) | Chamada direta de `gh`, sem modelo | Não há raciocínio nenhum aqui — é mecânico. |
 | 2, rodada 1 de cada card (rascunho de RN a partir da história) | Subagente leve (Haiku), few-shot com o exemplo de `padrao-de-issue.md` | Segue um padrão já estabelecido — não precisa do modelo principal (mesma lógica já documentada em [`padrao-de-issue.md`](../backlog/padrao-de-issue.md#divisão-de-esforço-por-modeloagente)). |
-| 2, reflexão de código/RN anteriores, polimento final, perguntas ao usuário | Modelo principal da sessão | É onde aparecem ligações não óbvias entre cards e julgamento sobre o que perguntar — não delega bem. |
-| 2.5 (spec técnica: `task.md`/`implementation.md`) | Modelo principal | É a formalização em arquivo da mesma reflexão da fase 2 — mesmo julgamento, não delega a modelo leve. |
-| 3 (implementação, thread sequencial principal) | Modelo principal | Correção de código tem custo de erro mais alto que rascunho de issue; não usar modelo leve aqui. |
-| 3 (agentes de swarm, quando compensa) | `Agent` `subagent_type: "synclass-worker"`, **fixo em Sonnet** (pin no `model:` do agente — sobrescreve o modelo da sessão principal, não herda) | Swarm aqui é sobre paralelizar, não sobre baratear o julgamento — mas o julgamento em si já vem guiado por `docs/specs/<n>-<slug>/`, então Sonnet iguala a qualidade de um tier maior por um custo bem menor; Haiku fica de fora porque o custo de erro em código de produção é alto. Fixo (não herdado) para o custo não variar se a sessão principal estiver rodando num modelo mais caro por outro motivo. |
+| 2, reflexão de código/RN anteriores, polimento final, perguntas ao usuário | Modelo principal da sessão (Claude) | É onde aparecem ligações não óbvias entre cards e julgamento sobre o que perguntar — não delega bem. |
+| 2.5, rascunho de `task.md`/`implementation.md` (média/complexa) | DeepSeek (`scripts/deepseek-call.sh`, chamada única de texto, não o harness) | Formalizar em arquivo o que a Fase 2 já decidiu é um passo mais mecânico que a reflexão em si — cabe delegar; fica mais barato que redigir no modelo principal. |
+| 2.5, aprovação do plano (média/complexa) e escrita direta (trivial) | Claude (`APPROVED`/`CHANGES_REQUESTED`, ver `especificacao-tecnica.md`) | Julgamento sobre se o plano está certo antes de gastar uma implementação inteira em cima dele — não delega. |
+| 3 (implementação, TDD completo) | **DeepSeek**, via `scripts/deepseek-agent.mjs` (harness com tool-calling — `read_file`/`write_file`/`list_dir`/`run_command`), disparado pelo agente `synclass-worker` (Claude, Sonnet, papel de orquestrador/fallback) | Objetivo explícito do mantenedor (ADR-0001): reduzir gasto de Claude no longo prazo tirando-o do loop de iteração de TDD, que é a fase mais longa/repetitiva. O harness roda fora do contexto da sessão supervisora — `synclass-worker` só dispara e monitora, não implementa linha a linha, exceto como fallback explícito. |
 | 3 (buscas pontuais de arquivo/padrão antes de implementar) | Agente `Explore` | Busca é mais barata como agente somente-leitura dedicado. |
-| 4 (dev-review, qa-review) | Uma invocação de `Agent` (`synclass-worker`, também fixo em Sonnet) cada, em paralelo, delegando a skill correspondente | Já são skills prontas com seus próprios passos; não reimplementar — mas rodar via `Agent` (não `Skill()` direto) mantém o output bruto de cada revisão (docker, testes, Playwright) fora do contexto da sessão supervisora, e o pin em Sonnet garante julgamento suficiente para não deixar passar achado bloqueante sem depender do tier da sessão que invocou. |
-| 6 (relatório) | Modelo principal | Síntese final, precisa juntar contexto de todas as fases anteriores. |
+| 4 (dev-review) | Uma invocação de `Agent` (`synclass-worker`, fixo em Sonnet) delegando a skill | Já é skill pronta com seus próprios passos; não reimplementar — mas rodar via `Agent` (não `Skill()` direto) mantém o output bruto (`dotnet test`/`npm test`) fora do contexto da sessão supervisora, e o pin em Sonnet garante julgamento suficiente pra não deixar passar achado bloqueante. `qa-review` não entra por padrão aqui (ver Fase 4). |
+| 6 (relatório) | Modelo principal (Claude) | Síntese final, precisa juntar contexto de todas as fases anteriores. |
 
 ## Board e labels usados
 

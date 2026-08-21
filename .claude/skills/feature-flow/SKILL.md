@@ -1,6 +1,6 @@
 ---
 name: feature-flow
-description: Pipeline autônomo ponta a ponta do projeto Synclass — da ideia (ou de uma issue já existente) ao merge e relatório final — que dispara quando o usuário expressa a intenção de implementar algo novo ("quero implementar login", "quero criar cadastro de horário", "quero adicionar recuperação de senha", "implementa X pra mim", "bota isso pra rodar do jeito que a gente combinou") ou pede para retomar o fluxo numa issue que já existe ("roda o fluxo completo pra issue #12", "continua esse fluxo na issue https://github.com/.../issues/12", "roda o feature-flow nessa issue"). Se uma issue for referenciada, reaproveita ela em vez de criar uma nova. Cria a issue no GitHub (quando ainda não existe), reflete em até 3 rodadas (conhecimento geral + código + regras de negócio anteriores) perguntando ao usuário o que for ambíguo, gera 1+ cards seguindo `docs/backlog/padrao-de-issue.md` — quebrando em Épico + Tasks (sub-issues nativas do GitHub) quando o pedido é grande/fullstack demais para um card só —, formaliza a reflexão técnica de cada Task em `docs/specs/<n>-<slug>/{task.md,implementation.md}` (`docs/spec/especificacao-tecnica.md`), implementa com TDD e commits precisos usando os logs de dev como guardrail, revisa em até 3 rodadas com `dev-review` + `qa-review` em paralelo, faz squash-merge em `main` e publica um relatório final (Artifact + notificação) com o card, o PR e os prints da última rodada de QA. Roda sem pausas de confirmação (autonomia total, decisão explícita do mantenedor) — não usar para tarefas pontuais que não envolvem uma feature/fix nova.
+description: Pipeline autônomo ponta a ponta do projeto Synclass — da ideia (ou de uma issue já existente) ao merge e relatório final — que dispara quando o usuário expressa a intenção de implementar algo novo ("quero implementar login", "quero criar cadastro de horário", "quero adicionar recuperação de senha", "implementa X pra mim", "bota isso pra rodar do jeito que a gente combinou") ou pede para retomar o fluxo numa issue que já existe ("roda o fluxo completo pra issue #12", "continua esse fluxo na issue https://github.com/.../issues/12", "roda o feature-flow nessa issue"). Se uma issue for referenciada, reaproveita ela em vez de criar uma nova. Cria a issue no GitHub (quando ainda não existe), reflete em até 3 rodadas (conhecimento geral + código + regras de negócio anteriores) perguntando ao usuário o que for ambíguo, gera 1+ cards seguindo `docs/backlog/padrao-de-issue.md` — quebrando em Épico + Tasks (sub-issues nativas do GitHub) quando o pedido é grande/fullstack demais para um card só —, formaliza a reflexão técnica de cada Task em `docs/specs/<n>-<slug>/{task.md,implementation.md}` (`docs/spec/especificacao-tecnica.md`). Desde ADR-0001 (docs/spec/decisions/), a implementação TDD roda via harness da DeepSeek (`scripts/deepseek-agent.mjs`), orquestrado pelo agente `synclass-worker`; a revisão automática é só `dev-review` (`qa-review` fica sob pedido explícito, fora do fluxo). Faz squash-merge em `main` e publica um relatório final (Artifact + notificação) com o card, o PR e o veredito de dev-review. Roda sem pausas de confirmação (autonomia total, decisão explícita do mantenedor) — não usar para tarefas pontuais que não envolvem uma feature/fix nova.
 ---
 
 # feature-flow
@@ -118,41 +118,60 @@ agente de swarm delegado. Commit inicial da branch, antes de qualquer teste.
 
 ## Passo 3 — Implementação
 
+Desde ADR-0001, quem faz o TDD é a DeepSeek via harness — você (Claude)
+orquestra, não implementa linha a linha por padrão.
+
 1. Branch: `git worktree add ../synclass-<escopo> feature/<escopo-curto>`
    (ou `fix/<escopo-curto>`), seguindo `CONTRIBUTING.md`. Primeiro commit é a
    pasta de spec técnica do Passo 2.5.
-2. TDD seguindo a ordem do `task.md`: escreva o teste do item, veja falhar,
-   implemente o mínimo, refatore, commit (`tipo(escopo): descrição no
-   imperativo`), marque o item como concluído no `task.md`.
-3. Durante mudanças de backend, mantenha `backend/scripts/watch.sh` rodando
-   em background e observe o log estruturado (`pretty-log.sh`) para
-   confirmar que o comportamento e os eventos logados batem com os
-   Critérios técnicos do card antes de considerar o teste suficiente.
+2. Dispare o harness na worktree:
+   ```bash
+   node scripts/deepseek-agent.mjs --task docs/specs/<n>-<slug>/task.md \
+     --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md
+   ```
+   Ele segue a ordem do `task.md` (teste → implementação mínima →
+   refatora → commit → marca o item) por conta própria, com testes
+   escopados ao arquivo tocado. Acompanhe o `deepseek-run.log` gerado ao
+   lado do `task.md`.
+3. Se o harness sair com sucesso (código 0), siga para o passo 5. Se
+   sair com código **3** (limite/quota da API DeepSeek — ver
+   [ADR-0002](../../../docs/spec/decisions/ADR-0002-continuidade-cruzada-limites.md)):
+   não é falha da Task, não acione fallback — o `task.md` já tem a seção
+   `## Bloqueado por limite da API DeepSeek`; deixe para o cron horário
+   (ou uma nova invocação sua depois) retomar, e siga para outra
+   Task/issue disponível na fila em vez de esperar parado. Se sair com
+   código **1** (teto de iterações, ou parou numa seção `##
+   Inconsistências encontradas` do `task.md`): não adivinhe a resposta —
+   resolva a ambiguidade você mesmo (envolva `AskUserQuestion` se for
+   decisão de produto) e rode o harness de novo a partir dali. Implemente
+   o passo travado você mesmo só se isso não resolver ou a Task for
+   complexa demais para o harness sozinho (fallback explícito).
 4. Avalie swarm (ver `fluxo-de-feature.md#fase-3--implementação` para os
    critérios exatos de quando compensa): cards/Tasks independentes → um
    `Agent` (`subagent_type: "synclass-worker"`) por card, cada um em sua
-   worktree, com o caminho de `docs/specs/<n>-<slug>/` no prompt em vez do
-   desenho técnico reexplicado inline — o toolset mais estreito desse
-   agente (sem `Agent`/`Artifact`) evita pagar overhead de ferramentas que
-   implementação nunca usa, em cada uma das execuções paralelas; dentro de um card back+front → backend primeiro até o contrato
-   estabilizar, depois paralelize frontend contra esse contrato. Não abra
-   agente extra para trabalho pequeno ou acoplado — e não trate "mesmo
-   épico" como sinal de independência: Tasks de um épico rodam espaçadas
-   (uma execução do fluxo por Task) por padrão, swarm só quando já
-   satisfazem o critério normal de independência. **Exceção que não conta
-   como independência**: se dois cards em swarm mexem em
-   `SynclassDbContext.cs`, `Program.cs` (registro de DI) ou geram migration
-   nova, os `ModelSnapshot.cs` de cada worktree vão divergir do outro e do
-   `main` — conflito garantido no merge, e caro de resolver manualmente
-   (arquivo gerado, não dá pra pegar um lado só). Nesse caso, sempre que um
-   dos cards do swarm mergear em `main`, rebase os worktrees dos outros
-   antes de continuar a revisão deles — resolver o conflito ali, com o
-   card ainda em progresso e o contexto fresco, é muito mais barato que
-   resolver depois de dev-review/qa-review já terem rodado sobre código que
-   vai mudar de novo no merge.
+   worktree, disparando o harness com o caminho de `docs/specs/<n>-<slug>/`
+   no prompt — o toolset mais estreito desse agente (sem `Agent`/`Artifact`)
+   evita pagar overhead de ferramentas que a orquestração nunca usa, em
+   cada uma das execuções paralelas; dentro de um card back+front → backend
+   primeiro até o contrato estabilizar, depois paralelize frontend contra
+   esse contrato. Não abra agente extra para trabalho pequeno ou acoplado —
+   e não trate "mesmo épico" como sinal de independência: Tasks de um
+   épico rodam espaçadas (uma execução do fluxo por Task) por padrão,
+   swarm só quando já satisfazem o critério normal de independência.
+   **Exceção que não conta como independência**: se dois cards em swarm
+   mexem em `SynclassDbContext.cs`, `Program.cs` (registro de DI) ou geram
+   migration nova, os `ModelSnapshot.cs` de cada worktree vão divergir do
+   outro e do `main` — conflito garantido no merge, e caro de resolver
+   manualmente (arquivo gerado, não dá pra pegar um lado só). Nesse caso,
+   sempre que um dos cards do swarm mergear em `main`, rebase os
+   worktrees dos outros antes de continuar a revisão deles — resolver o
+   conflito ali, com o card ainda em progresso e o contexto fresco, é
+   muito mais barato que resolver depois de dev-review já ter rodado
+   sobre código que vai mudar de novo no merge.
 5. Antes do PR, rode os checks de `CONTRIBUTING.md#antes-de-abrir-um-pr`
    (`dotnet format && dotnet test`, `npm run lint && npm run typecheck &&
-   npm test`). Só prossiga com tudo verde.
+   npm test` — suíte **completa**, diferente dos testes escopados do
+   harness). Só prossiga com tudo verde.
 6. Abra o PR:
 
 ```bash
@@ -163,21 +182,19 @@ gh pr create --title "<título>" --body "Closes #<n>
 
 ## Passo 4 — Revisão (até 3 rodadas)
 
-Cada rodada, em paralelo (duas chamadas independentes na mesma resposta),
-delegue para um `Agent` (`subagent_type: "synclass-worker"`) — não chame
-`Skill()` direto neste passo: `dev-review`/`qa-review` produzem muito output
-bruto (docker, `dotnet test`/`npm test`, traces do Playwright) que você não
-quer acumulando na sua própria janela de contexto ao longo de até 3 rodadas.
-Deixe explícito em cada prompt que o agente está "rodando como subagente" —
-as duas skills já reduzem a resposta a só a tabela quando avisadas disso
-(ver Passo 6 de `dev-review` e Passo 8 de `qa-review`):
+Desde ADR-0001, só `dev-review` roda por padrão — `qa-review` sai do par
+de agentes paralelos (fica disponível sob pedido explícito do usuário,
+fora deste fluxo). Cada rodada, delegue para um `Agent`
+(`subagent_type: "synclass-worker"`) — não chame `Skill()` direto neste
+passo: `dev-review` produz muito output bruto (`dotnet test`/`npm test`)
+que você não quer acumulando na sua própria janela de contexto ao longo
+de até 3 rodadas. Deixe explícito no prompt que o agente está "rodando
+como subagente" — a skill já reduz a resposta a só a tabela quando
+avisada disso (ver Passo 6 de `dev-review`):
 
-- Agent 1: "Você está rodando como subagente. Invoque a skill `dev-review`
-  sobre o PR #<n> e retorne só a tabela de achados (Passo 6 da skill), sem
-  prosa adicional."
-- Agent 2: "Você está rodando como subagente. Invoque a skill `qa-review`
-  sobre o PR #<n> e retorne só a tabela de critérios + seção de UX (Passo 8
-  da skill), sem prosa adicional."
+- "Você está rodando como subagente. Invoque a skill `dev-review` sobre o
+  PR #<n> e retorne só a tabela de achados (Passo 6 da skill), sem prosa
+  adicional."
 
 Corrija tudo que voltar bloqueante/falhou, um commit por correção. Como
 autonomia total já está decidida (não há confirmação a pausar), aplique a
@@ -188,12 +205,14 @@ pesados e independentes para o mesmo achado: o segundo reconstrói do zero
 tinha na mão, e isso é o maior desperdício de token do pipeline. Pare a
 rotação assim que uma rodada não encontrar mais nada bloqueante (não force
 até 3). Nas rodadas 1–2 não poste nada no GitHub — os achados guiam correção
-interna. Na rodada final (ou na 3ª, o que vier primeiro), consolide os dois
-relatórios (que já voltaram compactos dos agentes) e poste um único
+interna. Na rodada final (ou na 3ª, o que vier primeiro), poste um único
 `gh pr comment <n>` com o veredito — sem pedir confirmação (exceção de
-autonomia desta skill). Preserve
-`frontend/e2e/.qa-review/screenshots/<slug-do-pr>/` da rodada final: é a
-evidência usada no relatório do Passo 6.
+autonomia desta skill).
+
+Se o usuário pedir `qa-review` explicitamente para esta Task (fora deste
+fluxo automático), preserve
+`frontend/e2e/.qa-review/screenshots/<slug-do-pr>/` dessa rodada avulsa —
+é a evidência a incluir no relatório do Passo 6, se existir.
 
 ## Passo 5 — Merge
 
@@ -209,10 +228,12 @@ deletada no merge.
 ## Passo 6 — Relatório final
 
 Monte um HTML com: link da issue (e issues-irmãs), link do PR mergeado,
-resumo do que foi implementado, veredito final de `dev-review`, tabela
-critério Gherkin × resultado da rodada final de `qa-review`, e os
-screenshots dessa rodada embutidos como `data:` URI (o Artifact precisa ser
-autocontido). **Carregue a skill `artifact-design` antes de escrever o
-HTML.** Publique com `Artifact` e mande `PushNotification` com o link e um
-resumo de uma linha. Depois de publicar, apague os artefatos temporários
-(`frontend/e2e/.qa-review/**`) que ainda restarem no disco.
+resumo do que foi implementado, veredito final de `dev-review`. Se
+`qa-review` rodou nesta Task (sob pedido explícito), inclua também a
+tabela critério Gherkin × resultado e os screenshots dessa rodada
+embutidos como `data:` URI (o Artifact precisa ser autocontido) — caso
+contrário, o relatório segue só com o veredito de `dev-review`.
+**Carregue a skill `artifact-design` antes de escrever o HTML.** Publique
+com `Artifact` e mande `PushNotification` com o link e um resumo de uma
+linha. Depois de publicar, apague os artefatos temporários
+(`frontend/e2e/.qa-review/**`) que ainda restarem no disco, se houver.

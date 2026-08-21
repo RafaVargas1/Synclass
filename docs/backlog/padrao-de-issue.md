@@ -157,6 +157,12 @@ nada em relação à 1ª, não force a 3ª só para cumprir o número.
 
 ## Divisão de esforço por modelo/agente
 
+Esta seção cobre só a criação de issues (Fase 1/2). Para a divisão
+completa do pipeline — incluindo implementação (DeepSeek, via harness) e
+revisão (Claude) — ver a tabela em
+[`fluxo-de-feature.md#divisão-de-modeloagente-por-fase`](../spec/fluxo-de-feature.md#divisão-de-modeloagente-por-fase),
+atualizada por [ADR-0001](../spec/decisions/ADR-0001-pipeline-claude-deepseek.md).
+
 Ao criar issues em lote (ex: destrinchar um documento de requisitos
 funcionais inteiro), nem toda etapa do processo acima exige o mesmo nível de
 raciocínio — e isso deve guiar qual modelo/agente executa cada parte:
