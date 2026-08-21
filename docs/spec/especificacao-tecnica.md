@@ -66,6 +66,40 @@ A ordem reflete a mesma prioridade já usada na Fase 3 (backend até o
 contrato estabilizar, frontend depois) — este arquivo só a torna explícita e
 checável.
 
+#### Item de frontend não pode ser vago
+
+`"Componente frontend: <tela/organism>, contra o contrato já estabilizado"`
+é o esqueleto do item, nunca o item pronto — quem escreve o `task.md` (Claude
+ou DeepSeek rascunhando, Passo "Quem escreve" abaixo) substitui por uma
+versão concreta antes de liberar a Task para implementação, porque a
+DeepSeek implementa exatamente o que o item diz e não tem contexto de
+produto pra preencher a lacuna sozinha (foi assim que um "Componente
+frontend: tela do Painel" virou um botão de "Meu perfil" do tamanho errado
+numa tela vazia — o item não dizia onde o elemento deveria ficar nem contra
+qual critério de UX checar). Um item de frontend concreto tem, no mínimo:
+
+- **Onde exatamente** o elemento fica (dentro de qual componente/slot já
+  existente, não só "na tela X") e **o que ele NÃO é** quando isso não for
+  óbvio (ex: "ação secundária, mesmo peso visual dos demais itens do menu —
+  não um CTA cheio isolado no corpo da tela").
+- **Rótulo/copy exato** de qualquer texto novo visível ao usuário — não
+  delegar a escolha da palavra pra DeepSeek.
+- **Consistência terminológica**: se o item introduz um rótulo/mensagem pra
+  um conceito que já aparece em outra tela/mensagem de erro do sistema
+  (grep rápido antes de escrever o item), usa o mesmo termo — nunca dois
+  nomes para a mesma coisa (ex: enum `Vago` no backend vs. rótulo "Livre" no
+  formulário: a mensagem de erro que cita "Vago" pro usuário quebra
+  reconhecimento porque ele nunca viu essa palavra em nenhuma tela).
+- Referência explícita a `docs/spec/ux-heuristics.md` quando o item envolve
+  hierarquia visual, alvo de toque, ou navegação — não basta citar o
+  documento nos docs `--system` do harness (Passo "Quem escreve" abaixo),
+  o item precisa dizer *qual* regra se aplica aqui.
+
+Se ao escrever o item essas informações não estiverem claras a partir do
+card + reflexão da Fase 2, isso é ambiguidade de produto igual qualquer
+outra — trate como uma pergunta pendente da Fase 2 (`AskUserQuestion`) em
+vez de escrever um item vago e empurrar a decisão pra DeepSeek.
+
 ### `implementation.md` — desenho técnico
 
 Prosa curta + bullets, direcionado a quem vai ler o código, não o card:
