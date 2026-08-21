@@ -10,7 +10,7 @@ import { BotaoLoginGoogle } from '@/components/molecules/BotaoLoginGoogle';
 import { SolicitarCodigoForm } from '@/components/organisms/SolicitarCodigoForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import { solicitarCodigo } from '@/lib/api/auth';
-import { useSessao } from '@/lib/auth/contexto-sessao';
+import { useAutenticadoGoogle } from '@/lib/auth/useAutenticadoGoogle';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
@@ -29,7 +29,7 @@ import { MaxContentWidth } from '@/theme/tokens';
 export default function LoginScreen() {
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email?: string }>();
-  const { definirSessao } = useSessao();
+  const { handleAutenticadoGoogle, erroGoogle } = useAutenticadoGoogle();
   const [contato, setContato] = useState('');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
@@ -47,21 +47,6 @@ export default function LoginScreen() {
       return;
     }
     router.push({ pathname: '/login/verificar', params: { contato } });
-  }
-
-  async function handleAutenticado({
-    token,
-    papeis,
-  }: {
-    token: string;
-    papeis: string[];
-  }) {
-    try {
-      await definirSessao(token, papeis);
-      router.replace('/painel');
-    } catch {
-      setErro('Não foi possível concluir o login neste dispositivo. Tente novamente.');
-    }
   }
 
   function handleCadastroPendente(email: string) {
@@ -111,14 +96,14 @@ export default function LoginScreen() {
           <View className="w-full gap-four">
             <SolicitarCodigoForm
               contato={contato}
-              erro={erro}
+              erro={erro ?? erroGoogle}
               enviando={enviando}
               onChangeContato={setContato}
               onSubmit={handleSubmit}
             />
             <Divisor texto="ou" />
             <BotaoLoginGoogle
-              onAutenticado={handleAutenticado}
+              onAutenticado={handleAutenticadoGoogle}
               onCadastroPendente={handleCadastroPendente}
             />
           </View>
