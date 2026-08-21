@@ -5,6 +5,7 @@ import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { ChipSelector, type ChipSelectorOption } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
+import { SeletorDeHora } from '@/components/molecules/SeletorDeHora';
 import { TipoMarcacao, type CriarHorarioInput, type Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { horariosSeSobrepoe } from '@/lib/horarioConflito';
@@ -22,7 +23,7 @@ export type HorarioFormProps = {
   onSubmit: (input: CriarHorarioInput) => void;
 };
 
-const MensagemFormatoHoraInvalido = 'Informe a hora no formato HH:mm.';
+const MensagemHoraObrigatoria = 'Escolha a hora de início.';
 const MensagemDuracaoInvalida = 'Informe uma duração em minutos maior que zero.';
 const MensagemLimiteAlunosInvalido = 'Informe um limite de alunos maior que zero.';
 const MensagemConflito = 'Esse horário conflita com um já cadastrado.';
@@ -30,14 +31,17 @@ const MensagemPoliticaObrigatoria = 'Escolha a política de marcação deste hor
 
 /**
  * Organismo: formulário de criação de horário disponível (issue #6). Valida
- * formato/duração e conflito no cliente antes de chamar `onSubmit` —
- * feedback imediato para casos óbvios, sem esperar o round-trip da Api (ver
- * Critérios técnicos da issue #6). A Api continua sendo a fonte de verdade.
+ * duração e conflito no cliente antes de chamar `onSubmit` — feedback
+ * imediato para casos óbvios, sem esperar o round-trip da Api (ver
+ * Critérios técnicos da issue #6). A hora de início é escolhida pelo
+ * `SeletorDeHora` (issue #117), que não permite formato inválido por
+ * construção, então só resta garantir que ela foi de fato escolhida.
+ * A Api continua sendo a fonte de verdade.
  */
 export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: HorarioFormProps) {
   const [diaSemana, setDiaSemana] = useState(1);
   const [tipoMarcacao, setTipoMarcacao] = useState<TipoMarcacao | undefined>(undefined);
-  const [horaInicio, setHoraInicio] = useState('');
+  const [horaInicio, setHoraInicio] = useState<string | undefined>(undefined);
   const [duracaoMinutos, setDuracaoMinutos] = useState('');
   const [limiteAlunos, setLimiteAlunos] = useState('1');
   const [erroCliente, setErroCliente] = useState<string | undefined>(undefined);
@@ -74,12 +78,7 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
         valor={tipoMarcacao}
         onChange={setTipoMarcacao}
       />
-      <FormField
-        label="Hora de início"
-        value={horaInicio}
-        onChangeText={setHoraInicio}
-        placeholder="HH:mm"
-      />
+      <SeletorDeHora label="Hora de início" valor={horaInicio} onSelecionar={setHoraInicio} />
       <FormField
         label="Duração (minutos)"
         value={duracaoMinutos}
@@ -110,7 +109,7 @@ type ResultadoValidacao =
 function validar(
   diaSemana: number,
   tipoMarcacao: TipoMarcacao | undefined,
-  horaInicio: string,
+  horaInicio: string | undefined,
   duracaoMinutos: string,
   limiteAlunos: string,
   horariosExistentes: Horario[],
@@ -119,8 +118,8 @@ function validar(
     return { valido: false, mensagem: MensagemPoliticaObrigatoria };
   }
 
-  if (!/^\d{2}:\d{2}$/.test(horaInicio)) {
-    return { valido: false, mensagem: MensagemFormatoHoraInvalido };
+  if (horaInicio === undefined) {
+    return { valido: false, mensagem: MensagemHoraObrigatoria };
   }
 
   const duracao = Number(duracaoMinutos);

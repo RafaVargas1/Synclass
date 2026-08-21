@@ -48,6 +48,13 @@ const horarioExistente = {
   tipoMarcacao: TipoMarcacao.Livre,
 };
 
+async function selecionarHora(hora: string, minuto: string) {
+  await fireEvent.press(screen.getByText('Selecionar hora'));
+  await fireEvent.press(screen.getByLabelText(`Hora ${hora}`));
+  await fireEvent.press(screen.getByLabelText(`Minuto ${minuto}`));
+  await fireEvent.press(screen.getByText('Confirmar'));
+}
+
 async function selecionarPoliticaEEnviar() {
   await fireEvent.press(screen.getAllByRole('button', { name: 'Livre' })[0]);
   await fireEvent.press(screen.getByText('Adicionar horário'));
@@ -89,7 +96,7 @@ describe('HorariosProfessorScreen', () => {
     await render(<HorariosProfessorScreen />);
     await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
 
-    await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), '09:00');
+    await selecionarHora('09', '00');
     await fireEvent.changeText(screen.getByPlaceholderText('60'), '30');
     await selecionarPoliticaEEnviar();
 
@@ -105,7 +112,7 @@ describe('HorariosProfessorScreen', () => {
     await render(<HorariosProfessorScreen />);
     await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
 
-    await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), '14:00');
+    await selecionarHora('14', '00');
     await fireEvent.changeText(screen.getByPlaceholderText('60'), '30');
     await selecionarPoliticaEEnviar();
 
