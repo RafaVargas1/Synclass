@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Crown } from '@/components/atoms/Crown';
-import { ZigzagDivider } from '@/components/atoms/ZigzagDivider';
 import { Fonts, MaxContentWidth } from '@/theme/tokens';
 
 export type TopbarProps = {
@@ -29,7 +28,6 @@ export function Topbar({ titulo, children }: TopbarProps) {
         {titulo ? <TituloComVoltar titulo={titulo} /> : <Marca />}
         {children ? <View className="flex-row items-center gap-three">{children}</View> : null}
       </View>
-      <ZigzagDivider />
     </View>
   );
 }
