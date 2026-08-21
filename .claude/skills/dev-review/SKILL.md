@@ -167,3 +167,25 @@ confirmar — a menos que o usuário já tenha pedido postagem automática nesta
 mesma invocação da skill (ex: "revisa o PR 12 e já posta o comentário"), caso
 em que você pode postar sem esperar uma segunda confirmação, mas ainda assim
 deve mostrar o texto antes de rodar o comando `gh`.
+
+**Sempre termine o comentário postado com um marcador HTML** (invisível na
+renderização do GitHub, lido por `scripts/pipeline-orchestrator.sh` —
+ADR-0003, `docs/spec/decisions/ADR-0003-orquestrador-mecanico-sem-claude.md`
+— pra decidir se um PR pode ser mergeado sem gastar uma sessão Claude nova):
+
+```
+<!-- dev-review:status=aprovado -->
+```
+
+se o veredito do Passo 6 foi "aprovar" (nenhum achado bloqueante, gate de
+CI passou), ou
+
+```
+<!-- dev-review:status=mudancas-solicitadas -->
+```
+
+se foi "aprovar com ressalvas" ou "pedir mudanças" — qualquer coisa que não
+seja aprovação direta conta como `mudancas-solicitadas`, o orquestrador
+mecânico só mergeia no primeiro caso. Use sempre um dos dois valores
+exatos; o script lê o comentário mais recente do PR que contenha
+`dev-review:status=` — não invente um terceiro valor nem omita o marcador.
