@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
-import { SeletorDeData } from '@/components/molecules/SeletorDeData';
+import { SeletorDePeriodoDuplo } from '@/components/molecules/SeletorDePeriodoDuplo';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
 import {
@@ -34,7 +34,7 @@ export default function ValorDevidoAlunoScreen() {
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <TopbarAutenticada titulo="Quanto tenho que pagar" />
       <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
-        <PeriodoSelecionado
+        <SeletorDePeriodoDuplo
           inicio={estado.inicio}
           fim={estado.fim}
           onSelecionarInicio={estado.setInicio}
@@ -45,29 +45,6 @@ export default function ValorDevidoAlunoScreen() {
         {!estado.carregando && !estado.erro && <ListaDeValoresDevidos valoresDevidos={estado.valoresDevidos} />}
       </View>
     </SafeAreaView>
-  );
-}
-
-function PeriodoSelecionado({
-  inicio,
-  fim,
-  onSelecionarInicio,
-  onSelecionarFim,
-}: {
-  inicio: string | undefined;
-  fim: string | undefined;
-  onSelecionarInicio: (dataISO: string) => void;
-  onSelecionarFim: (dataISO: string) => void;
-}) {
-  return (
-    <View className="flex-row gap-three">
-      <View className="flex-1">
-        <SeletorDeData label="Início" valor={inicio} onSelecionar={onSelecionarInicio} />
-      </View>
-      <View className="flex-1">
-        <SeletorDeData label="Fim" valor={fim} onSelecionar={onSelecionarFim} />
-      </View>
-    </View>
   );
 }
 

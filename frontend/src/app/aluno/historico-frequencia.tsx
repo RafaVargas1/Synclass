@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
-import { SeletorDeData } from '@/components/molecules/SeletorDeData';
+import { SeletorDePeriodoDuplo } from '@/components/molecules/SeletorDePeriodoDuplo';
 import { HistoricoFrequenciaCard } from '@/components/organisms/HistoricoFrequenciaCard';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import {
@@ -33,7 +33,7 @@ export default function HistoricoFrequenciaAlunoScreen() {
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <TopbarAutenticada titulo="Meu histórico de frequência" />
       <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
-        <PeriodoSelecionado
+        <SeletorDePeriodoDuplo
           inicio={estado.inicio}
           fim={estado.fim}
           onSelecionarInicio={estado.setInicio}
@@ -44,29 +44,6 @@ export default function HistoricoFrequenciaAlunoScreen() {
         {!estado.carregando && !estado.erro && <ListaDeHistoricos historico={estado.historico} />}
       </View>
     </SafeAreaView>
-  );
-}
-
-function PeriodoSelecionado({
-  inicio,
-  fim,
-  onSelecionarInicio,
-  onSelecionarFim,
-}: {
-  inicio: string | undefined;
-  fim: string | undefined;
-  onSelecionarInicio: (dataISO: string) => void;
-  onSelecionarFim: (dataISO: string) => void;
-}) {
-  return (
-    <View className="flex-row gap-three">
-      <View className="flex-1">
-        <SeletorDeData label="Início" valor={inicio} onSelecionar={onSelecionarInicio} />
-      </View>
-      <View className="flex-1">
-        <SeletorDeData label="Fim" valor={fim} onSelecionar={onSelecionarFim} />
-      </View>
-    </View>
   );
 }
 
