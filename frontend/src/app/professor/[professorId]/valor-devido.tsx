@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { SeletorDeData } from '@/components/molecules/SeletorDeData';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
 import {
   calcularPeriodoTodos,
@@ -34,7 +34,7 @@ export default function ValorDevidoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Valor devido por Aluno" />
+      <TopbarAutenticada titulo="Valor devido por Aluno" />
       <View className="w-full flex-1 self-center gap-four px-four py-five" style={{ maxWidth: MaxContentWidth }}>
         <FiltroDePeriodo modo={estado.modo} onMudarModo={estado.setModo} />
         {estado.modo === 'personalizado' ? (

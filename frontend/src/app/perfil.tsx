@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PerfilForm } from '@/components/organisms/PerfilForm';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { atualizarNome, buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
@@ -84,7 +84,7 @@ export default function PerfilScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Meu perfil" />
+      <TopbarAutenticada titulo="Meu perfil" />
       <View
         className="w-full flex-1 self-center items-center justify-center gap-four px-four"
         style={{ maxWidth: MaxContentWidth }}

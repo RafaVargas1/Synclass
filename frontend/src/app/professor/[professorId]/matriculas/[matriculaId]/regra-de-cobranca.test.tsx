@@ -4,6 +4,17 @@ import { definirRegraDeCobranca, obterRegraDeCobranca } from '@/lib/api/regraDeC
 
 import RegraDeCobrancaScreen from './regra-de-cobranca';
 
+// TopbarAutenticada (#77) monta o MenuNavegacao real, que já tem sua
+// própria suíte (MenuNavegacao.test.tsx). Mockado aqui pra manter este
+// arquivo focado no contrato da própria tela, sem precisar mockar
+// usePathname/useIsTelaLarga/usePerfilLogado só por causa do menu.
+jest.mock('@/components/organisms/TopbarAutenticada', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    TopbarAutenticada: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+  };
+});
+
 jest.mock('@/lib/api/regraDeCobranca', () => ({
   definirRegraDeCobranca: jest.fn(),
   obterRegraDeCobranca: jest.fn(),
