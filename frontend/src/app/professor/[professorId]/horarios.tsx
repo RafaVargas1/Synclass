@@ -7,11 +7,13 @@ import { HorarioCard } from '@/components/organisms/HorarioCard';
 import { HorarioForm } from '@/components/organisms/HorarioForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import {
+  alterarTipoMarcacaoHorario,
   criarHorario,
   listarHorarios,
   removerHorario,
   type CriarHorarioInput,
   type Horario,
+  type TipoMarcacao,
 } from '@/lib/api/horarios';
 import { MaxContentWidth } from '@/theme/tokens';
 
@@ -54,7 +56,13 @@ function HorariosConteudo({ professorId }: { professorId: string }) {
       <FlatList
         data={estado.horarios}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <HorarioCard horario={item} onRemover={estado.handleRemover} />}
+        renderItem={({ item }) => (
+          <HorarioCard
+            horario={item}
+            onRemover={estado.handleRemover}
+            onAlterarPolitica={estado.handleAlterarPolitica}
+          />
+        )}
         contentContainerClassName="gap-two"
       />
     </>
@@ -74,6 +82,7 @@ function useGerenciamentoHorarios(professorId: string) {
   const [enviando, setEnviando] = useState(false);
   const handleSubmit = criarHandleSubmit(professorId, setHorarios, setErro, setEnviando);
   const handleRemover = criarHandleRemover(professorId, setHorarios, setErro);
+  const handleAlterarPolitica = criarHandleAlterarPolitica(professorId, setHorarios, setErro);
 
   useEffect(() => {
     let cancelado = false;
@@ -85,7 +94,7 @@ function useGerenciamentoHorarios(professorId: string) {
     };
   }, [professorId]);
 
-  return { horarios, erro, enviando, handleSubmit, handleRemover };
+  return { horarios, erro, enviando, handleSubmit, handleRemover, handleAlterarPolitica };
 }
 
 function criarHandleSubmit(
@@ -120,5 +129,23 @@ function criarHandleRemover(
       return;
     }
     setHorarios((atual) => atual.filter((horario) => horario.id !== horarioId));
+  };
+}
+
+function criarHandleAlterarPolitica(
+  professorId: string,
+  setHorarios: Dispatch<SetStateAction<Horario[]>>,
+  setErro: Dispatch<SetStateAction<string | undefined>>,
+) {
+  return async (horarioId: string, tipoMarcacao: TipoMarcacao) => {
+    setErro(undefined);
+    const resultado = await alterarTipoMarcacaoHorario(professorId, horarioId, tipoMarcacao);
+    if (!resultado.sucesso) {
+      setErro(resultado.mensagem);
+      return;
+    }
+    setHorarios((atual) =>
+      atual.map((horario) => (horario.id === horarioId ? resultado.horario : horario)),
+    );
   };
 }

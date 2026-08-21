@@ -8,7 +8,8 @@ namespace Synclass.Domain.Tests.Horarios;
 /// Cobre a Regra de Negócio central da issue #6 na entidade: criação válida,
 /// rejeição de duração inválida e o cálculo puro de sobreposição de horário
 /// (sem depender de repositório — ver <see cref="HorarioServiceTests"/> para
-/// o fluxo orquestrado com persistência).
+/// o fluxo orquestrado com persistência). Também cobre a alteração da
+/// política de marcação de um horário já cadastrado (issue #71).
 /// </summary>
 public sealed class HorarioTests
 {
@@ -128,6 +129,33 @@ public sealed class HorarioTests
         var acao = () => horario.AlterarLimiteAlunos(novoLimite, quantidadeAlunosAlocados: 0);
 
         acao.Should().Throw<LimiteAlunosInvalidoException>();
+    }
+
+    [Theory]
+    [InlineData(TipoMarcacao.Livre)]
+    [InlineData(TipoMarcacao.Fixo)]
+    [InlineData(TipoMarcacao.Hibrido)]
+    public void AlterarTipoMarcacao_ValorValido_TrocaAPoliticaDoHorario(TipoMarcacao novoTipo)
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+
+        horario.AlterarTipoMarcacao(novoTipo);
+
+        horario.TipoMarcacao.Should().Be(novoTipo);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(3)]
+    [InlineData(99)]
+    public void Criar_TipoMarcacaoInvalido_RejeitaComTipoMarcacaoInvalidoExceptionNaAlteracao(int tipoMarcacao)
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+
+        var acao = () => horario.AlterarTipoMarcacao((TipoMarcacao)tipoMarcacao);
+
+        acao.Should().Throw<TipoMarcacaoInvalidoException>();
+        horario.TipoMarcacao.Should().Be(TipoMarcacao.Livre);
     }
 
     [Fact]

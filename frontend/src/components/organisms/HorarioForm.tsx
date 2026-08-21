@@ -8,17 +8,12 @@ import { FormField } from '@/components/molecules/FormField';
 import { TipoMarcacao, type CriarHorarioInput, type Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { horariosSeSobrepoe } from '@/lib/horarioConflito';
+import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
 
 const OpcoesDiaSemana: readonly ChipSelectorOption<number>[] = NomesDiaSemana.map((nome, dia) => ({
   valor: dia,
   rotulo: nome.slice(0, 3),
 }));
-
-const OpcoesTipoMarcacao: readonly ChipSelectorOption<TipoMarcacao>[] = [
-  { valor: TipoMarcacao.Livre, rotulo: 'Livre' },
-  { valor: TipoMarcacao.Fixo, rotulo: 'Fixo' },
-  { valor: TipoMarcacao.Hibrido, rotulo: 'Híbrido' },
-];
 
 export type HorarioFormProps = {
   horariosExistentes: Horario[];

@@ -36,6 +36,9 @@ export type ListarHorariosResultado =
 
 export type RemoverHorarioResultado = { sucesso: true } | { sucesso: false; mensagem: string };
 
+export type AlterarTipoMarcacaoResultado =
+  { sucesso: true; horario: Horario } | { sucesso: false; mensagem: string };
+
 const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente novamente.';
 
 /**
@@ -99,4 +102,27 @@ export async function removerHorario(
     return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
   }
   return { sucesso: true };
+}
+
+export async function alterarTipoMarcacaoHorario(
+  professorId: string,
+  horarioId: string,
+  tipoMarcacao: TipoMarcacao,
+): Promise<AlterarTipoMarcacaoResultado> {
+  let response: Response;
+  try {
+    response = await fetchComTimeout(`/professores/${professorId}/horarios/${horarioId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipoMarcacao }),
+    });
+  } catch {
+    return { sucesso: false, mensagem: MensagemErroConexao };
+  }
+
+  const corpo = await response.json().catch(() => null);
+  if (!response.ok) {
+    return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
+  }
+  return { sucesso: true, horario: corpo as Horario };
 }

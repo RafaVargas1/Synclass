@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
-import { criarHorario, listarHorarios, removerHorario, TipoMarcacao } from '@/lib/api/horarios';
+import {
+  alterarTipoMarcacaoHorario,
+  criarHorario,
+  listarHorarios,
+  removerHorario,
+  TipoMarcacao,
+} from '@/lib/api/horarios';
 
 import HorariosProfessorScreen from './horarios';
 
@@ -10,12 +16,14 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('@/lib/api/horarios', () => ({
+  alterarTipoMarcacaoHorario: jest.fn(),
   criarHorario: jest.fn(),
   listarHorarios: jest.fn(),
   removerHorario: jest.fn(),
   TipoMarcacao: { Livre: 0, Fixo: 1, Hibrido: 2 },
 }));
 
+const alterarTipoMarcacaoHorarioMock = alterarTipoMarcacaoHorario as jest.Mock;
 const criarHorarioMock = criarHorario as jest.Mock;
 const listarHorariosMock = listarHorarios as jest.Mock;
 const removerHorarioMock = removerHorario as jest.Mock;
@@ -25,6 +33,7 @@ const horarioExistente = {
   diaSemana: 2,
   horaInicio: '10:00:00',
   duracaoMinutos: 60,
+  limiteAlunos: 1,
   tipoMarcacao: TipoMarcacao.Livre,
 };
 
@@ -35,6 +44,7 @@ async function selecionarPoliticaEEnviar() {
 
 describe('HorariosProfessorScreen', () => {
   beforeEach(() => {
+    alterarTipoMarcacaoHorarioMock.mockReset();
     criarHorarioMock.mockReset();
     listarHorariosMock.mockReset();
     removerHorarioMock.mockReset();
@@ -116,5 +126,46 @@ describe('HorariosProfessorScreen', () => {
       expect(screen.getByText('Não é possível remover: existem Alunos alocados.')).toBeTruthy(),
     );
     expect(screen.getByText(/Terça/)).toBeTruthy();
+  });
+
+  describe('handleAlterarPolitica (issue #71)', () => {
+    it('updates the local list with the returned horario when the politica changes', async () => {
+      const horarioComPoliticaAlterada = { ...horarioExistente, tipoMarcacao: TipoMarcacao.Fixo };
+      alterarTipoMarcacaoHorarioMock.mockResolvedValue({
+        sucesso: true,
+        horario: horarioComPoliticaAlterada,
+      });
+      await render(<HorariosProfessorScreen />);
+      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+
+      await fireEvent.press(screen.getByText('Editar política'));
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Fixo' })[1]);
+      await fireEvent.press(screen.getByText('Salvar'));
+
+      expect(alterarTipoMarcacaoHorarioMock).toHaveBeenCalledWith(
+        'professor-1',
+        'h1',
+        TipoMarcacao.Fixo,
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId('horario-politica-atual')).toHaveTextContent('Fixo'),
+      );
+    });
+
+    it('shows the Api error message and keeps the horario when the politica change fails', async () => {
+      alterarTipoMarcacaoHorarioMock.mockResolvedValue({
+        sucesso: false,
+        mensagem: 'Tipo de marcação inválido.',
+      });
+      await render(<HorariosProfessorScreen />);
+      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+
+      await fireEvent.press(screen.getByText('Editar política'));
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Fixo' })[1]);
+      await fireEvent.press(screen.getByText('Salvar'));
+
+      await waitFor(() => expect(screen.getByText('Tipo de marcação inválido.')).toBeTruthy());
+      expect(screen.getByTestId('horario-politica-atual')).toHaveTextContent('Livre');
+    });
   });
 });
