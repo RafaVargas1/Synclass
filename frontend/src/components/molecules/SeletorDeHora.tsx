@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+
+const Horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const Minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
 export type SeletorDeHoraProps = {
   label: string;
@@ -28,7 +31,46 @@ export function SeletorDeHora({ label, valor, onSelecionar }: SeletorDeHoraProps
           {valor ? valor : 'Selecionar hora'}
         </Text>
       </Pressable>
-      {aberto ? <Text>painel</Text> : null}
+      {aberto ? (
+        <View className="gap-one">
+          <Text className="text-xs font-semibold uppercase tracking-widest text-text-secondary dark:text-dark-text-secondary">
+            Hora
+          </Text>
+          <ScrollView horizontal>
+            <View className="flex-row">
+              {Horas.map((hora) => (
+                <Pressable
+                  key={hora}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Hora ${hora}`}
+                  className="items-center justify-center"
+                  style={{ minWidth: 44, minHeight: 44 }}
+                >
+                  <Text className="text-sm text-text dark:text-dark-text">{hora}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+          <Text className="text-xs font-semibold uppercase tracking-widest text-text-secondary dark:text-dark-text-secondary">
+            Minuto
+          </Text>
+          <ScrollView horizontal>
+            <View className="flex-row">
+              {Minutos.map((minuto) => (
+                <Pressable
+                  key={minuto}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Minuto ${minuto}`}
+                  className="items-center justify-center"
+                  style={{ minWidth: 44, minHeight: 44 }}
+                >
+                  <Text className="text-sm text-text dark:text-dark-text">{minuto}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      ) : null}
     </View>
   );
 }

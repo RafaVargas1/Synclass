@@ -1,6 +1,9 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { SeletorDeHora } from './SeletorDeHora';
+
+const Horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const Minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
 describe('SeletorDeHora', () => {
   it('shows the value formatted as HH:mm when a value is provided', async () => {
@@ -15,5 +18,20 @@ describe('SeletorDeHora', () => {
 
     expect(screen.getByText('Início')).toBeTruthy();
     expect(screen.getByText('Selecionar hora')).toBeTruthy();
+  });
+
+  it('opens the panel on press listing hours 00-23 and minutes 00-59', async () => {
+    await render(<SeletorDeHora label="Início" valor={undefined} onSelecionar={() => {}} />);
+
+    await fireEvent.press(screen.getByText('Selecionar hora'));
+
+    expect(screen.getByText('Hora')).toBeTruthy();
+    expect(screen.getByText('Minuto')).toBeTruthy();
+    for (const hora of Horas) {
+      expect(screen.getByLabelText(`Hora ${hora}`)).toBeTruthy();
+    }
+    for (const minuto of Minutos) {
+      expect(screen.getByLabelText(`Minuto ${minuto}`)).toBeTruthy();
+    }
   });
 });
