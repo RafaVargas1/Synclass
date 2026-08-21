@@ -4,19 +4,34 @@ import { TipoMarcacao } from '@/lib/api/horarios';
 
 import { HorarioForm } from './HorarioForm';
 
-async function preencherEEnviar(horaInicio: string, duracaoMinutos: string) {
+async function selecionarHora(hora: string, minuto: string) {
+  await fireEvent.press(screen.getByText('Selecionar hora'));
+  await fireEvent.press(screen.getByLabelText(`Hora ${hora}`));
+  await fireEvent.press(screen.getByLabelText(`Minuto ${minuto}`));
+  await fireEvent.press(screen.getByText('Confirmar'));
+}
+
+async function preencherEEnviar(hora: string, minuto: string, duracaoMinutos: string) {
   await fireEvent.press(screen.getByText('Livre'));
-  await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), horaInicio);
+  await selecionarHora(hora, minuto);
   await fireEvent.changeText(screen.getByPlaceholderText('60'), duracaoMinutos);
   await fireEvent.press(screen.getByText('Adicionar horário'));
 }
 
 describe('HorarioForm', () => {
+  it('uses SeletorDeHora for the start time instead of a free text input', async () => {
+    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={jest.fn()} />);
+
+    expect(screen.getByText('Hora de início')).toBeTruthy();
+    expect(screen.getByText('Selecionar hora')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('HH:mm')).toBeNull();
+  });
+
   it('calls onSubmit with valid data and no conflict', async () => {
     const onSubmit = jest.fn();
     await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
-    await preencherEEnviar('10:00', '60');
+    await preencherEEnviar('10', '00', '60');
 
     expect(onSubmit).toHaveBeenCalledWith({
       diaSemana: 1,
@@ -32,7 +47,7 @@ describe('HorarioForm', () => {
     await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await fireEvent.press(screen.getByText('Híbrido'));
-    await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), '10:00');
+    await selecionarHora('10', '00');
     await fireEvent.changeText(screen.getByPlaceholderText('60'), '60');
     await fireEvent.press(screen.getByText('Adicionar horário'));
 
@@ -45,7 +60,7 @@ describe('HorarioForm', () => {
     const onSubmit = jest.fn();
     await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
-    await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), '10:00');
+    await selecionarHora('10', '00');
     await fireEvent.changeText(screen.getByPlaceholderText('60'), '60');
     await fireEvent.press(screen.getByText('Adicionar horário'));
 
@@ -58,7 +73,7 @@ describe('HorarioForm', () => {
     await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('1'), '4');
-    await preencherEEnviar('10:00', '60');
+    await preencherEEnviar('10', '00', '60');
 
     expect(onSubmit).toHaveBeenCalledWith({
       diaSemana: 1,
@@ -74,7 +89,7 @@ describe('HorarioForm', () => {
     await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('1'), '0');
-    await preencherEEnviar('10:00', '60');
+    await preencherEEnviar('10', '00', '60');
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText('Informe um limite de alunos maior que zero.')).toBeTruthy();
@@ -96,7 +111,7 @@ describe('HorarioForm', () => {
       <HorarioForm horariosExistentes={horariosExistentes} enviando={false} onSubmit={onSubmit} />,
     );
 
-    await preencherEEnviar('10:30', '30');
+    await preencherEEnviar('10', '30', '30');
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText(/conflita/)).toBeTruthy();
@@ -106,7 +121,7 @@ describe('HorarioForm', () => {
     const onSubmit = jest.fn();
     await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
-    await preencherEEnviar('10:00', '0');
+    await preencherEEnviar('10', '00', '0');
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText('Informe uma duração em minutos maior que zero.')).toBeTruthy();
