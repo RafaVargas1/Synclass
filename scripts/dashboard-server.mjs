@@ -184,7 +184,10 @@ const heartbeatIntervalId = setInterval(() => {
 }, INTERVALO_HEARTBEAT_MS);
 heartbeatIntervalId.unref();
 
-server.listen(PORT, () => {
+// Bind só em loopback: ferramenta interna, só usada localmente por quem
+// roda scripts/deepseek-agent.mjs na própria máquina — não precisa estar
+// acessível por outros hosts da rede (docs/spec/security-rules.md).
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`Dashboard disponível em http://localhost:${PORT}`);
 });
 
