@@ -85,6 +85,12 @@ describe('BotaoLoginGoogle', () => {
     expect(onCadastroPendente).not.toHaveBeenCalled();
   });
 
+  it('renders the official Google G icon next to the label (issue #113)', async () => {
+    await render(<BotaoLoginGoogle onAutenticado={onAutenticado} onCadastroPendente={onCadastroPendente} />);
+
+    expect(screen.getByTestId('icone-google', { includeHiddenElements: true })).toBeTruthy();
+  });
+
   it('não emite callback quando o usuário cancela o fluxo do Google (idToken null)', async () => {
     obterIdTokenMock.mockResolvedValue(null);
 

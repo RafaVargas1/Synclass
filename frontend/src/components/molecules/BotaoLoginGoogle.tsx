@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Pressable, Text } from 'react-native';
 
-import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
+import { IconeGoogle } from '@/components/atoms/IconeGoogle';
 import { loginComGoogle } from '@/lib/api/auth';
 import { obterIdTokenGoogle } from '@/lib/auth/google';
 
@@ -27,10 +28,17 @@ export type BotaoLoginGoogleProps = {
 
 /**
  * Molécula: botão único de entrada com conta Google (issue #65),
- * reaproveitado nas 3 telas que aceitam Google (login, cadastro Professor e
- * cadastro Aluno). É a única que conhece o fluxo completo do Google
- * (`obterIdTokenGoogle` → `loginComGoogle`), assim as telas não duplicam a
- * orquestração — a tela só decide o que fazer com o desfecho via callback.
+ * reaproveitado nas 4 telas que aceitam Google (Home, login, cadastro
+ * Professor e cadastro Aluno). É a única que conhece o fluxo completo do
+ * Google (`obterIdTokenGoogle` → `loginComGoogle`), assim as telas não
+ * duplicam a orquestração — a tela só decide o que fazer com o desfecho via
+ * callback.
+ *
+ * Estilo próprio (issue #113, não o átomo `Button` genérico do app): fundo
+ * claro/borda + `IconeGoogle`, seguindo as diretrizes de marca do Google
+ * pra botão "Sign in with Google" — um botão de terceiro que usa o estilo
+ * genérico do app quebra reconhecimento de marca (ver
+ * `docs/spec/ux-heuristics.md#reconhecimento-em-vez-de-recordação`).
  *
  * O cancelamento do fluxo pelo usuário (`idToken === null`) não é erro nem
  * desfecho informado à tela: apenas não dispara nada, já que o Google
@@ -73,7 +81,20 @@ export function BotaoLoginGoogle({ onAutenticado, onCadastroPendente }: BotaoLog
 
   return (
     <>
-      <Button label={carregando ? 'Entrando...' : 'Entrar com Google'} onPress={handlePress} disabled={carregando} />
+      <Pressable
+        accessibilityRole="button"
+        onPress={handlePress}
+        disabled={carregando}
+        className={`w-full flex-row items-center justify-center gap-three border border-[#747775] bg-white px-four py-three active:bg-[#F8F9FA] dark:border-[#8E918F] dark:bg-[#131314] dark:active:bg-[#1E1F20] ${
+          carregando ? 'opacity-60' : ''
+        }`}
+        style={{ minHeight: 44 }}
+      >
+        <IconeGoogle />
+        <Text className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
+          {carregando ? 'Entrando...' : 'Entrar com Google'}
+        </Text>
+      </Pressable>
       {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
     </>
   );

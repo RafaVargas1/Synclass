@@ -1,31 +1,51 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { Marca } from '@/components/atoms/Marca';
 import { Button } from '@/components/atoms/Button';
+import { Divisor } from '@/components/atoms/Divisor';
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
+import { Marca } from '@/components/atoms/Marca';
 import { Paragraph } from '@/components/atoms/Paragraph';
+import {
+  BotaoLoginGoogle,
+  type ResultadoAutenticadoGoogle,
+} from '@/components/molecules/BotaoLoginGoogle';
 import { Fonts } from '@/theme/tokens';
 
 export type HomeHeroProps = {
+  onAutenticadoGoogle: (resultado: ResultadoAutenticadoGoogle) => void;
+  onCadastroPendenteGoogle: (email: string) => void;
   onEntrarComoProfessor: () => void;
   onEntrarComoAluno: () => void;
   onLogin: () => void;
+  /** Erro ao concluir o login Google já autenticado (ex: falha ao persistir a sessão no dispositivo). */
+  erro?: string;
 };
 
 /**
  * Organismo: seção de apresentação da Home, na direção visual art deco
  * aprovada pelo Rafael (moldura escalonada em vez de sombra/gradiente —
  * ver docs/spec/design-system.md#tipografia para a decisão da fonte de
- * destaque `Fonts.deco`). `onLogin` é a entrada de navegação para o login
- * por código (issue #18) — ação secundária, para quem já tem conta.
- * `onEntrarComoProfessor`/`onEntrarComoAluno` são os dois caminhos de
- * entrada (issue #64) — o Aluno deixou de ser um card estático e passou a
- * ter um CTA de mesmo peso (leva à tela única de `app/aluno`, que combina
- * código de convite + cadastro).
+ * destaque `Fonts.deco`).
+ *
+ * Hierarquia de entrada (issues #111/#112/#114, achados de UX): "Entrar
+ * com Google" é o CTA de maior destaque — autenticação de um toque, o
+ * caminho mais frequente pra quem já tem conta, direto na Home sem
+ * navegar antes pra `/login` (Hick's Law,
+ * `docs/spec/ux-heuristics.md#número-de-opções-simultâneas`). "Entrar com
+ * código" é o link secundário pra quem prefere OTP. Os CTAs de cadastro
+ * ("Cadastrar como Professor"/"Cadastrar como Aluno", nomeados pela ação —
+ * não mais "sou X", que comunicava identidade e não ação, achado de
+ * reconhecimento de `docs/spec/ux-heuristics.md`) ficam por último, em
+ * variante secundária — não competem em peso visual com as ações de
+ * entrar, já que cadastro é o caminho menos frequente (só primeira visita).
  */
 export function HomeHero({
+  onAutenticadoGoogle,
+  onCadastroPendenteGoogle,
   onEntrarComoProfessor,
   onEntrarComoAluno,
   onLogin,
+  erro,
 }: HomeHeroProps) {
   return (
     <View className="w-full max-w-[480px] items-center gap-five">
@@ -34,15 +54,19 @@ export function HomeHero({
         Professor organiza horários e frequência dos seus Alunos, Aluno confirma presença e
         acompanha o que deve, tudo em um só lugar.
       </Paragraph>
-      <Divisor />
       <View className="w-full gap-three">
-        <Button label="sou Professor" onPress={onEntrarComoProfessor} />
-        <Button label="sou Aluno" onPress={onEntrarComoAluno} />
+        <BotaoLoginGoogle onAutenticado={onAutenticadoGoogle} onCadastroPendente={onCadastroPendenteGoogle} />
+        {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
         <Pressable accessibilityRole="button" onPress={onLogin} className="items-center py-two">
           <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
-            Já tenho conta, entrar
+            Entrar com código
           </Text>
         </Pressable>
+      </View>
+      <Divisor />
+      <View className="w-full gap-three">
+        <Button label="Cadastrar como Professor" variante="secundario" onPress={onEntrarComoProfessor} />
+        <Button label="Cadastrar como Aluno" variante="secundario" onPress={onEntrarComoAluno} />
       </View>
     </View>
   );
@@ -65,19 +89,6 @@ function MolduraDaMarca() {
         </Text>
       </View>
       <Marca invertido />
-    </View>
-  );
-}
-
-function Divisor() {
-  return (
-    <View className="w-full flex-row items-center gap-three">
-      <View className="h-px flex-1 bg-border dark:bg-dark-border" />
-      <View
-        className="h-2 w-2 bg-primary dark:bg-dark-primary"
-        style={{ transform: [{ rotate: '45deg' }] }}
-      />
-      <View className="h-px flex-1 bg-border dark:bg-dark-border" />
     </View>
   );
 }

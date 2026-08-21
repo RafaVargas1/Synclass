@@ -1,15 +1,16 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/atoms/Button';
+import { Divisor } from '@/components/atoms/Divisor';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { BotaoLoginGoogle } from '@/components/molecules/BotaoLoginGoogle';
 import { SolicitarCodigoForm } from '@/components/organisms/SolicitarCodigoForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import { solicitarCodigo } from '@/lib/api/auth';
-import { useSessao } from '@/lib/auth/contexto-sessao';
+import { useAutenticadoGoogle } from '@/lib/auth/useAutenticadoGoogle';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
@@ -27,11 +28,12 @@ import { MaxContentWidth } from '@/theme/tokens';
  */
 export default function LoginScreen() {
   const router = useRouter();
-  const { definirSessao } = useSessao();
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { handleAutenticadoGoogle, erroGoogle } = useAutenticadoGoogle();
   const [contato, setContato] = useState('');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
-  const [emailPendente, setEmailPendente] = useState<string | undefined>(undefined);
+  const [emailPendente, setEmailPendente] = useState<string | undefined>(email);
 
   async function handleSubmit() {
     setEnviando(true);
@@ -45,21 +47,6 @@ export default function LoginScreen() {
       return;
     }
     router.push({ pathname: '/login/verificar', params: { contato } });
-  }
-
-  async function handleAutenticado({
-    token,
-    papeis,
-  }: {
-    token: string;
-    papeis: string[];
-  }) {
-    try {
-      await definirSessao(token, papeis);
-      router.replace('/painel');
-    } catch {
-      setErro('Não foi possível concluir o login neste dispositivo. Tente novamente.');
-    }
   }
 
   function handleCadastroPendente(email: string) {
@@ -85,7 +72,7 @@ export default function LoginScreen() {
               Seu e-mail ainda não tem uma conta. Continue o cadastro como:
             </Paragraph>
             <Button
-              label="sou Professor"
+              label="Cadastrar como Professor"
               onPress={() => {
                 handleEscolhaCadastro();
                 router.push({
@@ -95,7 +82,7 @@ export default function LoginScreen() {
               }}
             />
             <Button
-              label="sou Aluno"
+              label="Cadastrar como Aluno"
               onPress={() => {
                 handleEscolhaCadastro();
                 router.push({
@@ -106,19 +93,20 @@ export default function LoginScreen() {
             />
           </View>
         ) : (
-          <>
+          <View className="w-full gap-four">
             <SolicitarCodigoForm
               contato={contato}
-              erro={erro}
+              erro={erro ?? erroGoogle}
               enviando={enviando}
               onChangeContato={setContato}
               onSubmit={handleSubmit}
             />
+            <Divisor texto="ou" />
             <BotaoLoginGoogle
-              onAutenticado={handleAutenticado}
+              onAutenticado={handleAutenticadoGoogle}
               onCadastroPendente={handleCadastroPendente}
             />
-          </>
+          </View>
         )}
       </View>
     </SafeAreaView>

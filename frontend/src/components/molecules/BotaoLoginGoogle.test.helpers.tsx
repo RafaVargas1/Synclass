@@ -1,3 +1,5 @@
+import { Text } from 'react-native';
+
 import type {
   BotaoLoginGoogleProps,
 } from '@/components/molecules/BotaoLoginGoogle';
@@ -12,7 +14,13 @@ import type {
  */
 export let botaoProps: BotaoLoginGoogleProps;
 
+/**
+ * Renderiza o rótulo real (não `null`) pra testes de hierarquia/ordem
+ * (ex: `HomeHero`, issue #111) conseguirem localizar o botão via
+ * `getByText`/`getByRole` sem precisar do fluxo interno do Google.
+ */
 export function BotaoLoginGoogleDeTeste(props: BotaoLoginGoogleProps) {
+  // eslint-disable-next-line react-hooks/globals -- substituto de mock só de teste, nunca roda em produção; é o único jeito de os testes das telas acionarem os callbacks sem duplicar o fluxo do Google.
   botaoProps = props;
-  return null;
+  return <Text accessibilityRole="button">Entrar com Google</Text>;
 }
