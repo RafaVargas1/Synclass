@@ -79,4 +79,22 @@ describe('Topbar', () => {
 
     expect(screen.getByText('Sair')).toBeTruthy();
   });
+
+  it('renders the optional menuNavegacao slot (ex: botão de menu no mobile)', async () => {
+    await render(<Topbar menuNavegacao={<Text>Abrir menu</Text>} />);
+
+    expect(screen.getByText('Abrir menu')).toBeTruthy();
+  });
+
+  it('mantém titulo e children ao exibir menuNavegacao, sem quebrar o uso atual', async () => {
+    await render(
+      <Topbar titulo="Meu perfil" menuNavegacao={<Text>Abrir menu</Text>}>
+        <Text>Sair</Text>
+      </Topbar>,
+    );
+
+    expect(screen.getByRole('header', { name: 'Meu perfil' })).toBeTruthy();
+    expect(screen.getByText('Abrir menu')).toBeTruthy();
+    expect(screen.getByText('Sair')).toBeTruthy();
+  });
 });

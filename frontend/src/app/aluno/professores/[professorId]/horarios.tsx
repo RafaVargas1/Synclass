@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { HorarioVagoCard } from '@/components/organisms/HorarioVagoCard';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { listarHorariosVagos, marcarHorario, type HorarioVago } from '@/lib/api/marcacoes';
 import { MaxContentWidth } from '@/theme/tokens';
 
@@ -27,7 +27,7 @@ export default function HorariosVagosAlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Horários disponíveis" />
+      <TopbarAutenticada titulo="Horários disponíveis" />
       <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
         {estado.erro ? <ErrorMessage>{estado.erro}</ErrorMessage> : null}
         <ConteudoHorariosVagos horarios={estado.horarios} onMarcar={estado.handleMarcar} />

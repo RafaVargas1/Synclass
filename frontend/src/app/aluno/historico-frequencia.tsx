@@ -6,7 +6,7 @@ import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { SeletorDePeriodo } from '@/components/molecules/SeletorDePeriodo';
 import { HistoricoFrequenciaCard } from '@/components/organisms/HistoricoFrequenciaCard';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import {
   listarHistoricoFrequenciaDoAluno,
   type HistoricoFrequenciaPorProfessor,
@@ -28,7 +28,7 @@ export default function HistoricoFrequenciaAlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Meu histórico de frequência" />
+      <TopbarAutenticada titulo="Meu histórico de frequência" />
       <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
         <SeletorDePeriodo
           inicio={estado.inicio}

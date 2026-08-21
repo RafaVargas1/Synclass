@@ -10,22 +10,31 @@ export type TopbarProps = {
   titulo?: string;
   /** Conteúdo à direita (links de navegação, usuário + Sair, etc). */
   children?: ReactNode;
+  /** Menu de navegação (#77). Slot opcional: no mobile o `MenuNavegacao`
+   *  renderiza o próprio botão de abrir/fechar; no desktop, o painel lateral.
+   *  Fica à esquerda do título/marca, sem substituir `titulo` nem `children`. */
+  menuNavegacao?: ReactNode;
 };
 
 /**
  * Organismo: cabeçalho consistente de toda tela (issue de usabilidade —
  * antes desta issue nenhuma tela tinha forma de voltar). Duas variantes:
  * marca (sem `titulo`, usada na Home e no Painel — telas raiz de
- * navegação) ou voltar+título (demais telas).
+ * navegação) ou voltar+título (demais telas). `menuNavegacao` (#77) é um
+ * slot opcional à esquerda para o menu persistente/por botão do fluxo
+ * autenticado, sem alterar a API existente (`titulo`/`children`).
  */
-export function Topbar({ titulo, children }: TopbarProps) {
+export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
   return (
     <View className="border-b border-border bg-background dark:border-dark-border dark:bg-dark-background">
       <View
         className="w-full flex-row items-center justify-between self-center px-four py-three"
         style={{ maxWidth: MaxContentWidth }}
       >
-        {titulo ? <TituloComVoltar titulo={titulo} /> : <Logotipo />}
+        <View className="flex-row items-center gap-three">
+          {menuNavegacao ? menuNavegacao : null}
+          {titulo ? <TituloComVoltar titulo={titulo} /> : <Logotipo />}
+        </View>
         {children ? <View className="flex-row items-center gap-three">{children}</View> : null}
       </View>
     </View>

@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { FrequenciaAlunoToggle } from '@/components/organisms/FrequenciaAlunoToggle';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { listarAlocacoes } from '@/lib/api/alocacoes';
 import { listarAlunosProvisorios, type AlunoProvisorio } from '@/lib/api/alunosProvisorios';
 import { registrarFrequencia, type RegistroFrequenciaItem } from '@/lib/api/frequencias';
@@ -41,7 +41,7 @@ export default function ChamadaScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Chamada" />
+      <TopbarAutenticada titulo="Chamada" />
       <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
         {carregamento.erro ? <ErrorMessage>{carregamento.erro}</ErrorMessage> : null}
         {salvamento.erro ? <ErrorMessage>{salvamento.erro}</ErrorMessage> : null}

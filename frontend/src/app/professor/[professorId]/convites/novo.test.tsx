@@ -7,6 +7,17 @@ import { gerarConvite } from '@/lib/api/convites';
 
 import GerarConviteScreen from './novo';
 
+// TopbarAutenticada (#77) monta o MenuNavegacao real, que já tem sua
+// própria suíte (MenuNavegacao.test.tsx). Mockado aqui pra manter este
+// arquivo focado no contrato da própria tela, sem precisar mockar
+// usePathname/useIsTelaLarga/usePerfilLogado só por causa do menu.
+jest.mock('@/components/organisms/TopbarAutenticada', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    TopbarAutenticada: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+  };
+});
+
 jest.mock('@/lib/api/convites', () => ({
   gerarConvite: jest.fn(),
 }));

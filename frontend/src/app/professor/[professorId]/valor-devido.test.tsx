@@ -4,6 +4,17 @@ import { calcularPeriodoTodos, listarValorDevido } from '@/lib/api/valorDevido';
 
 import ValorDevidoScreen from './valor-devido';
 
+// TopbarAutenticada (#77) monta o MenuNavegacao real, que já tem sua
+// própria suíte (MenuNavegacao.test.tsx). Mockado aqui pra manter este
+// arquivo focado no contrato da própria tela, sem precisar mockar
+// usePathname/useIsTelaLarga/usePerfilLogado só por causa do menu.
+jest.mock('@/components/organisms/TopbarAutenticada', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    TopbarAutenticada: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+  };
+});
+
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ professorId: 'professor-1' }),
   useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),

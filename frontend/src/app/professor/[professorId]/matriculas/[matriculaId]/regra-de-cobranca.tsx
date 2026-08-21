@@ -7,7 +7,7 @@ import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { RegraDeCobrancaForm } from '@/components/organisms/RegraDeCobrancaForm';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import {
   definirRegraDeCobranca,
   obterRegraDeCobranca,
@@ -55,7 +55,7 @@ function TelaComFormulario({
   const { enviando, erro, salva, handleSubmit } = useDefinirRegraDeCobranca(professorId, matriculaId);
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Regra de cobrança" />
+      <TopbarAutenticada titulo="Regra de cobrança" />
       <View
         className="w-full flex-1 self-center items-center justify-center gap-four px-four"
         style={{ maxWidth: MaxContentWidth }}

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlunoProvisorioConfirmado } from '@/components/molecules/AlunoProvisorioConfirmado';
 import { CadastroAlunoProvisorioForm } from '@/components/organisms/CadastroAlunoProvisorioForm';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { cadastrarAlunoProvisorio } from '@/lib/api/alunosProvisorios';
 import { MaxContentWidth } from '@/theme/tokens';
 
@@ -40,7 +40,7 @@ export default function CadastroAlunoProvisorioScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Cadastrar Aluno" />
+      <TopbarAutenticada titulo="Cadastrar Aluno" />
       <View
         className="w-full flex-1 items-center justify-center self-center px-four"
         style={{ maxWidth: MaxContentWidth }}

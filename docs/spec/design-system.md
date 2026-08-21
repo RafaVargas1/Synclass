@@ -166,6 +166,29 @@ uma tela quando ela sobra espaço em monitores web largos.
 | `MaxContentWidth` | `800` | container de formulários (telas de cadastro/editar) |
 | `MaxContentWidthPainel` *(novo)* | `1120` | container do Painel (tela pós-login, issue #69) — mais largo porque distribui ações lado a lado; nome explícito para não confundir com o token genérico de formulário |
 
+## Navegação persistente
+
+`MenuNavegacao` (issue #77) fica no `Topbar`, à esquerda do título/marca, via
+o slot opcional `menuNavegacao` — não é um componente separado colado na
+tela, é parte do cabeçalho. Dois modos conforme `useIsTelaLarga` (breakpoint
+de 1024px): em viewport larga as seções ficam sempre visíveis (painel/lista
+inline, sem exigir toque para abrir); em viewport estreita o menu começa
+fechado e só aparece ao acionar um botão de abrir/fechar (`Abrir menu`/
+`Fechar menu` como `accessibilityLabel`), evitando competir por espaço com o
+conteúdo da tela no celular.
+
+A seção correspondente à rota ativa é destacada com `background-selected`
+(mesma escada de contraste de `## Forma e elevação`, não uma cor nova) — sem
+sublinhado nem ícone extra marcando o item ativo. Quando o usuário acumula
+mais de um papel, o `AlternadorDePapel` aparece dentro do próprio menu, antes
+da lista de seções, em vez de duplicado em outro canto da tela.
+
+Toda tela do fluxo autenticado usa `TopbarAutenticada` (não `Topbar`
+diretamente) para herdar esse menu sem repetir a resolução de sessão em cada
+tela — exceção: telas de fluxo anônimo (`login`, cadastro de Professor,
+tela inicial do Aluno) continuam em `Topbar` puro, sem menu, porque ainda
+não há sessão para derivar seções.
+
 ## Ícones
 
 Lucide está fora. Recomendo **Phosphor** (`phosphor-react-native`, MIT,
