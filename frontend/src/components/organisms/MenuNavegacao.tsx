@@ -15,9 +15,12 @@ import { AlvoDeToqueMinimo } from '@/theme/tokens';
  * à rota ativa vinda de `usePathname`. Compara por igualdade de caminho:
  * as seções de Professor já embutem o `usuarioId` real do logado, então
  * cada rota do próprio Professor casa exatamente com a seção correspondente.
+ * `todasSecoes` inclui `SecaoMeuPerfil` (issue #129): o item fixo de perfil
+ * precisa ser destacado quando a rota ativa é `/perfil` — antes só buscava
+ * em `secoesDoPapel`, que nunca contém esse item.
  */
-function encontrarSecaoAtiva(secoes: Secao[], pathname: string): Secao | undefined {
-  return secoes.find((secao) => pathname === secao.href);
+function encontrarSecaoAtiva(todasSecoes: Secao[], pathname: string): Secao | undefined {
+  return todasSecoes.find((secao) => pathname === secao.href);
 }
 
 /** "Meu perfil" (#77 follow-up): item fixo do menu, igual em qualquer papel
@@ -51,11 +54,11 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
   const telaLarga = useIsTelaLarga();
   const [aberto, setAberto] = useState(false);
   const secoes = secoesDoPapel(papelAtivo, usuarioId);
-  const secaoAtiva = encontrarSecaoAtiva(secoes, pathname);
+  const todasSecoes = [...secoes, SecaoMeuPerfil];
+  const secaoAtiva = encontrarSecaoAtiva(todasSecoes, pathname);
 
   const exibirSeccoes = telaLarga || aberto;
   const temVariosPapeis = papeis.length > 1;
-  const todasSecoes = [...secoes, SecaoMeuPerfil];
 
   return (
     <View className={telaLarga ? 'w-full' : 'relative'}>

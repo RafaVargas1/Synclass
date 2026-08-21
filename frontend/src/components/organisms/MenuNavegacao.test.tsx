@@ -60,6 +60,14 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(screen.getByRole('link', { name: 'Cadastrar Aluno', selected: false })).toBeTruthy();
   });
 
+  it('destaca "Meu perfil" quando a rota ativa é /perfil (issue #129)', async () => {
+    mockUsePathname.mockReturnValue('/perfil');
+
+    await render(<MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />);
+
+    expect(screen.getByRole('link', { name: 'Meu perfil', selected: true })).toBeTruthy();
+  });
+
   it('navega direto entre as seções via Link, sem passar por /painel', async () => {
     mockUsePathname.mockReturnValue('/aluno/historico-frequencia');
 
