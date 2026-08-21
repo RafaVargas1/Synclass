@@ -107,4 +107,53 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(screen.getByTestId('secao-link-/aluno/valor-devido')).toBeTruthy();
     expect(screen.getByLabelText('Fechar menu')).toBeTruthy();
   });
+
+  it('com dois papéis mostra as seções do papel ativo e inclui AlternadorDePapel', async () => {
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+    const onSelecionarPapel = jest.fn();
+
+    await render(
+      <MenuNavegacao
+        papeis={['Professor', 'Aluno']}
+        papelAtivo="Professor"
+        onSelecionarPapel={onSelecionarPapel}
+      />,
+    );
+
+    // Seções do papel ativo (Professor) visíveis; as do Aluno não.
+    expect(screen.getByTestId('secao-link-/professor/abc-123/horarios')).toBeTruthy();
+    expect(screen.queryByTestId('secao-link-/aluno/valor-devido')).toBeNull();
+    // AlternadorDePapel presente por haver mais de um papel.
+    expect(screen.getByRole('button', { name: 'Professor', selected: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Aluno', selected: false })).toBeTruthy();
+  });
+
+  it('ao trocar de papel (rerender), a lista de seções exibida muda', async () => {
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+    const onSelecionarPapel = jest.fn();
+
+    const { rerender } = await render(
+      <MenuNavegacao
+        papeis={['Professor', 'Aluno']}
+        papelAtivo="Professor"
+        onSelecionarPapel={onSelecionarPapel}
+      />,
+    );
+
+    // Acionar a aba Aluno repassa a troca para o parent.
+    await fireEvent.press(screen.getByRole('button', { name: 'Aluno' }));
+    expect(onSelecionarPapel).toHaveBeenCalledWith('Aluno');
+
+    // Parent atualiza papelAtivo → menu passa a exibir as seções do Aluno.
+    await rerender(
+      <MenuNavegacao
+        papeis={['Professor', 'Aluno']}
+        papelAtivo="Aluno"
+        onSelecionarPapel={onSelecionarPapel}
+      />,
+    );
+
+    expect(screen.getByTestId('secao-link-/aluno/valor-devido')).toBeTruthy();
+    expect(screen.queryByTestId('secao-link-/professor/abc-123/horarios')).toBeNull();
+  });
 });
