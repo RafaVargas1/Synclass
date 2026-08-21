@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { Crown } from '@/components/atoms/Crown';
+import { Marca } from '@/components/atoms/Marca';
 import { Button } from '@/components/atoms/Button';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { Fonts } from '@/theme/tokens';
@@ -51,7 +51,7 @@ export function HomeHero({
 function MolduraDaMarca() {
   return (
     <View className="items-center">
-      <Crown degraus={[8, 16, 24]} />
+      <Marca />
       <View className="border border-text bg-background px-six py-five dark:border-dark-text dark:bg-dark-background">
         <View className="absolute inset-1.5 border border-border dark:border-dark-border" />
         <Text
@@ -64,7 +64,7 @@ function MolduraDaMarca() {
           Agenda entre Professor e Aluno
         </Text>
       </View>
-      <Crown degraus={[8, 16, 24]} invertido />
+      <Marca invertido />
     </View>
   );
 }
