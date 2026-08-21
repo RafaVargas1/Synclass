@@ -7,6 +7,7 @@ import type { Alocacao } from '@/lib/api/alocacoes';
 import type { AlunoProvisorio } from '@/lib/api/alunosProvisorios';
 import type { Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
+import { AlvoDeToqueMinimo } from '@/theme/tokens';
 
 export type HorarioAlocacaoCardProps = {
   horario: Horario;
@@ -75,7 +76,7 @@ function AlunoAlocadoItem({ aluno, onRemover }: { aluno: AlunoProvisorio; onRemo
         accessibilityRole="button"
         onPress={onRemover}
         className="items-center justify-center"
-        style={{ minWidth: 44, minHeight: 44 }}
+        style={AlvoDeToqueMinimo}
       >
         <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
       </Pressable>

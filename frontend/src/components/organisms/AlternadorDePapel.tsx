@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { AlvoDeToqueMinimo } from '@/theme/tokens';
+
 export type AlternadorDePapelProps = {
   papeis: string[];
   papelAtivo: string | undefined;
@@ -44,7 +46,7 @@ function Aba({ papel, selecionado, onPress }: AbaProps) {
       accessibilityState={{ selected: selecionado }}
       onPress={onPress}
       className={`rounded-small border px-two py-one items-center justify-center ${corDeFundo}`}
-      style={{ minWidth: 44, minHeight: 44 }}
+      style={AlvoDeToqueMinimo}
     >
       <Text className={corDoTexto}>{papel}</Text>
     </Pressable>

@@ -16,7 +16,7 @@ import {
   type ValorDevidoPorMatricula,
 } from '@/lib/api/valorDevido';
 import { proximoDia } from '@/lib/formatarData';
-import { MaxContentWidth } from '@/theme/tokens';
+import { AlvoDeToqueMinimo, MaxContentWidth } from '@/theme/tokens';
 
 type Modo = 'todos' | 'mes' | 'personalizado';
 
@@ -77,7 +77,7 @@ function ChipDeModo({ label, selecionado, onPress }: { label: string; selecionad
       accessibilityState={{ selected: selecionado }}
       onPress={onPress}
       className={`px-three py-two items-center justify-center ${fundo}`}
-      style={{ minWidth: 44, minHeight: 44 }}
+      style={AlvoDeToqueMinimo}
     >
       <Text className={`text-sm font-semibold ${texto}`}>{label}</Text>
     </Pressable>

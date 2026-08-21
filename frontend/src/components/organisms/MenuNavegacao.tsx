@@ -7,6 +7,7 @@ import { useSessao } from '@/lib/auth/contexto-sessao';
 import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
 import { useIsTelaLarga } from '@/lib/useIsTelaLarga';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
+import { AlvoDeToqueMinimo } from '@/theme/tokens';
 
 /**
  * Devolve a primeira seção cuja rota (já com o segmento dinâmico resolvido
@@ -79,7 +80,7 @@ function BotaoAlternarMenu({ aberto, aoAlternar }: { aberto: boolean; aoAlternar
       accessibilityLabel={rotulo}
       onPress={aoAlternar}
       className="items-center justify-center"
-      style={{ minWidth: 44, minHeight: 44 }}
+      style={AlvoDeToqueMinimo}
     >
       <Text>{rotulo}</Text>
     </Pressable>

@@ -5,6 +5,7 @@ import { ChipSelector } from '@/components/molecules/ChipSelector';
 import { TipoMarcacao, type Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
+import { AlvoDeToqueMinimo } from '@/theme/tokens';
 
 export type HorarioCardProps = {
   horario: Horario;
@@ -58,7 +59,7 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
               accessibilityRole="button"
               onPress={() => setEditando(false)}
               className="items-center justify-center"
-              style={{ minWidth: 44, minHeight: 44 }}
+              style={AlvoDeToqueMinimo}
             >
               <Text className="text-sm font-semibold text-text-secondary dark:text-dark-text-secondary">
                 Cancelar
@@ -68,7 +69,7 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
               accessibilityRole="button"
               onPress={handleSalvar}
               className="items-center justify-center"
-              style={{ minWidth: 44, minHeight: 44 }}
+              style={AlvoDeToqueMinimo}
             >
               <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
                 Salvar
@@ -81,7 +82,7 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
           accessibilityRole="button"
           onPress={handleEditar}
           className="mt-two items-center justify-center"
-          style={{ minWidth: 44, minHeight: 44 }}
+          style={AlvoDeToqueMinimo}
         >
           <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
             Editar política
@@ -118,7 +119,7 @@ function CardCorpo({ horario, onRemover }: { horario: Horario; onRemover: (id: s
         accessibilityRole="button"
         onPress={() => onRemover(horario.id)}
         className="items-center justify-center"
-        style={{ minWidth: 44, minHeight: 44 }}
+        style={AlvoDeToqueMinimo}
       >
         <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
       </Pressable>
