@@ -14,18 +14,18 @@ aumenta a superfície de ataque à toa (`docs/spec/security-rules.md`).
 
 ## Ordem de execução
 
-- [ ] Teste (`node --test`, novo arquivo `scripts/dashboard-server.test.mjs`
+- [x] Teste (`node --test`, novo arquivo `scripts/dashboard-server.test.mjs`
       se ainda não existir, ou adicione a `scripts/dashboard-store.test.mjs`
       se fizer mais sentido colocalizado): suba o servidor numa porta
       efêmera (`0`) e confirme via `server.address().address` que o bind
       é `127.0.0.1` (ou `::1`, dependendo da stack IPv4/IPv6 do Node) —
       não `0.0.0.0`/`::`. Escreva o teste primeiro, veja-o falhar contra o
       código atual.
-- [ ] Implementação mínima: `server.listen(PORT, '127.0.0.1', () => {...})`
+- [x] Implementação mínima: `server.listen(PORT, '127.0.0.1', () => {...})`
       em `scripts/dashboard-server.mjs`. Não adicione autenticação, não
       mude o formato de `/api/ingest`/`/api/state`/`/api/logs`, não mude
       nenhum outro arquivo — escopo é só o bind de interface.
-- [ ] Rode `npm test` (raiz do repo, não `frontend/`) pra confirmar que os
+- [x] Rode `npm test` (raiz do repo, não `frontend/`) pra confirmar que os
       testes existentes de `dashboard-store.test.mjs`/`event-tracker.test.mjs`
       continuam passando.
 
