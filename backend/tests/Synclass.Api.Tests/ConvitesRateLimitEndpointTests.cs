@@ -15,9 +15,10 @@ namespace Synclass.Api.Tests;
 /// Teste de fumaça do rate limiting aplicado aos endpoints anônimos de
 /// aceite de convite (issue #89). O limite configurado é 5 requisições por
 /// 60 segundos por IP (<c>RateLimiting:ConvitesAnonimos</c>). Cobre o caso
-/// de exceder o limite (429) e o caso de não o exceder (200/400, prova de
-/// que o limiter não interfere) — o comportamento detalhado dos endpoints
-/// fica em <see cref="ConvitesEndpointTests"/>.
+/// de exceder o limite (429), o corpo/header da rejeição (issue #89) e o
+/// caso de não o exceder (200/400, prova de que o limiter não interfere) —
+/// o comportamento detalhado dos endpoints fica em
+/// <see cref="ConvitesEndpointTests"/>.
 /// </summary>
 /// <remarks>
 /// Cada teste cria uma instância própria de
@@ -88,6 +89,34 @@ public sealed class ConvitesRateLimitEndpointTests
         var resposta = await FazerTentativasDeAceiteAsync(client, "/convites/codigo/99999/aceite", PermissoesPorJanela + 1);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
+    public async Task Post_Aceite_TooManyRequests_UsaContratoConviteErrorResponseERetryAfter()
+    {
+        using var factory = CriarFactory();
+        var client = factory.CreateClient();
+
+        var resposta = await FazerTentativasDeAceiteAsync(client, "/convites/token-invalido/aceite", PermissoesPorJanela + 1);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        var corpo = await resposta.Content.ReadFromJsonAsync<ConviteErrorResponse>();
+        corpo!.Mensagem.Should().NotBeNullOrWhiteSpace();
+        resposta.Headers.RetryAfter.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Post_AceitePorCodigo_TooManyRequests_UsaContratoConviteErrorResponseERetryAfter()
+    {
+        using var factory = CriarFactory();
+        var client = factory.CreateClient();
+
+        var resposta = await FazerTentativasDeAceiteAsync(client, "/convites/codigo/99999/aceite", PermissoesPorJanela + 1);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        var corpo = await resposta.Content.ReadFromJsonAsync<ConviteErrorResponse>();
+        corpo!.Mensagem.Should().NotBeNullOrWhiteSpace();
+        resposta.Headers.RetryAfter.Should().NotBeNull();
     }
 
     [Fact]
