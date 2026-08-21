@@ -73,62 +73,20 @@ export function SeletorDeHora({ label, valor, onSelecionar }: SeletorDeHoraProps
       </Pressable>
       {aberto ? (
         <View className="gap-one">
-          <Text className="text-xs font-semibold uppercase tracking-widest text-text-secondary dark:text-dark-text-secondary">
-            Hora
-          </Text>
-          <ScrollView horizontal>
-            <View className="flex-row">
-              {Horas.map((hora) => (
-                <Pressable
-                  key={hora}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Hora ${hora}`}
-                  accessibilityState={{ selected: hora === horaSelecionada }}
-                  onPress={() => setHoraSelecionada(hora)}
-                  className="items-center justify-center"
-                  style={{ minWidth: 44, minHeight: 44 }}
-                >
-                  <Text
-                    className={
-                      hora === horaSelecionada
-                        ? 'font-bold text-primary dark:text-dark-primary'
-                        : 'text-sm text-text dark:text-dark-text'
-                    }
-                  >
-                    {hora}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
-          <Text className="text-xs font-semibold uppercase tracking-widest text-text-secondary dark:text-dark-text-secondary">
-            Minuto
-          </Text>
-          <ScrollView horizontal>
-            <View className="flex-row">
-              {Minutos.map((minuto) => (
-                <Pressable
-                  key={minuto}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Minuto ${minuto}`}
-                  accessibilityState={{ selected: minuto === minutoSelecionado }}
-                  onPress={() => setMinutoSelecionado(minuto)}
-                  className="items-center justify-center"
-                  style={{ minWidth: 44, minHeight: 44 }}
-                >
-                  <Text
-                    className={
-                      minuto === minutoSelecionado
-                        ? 'font-bold text-primary dark:text-dark-primary'
-                        : 'text-sm text-text dark:text-dark-text'
-                    }
-                  >
-                    {minuto}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
+          <ListaDeNumeros
+            titulo="Hora"
+            prefixoRotulo="Hora"
+            valores={Horas}
+            selecionado={horaSelecionada}
+            onSelecionar={setHoraSelecionada}
+          />
+          <ListaDeNumeros
+            titulo="Minuto"
+            prefixoRotulo="Minuto"
+            valores={Minutos}
+            selecionado={minutoSelecionado}
+            onSelecionar={setMinutoSelecionado}
+          />
           <Pressable
             accessibilityRole="button"
             onPress={confirmar}
@@ -142,5 +100,54 @@ export function SeletorDeHora({ label, valor, onSelecionar }: SeletorDeHoraProps
         </View>
       ) : null}
     </View>
+  );
+}
+
+type ListaDeNumerosProps = {
+  titulo: string;
+  prefixoRotulo: string;
+  valores: readonly string[];
+  selecionado: string | undefined;
+  onSelecionar: (valor: string) => void;
+};
+
+/**
+ * Lista rolável horizontal de números (Hora ou Minuto) — extraída pra não
+ * duplicar o mesmo `ScrollView`/`Pressable` entre as duas listas do
+ * `SeletorDeHora` (achado de dev-review, PR #120: função original passava
+ * do limite de 4-20 linhas por repetir o mesmo bloco duas vezes).
+ */
+function ListaDeNumeros({ titulo, prefixoRotulo, valores, selecionado, onSelecionar }: ListaDeNumerosProps) {
+  return (
+    <>
+      <Text className="text-xs font-semibold uppercase tracking-widest text-text-secondary dark:text-dark-text-secondary">
+        {titulo}
+      </Text>
+      <ScrollView horizontal>
+        <View className="flex-row">
+          {valores.map((valor) => (
+            <Pressable
+              key={valor}
+              accessibilityRole="button"
+              accessibilityLabel={`${prefixoRotulo} ${valor}`}
+              accessibilityState={{ selected: valor === selecionado }}
+              onPress={() => onSelecionar(valor)}
+              className="items-center justify-center"
+              style={{ minWidth: 44, minHeight: 44 }}
+            >
+              <Text
+                className={
+                  valor === selecionado
+                    ? 'font-bold text-primary dark:text-dark-primary'
+                    : 'text-sm text-text dark:text-dark-text'
+                }
+              >
+                {valor}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+    </>
   );
 }
