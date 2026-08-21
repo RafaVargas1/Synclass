@@ -19,13 +19,20 @@ atual, e restringir minutos mudaria o comportamento aceito hoje).
 - [x] Teste de componente: `SeletorDeHora` — abre o painel ao tocar, lista horas 00-23 e minutos 00-59
 - [x] Teste de componente: `SeletorDeHora` — selecionar hora e minuto chama `onSelecionar` com `HH:mm` e fecha o painel
 - [x] Implementação mínima: `frontend/src/components/molecules/SeletorDeHora.tsx` (props: `label`, `valor: string | undefined` em `HH:mm`, `onSelecionar: (hora: string) => void`)
-- [ ] Teste de componente: cada botão de hora/minuto no painel tem `minWidth`/`minHeight` de 44 efetivos (mesmo padrão da issue #115, aplicar aqui desde já já que é componente novo)
-- [ ] Teste de componente: `HorarioForm` — usa `SeletorDeHora` em vez do `FormField` de texto livre pra "Hora de início"
-- [ ] Implementação: `frontend/src/components/organisms/HorarioForm.tsx` — troca o `FormField` de "Hora de início" por `SeletorDeHora`; remove a validação de formato `HH:mm` via regex (`validar`, `MensagemFormatoHoraInvalido`) já que o seletor não permite formato inválido por construção; mantém o restante da validação (duração, limite de alunos, conflito)
-- [ ] Teste de componente: `HorarioForm` — submissão continua enviando `horaInicio` como `HH:mm:00` pra Api (contrato inalterado)
+- [x] Teste de componente: cada botão de hora/minuto no painel tem `minWidth`/`minHeight` de 44 efetivos (mesmo padrão da issue #115, aplicar aqui desde já já que é componente novo)
+- [x] Teste de componente: `HorarioForm` — usa `SeletorDeHora` em vez do `FormField` de texto livre pra "Hora de início"
+- [x] Implementação: `frontend/src/components/organisms/HorarioForm.tsx` — troca o `FormField` de "Hora de início" por `SeletorDeHora`; remove a validação de formato `HH:mm` via regex (`validar`, `MensagemFormatoHoraInvalido`) já que o seletor não permite formato inválido por construção; mantém o restante da validação (duração, limite de alunos, conflito)
+- [x] Teste de componente: `HorarioForm` — submissão continua enviando `horaInicio` como `HH:mm:00` pra Api (contrato inalterado)
 
 ### Inconsistências encontradas
 
-_(Nenhuma até o momento — decisão de design do painel de seleção já
-resolvida acima antes de começar. Se surgir ambiguidade nova durante a
-implementação, registrar aqui em vez de decidir sozinho.)_
+O task não especificava o que fazer quando o usuário submete o formulário
+sem tocar no seletor de hora — com o campo trocado do `FormField` de texto
+(que iniciava `''`) para `SeletorDeHora` (que inicia `undefined`), enviar
+sem escolher geraria `undefined:00` na Api, um bug claro. Como horário sem
+hora de início não existe no domínio, decidi manter a obrigatoriedade do
+campo ao remover só a checagem de *formato*: adicionei uma validação mínima
+(`horaInicio === undefined` → mensagem "Escolha a hora de início."), sem
+regex. Não é ambiguidade que bloqueia a Task — os critérios de aceite dados
+(remover regex de formato, manter demais validações e o contrato `HH:mm:00`)
+continuam atendidos —, mas registro aqui a decisão para transparência.
