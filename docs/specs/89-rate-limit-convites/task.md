@@ -25,7 +25,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/89
   `AceitarPorCodigo` continuam respondendo normalmente (200 ou 400, conforme
   os cenários já cobertos por `ConvitesEndpointTests`) — prova que o limiter
   não interfere no caso não excedido.
-- [ ] `OnRejected`: resposta `429` usa o mesmo contrato `ConviteErrorResponse`
+- [x] `OnRejected`: resposta `429` usa o mesmo contrato `ConviteErrorResponse`
   já usado pelos dois endpoints + header `Retry-After` (segundos restantes
   da janela) + log estruturado `ConviteAceiteBloqueadoPorLimite {TrackId}
   {Rota}` (sem IP/payload no log, ver `security-rules.md`). Teste de fumaça
