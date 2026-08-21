@@ -62,7 +62,12 @@ export default function PainelScreen() {
 
 function BotaoSair({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className="items-center justify-center"
+      style={{ minWidth: 44, minHeight: 44 }}
+    >
       <Text className="text-sm font-semibold text-text dark:text-dark-text">Sair</Text>
     </Pressable>
   );

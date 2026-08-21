@@ -71,7 +71,12 @@ function AlunoAlocadoItem({ aluno, onRemover }: { aluno: AlunoProvisorio; onRemo
   return (
     <View className="flex-row items-center justify-between">
       <Text className="text-sm text-text dark:text-dark-text">{aluno.nome}</Text>
-      <Pressable accessibilityRole="button" onPress={onRemover}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onRemover}
+        className="items-center justify-center"
+        style={{ minWidth: 44, minHeight: 44 }}
+      >
         <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
       </Pressable>
     </View>

@@ -104,6 +104,21 @@ describe('PainelScreen', () => {
 
     expect(sair).toHaveBeenCalled();
   });
+
+  it('gives the Sair button a touch target of at least 44x44 (issue #115)', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      sair: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    expect(screen.getByRole('button', { name: 'Sair' })).toHaveStyle({
+      minWidth: 44,
+      minHeight: 44,
+    });
+  });
 });
 
 describe('PainelScreen saudação', () => {

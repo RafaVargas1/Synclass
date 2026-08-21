@@ -74,7 +74,13 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
 function BotaoAlternarMenu({ aberto, aoAlternar }: { aberto: boolean; aoAlternar: () => void }) {
   const rotulo = aberto ? 'Fechar menu' : 'Abrir menu';
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={rotulo} onPress={aoAlternar}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={rotulo}
+      onPress={aoAlternar}
+      className="items-center justify-center"
+      style={{ minWidth: 44, minHeight: 44 }}
+    >
       <Text>{rotulo}</Text>
     </Pressable>
   );
