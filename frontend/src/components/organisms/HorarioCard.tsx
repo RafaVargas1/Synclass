@@ -54,12 +54,22 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
             onChange={setTipoSelecionado}
           />
           <View className="flex-row justify-end gap-two">
-            <Pressable accessibilityRole="button" onPress={() => setEditando(false)}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setEditando(false)}
+              className="items-center justify-center"
+              style={{ minWidth: 44, minHeight: 44 }}
+            >
               <Text className="text-sm font-semibold text-text-secondary dark:text-dark-text-secondary">
                 Cancelar
               </Text>
             </Pressable>
-            <Pressable accessibilityRole="button" onPress={handleSalvar}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleSalvar}
+              className="items-center justify-center"
+              style={{ minWidth: 44, minHeight: 44 }}
+            >
               <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
                 Salvar
               </Text>
@@ -67,7 +77,12 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
           </View>
         </View>
       ) : (
-        <Pressable accessibilityRole="button" onPress={handleEditar} className="mt-two">
+        <Pressable
+          accessibilityRole="button"
+          onPress={handleEditar}
+          className="mt-two items-center justify-center"
+          style={{ minWidth: 44, minHeight: 44 }}
+        >
           <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
             Editar política
           </Text>
@@ -99,7 +114,12 @@ function CardCorpo({ horario, onRemover }: { horario: Horario; onRemover: (id: s
           {rotuloPolitica}
         </Text>
       </View>
-      <Pressable accessibilityRole="button" onPress={() => onRemover(horario.id)}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => onRemover(horario.id)}
+        className="items-center justify-center"
+        style={{ minWidth: 44, minHeight: 44 }}
+      >
         <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
       </Pressable>
     </View>
