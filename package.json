@@ -8,6 +8,7 @@
     "dashboard": "node scripts/dashboard-server.mjs",
     "test:tracker": "node --test scripts/event-tracker.test.mjs",
     "test:dashboard-store": "node --test scripts/dashboard-store.test.mjs",
-    "test": "npm run test:tracker && npm run test:dashboard-store"
+    "test:dashboard-server": "node --test scripts/dashboard-server.test.mjs",
+    "test": "npm run test:tracker && npm run test:dashboard-store && npm run test:dashboard-server"
   }
 }

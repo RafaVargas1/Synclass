@@ -29,6 +29,19 @@ aumenta a superfície de ataque à toa (`docs/spec/security-rules.md`).
       testes existentes de `dashboard-store.test.mjs`/`event-tracker.test.mjs`
       continuam passando.
 
+## Nota final
+
+Duas execuções do harness (uma minha, uma disparada pelo cron horário,
+sem eu perceber que rodavam ao mesmo tempo no mesmo worktree — corrigido:
+ambas foram encerradas assim que percebido) travaram nesta Task sem
+nunca commitar nada. Causa raiz real, encontrada depurando diretamente:
+bug de higiene no teste, não ambiguidade de produto — `server.close()` na
+limpeza do teste vinha depois da asserção, que lança na fase vermelha
+esperada (bind ainda em `::`), pulando o `close()` e deixando o processo
+do `node --test` vivo pra sempre (o próprio DeepSeek diagnosticou
+corretamente o comportamento do teste, mas nunca conectou que era ISSO
+que travava o `run_command`). Corrigido com `try/finally`.
+
 ## Fora de escopo
 
 - Não mexer em `dashboard.html`, `dashboard-store.mjs`,
