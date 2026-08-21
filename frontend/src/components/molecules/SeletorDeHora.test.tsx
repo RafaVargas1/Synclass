@@ -34,4 +34,17 @@ describe('SeletorDeHora', () => {
       expect(screen.getByLabelText(`Minuto ${minuto}`)).toBeTruthy();
     }
   });
+
+  it('selects hour and minute, calls onSelecionar with HH:mm and closes the panel', async () => {
+    const onSelecionar = jest.fn();
+    await render(<SeletorDeHora label="Início" valor={undefined} onSelecionar={onSelecionar} />);
+
+    await fireEvent.press(screen.getByText('Selecionar hora'));
+    await fireEvent.press(screen.getByLabelText('Hora 10'));
+    await fireEvent.press(screen.getByLabelText('Minuto 30'));
+    await fireEvent.press(screen.getByText('Confirmar'));
+
+    expect(onSelecionar).toHaveBeenCalledWith('10:30');
+    expect(screen.queryByText('Confirmar')).toBeNull();
+  });
 });
