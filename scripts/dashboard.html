@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synclass — Pipeline Dashboard</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 20px; }
+  h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .full { grid-column: 1 / -1; }
+  .status-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+  }
+  .status-running { background: rgba(59,130,246,0.2); color: var(--blue); border: 1px solid var(--blue); }
+  .status-idle { background: rgba(148,163,184,0.2); color: var(--muted); border: 1px solid var(--muted); }
+  .status-success { background: rgba(34,197,94,0.2); color: var(--green); border: 1px solid var(--green); }
+  .status-failed { background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red); }
+  .status-aborted { background: rgba(245,158,11,0.2); color: var(--yellow); border: 1px solid var(--yellow); }
+  .status-unknown { background: rgba(148,163,184,0.2); color: var(--muted); border: 1px solid var(--muted); }
+
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: 6px 14px; font-size: 0.92rem; }
+  .kv dt { color: var(--muted); }
+  .kv dd { word-break: break-all; }
+
+  .stage-row {
+    display: grid;
+    grid-template-columns: 1fr 90px 70px;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem;
+  }
+  .stage-row:last-child { border-bottom: none; }
+  .stage-name { display: flex; align-items: center; gap: 8px; }
+  .stage-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-completed { background: var(--green); }
+  .dot-running { background: var(--blue); animation: pulse 1.5s infinite; }
+  .dot-pending { background: var(--border); }
+  .dot-failed { background: var(--red); }
+  .dot-aborted { background: var(--yellow); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .events {
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 0.88rem;
+  }
+  .event {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(51,65,85,0.4);
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 10px;
+  }
+  .event-time { color: var(--muted); }
+  .event-type { color: var(--blue); }
+  .event-stage { color: var(--muted); }
+  .event-meta { color: var(--muted); font-size: 0.8rem; }
+
+  .sub { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+  .empty { color: var(--muted); font-style: italic; padding: 10px 0; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>Synclass — Pipeline Dashboard</h1>
+
+<div class="grid">
+  <div class="card full">
+    <div id="pipelineStatus">
+      <span id="statusBadge" class="status-badge status-idle">IDLE</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>CURRENT STAGE</h2>
+    <div class="kv" id="currentStage">
+      <dt>Status:</dt><dd id="cs-status">—</dd>
+      <dt>Stage:</dt><dd id="cs-stage">—</dd>
+      <dt>Model:</dt><dd id="cs-model">—</dd>
+      <dt>Provider:</dt><dd id="cs-provider">—</dd>
+      <dt>Tool:</dt><dd id="cs-tool">—</dd>
+      <dt>Elapsed:</dt><dd id="cs-elapsed">—</dd>
+      <dt>Feature:</dt><dd id="cs-feature">—</dd>
+      <dt>Task:</dt><dd id="cs-task">—</dd>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>PIPELINE STAGES</h2>
+    <div id="stagesList">
+      <div class="empty">Nenhuma execução em andamento.</div>
+    </div>
+  </div>
+
+  <div class="card full">
+    <h2>EVENT STREAM (tempo real)</h2>
+    <div class="events" id="eventStream">
+      <div class="empty">Conectando ao servidor de eventos…</div>
+    </div>
+  </div>
+
+  <div class="card full">
+    <h2>ÚLTIMA EXECUÇÃO</h2>
+    <div id="ultimaExecucao">
+      <div class="empty">Nenhuma execução registrada ainda.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const eventosEl = document.getElementById('eventStream');
+const statusBadge = document.getElementById('statusBadge');
+
+function formatElapsed(ms) {
+  if (ms == null) return '—';
+  if (ms < 0) return '—';
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m`;
+}
+
+function statusClass(status) {
+  return `status-${(status || 'unknown').toLowerCase().replace(/[^a-z]/g, '') || 'unknown'}`;
+}
+
+function dotClass(status) {
+  return `dot-${(status || 'pending').toLowerCase()}`;
+}
+
+function renderSnapshot(state) {
+  const exec = state.execution;
+
+  let statusStr = (state.pipelineStatus || 'idle').toUpperCase();
+  if (exec && exec.status === 'running') statusStr = 'RUNNING';
+  else if (state.últimaExecucao && !exec) {
+    statusStr = (state.últimaExecucao.status || 'idle').toUpperCase();
+  }
+  statusBadge.textContent = statusStr;
+  statusBadge.className = `status-badge ${statusClass(state.pipelineStatus || (exec ? 'running' : 'idle'))}`;
+
+  // current stage
+  document.getElementById('cs-status').textContent = exec ? (exec.currentStatus || 'running') : '—';
+  document.getElementById('cs-stage').textContent = exec?.currentStage || '—';
+  document.getElementById('cs-model').textContent = exec?.currentModel || '—';
+  document.getElementById('cs-provider').textContent = exec?.currentStage?.includes('DeepSeek') ? 'DeepSeek' :
+    (exec?.currentStage?.includes('Claude') ? 'Claude' : '—');
+  document.getElementById('cs-tool').textContent = exec?.currentTool || '—';
+  document.getElementById('cs-elapsed').textContent = exec ? formatElapsed(Date.now() - Date.parse(exec.startedAt)) : '—';
+  document.getElementById('cs-feature').textContent = exec?.feature || '—';
+  document.getElementById('cs-task').textContent = exec?.taskPath || '—';
+
+  // stages
+  const stagesEl = document.getElementById('stagesList');
+  stagesEl.innerHTML = '';
+  const etapaNomes = state.etapasPipeline || [];
+
+  if (exec && exec.stages.length > 0) {
+    etapasPipelineRender(stagesEl, exec, etapaNomes);
+  } else if (state.últimaExecucao && state.últimaExecucao.stages.length > 0) {
+    const pseudoExec = { stages: state.últimaExecucao.stages };
+    etapasPipelineRender(stagesEl, pseudoExec, etapaNomes);
+  } else {
+    stagesEl.innerHTML = '<div class="empty">Nenhuma execução em andamento.</div>';
+  }
+
+  // última execução
+  renderUltimaExecucao(state.últimaExecucao);
+}
+
+function etapasPipelineRender(el, exec, nomes) {
+  const lista = [];
+  // Renderiza as etapas reais da execução + espaços para as etapas ainda não iniciadas
+  for (const nome of nomes) {
+    const etapaMatches = exec.stages.filter((s) => s.nome === nome || s.nome.startsWith(nome.split(' (')[0]));
+    if (etapaMatches.length > 0) {
+      for (const etapa of etapaMatches.slice(-1)) {
+        lista.push({ nome: etapa.nome, status: etapa.status, duracao: etapa.duration, model: etapa.model });
+      }
+    } else {
+      lista.push({ nome, status: 'pending', duracao: null, model: null });
+    }
+  }
+  // Se a execução tem estágios que não estão na lista de etapas pipeline, adiciona
+  for (const etapa of exec.stages) {
+    if (!lista.some((l) => l.nome === etapa.nome)) {
+      lista.push({ nome: etapa.nome, status: etapa.status, duracao: etapa.duration, model: etapa.model });
+    }
+  }
+
+  for (const step of lista) {
+    const row = document.createElement('div');
+    row.className = 'stage-row';
+    row.innerHTML = `
+      <div class="stage-name">
+        <span class="stage-dot ${dotClass(step.status)}"></span>
+        <span>${esc(step.nome)}</span>
+        ${step.model ? `<span class="sub">(${esc(step.model)})</span>` : ''}
+      </div>
+      <div>${esc(step.status)}</div>
+      <div class="sub">${step.duracao != null ? formatElapsed(step.duracao) : ''}</div>
+    `;
+    el.appendChild(row);
+  }
+}
+
+function renderUltimaExecucao(ultima) {
+  const el = document.getElementById('ultimaExecucao');
+  if (!ultima) {
+    el.innerHTML = '<div class="empty">Nenhuma execução registrada ainda.</div>';
+    return;
+  }
+  const dur = ultima.elapsedMs != null ? formatElapsed(ultima.elapsedMs) : '—';
+  el.innerHTML = `
+    <div class="kv">
+      <dt>Feature:</dt><dd>${esc(ultima.feature || '—')}</dd>
+      <dt>Status:</dt><dd><span class="status-badge ${statusClass(ultima.status)}">${esc((ultima.status || '').toUpperCase())}</span></dd>
+      <dt>Duração:</dt><dd>${dur}</dd>
+      <dt>Início:</dt><dd>${esc(ultima.startedAt || '—')}</dd>
+      <dt>Fim:</dt><dd>${esc(ultima.finishedAt || '—')}</dd>
+      <dt>Étapas:</dt><dd>${esc(ultima.stages.map(s => `${s.nome} → ${s.status}`).join('; ') || '—')}</dd>
+      ${ultima.events?.length ? `<dt>Eventos:</dt><dd>${esc(String(ultima.events.length))}</dd>` : ''}
+    </div>
+  `;
+}
+
+function appendEvent(evento) {
+  const el = document.createElement('div');
+  el.className = 'event';
+  el.innerHTML = `
+    <div class="event-time">${esc(shortTime(evento.timestamp))}</div>
+    <div>
+      <div class="event-type">${esc(evento.type)}</div>
+      ${evento.stage ? `<div class="event-stage">${esc(evento.stage)}${evento.provider ? ` · ${esc(evento.provider)}` : ''}</div>` : ''}
+      ${formatMeta(evento.metadata)}
+    </div>
+  `;
+  eventosEl.prepend(el);
+  // mantém só os últimos ~100
+  while (eventosEl.children.length > 100) {
+    eventosEl.lastChild.remove();
+  }
+}
+
+function formatMeta(meta) {
+  if (!meta || typeof meta !== 'object' || Object.keys(meta).length === 0) return '';
+  const parts = Object.entries(meta)
+    .filter(([k]) => !['duration','error','command','path','model','content','response'].includes(k))
+    .map(([k, v]) => `${esc(k)}: ${esc(String(v)).slice(0, 100)}`);
+  return `<div class="event-meta">${parts.join(' · ') || ''}</div>`;
+}
+
+function shortTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('pt-BR');
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// SSE
+const es = new EventSource('/events');
+es.onopen = () => {
+  eventosEl.innerHTML = '';
+  const el = document.createElement('div');
+  el.innerHTML = '<div class="sub">Conectado — aguardando eventos…</div>';
+  eventosEl.prepend(el);
+};
+es.onmessage = (event) => {
+  const payload = JSON.parse(event.data);
+  if (payload.type === 'snapshot') {
+    renderSnapshot(payload);
+    return;
+  }
+  if (payload.type === 'event') {
+    appendEvent(payload.evento);
+    return;
+  }
+  // 'state' ou outro tipo — atualiza o snapshot
+  // pedimos snapshot completo no próximo tick
+};
+es.onerror = () => {
+  statusBadge.textContent = 'DESCONECTADO';
+  statusBadge.className = 'status-badge status-failed';
+};
+</script>
+</body>
+</html>

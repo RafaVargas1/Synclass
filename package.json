@@ -1,0 +1,12 @@
+{
+  "name": "synclass-pipeline-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ferramentas locais do pipeline Synclass (dashboard, deepseek harness).",
+  "type": "module",
+  "scripts": {
+    "dashboard": "node scripts/dashboard-server.mjs",
+    "test:tracker": "node --test scripts/event-tracker.test.mjs",
+    "test": "npm run test:tracker"
+  }
+}
