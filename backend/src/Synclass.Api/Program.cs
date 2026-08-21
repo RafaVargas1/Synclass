@@ -1,10 +1,13 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using Synclass.Api.Controllers;
 using Synclass.Api.Logging;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Alocacoes;
@@ -149,6 +152,35 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromSeconds(janelaEmSegundos),
             }));
+
+    // Corpo/header/log da rejeição 429 — ver
+    // docs/specs/89-rate-limit-convites/implementation.md. Usa o mesmo
+    // contrato ConviteErrorResponse dos endpoints de aceite (issue #2/issue
+    // #63), o header Retry-After (segundos restantes da janela, vindos do
+    // metadata da partição) e log estruturado sem IP/payload (ver
+    // security-rules.md).
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        var httpContext = context.HttpContext;
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            httpContext.Response.Headers.RetryAfter = retryAfter.TotalSeconds.ToString("0");
+        }
+
+        var jsonOptions = httpContext.RequestServices.GetRequiredService<IOptions<JsonOptions>>().Value;
+        await httpContext.Response.WriteAsJsonAsync(
+            new ConviteErrorResponse("Muitas tentativas. Tente novamente em instantes."),
+            jsonOptions.JsonSerializerOptions,
+            cancellationToken);
+
+        var trackId = httpContext.Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("ConvitesRateLimiting");
+        logger.LogWarning(
+            "ConviteAceiteBloqueadoPorLimite {TrackId} {Rota}",
+            trackId, httpContext.Request.Path.ToString());
+    };
 });
 
 var app = builder.Build();
