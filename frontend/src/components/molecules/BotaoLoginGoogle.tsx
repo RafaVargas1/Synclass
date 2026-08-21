@@ -60,7 +60,11 @@ export function BotaoLoginGoogle({ onAutenticado, onCadastroPendente }: BotaoLog
       onAutenticado({ token, nome, papeis });
       return;
     }
-    if (resultado.cadastroPendente) {
+    // `cadastroPendente` só existe no desfecho de e-mail sem conta — o `in`
+    // discrimina a união de `LoginGoogleResultado` (o acesso direto
+    // `resultado.cadastroPendente` não compila porque o TS não garante a
+    // presença da propriedade em todos os membros).
+    if ('cadastroPendente' in resultado) {
       onCadastroPendente(resultado.email);
       return;
     }

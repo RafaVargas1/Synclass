@@ -31,4 +31,4 @@ Card: https://github.com/RafaVargas1/Synclass/issues/6
 - [x] Implementação: organism `HorarioForm`, organism `HorarioCard`.
 - [x] Teste frontend: tela `professor/[professorId]/horarios` — lista, cria, mostra erro de conflito, remove.
 - [x] Implementação: tela `professor/[professorId]/horarios.tsx`.
-- [ ] Checks finais: `dotnet format && dotnet test` / `npm run lint && npm run typecheck && npm test`.
+- [x] Checks finais: `dotnet format && dotnet test` / `npm run lint && npm run typecheck && npm test`. Issue #6 fechada e mergeada (PR já em produção) — gate já rodou no fluxo original, item só não tinha sido marcado.
