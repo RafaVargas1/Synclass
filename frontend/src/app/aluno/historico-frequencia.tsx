@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
-import { SeletorDePeriodo } from '@/components/molecules/SeletorDePeriodo';
+import { SeletorDePeriodoDuplo } from '@/components/molecules/SeletorDePeriodoDuplo';
 import { HistoricoFrequenciaCard } from '@/components/organisms/HistoricoFrequenciaCard';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import {
@@ -13,15 +13,18 @@ import {
   type ListarHistoricoFrequenciaResultado,
   type PeriodoConsultaInput,
 } from '@/lib/api/historicoFrequencia';
+import { proximoDia } from '@/lib/formatarData';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de consulta do histórico de frequência do Aluno autenticado,
- * detalhado por Professor (issue #16) — reaproveita `SeletorDePeriodo`
- * extraído de `valor-devido.tsx` (issue #13) e o organism novo
- * `HistoricoFrequenciaCard`. Sem segmento de rota (`[professorId]`), mesmo
- * padrão de `aluno/valor-devido.tsx`: `alunoUsuarioId` vem do token da
- * sessão, a Api já devolve a lista agrupada por Professor.
+ * detalhado por Professor (issue #16) — desde a #116 usa dois
+ * `SeletorDeData` (calendário) no lugar de `SeletorDePeriodo` (texto livre +
+ * botão "Consultar"), com a consulta reagindo à mudança das duas datas, mesmo
+ * padrão reativo de `professor/[professorId]/valor-devido.tsx`. Sem segmento
+ * de rota (`[professorId]`), mesmo padrão de `aluno/valor-devido.tsx`:
+ * `alunoUsuarioId` vem do token da sessão. Sem estado de seleção inicial,
+ * monta carregando o mês corrente (`periodo` indefinido).
  */
 export default function HistoricoFrequenciaAlunoScreen() {
   const estado = useConsultaHistoricoFrequenciaDoAluno();
@@ -30,12 +33,11 @@ export default function HistoricoFrequenciaAlunoScreen() {
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <TopbarAutenticada titulo="Meu histórico de frequência" />
       <View className="w-full flex-1 self-center gap-four px-four py-four" style={{ maxWidth: MaxContentWidth }}>
-        <SeletorDePeriodo
+        <SeletorDePeriodoDuplo
           inicio={estado.inicio}
           fim={estado.fim}
-          onChangeInicio={estado.setInicio}
-          onChangeFim={estado.setFim}
-          onConsultar={estado.consultar}
+          onSelecionarInicio={estado.setInicio}
+          onSelecionarFim={estado.setFim}
         />
         {estado.carregando && <TelaCarregando />}
         {!estado.carregando && estado.erro && <ErrorMessage>{estado.erro}</ErrorMessage>}
@@ -82,38 +84,49 @@ function TelaCarregando() {
 }
 
 /**
- * Carrega o histórico ao montar (mês corrente, `periodo` indefinido) e
- * expõe `consultar` para recarregar com o período digitado — mesma
- * estratégia de `aluno/valor-devido.tsx#useConsultaValorDevidoDoAluno`.
+ * Carrega o histórico ao montar (mês corrente, período indefinido) e reage à
+ * seleção das duas datas no calendário (`SeletorDeData`): `chaveAtual` vira
+ * `mes` enquanto não houver início e fim, e o período escolhido assim que as
+ * duas estiverem preenchidas. Mesmo padrão de
+ * `professor/[professorId]/valor-devido.tsx#useConsultaValorDevido` — o fim
+ * escolhido (inclusive) vira `proximoDia` (exclusive) no contrato da Api.
  */
 function useConsultaHistoricoFrequenciaDoAluno() {
-  const [inicio, setInicio] = useState('');
-  const [fim, setFim] = useState('');
-  const [periodo, setPeriodo] = useState<PeriodoConsultaInput | undefined>(undefined);
-  const [resultado, setResultado] = useState<ListarHistoricoFrequenciaResultado | undefined>(undefined);
+  const [inicio, setInicio] = useState<string | undefined>(undefined);
+  const [fim, setFim] = useState<string | undefined>(undefined);
+  const [resultado, setResultado] = useState<{ chave: string; dados: ListarHistoricoFrequenciaResultado } | undefined>(undefined);
+
+  const periodo = inicio && fim ? ({ inicio, fim: proximoDia(fim) } satisfies PeriodoConsultaInput) : undefined;
+  const chaveAtual = inicio && fim ? `${inicio}|${fim}` : 'mes';
 
   useEffect(() => {
     let cancelado = false;
-    listarHistoricoFrequenciaDoAluno(periodo).then((res) => {
-      if (!cancelado) setResultado(res);
+    listarHistoricoFrequenciaDoAluno(periodo).then((dados) => {
+      if (!cancelado) setResultado({ chave: chaveAtual, dados });
     });
     return () => {
       cancelado = true;
     };
-  }, [periodo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `periodo` é derivado de `chaveAtual`, incluir os dois duplicaria a dependência
+  }, [chaveAtual]);
 
-  const consultar = () => {
-    setResultado(undefined);
-    setPeriodo(inicio && fim ? { inicio, fim } : undefined);
+  return {
+    inicio,
+    setInicio,
+    fim,
+    setFim,
+    ...derivarEstadoConsulta(chaveAtual, resultado),
   };
-
-  return { inicio, setInicio, fim, setFim, consultar, ...derivarEstadoConsulta(resultado) };
 }
 
-function derivarEstadoConsulta(resultado: ListarHistoricoFrequenciaResultado | undefined) {
+function derivarEstadoConsulta(
+  chaveAtual: string,
+  resultado: { chave: string; dados: ListarHistoricoFrequenciaResultado } | undefined,
+) {
+  const dadosAtuais = resultado?.chave === chaveAtual ? resultado.dados : undefined;
   return {
-    carregando: resultado === undefined,
-    erro: resultado && !resultado.sucesso ? resultado.mensagem : undefined,
-    historico: resultado && resultado.sucesso ? resultado.historico : [],
+    carregando: dadosAtuais === undefined,
+    erro: dadosAtuais && !dadosAtuais.sucesso ? dadosAtuais.mensagem : undefined,
+    historico: dadosAtuais?.sucesso ? dadosAtuais.historico : [],
   };
 }

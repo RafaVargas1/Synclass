@@ -79,17 +79,20 @@ describe('HistoricoFrequenciaAlunoScreen', () => {
     await waitFor(() => expect(screen.getByText('Nenhum histórico de frequência para este período.')).toBeTruthy());
   });
 
-  it('re-queries with the informed periodo when the user fills inicio/fim and presses Consultar', async () => {
+  it('re-queries with the picked inicio/fim (fim exclusive = day after the picked day) once both dates are chosen via the calendar', async () => {
     listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({ sucesso: true, historico: [] });
     await render(<HistoricoFrequenciaAlunoScreen />);
     await waitFor(() => expect(listarHistoricoFrequenciaDoAlunoMock).toHaveBeenCalledWith(undefined));
 
-    await fireEvent.changeText(screen.getByLabelText('Início do período'), '2026-08-01');
-    await fireEvent.changeText(screen.getByLabelText('Fim do período'), '2026-09-01');
-    await fireEvent.press(screen.getByText('Consultar'));
+    await fireEvent.press(screen.getAllByText('Selecionar data')[0]);
+    await fireEvent.press(screen.getByText('1'));
 
-    await waitFor(() =>
-      expect(listarHistoricoFrequenciaDoAlunoMock).toHaveBeenCalledWith({ inicio: '2026-08-01', fim: '2026-09-01' }),
-    );
+    await fireEvent.press(screen.getAllByText('Selecionar data')[0]);
+    await fireEvent.press(screen.getByText('5'));
+
+    await waitFor(() => expect(listarHistoricoFrequenciaDoAlunoMock).toHaveBeenCalledTimes(2));
+    const [, ultimaChamada] = listarHistoricoFrequenciaDoAlunoMock.mock.calls;
+    expect(ultimaChamada[0].inicio.endsWith('-01')).toBe(true);
+    expect(ultimaChamada[0].fim.endsWith('-06')).toBe(true);
   });
 });
