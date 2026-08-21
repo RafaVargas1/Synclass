@@ -48,6 +48,40 @@ describe('SeletorDeHora', () => {
     expect(screen.queryByText('Confirmar')).toBeNull();
   });
 
+  it('does not call onSelecionar when confirming without picking hour/minute (achado de dev-review, PR #120)', async () => {
+    const onSelecionar = jest.fn();
+    await render(<SeletorDeHora label="Início" valor={undefined} onSelecionar={onSelecionar} />);
+
+    await fireEvent.press(screen.getByText('Selecionar hora'));
+    await fireEvent.press(screen.getByText('Confirmar'));
+
+    expect(onSelecionar).not.toHaveBeenCalled();
+  });
+
+  it('does not confirm with only the hour picked (minute still missing)', async () => {
+    const onSelecionar = jest.fn();
+    await render(<SeletorDeHora label="Início" valor={undefined} onSelecionar={onSelecionar} />);
+
+    await fireEvent.press(screen.getByText('Selecionar hora'));
+    await fireEvent.press(screen.getByLabelText('Hora 10'));
+    await fireEvent.press(screen.getByText('Confirmar'));
+
+    expect(onSelecionar).not.toHaveBeenCalled();
+  });
+
+  it('closes the panel without changing the value when pressed again while open (toggle, issue #113/#117)', async () => {
+    const onSelecionar = jest.fn();
+    await render(<SeletorDeHora label="Início" valor={undefined} onSelecionar={onSelecionar} />);
+
+    await fireEvent.press(screen.getByText('Selecionar hora'));
+    expect(screen.getByText('Hora')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Selecionar hora'));
+
+    expect(screen.queryByText('Hora')).toBeNull();
+    expect(onSelecionar).not.toHaveBeenCalled();
+  });
+
   it('gives every hour and minute button a min touch target of 44 (issue #115)', async () => {
     await render(<SeletorDeHora label="Início" valor={undefined} onSelecionar={() => {}} />);
 
