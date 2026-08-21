@@ -190,6 +190,14 @@ objetivo da Fase 3, especialmente quando ela é delegada a um agente de
 swarm. Commit desses dois arquivos é o primeiro commit da branch da Task
 (antes de qualquer teste), `docs(specs): adiciona spec técnica da Task #<n>`.
 
+Todo item de frontend do `task.md` segue a regra de concretude de
+[`especificacao-tecnica.md#item-de-frontend-não-pode-ser-vago`](especificacao-tecnica.md#item-de-frontend-não-pode-ser-vago)
+— quem escreve o `task.md` (você, ou a DeepSeek rascunhando sob revisão,
+conforme o nível de rigor) resolve onde o elemento fica, o rótulo exato, e
+qual regra de `ux-heuristics.md` se aplica **antes** de liberar a Task pra
+Fase 3, não depois. A DeepSeek implementa o item como está escrito; um item
+vago vira uma decisão de produto tomada sem contexto, não um atalho.
+
 ## Fase 3 — Implementação
 
 Desde [ADR-0001](decisions/ADR-0001-pipeline-claude-deepseek.md), quem
