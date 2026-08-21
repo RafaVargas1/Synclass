@@ -15,10 +15,10 @@ atual, e restringir minutos mudaria o comportamento aceito hoje).
 
 ## Ordem de execução
 
-- [ ] Teste de componente: `SeletorDeHora` — mostra o valor atual formatado (`HH:mm`) ou um placeholder quando `undefined`
-- [ ] Teste de componente: `SeletorDeHora` — abre o painel ao tocar, lista horas 00-23 e minutos 00-59
-- [ ] Teste de componente: `SeletorDeHora` — selecionar hora e minuto chama `onSelecionar` com `HH:mm` e fecha o painel
-- [ ] Implementação mínima: `frontend/src/components/molecules/SeletorDeHora.tsx` (props: `label`, `valor: string | undefined` em `HH:mm`, `onSelecionar: (hora: string) => void`)
+- [x] Teste de componente: `SeletorDeHora` — mostra o valor atual formatado (`HH:mm`) ou um placeholder quando `undefined`
+- [x] Teste de componente: `SeletorDeHora` — abre o painel ao tocar, lista horas 00-23 e minutos 00-59
+- [x] Teste de componente: `SeletorDeHora` — selecionar hora e minuto chama `onSelecionar` com `HH:mm` e fecha o painel
+- [x] Implementação mínima: `frontend/src/components/molecules/SeletorDeHora.tsx` (props: `label`, `valor: string | undefined` em `HH:mm`, `onSelecionar: (hora: string) => void`)
 - [ ] Teste de componente: cada botão de hora/minuto no painel tem `minWidth`/`minHeight` de 44 efetivos (mesmo padrão da issue #115, aplicar aqui desde já já que é componente novo)
 - [ ] Teste de componente: `HorarioForm` — usa `SeletorDeHora` em vez do `FormField` de texto livre pra "Hora de início"
 - [ ] Implementação: `frontend/src/components/organisms/HorarioForm.tsx` — troca o `FormField` de "Hora de início" por `SeletorDeHora`; remove a validação de formato `HH:mm` via regex (`validar`, `MensagemFormatoHoraInvalido`) já que o seletor não permite formato inválido por construção; mantém o restante da validação (duração, limite de alunos, conflito)

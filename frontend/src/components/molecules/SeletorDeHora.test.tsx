@@ -47,4 +47,23 @@ describe('SeletorDeHora', () => {
     expect(onSelecionar).toHaveBeenCalledWith('10:30');
     expect(screen.queryByText('Confirmar')).toBeNull();
   });
+
+  it('gives every hour and minute button a min touch target of 44 (issue #115)', async () => {
+    await render(<SeletorDeHora label="Início" valor={undefined} onSelecionar={() => {}} />);
+
+    await fireEvent.press(screen.getByText('Selecionar hora'));
+
+    for (const hora of Horas) {
+      const botao = screen.getByLabelText(`Hora ${hora}`);
+      expect(botao.props.style).toEqual(
+        expect.objectContaining({ minWidth: 44, minHeight: 44 }),
+      );
+    }
+    for (const minuto of Minutos) {
+      const botao = screen.getByLabelText(`Minuto ${minuto}`);
+      expect(botao.props.style).toEqual(
+        expect.objectContaining({ minWidth: 44, minHeight: 44 }),
+      );
+    }
+  });
 });
