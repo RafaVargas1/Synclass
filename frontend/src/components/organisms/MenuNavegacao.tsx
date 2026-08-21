@@ -2,7 +2,7 @@ import { Link, usePathname } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import type { AlternadorDePapelProps } from '@/components/organisms/AlternadorDePapel';
+import { AlternadorDePapel, type AlternadorDePapelProps } from '@/components/organisms/AlternadorDePapel';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
 import { useIsTelaLarga } from '@/lib/useIsTelaLarga';
@@ -24,7 +24,8 @@ function encontrarSecaoAtiva(secoes: Secao[], pathname: string): Secao | undefin
  * `useSessao()` e `usuarioId` via `usePerfilLogado(token)` internamente
  * (mesma assinatura de props de `AlternadorDePapel` — decisão do task.md),
  * deriva a lista de seções via `secoesDoPapel` e destaca a seção ativa com
- * base em `usePathname` (match por segmento dinâmico).
+ * base em `usePathname` (match por segmento dinâmico). Quando há mais de um
+ * papel, inclui `AlternadorDePapel` para trocar o papel ativo (issue #4).
  *
  * Dois modos de exibição conforme `useIsTelaLarga`: em viewport larga as
  * seções ficam sempre visíveis; em estreita o menu começa fechado e só
@@ -40,16 +41,17 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
   const secoes = secoesDoPapel(papelAtivo, usuarioId);
   const secaoAtiva = encontrarSecaoAtiva(secoes, pathname);
 
-  void papeis;
-  void onSelecionarPapel;
-
   const exibirSeccoes = telaLarga || aberto;
+  const temVariosPapeis = papeis.length > 1;
 
   return (
     <View>
       {telaLarga ? null : (
         <BotaoAlternarMenu aberto={aberto} aoAlternar={() => setAberto((atual) => !atual)} />
       )}
+      {temVariosPapeis ? (
+        <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={onSelecionarPapel} />
+      ) : null}
       {exibirSeccoes ? (
         <View>
           {secoes.map((secao) => (
