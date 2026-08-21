@@ -1,8 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
-import { useSessao } from '@/lib/auth/contexto-sessao';
-
 import { TopbarAutenticada } from './TopbarAutenticada';
 
 const mockUseSessao = jest.fn();

@@ -1,4 +1,5 @@
 import { renderHook } from '@testing-library/react-native';
+import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 
 import { useIsTelaLarga } from './useIsTelaLarga';
 
@@ -6,8 +7,6 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => {
   const useWindowDimensions = jest.fn();
   return { __esModule: true, default: useWindowDimensions };
 });
-
-import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 
 const useWindowDimensionsMock = useWindowDimensions as jest.Mock;
 
