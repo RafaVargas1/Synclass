@@ -7,15 +7,28 @@ export type ClienteCadastroUsuario = {
   verificarContato: (contato: string) => Promise<VerificarContatoResultado>;
 };
 
+export type OpcoesCadastroUsuario = {
+  /**
+   * Valor inicial do campo de contato (issue #65): preenchido quando a tela
+   * já sabe o e-mail — vindo de `?email=` na rota (Google com cadastro
+   * pendente). Serve só como valor inicial de estado; se o usuário digitar
+   * algo depois, o que ele digitou prevalece.
+   */
+  contatoInicial?: string;
+};
+
 /**
  * Estado e handlers da tela de cadastro de usuário (nome + contato) —
  * Professor (issue #1) e Aluno (issue #61) só diferem no `cliente` de Api
  * injetado (ver `lib/api/cadastroUsuario.ts`) e no texto exibido pela tela,
  * então compartilham este hook em vez de duplicar o fluxo de estado.
  */
-export function useCadastroUsuario(cliente: ClienteCadastroUsuario) {
+export function useCadastroUsuario(
+  cliente: ClienteCadastroUsuario,
+  opcoes?: OpcoesCadastroUsuario,
+) {
   const [nome, setNome] = useState('');
-  const [contato, setContato] = useState('');
+  const [contato, setContato] = useState(opcoes?.contatoInicial ?? '');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
   const [concluido, setConcluido] = useState(false);
@@ -58,6 +71,7 @@ export function useCadastroUsuario(cliente: ClienteCadastroUsuario) {
     enviando,
     concluido,
     nomeReadonly,
+    setContato,
     setNome,
     handleChangeContato,
     handleBlurContato,

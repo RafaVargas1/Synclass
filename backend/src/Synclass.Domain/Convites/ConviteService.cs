@@ -1,3 +1,4 @@
+using Synclass.Domain.Alunos;
 using Synclass.Domain.Common;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
@@ -18,6 +19,7 @@ public sealed class ConviteService
     private readonly IGeradorDeCodigoConvite _geradorDeCodigo;
     private readonly IClock _clock;
     private readonly int _diasValidade;
+    private readonly IdentificadorAlunoService _identificadorAluno;
 
     /// <summary>
     /// Teto do loop de <see cref="GerarCodigoUnicoAsync"/> — o espaço de
@@ -35,7 +37,8 @@ public sealed class ConviteService
         IGeradorDeTokenConvite geradorDeToken,
         IGeradorDeCodigoConvite geradorDeCodigo,
         IClock clock,
-        int diasValidade)
+        int diasValidade,
+        IdentificadorAlunoService identificadorAluno)
     {
         _convites = convites;
         _matriculas = matriculas;
@@ -44,6 +47,7 @@ public sealed class ConviteService
         _geradorDeCodigo = geradorDeCodigo;
         _clock = clock;
         _diasValidade = diasValidade;
+        _identificadorAluno = identificadorAluno;
     }
 
     /// <summary>
@@ -226,11 +230,14 @@ public sealed class ConviteService
         var usuarioExistente = await _usuarios.BuscarPorContatoAsync(contatoNormalizado, cancellationToken);
         if (usuarioExistente is not null)
         {
-            var papelAdicionado = AdicionarPapelAlunoIdempotente(usuarioExistente);
+            var jaEAluno = usuarioExistente.Papeis.Any(p => p.Papel == PapelUsuario.Aluno);
+            var identificadorAluno = jaEAluno ? null : await _identificadorAluno.GerarUnicoAsync(cancellationToken);
+            var papelAdicionado = AdicionarPapelAlunoIdempotente(usuarioExistente, identificadorAluno);
             return (usuarioExistente, papelAdicionado);
         }
 
-        var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, PapelUsuario.Aluno, _clock);
+        var identificador = await _identificadorAluno.GerarUnicoAsync(cancellationToken);
+        var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, PapelUsuario.Aluno, identificador, _clock);
         await _usuarios.AdicionarAsync(novoUsuario, cancellationToken);
         return (novoUsuario, false);
     }
@@ -243,11 +250,11 @@ public sealed class ConviteService
     /// no-op (<c>false</c>) — usado pelo log estruturado
     /// <c>PapelAdicionado</c> (Critérios técnicos da issue #4).
     /// </summary>
-    private bool AdicionarPapelAlunoIdempotente(Usuario usuario)
+    private bool AdicionarPapelAlunoIdempotente(Usuario usuario, string? identificadorAluno)
     {
         try
         {
-            usuario.AdicionarPapel(PapelUsuario.Aluno, _clock);
+            usuario.AdicionarPapel(PapelUsuario.Aluno, identificadorAluno, _clock);
             return true;
         }
         catch (PapelJaAtribuidoException)

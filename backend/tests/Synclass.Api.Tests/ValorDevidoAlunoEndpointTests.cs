@@ -49,7 +49,7 @@ public sealed class ValorDevidoAlunoEndpointTests : IClassFixture<WebApplication
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
-        var professor = Usuario.Cadastrar(nome, $"{Guid.NewGuid()}@exemplo.com", PapelUsuario.Professor, clock);
+        var professor = Usuario.Cadastrar(nome, $"{Guid.NewGuid()}@exemplo.com", PapelUsuario.Professor, null, clock);
         dbContext.Usuarios.Add(professor);
         await dbContext.SaveChangesAsync();
         return professor.Id;

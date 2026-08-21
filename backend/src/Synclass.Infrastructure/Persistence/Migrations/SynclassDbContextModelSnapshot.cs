@@ -325,6 +325,10 @@ namespace Synclass.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("IdentificadorAluno")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<string>("IdentificadorProvisorio")
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
@@ -339,6 +343,10 @@ namespace Synclass.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AlunoUsuarioId");
+
+                    b.HasIndex("IdentificadorAluno")
+                        .IsUnique()
+                        .HasFilter("\"IdentificadorAluno\" IS NOT NULL");
 
                     b.HasIndex("ProfessorId", "IdentificadorProvisorio")
                         .IsUnique()
@@ -384,6 +392,10 @@ namespace Synclass.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("IdentificadorAluno")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -393,6 +405,10 @@ namespace Synclass.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Contato")
                         .IsUnique();
+
+                    b.HasIndex("IdentificadorAluno")
+                        .IsUnique()
+                        .HasFilter("\"IdentificadorAluno\" IS NOT NULL");
 
                     b.ToTable("Usuarios", (string)null);
                 });

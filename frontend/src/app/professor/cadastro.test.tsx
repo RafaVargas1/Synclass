@@ -1,18 +1,36 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { botaoProps } from '@/components/molecules/BotaoLoginGoogle.test.helpers';
+import { useSessao } from '@/lib/auth/contexto-sessao';
 import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
 
 import CadastroProfessorScreen from './cadastro';
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+  useRouter: () => ({ back: jest.fn(), replace: mockReplace, canGoBack: () => false }),
+  useLocalSearchParams: () => ({ ...mockRouteParams }),
 }));
+
+jest.mock('@/lib/auth/contexto-sessao', () => ({
+  useSessao: jest.fn(),
+}));
+
+jest.mock('@/components/molecules/BotaoLoginGoogle', () => {
+  const { BotaoLoginGoogleDeTeste } = jest.requireActual(
+    '@/components/molecules/BotaoLoginGoogle.test.helpers',
+  );
+  return { BotaoLoginGoogle: BotaoLoginGoogleDeTeste };
+});
 
 jest.mock('@/lib/api/professores', () => ({
   cadastrarProfessor: jest.fn(),
   verificarContatoProfessor: jest.fn(),
 }));
 
+const mockReplace = jest.fn();
+const mockRouteParams: Record<string, string> = {};
+const definirSessaoMock = jest.fn();
+const useSessaoMock = useSessao as jest.Mock;
 const cadastrarProfessorMock = cadastrarProfessor as jest.Mock;
 const verificarContatoProfessorMock = verificarContatoProfessor as jest.Mock;
 
@@ -21,6 +39,12 @@ describe('CadastroProfessorScreen', () => {
     cadastrarProfessorMock.mockReset();
     verificarContatoProfessorMock.mockReset();
     verificarContatoProfessorMock.mockResolvedValue({ identidadeExistente: false, nome: null });
+    mockReplace.mockReset();
+    mockRouteParams.email = '';
+    definirSessaoMock.mockReset();
+    definirSessaoMock.mockResolvedValue(undefined);
+    useSessaoMock.mockReset();
+    useSessaoMock.mockReturnValue({ definirSessao: definirSessaoMock });
   });
 
   it('shows an inline confirmation when the Api responds with success', async () => {
@@ -97,5 +121,33 @@ describe('CadastroProfessorScreen', () => {
       expect(screen.getByText('Informe um e-mail ou telefone válido.')).toBeTruthy(),
     );
     expect(cadastrarProfessorMock).not.toHaveBeenCalled();
+  });
+
+  it('pre-fills the contact field from the ?email= route param', async () => {
+    mockRouteParams.email = 'pediu.google@gmail.com';
+    await render(<CadastroProfessorScreen />);
+
+    expect(screen.getByDisplayValue('pediu.google@gmail.com')).toBeTruthy();
+  });
+
+  it('persists the session and navigates to /painel when the Google login succeeds', async () => {
+    await render(<CadastroProfessorScreen />);
+
+    await act(async () => {
+      botaoProps.onAutenticado({ token: 'token-google', nome: 'Maria Silva', papeis: ['Professor'] });
+    });
+
+    expect(definirSessaoMock).toHaveBeenCalledWith('token-google', ['Professor']);
+    expect(mockReplace).toHaveBeenCalledWith('/painel');
+  });
+
+  it('pre-fills the contact field with the Google e-mail when the account has no user yet', async () => {
+    await render(<CadastroProfessorScreen />);
+
+    await act(async () => {
+      botaoProps.onCadastroPendente('novo.google@gmail.com');
+    });
+
+    expect(screen.getByDisplayValue('novo.google@gmail.com')).toBeTruthy();
   });
 });

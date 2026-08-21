@@ -1,7 +1,9 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BotaoLoginGoogle } from '@/components/molecules/BotaoLoginGoogle';
 import { AceiteConviteConfirmado } from '@/components/molecules/AceiteConviteConfirmado';
 import { CadastroConfirmado } from '@/components/molecules/CadastroConfirmado';
 import { ConviteExpirado } from '@/components/molecules/ConviteExpirado';
@@ -11,6 +13,7 @@ import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm'
 import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarAluno, verificarContatoAluno } from '@/lib/api/alunos';
 import { aceitarConvitePorCodigo } from '@/lib/api/convites';
+import { useSessao } from '@/lib/auth/contexto-sessao';
 import { normalizarCodigoConvite } from '@/lib/normalizarCodigoConvite';
 
 /**
@@ -33,11 +36,22 @@ function ehConviteExpirado(mensagem: string): boolean {
  * chamar conforme o código (já normalizado) estar vazio ou não. Reaproveita
  * `CadastroUsuarioForm`, os estados de confirmação/expiração e a
  * normalização de código — sem duplicar formulário nem lógica.
+ *
+ * Também aceita a entrada com conta Google (issue #65): o `?email=` da rota
+ * (vindo do login quando o cadastro está pendente) pré-preenche o campo de
+ * contato — sem sobrescrever o que o usuário digitar depois. Quando o
+ * `BotaoLoginGoogle` bem-sucedido encontra um usuário já existente, persiste
+ * a sessão e vai para `/painel`; quando o e-mail ainda não tem conta, o
+ * próprio cadastro é o destino, então só pré-preenche o contato com o e-mail
+ * do Google.
  */
 export default function AlunoScreen() {
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const router = useRouter();
+  const { definirSessao } = useSessao();
   const [codigo, setCodigo] = useState('');
   const [nome, setNome] = useState('');
-  const [contato, setContato] = useState('');
+  const [contato, setContato] = useState(email ?? '');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
   const [nomeReadonly, setNomeReadonly] = useState(false);
@@ -79,6 +93,17 @@ export default function AlunoScreen() {
     setNomeConfirmado(resultado.nome);
   }
 
+  async function handleAutenticado({
+    token,
+    papeis,
+  }: {
+    token: string;
+    papeis: string[];
+  }) {
+    await definirSessao(token, papeis);
+    router.replace('/painel');
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <Topbar titulo="Entrar como Aluno" />
@@ -116,6 +141,10 @@ export default function AlunoScreen() {
               onChangeContato={handleChangeContato}
               onBlurContato={handleBlurContato}
               onSubmit={handleSubmit}
+            />
+            <BotaoLoginGoogle
+              onAutenticado={handleAutenticado}
+              onCadastroPendente={setContato}
             />
           </View>
         )}

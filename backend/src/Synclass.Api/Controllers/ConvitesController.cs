@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Convites;
 using Synclass.Domain.Matriculas;
@@ -48,7 +49,13 @@ public sealed class ConvitesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Aceita um convite pela URL longa (token). Endpoint anônimo sujeito a
+    /// rate limit por IP (<c>EnableRateLimiting("ConvitesAnonimos")</c>,
+    /// issue #89) — freia enumeração automatizada do keyspace do token.
+    /// </summary>
     [AllowAnonymous]
+    [EnableRateLimiting("ConvitesAnonimos")]
     [HttpPost("convites/{token}/aceite")]
     public async Task<IActionResult> Aceitar(string token, [FromBody] AceitarConviteRequest request, CancellationToken cancellationToken)
     {
@@ -70,8 +77,12 @@ public sealed class ConvitesController : ControllerBase
     /// Aceita um convite pelo código curto de 5 dígitos (issue #63) — mesmo
     /// contrato de resposta e tratamento de exceções de
     /// <see cref="Aceitar"/>, reaproveitando <see cref="AceitarConviteRequest"/>.
+    /// Endpoint anônimo sujeito ao mesmo rate limit por IP de
+    /// <see cref="Aceitar"/> (issue #89) — o keyspace de 5 dígitos (issue #62)
+    /// é o alvo da enumeração automatizada que o limite freia.
     /// </summary>
     [AllowAnonymous]
+    [EnableRateLimiting("ConvitesAnonimos")]
     [HttpPost("convites/codigo/{codigo}/aceite")]
     public async Task<IActionResult> AceitarPorCodigo(string codigo, [FromBody] AceitarConviteRequest request, CancellationToken cancellationToken)
     {

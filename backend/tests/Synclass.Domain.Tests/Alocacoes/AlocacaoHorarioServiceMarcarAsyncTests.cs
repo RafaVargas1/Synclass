@@ -46,7 +46,7 @@ public sealed class AlocacaoHorarioServiceMarcarAsyncTests
 
     private static async Task<Matricula> CriarMatriculaAsync(FakeMatriculaRepository matriculas, Guid professorId)
     {
-        var matricula = Matricula.CriarProvisoria(professorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(professorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", null, Clock);
         await matriculas.AdicionarAsync(matricula, CancellationToken.None);
         return matricula;
     }

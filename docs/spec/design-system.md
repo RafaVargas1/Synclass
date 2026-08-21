@@ -78,7 +78,7 @@ não deixam espaço pra esse degradê.
 
 | Token | Light | Dark | Uso |
 |---|---|---|---|
-| `background` | `#F5F6F8` | `#121317` | fundo de tela |
+| `background` | `#F9FAFB` | `#121317` | fundo de tela |
 | `background-element` | `#E7E9ED` | `#1D1F24` | card, input, superfície elevada |
 | `background-selected` | `#D8DBE1` | `#292C33` | chip/item selecionado, hover-equivalente em toque |
 | `border` *(novo)* | `#D3D6DC` | `#34373E` | borda de 1px — substitui sombra como sinal de elevação |
@@ -91,11 +91,15 @@ Mudanças em relação ao `palette.js` atual: `background` sai de branco/preto
 puro; `primary` no light escurece de `#208AEF` para `#1873BD` — o tom atual
 tem contraste apertado quando usado como texto/link sobre fundo claro (ex:
 "Já tenho conta — Entrar" em `HomeHero`), e vai continuar servindo bem como
-fundo de botão com texto branco. Valide contraste (mínimo AA, 4.5:1 para
-texto normal) antes de aplicar — não tenho uma ferramenta de contraste aqui,
-então trate os hexadecimais acima como ponto de partida, não valor final.
-`border` é um token novo — não existe hoje porque nada precisava de linha
-divisória com sombra disponível; agora precisa.
+fundo de botão com texto branco. O valor de `background` no modo claro foi
+clareado de `#F5F6F8` para `#F9FAFB` e validado por teste automatizado
+(`frontend/src/theme/palette.test.ts`): a razão de contraste contra
+`backgroundElement` (`#E7E9ED`) e `backgroundSelected` (`#D8DBE1`) permanece
+>= 1.10 par a par (a escada de elevação fica mais perceptível, não menos), e
+o contraste de `text` (`#14161A`) e `text-secondary` (`#5B616B`) sobre o novo
+fundo permanece >= 4.5:1 (AA). `border` é um token novo — não existe hoje
+porque nada precisava de linha divisória com sombra disponível; agora
+precisa.
 
 Não adicionar cor de "sucesso" enquanto nenhuma tela precisar dela — hoje
 `LoginConfirmado`/`CadastroConfirmado` usam texto normal, e isso está certo.

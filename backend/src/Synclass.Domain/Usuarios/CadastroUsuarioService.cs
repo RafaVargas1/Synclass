@@ -1,3 +1,4 @@
+using Synclass.Domain.Alunos;
 using Synclass.Domain.Common;
 
 namespace Synclass.Domain.Usuarios;
@@ -16,11 +17,13 @@ public sealed class CadastroUsuarioService
 {
     private readonly IUsuarioRepository _usuarios;
     private readonly IClock _clock;
+    private readonly IdentificadorAlunoService _identificadorAluno;
 
-    public CadastroUsuarioService(IUsuarioRepository usuarios, IClock clock)
+    public CadastroUsuarioService(IUsuarioRepository usuarios, IClock clock, IdentificadorAlunoService identificadorAluno)
     {
         _usuarios = usuarios;
         _clock = clock;
+        _identificadorAluno = identificadorAluno;
     }
 
     public async Task<ResultadoCadastroUsuario> CadastrarAsync(
@@ -67,15 +70,40 @@ public sealed class CadastroUsuarioService
         string contatoNormalizado,
         CancellationToken cancellationToken)
     {
+        var identificadorAluno = await GerarIdentificadorSeNecessarioAsync(papel, usuarioExistente, cancellationToken);
         if (usuarioExistente is not null)
         {
-            usuarioExistente.AdicionarPapel(papel, _clock);
+            usuarioExistente.AdicionarPapel(papel, identificadorAluno, _clock);
             return usuarioExistente;
         }
 
-        var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, papel, _clock);
+        var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, papel, identificadorAluno, _clock);
         await _usuarios.AdicionarAsync(novoUsuario, cancellationToken);
         return novoUsuario;
+    }
+
+    /// <summary>
+    /// Gera um <c>IdentificadorAluno</c> único (issue #70) apenas quando o
+    /// papel Aluno é de fato anexado neste cadastro — ou seja, papel é Aluno
+    /// E (novo usuário, ou usuário existente sem o papel Aluno ainda). Se o
+    /// usuário existente já for Aluno, <see cref="Usuario.AdicionarPapel"/>
+    /// lançará <see cref="PapelJaAtribuidoException"/> e nenhum identificador
+    /// é gerado nem gravado. Professor nunca gera identificador.
+    /// </summary>
+    private async Task<string?> GerarIdentificadorSeNecessarioAsync(
+        PapelUsuario papel, Usuario? usuarioExistente, CancellationToken cancellationToken)
+    {
+        if (papel != PapelUsuario.Aluno)
+        {
+            return null;
+        }
+
+        if (usuarioExistente is not null && usuarioExistente.Papeis.Any(p => p.Papel == PapelUsuario.Aluno))
+        {
+            return null;
+        }
+
+        return await _identificadorAluno.GerarUnicoAsync(cancellationToken);
     }
 }
 

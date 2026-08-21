@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { botaoProps } from '@/components/molecules/BotaoLoginGoogle.test.helpers';
 import { aceitarConvitePorCodigo } from '@/lib/api/convites';
 import { cadastrarAluno, verificarContatoAluno } from '@/lib/api/alunos';
+import { useSessao } from '@/lib/auth/contexto-sessao';
 
 import AlunoScreen from './index';
 
@@ -14,9 +16,29 @@ jest.mock('@/lib/api/alunos', () => ({
   verificarContatoAluno: jest.fn(),
 }));
 
+jest.mock('@/lib/auth/contexto-sessao', () => ({
+  useSessao: jest.fn(),
+}));
+
+jest.mock('@/components/molecules/BotaoLoginGoogle', () => {
+  const { BotaoLoginGoogleDeTeste } = jest.requireActual(
+    '@/components/molecules/BotaoLoginGoogle.test.helpers',
+  );
+  return { BotaoLoginGoogle: BotaoLoginGoogleDeTeste };
+});
+
+const mockReplace = jest.fn();
+const mockRouteParams: Record<string, string> = {};
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+  useLocalSearchParams: () => ({ ...mockRouteParams }),
+}));
+
 const aceitarConvitePorCodigoMock = aceitarConvitePorCodigo as jest.Mock;
 const cadastrarAlunoMock = cadastrarAluno as jest.Mock;
 const verificarContatoAlunoMock = verificarContatoAluno as jest.Mock;
+const definirSessaoMock = jest.fn();
+const useSessaoMock = useSessao as jest.Mock;
 
 describe('AlunoScreen', () => {
   beforeEach(() => {
@@ -24,6 +46,12 @@ describe('AlunoScreen', () => {
     cadastrarAlunoMock.mockReset();
     verificarContatoAlunoMock.mockReset();
     verificarContatoAlunoMock.mockResolvedValue({ identidadeExistente: false, nome: null });
+    mockReplace.mockReset();
+    mockRouteParams.email = '';
+    definirSessaoMock.mockReset();
+    definirSessaoMock.mockResolvedValue(undefined);
+    useSessaoMock.mockReset();
+    useSessaoMock.mockReturnValue({ definirSessao: definirSessaoMock });
   });
 
   it('mostra o campo de código e o formulário de nome/contato simultaneamente', async () => {
@@ -177,5 +205,33 @@ describe('AlunoScreen', () => {
         /o vínculo com o Professor é feito depois, por código ou link/i,
       ),
     ).toBeTruthy();
+  });
+
+  it('pré-preenche o campo de contato com o ?email= da rota', async () => {
+    mockRouteParams.email = 'pediu.google@gmail.com';
+    await render(<AlunoScreen />);
+
+    expect(screen.getByDisplayValue('pediu.google@gmail.com')).toBeTruthy();
+  });
+
+  it('persiste a sessão e navega para /painel quando o login do Google encontra usuário existente', async () => {
+    await render(<AlunoScreen />);
+
+    await act(async () => {
+      botaoProps.onAutenticado({ token: 'token-google', nome: 'João Souza', papeis: ['Aluno'] });
+    });
+
+    expect(definirSessaoMock).toHaveBeenCalledWith('token-google', ['Aluno']);
+    expect(mockReplace).toHaveBeenCalledWith('/painel');
+  });
+
+  it('pré-preenche o contato com o e-mail do Google quando a conta ainda é nova', async () => {
+    await render(<AlunoScreen />);
+
+    await act(async () => {
+      botaoProps.onCadastroPendente('novo.google@gmail.com');
+    });
+
+    expect(screen.getByDisplayValue('novo.google@gmail.com')).toBeTruthy();
   });
 });
