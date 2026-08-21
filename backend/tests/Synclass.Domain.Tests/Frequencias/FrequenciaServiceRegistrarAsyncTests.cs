@@ -35,14 +35,14 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
             ConfiguracaoProfessor.Criar(ProfessorId, ModeloAgendamento.Vago, Clock));
 
         var horarios = new FakeHorarioRepository();
-        var horarioService = new HorarioService(horarios, configuracoes, Clock);
+        var horarioService = new HorarioService(horarios, Clock);
         var aulas = new FakeAulaRepository();
         var cancelamentos = new FakeCancelamentoAulaRepository();
         var alocacoes = new FakeAlocacaoHorarioRepository();
         var matriculas = new FakeMatriculaRepository();
         var aulaService = new AulaService(
             aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService, Clock);
-        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, configuracoes, horarioService, Clock);
+        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);
         var registros = new FakeRegistroFrequenciaRepository();
         var usuarios = new FakeUsuarioRepository();
         var frequenciaService = new FrequenciaService(
@@ -53,7 +53,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
 
     private static async Task<Matricula> CriarMatriculaAlocadaAsync(Cenario cenario, Guid horarioId)
     {
-        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matricula, CancellationToken.None);
         var alocacao = AlocacaoHorario.Criar(horarioId, matricula.Id, OrigemAlocacao.Aluno, Clock);
         await cenario.Alocacoes.AdicionarAsync(alocacao, CancellationToken.None);
@@ -69,7 +69,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None, limiteAlunos: 2);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None, limiteAlunos: 2);
         var alunoPresente = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var alunoAusente = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
@@ -100,7 +100,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
         var statusPorMatricula = new Dictionary<Guid, StatusFrequencia> { [matricula.Id] = StatusFrequencia.Presente };
@@ -121,7 +121,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
         var aula = Aula.Criar(horario.Id, data, Clock);
@@ -151,7 +151,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
         var aula = Aula.Criar(horario.Id, data, Clock);
@@ -178,7 +178,7 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         var data = new DateOnly(2026, 8, 20);
         await cenario.FrequenciaService.RegistrarAsync(
@@ -205,8 +205,8 @@ public sealed class FrequenciaServiceRegistrarAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
-        var matriculaNaoAlocada = Matricula.CriarProvisoria(ProfessorId, "Aluno Dois", "aluno-2", Clock);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+        var matriculaNaoAlocada = Matricula.CriarProvisoria(ProfessorId, "Aluno Dois", "aluno-2", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matriculaNaoAlocada, CancellationToken.None);
         var statusPorMatricula = new Dictionary<Guid, StatusFrequencia> { [matriculaNaoAlocada.Id] = StatusFrequencia.Presente };
 

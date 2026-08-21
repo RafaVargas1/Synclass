@@ -7,11 +7,17 @@ export type GerarConviteInput = {
 };
 
 export type GerarConviteResultado =
-  | { sucesso: true; conviteId: string; token: string; expiraEm: string }
+  | { sucesso: true; conviteId: string; token: string; codigo: string; expiraEm: string }
   | { sucesso: false; mensagem: string };
 
 export type AceitarConviteInput = {
   token: string;
+  nome: string;
+  contato: string;
+};
+
+export type AceitarConvitePorCodigoInput = {
+  codigo: string;
   nome: string;
   contato: string;
 };
@@ -48,6 +54,7 @@ export async function gerarConvite(input: GerarConviteInput): Promise<GerarConvi
     sucesso: true,
     conviteId: corpo.conviteId,
     token: corpo.token,
+    codigo: corpo.codigo,
     expiraEm: corpo.expiraEm,
   };
 }
@@ -61,6 +68,38 @@ export async function aceitarConvite(input: AceitarConviteInput): Promise<Aceita
   let response: Response;
   try {
     response = await fetchComTimeout(`/convites/${input.token}/aceite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: input.nome, contato: input.contato }),
+    });
+  } catch {
+    return { sucesso: false, mensagem: MensagemErroConexao };
+  }
+
+  const corpo = await response.json().catch(() => null);
+  if (!response.ok) {
+    return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
+  }
+  return {
+    sucesso: true,
+    usuarioId: corpo.usuarioId,
+    nome: corpo.nome,
+    papeis: corpo.papeis ?? [],
+  };
+}
+
+/**
+ * Envolve o `fetch` de POST /convites/codigo/{codigo}/aceite (issue #63):
+ * mesmo contrato de `aceitarConvite`, mas resolvendo o convite pelo código
+ * curto de 5 dígitos em vez do token do link — nunca lança para erros de
+ * negócio (código expirado/inválido, contato já vinculado) ou de rede.
+ */
+export async function aceitarConvitePorCodigo(
+  input: AceitarConvitePorCodigoInput,
+): Promise<AceitarConviteResultado> {
+  let response: Response;
+  try {
+    response = await fetchComTimeout(`/convites/codigo/${input.codigo}/aceite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome: input.nome, contato: input.contato }),

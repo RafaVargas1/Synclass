@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConviteGerado } from '@/components/molecules/ConviteGerado';
 import { GerarConviteForm } from '@/components/organisms/GerarConviteForm';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { gerarConvite } from '@/lib/api/convites';
 import { montarLinkWhatsApp } from '@/lib/whatsapp';
 import { MaxContentWidth } from '@/theme/tokens';
@@ -35,6 +35,7 @@ export default function GerarConviteScreen() {
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
   const [linkConvite, setLinkConvite] = useState<string | undefined>(undefined);
+  const [codigoConvite, setCodigoConvite] = useState<string | undefined>(undefined);
 
   async function handleSubmit() {
     setEnviando(true);
@@ -48,6 +49,7 @@ export default function GerarConviteScreen() {
       return;
     }
     setLinkConvite(`${AppBaseUrl}/convite/${resultado.token}`);
+    setCodigoConvite(resultado.codigo);
   }
 
   function handleEnviarWhatsApp() {
@@ -60,13 +62,17 @@ export default function GerarConviteScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Convidar Aluno" />
+      <TopbarAutenticada titulo="Convidar Aluno" />
       <View
         className="w-full flex-1 self-center items-center justify-center px-four"
         style={{ maxWidth: MaxContentWidth }}
       >
-        {linkConvite ? (
-          <ConviteGerado linkConvite={linkConvite} onEnviarWhatsApp={handleEnviarWhatsApp} />
+        {linkConvite && codigoConvite ? (
+          <ConviteGerado
+            linkConvite={linkConvite}
+            codigo={codigoConvite}
+            onEnviarWhatsApp={handleEnviarWhatsApp}
+          />
         ) : (
           <GerarConviteForm
             contato={contato}

@@ -1,8 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import { TipoMarcacao } from '@/lib/api/horarios';
+
 import { HorarioForm } from './HorarioForm';
 
 async function preencherEEnviar(horaInicio: string, duracaoMinutos: string) {
+  await fireEvent.press(screen.getByText('Livre'));
   await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), horaInicio);
   await fireEvent.changeText(screen.getByPlaceholderText('60'), duracaoMinutos);
   await fireEvent.press(screen.getByText('Adicionar horário'));
@@ -20,7 +23,34 @@ describe('HorarioForm', () => {
       horaInicio: '10:00:00',
       duracaoMinutos: 60,
       limiteAlunos: 1,
+      tipoMarcacao: TipoMarcacao.Livre,
     });
+  });
+
+  it('calls onSubmit with the selected tipoMarcacao when a chip other than Livre is chosen', async () => {
+    const onSubmit = jest.fn();
+    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+    await fireEvent.press(screen.getByText('Híbrido'));
+    await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), '10:00');
+    await fireEvent.changeText(screen.getByPlaceholderText('60'), '60');
+    await fireEvent.press(screen.getByText('Adicionar horário'));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ tipoMarcacao: TipoMarcacao.Hibrido }),
+    );
+  });
+
+  it('shows a client-side error and does not call onSubmit when no política is chosen', async () => {
+    const onSubmit = jest.fn();
+    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('HH:mm'), '10:00');
+    await fireEvent.changeText(screen.getByPlaceholderText('60'), '60');
+    await fireEvent.press(screen.getByText('Adicionar horário'));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText('Escolha a política de marcação deste horário.')).toBeTruthy();
   });
 
   it('calls onSubmit with the informed limiteAlunos when the default is changed', async () => {
@@ -35,6 +65,7 @@ describe('HorarioForm', () => {
       horaInicio: '10:00:00',
       duracaoMinutos: 60,
       limiteAlunos: 4,
+      tipoMarcacao: TipoMarcacao.Livre,
     });
   });
 
@@ -52,7 +83,14 @@ describe('HorarioForm', () => {
   it('shows a client-side error and does not call onSubmit when the new horario overlaps an existing one', async () => {
     const onSubmit = jest.fn();
     const horariosExistentes = [
-      { id: 'h1', diaSemana: 1, horaInicio: '10:00:00', duracaoMinutos: 60, limiteAlunos: 1 },
+      {
+        id: 'h1',
+        diaSemana: 1,
+        horaInicio: '10:00:00',
+        duracaoMinutos: 60,
+        limiteAlunos: 1,
+        tipoMarcacao: TipoMarcacao.Livre,
+      },
     ];
     await render(
       <HorarioForm horariosExistentes={horariosExistentes} enviando={false} onSubmit={onSubmit} />,

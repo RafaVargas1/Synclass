@@ -1,4 +1,4 @@
-import { aceitarConvite, gerarConvite } from '@/lib/api/convites';
+import { aceitarConvite, aceitarConvitePorCodigo, gerarConvite } from '@/lib/api/convites';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -9,10 +9,11 @@ function mockFetchOnce(status: number, body: unknown) {
 }
 
 describe('gerarConvite', () => {
-  it('returns sucesso with token and expiraEm when the Api responds with 200', async () => {
+  it('returns sucesso with token, codigo and expiraEm when the Api responds with 200', async () => {
     mockFetchOnce(200, {
       conviteId: 'convite-1',
       token: 'token-alta-entropia',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
 
@@ -22,6 +23,7 @@ describe('gerarConvite', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-alta-entropia',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
   });
@@ -155,5 +157,62 @@ describe('aceitarConvite', () => {
 
     expect(resultado.sucesso).toBe(false);
     jest.useRealTimers();
+  });
+});
+
+describe('aceitarConvitePorCodigo', () => {
+  it('returns sucesso with usuarioId, nome and papeis when the Api responds with 200', async () => {
+    mockFetchOnce(200, { usuarioId: 'usuario-1', nome: 'João Pedro', papeis: ['Aluno'] });
+
+    const resultado = await aceitarConvitePorCodigo({
+      codigo: '12345',
+      nome: 'João Pedro',
+      contato: '11987654321',
+    });
+
+    expect(resultado).toEqual({
+      sucesso: true,
+      usuarioId: 'usuario-1',
+      nome: 'João Pedro',
+      papeis: ['Aluno'],
+    });
+  });
+
+  it('posts to the codigo-scoped aceite route', async () => {
+    mockFetchOnce(200, { usuarioId: 'usuario-1', nome: 'João Pedro', papeis: ['Aluno'] });
+
+    await aceitarConvitePorCodigo({ codigo: '12345', nome: 'João Pedro', contato: '11987654321' });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/convites/codigo/12345/aceite'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('returns the Api error message when the Api responds with 400 (código inválido)', async () => {
+    mockFetchOnce(400, { mensagem: 'Convite inválido ou já utilizado.' });
+
+    const resultado = await aceitarConvitePorCodigo({
+      codigo: '99999',
+      nome: 'João Pedro',
+      contato: '11987654321',
+    });
+
+    expect(resultado).toEqual({
+      sucesso: false,
+      mensagem: 'Convite inválido ou já utilizado.',
+    });
+  });
+
+  it('returns a connection error message when fetch throws', async () => {
+    globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
+
+    const resultado = await aceitarConvitePorCodigo({
+      codigo: '12345',
+      nome: 'João Pedro',
+      contato: '11987654321',
+    });
+
+    expect(resultado.sucesso).toBe(false);
   });
 });

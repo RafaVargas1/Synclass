@@ -42,8 +42,8 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     {
         var response = await client.PostAsJsonAsync(
             "/professores/cadastro",
-            new CadastroProfessorRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
-        var corpo = await response.Content.ReadFromJsonAsync<CadastroProfessorResponse>();
+            new CadastroUsuarioRequest("Maria Silva", $"{Guid.NewGuid()}@exemplo.com"));
+        var corpo = await response.Content.ReadFromJsonAsync<CadastroUsuarioResponse>();
         return corpo!.UsuarioId;
     }
 
@@ -168,15 +168,19 @@ public sealed class ConfiguracaoEndpointTests : IClassFixture<WebApplicationFact
     }
 
     [Fact]
-    public async Task Post_Horario_ReturnsBadRequest_QuandoProfessorNaoDefiniuModelo()
+    public async Task Post_Horario_ReturnsOk_QuandoProfessorNaoDefiniuModelo()
     {
+        // Issue #76 (achado do dev-review no PR #85): a Tela deixou de exigir
+        // que o Professor defina um modelo de agendamento antes de cadastrar
+        // horários (cada horário carrega sua própria política de marcação,
+        // issue #73), então o endpoint não pode mais bloquear isso.
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
         var professorId = await CriarProfessorAsync(client);
 
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

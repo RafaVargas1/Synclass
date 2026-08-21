@@ -1,25 +1,29 @@
 using Synclass.Domain.Common;
-using Synclass.Domain.Configuracoes;
 
 namespace Synclass.Domain.Horarios;
 
 /// <summary>
 /// Orquestra os 3 casos de uso do card (issue #6): cadastrar, listar e
-/// remover horários disponíveis de um Professor. Cadastro exige que o
-/// Professor já tenha definido um modelo de agendamento (issue #7), valida
-/// duração e rejeita sobreposição com horários já existentes no mesmo dia;
-/// remoção rejeita quando existem Alunos alocados (ver implementation.md).
+/// remover horários disponíveis de um Professor. Cadastro valida duração e
+/// rejeita sobreposição com horários já existentes no mesmo dia; remoção
+/// rejeita quando existem Alunos alocados (ver implementation.md). Não exige
+/// mais nenhuma configuração prévia do Professor — cada horário carrega sua
+/// própria política de marcação (issue #73, <see cref="TipoMarcacao"/>);
+/// a exigência de <c>ConfiguracaoProfessor</c> definida antes do cadastro
+/// (issue #7) ficou obsoleta com isso e foi removida na issue #76, achado do
+/// dev-review no PR #85 (sem essa remoção, um Professor sem configuração
+/// prévia não conseguia mais cadastrar horário nenhum, já que a Tela deixou
+/// de oferecer como defini-la). A alteração da política (issue #71) é o 4º
+/// caso de uso: <see cref="AlterarPoliticaAsync"/>.
 /// </summary>
 public sealed class HorarioService
 {
     private readonly IHorarioRepository _horarios;
-    private readonly IConfiguracaoProfessorRepository _configuracoes;
     private readonly IClock _clock;
 
-    public HorarioService(IHorarioRepository horarios, IConfiguracaoProfessorRepository configuracoes, IClock clock)
+    public HorarioService(IHorarioRepository horarios, IClock clock)
     {
         _horarios = horarios;
-        _configuracoes = configuracoes;
         _clock = clock;
     }
 
@@ -28,12 +32,11 @@ public sealed class HorarioService
         DiaSemana diaSemana,
         TimeOnly horaInicio,
         int duracaoMinutos,
+        TipoMarcacao tipoMarcacao,
         CancellationToken cancellationToken,
         int? limiteAlunos = null)
     {
-        await GarantirConfiguracaoDefinidaAsync(professorId, cancellationToken);
-
-        var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, _clock, limiteAlunos);
+        var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, _clock, limiteAlunos);
         var horariosDoDia = await _horarios.ListarPorProfessorEDiaAsync(professorId, diaSemana, cancellationToken);
         var conflitante = horariosDoDia.FirstOrDefault(existente => horario.Sobrepoe(existente));
         if (conflitante is not null)
@@ -49,6 +52,44 @@ public sealed class HorarioService
     public Task<IReadOnlyCollection<Horario>> ListarAsync(Guid professorId, CancellationToken cancellationToken)
     {
         return _horarios.ListarPorProfessorAsync(professorId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Devolve a política de marcação atual de um horário do Professor
+    /// (issue #71). Usado pelo controller para registrar o valor anterior no
+    /// log <c>HorarioTipoMarcacaoAlterado</c> junto com o valor novo já
+    /// alterado — mesmo padrão de "ler antes para logar o antes" de
+    /// <see cref="Synclass.Api.Controllers.ConfiguracoesController"/>.
+    /// Reutiliza <see cref="BuscarDoProfessorAsync"/> para a checagem de
+    /// posse, lançando <see cref="HorarioNaoEncontradoException"/> quando o
+    /// horário não existe ou é de outro Professor.
+    /// </summary>
+    public async Task<TipoMarcacao> BuscarTipoMarcacaoAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    {
+        var horario = await BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        return horario.TipoMarcacao;
+    }
+
+    /// <summary>
+    /// Altera a política de marcação (<see cref="TipoMarcacao"/>) de um
+    /// horário já cadastrado do Professor (issue #71), persistindo a mudança
+    /// quando o horário pertence a ele — rejeita com
+    /// <see cref="HorarioNaoEncontradoException"/> quando o horário não
+    /// existe ou é de outro Professor (via
+    /// <see cref="BuscarDoProfessorAsync"/>) e com
+    /// <see cref="TipoMarcacaoInvalidoException"/> quando o valor está fora
+    /// do enum (via <see cref="Horario.AlterarTipoMarcacao"/>).
+    /// </summary>
+    public async Task<Horario> AlterarPoliticaAsync(
+        Guid professorId,
+        Guid horarioId,
+        TipoMarcacao novoTipo,
+        CancellationToken cancellationToken)
+    {
+        var horario = await BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        horario.AlterarTipoMarcacao(novoTipo);
+        await _horarios.SalvarAsync(cancellationToken);
+        return horario;
     }
 
     public async Task RemoverAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
@@ -82,19 +123,5 @@ public sealed class HorarioService
         }
 
         return horario;
-    }
-
-    /// <summary>
-    /// Exige configuração definida só no cadastro (issue #7) — <see cref="ListarAsync"/>
-    /// e <see cref="RemoverAsync"/> não checam, conforme Critérios técnicos do
-    /// card (ver implementation.md#edge-points).
-    /// </summary>
-    private async Task GarantirConfiguracaoDefinidaAsync(Guid professorId, CancellationToken cancellationToken)
-    {
-        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
-        if (configuracao is null)
-        {
-            throw new ModeloAgendamentoNaoDefinidoException(professorId);
-        }
     }
 }

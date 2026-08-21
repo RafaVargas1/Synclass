@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
+using Synclass.Infrastructure.Alunos;
 
 namespace Synclass.Infrastructure.Persistence.Configurations;
 
@@ -10,7 +11,10 @@ namespace Synclass.Infrastructure.Persistence.Configurations;
 /// <c>Matriculas</c>. Índice único parcial em
 /// (<c>ProfessorId</c>, <c>IdentificadorProvisorio</c>) onde não nulo
 /// garante, a nível de banco, a Regra de Negócio da issue #3: identificador
-/// único por Professor, não globalmente.
+/// único por Professor, não globalmente. Índice único parcial em
+/// <c>IdentificadorAluno</c> (onde não nulo), independente do índice de
+/// <c>IdentificadorProvisorio</c>, garante que cada identificador de Aluno
+/// emitido é único no sistema (issue #70).
 /// </summary>
 public sealed class MatriculaConfiguration : IEntityTypeConfiguration<Matricula>
 {
@@ -25,6 +29,7 @@ public sealed class MatriculaConfiguration : IEntityTypeConfiguration<Matricula>
         builder.Property(m => m.ProfessorId).IsRequired();
         builder.Property(m => m.NomeProvisorio).HasMaxLength(NomeUsuario.TamanhoMaximo);
         builder.Property(m => m.IdentificadorProvisorio).HasMaxLength(IdentificadorProvisorio.TamanhoMaximo);
+        builder.Property(m => m.IdentificadorAluno).HasMaxLength(GeradorDeIdentificadorAluno.TamanhoIdentificador);
         builder.Property(m => m.CreatedAt).IsRequired();
 
         // Sem navegação de Usuario para Matricula (nenhum requisito funcional
@@ -38,5 +43,14 @@ public sealed class MatriculaConfiguration : IEntityTypeConfiguration<Matricula>
         builder.HasIndex(m => new { m.ProfessorId, m.IdentificadorProvisorio })
             .IsUnique()
             .HasFilter("\"IdentificadorProvisorio\" IS NOT NULL");
+
+        // Índice único parcial global em IdentificadorAluno: a unicidade do
+        // identificador de Aluno é do sistema como um todo, não por Professor
+        // — coluna independente de IdentificadorProvisorio (issue #70). Como
+        // Matriculas provisórias (sem promoção) também recebem identificador,
+        // o índice vive aqui além de em Usuarios.
+        builder.HasIndex(m => m.IdentificadorAluno)
+            .IsUnique()
+            .HasFilter("\"IdentificadorAluno\" IS NOT NULL");
     }
 }

@@ -56,9 +56,10 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
             options.UseInMemoryDatabase(nomeDoBanco));
     }
 
-    // Modelo Fixo (1): Vago (0) não permite alocação feita pelo Professor
-    // (AlocacoesHorarioController, issue #8) — ver
-    // AlocacaoHorarioService.GarantirModeloPermiteAlocacaoAsync.
+    // O modelo de agendamento do Professor continua sendo pré-requisito do
+    // cadastro do horário (issue #7); quem decide se a alocação pelo
+    // Professor é aceita é o TipoMarcacao do próprio Horario (issue #74) —
+    // ver CriarHorarioAsync (TipoMarcacao: 1, Fixo).
     private static async Task DefinirModeloAgendamentoAsync(HttpClient client, Guid professorId, int modeloAgendamento = 1)
     {
         await client.PutAsJsonAsync(
@@ -70,7 +71,7 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
     {
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: diaSemana, HoraInicio: horaInicio, DuracaoMinutos: 60, LimiteAlunos: 2));
+            new CriarHorarioRequest(DiaSemana: diaSemana, HoraInicio: horaInicio, DuracaoMinutos: 60, TipoMarcacao: 1, LimiteAlunos: 2));
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         return corpo!.Id;
     }

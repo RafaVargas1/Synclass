@@ -1,3 +1,4 @@
+using Synclass.Domain.Alunos;
 using Synclass.Domain.Common;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
@@ -15,23 +16,38 @@ public sealed class ConviteService
     private readonly IMatriculaRepository _matriculas;
     private readonly IUsuarioRepository _usuarios;
     private readonly IGeradorDeTokenConvite _geradorDeToken;
+    private readonly IGeradorDeCodigoConvite _geradorDeCodigo;
     private readonly IClock _clock;
     private readonly int _diasValidade;
+    private readonly IdentificadorAlunoService _identificadorAluno;
+
+    /// <summary>
+    /// Teto do loop de <see cref="GerarCodigoUnicoAsync"/> — o espaço de
+    /// 100.000 combinações torna colisões repetidas extremamente raras (ver
+    /// docs/specs/62-codigo-convite-curto/implementation.md), então este
+    /// valor é só um guardrail contra loop indefinido, não um limite
+    /// esperado em operação normal.
+    /// </summary>
+    private const int LimiteDeTentativasDeCodigo = 20;
 
     public ConviteService(
         IConviteRepository convites,
         IMatriculaRepository matriculas,
         IUsuarioRepository usuarios,
         IGeradorDeTokenConvite geradorDeToken,
+        IGeradorDeCodigoConvite geradorDeCodigo,
         IClock clock,
-        int diasValidade)
+        int diasValidade,
+        IdentificadorAlunoService identificadorAluno)
     {
         _convites = convites;
         _matriculas = matriculas;
         _usuarios = usuarios;
         _geradorDeToken = geradorDeToken;
+        _geradorDeCodigo = geradorDeCodigo;
         _clock = clock;
         _diasValidade = diasValidade;
+        _identificadorAluno = identificadorAluno;
     }
 
     /// <summary>
@@ -40,7 +56,7 @@ public sealed class ConviteService
     /// origem inválida (edge point) e contato já vinculado como Aluno pleno
     /// a este Professor (critério de aceite 4).
     /// </summary>
-    public async Task<Convite> GerarAsync(
+    public async Task<ResultadoGeracaoConvite> GerarAsync(
         Guid professorId, string contatoBruto, Guid? matriculaId, CancellationToken cancellationToken)
     {
         var contatoNormalizado = Contato.Normalizar(contatoBruto);
@@ -55,10 +71,40 @@ public sealed class ConviteService
         await GarantirContatoNaoVinculadoAsync(professorId, contatoNormalizado, cancellationToken);
 
         var token = _geradorDeToken.Gerar();
-        var convite = Convite.Gerar(professorId, contatoNormalizado, contatoTipo, matriculaId, token, _diasValidade, _clock);
+        var (codigo, tentativas) = await GerarCodigoUnicoAsync(cancellationToken);
+        var convite = Convite.Gerar(professorId, contatoNormalizado, contatoTipo, matriculaId, token, codigo, _diasValidade, _clock);
         await _convites.AdicionarAsync(convite, cancellationToken);
         await _convites.SalvarAsync(cancellationToken);
-        return convite;
+        return new ResultadoGeracaoConvite(convite, tentativas);
+    }
+
+    /// <summary>
+    /// Gera um código único entre os convites ativos (não usados, não
+    /// expirados) — colisão com um convite finalizado (usado ou expirado)
+    /// não conta como colisão, pois esse código pode ser reaproveitado (ver
+    /// edge points de docs/specs/62-codigo-convite-curto/implementation.md).
+    /// Devolve também quantas tentativas foram necessárias, usado pelo log
+    /// estruturado <c>ConviteGerado</c> (Critérios técnicos da issue #62).
+    /// </summary>
+    private async Task<(string Codigo, int Tentativas)> GerarCodigoUnicoAsync(CancellationToken cancellationToken)
+    {
+        var tentativas = 0;
+        string codigo;
+        bool codigoAtivo;
+        do
+        {
+            if (tentativas >= LimiteDeTentativasDeCodigo)
+            {
+                throw new LimiteDeTentativasDeCodigoConviteExcedidoException(LimiteDeTentativasDeCodigo);
+            }
+
+            codigo = _geradorDeCodigo.Gerar();
+            tentativas++;
+            codigoAtivo = await _convites.ExisteCodigoAtivoAsync(codigo, _clock.UtcNow, cancellationToken);
+        }
+        while (codigoAtivo);
+
+        return (codigo, tentativas);
     }
 
     private async Task GarantirProfessorExisteAsync(Guid professorId, CancellationToken cancellationToken)
@@ -105,6 +151,43 @@ public sealed class ConviteService
         string token, string nome, string contatoBruto, CancellationToken cancellationToken)
     {
         var convite = await _convites.BuscarPorTokenAsync(token, cancellationToken) ?? throw new ConviteInvalidoException();
+        return await AceitarResolvidoAsync(convite, nome, contatoBruto, rejeitarVinculoExistente: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Aceita um convite pelo código curto de 5 dígitos (issue #63), mesma
+    /// regra de negócio de <see cref="AceitarAsync"/>, mas rejeitando (em vez
+    /// de reaproveitar silenciosamente) um vínculo já existente entre o
+    /// contato e o Professor — critério de aceite 5 da issue #63, ver
+    /// desenho em docs/specs/63-entrar-turma-codigo/implementation.md.
+    /// </summary>
+    public async Task<ResultadoAceiteConvite> AceitarPorCodigoAsync(
+        string codigoBruto, string nome, string contatoBruto, CancellationToken cancellationToken)
+    {
+        var codigoNormalizado = NormalizarCodigo(codigoBruto);
+        var convite = await _convites.BuscarPorCodigoAsync(codigoNormalizado, cancellationToken) ?? throw new ConviteInvalidoException();
+        return await AceitarResolvidoAsync(convite, nome, contatoBruto, rejeitarVinculoExistente: true, cancellationToken);
+    }
+
+    /// <summary>
+    /// Corpo comum de <see cref="AceitarAsync"/> (token) e
+    /// <see cref="AceitarPorCodigoAsync"/> (código): valida o contato
+    /// submetido contra o do convite, marca o convite como usado antes de
+    /// qualquer mutação de Usuario/Matricula (uso único), e então
+    /// cria/reaproveita a identidade e promove ou cria o vínculo.
+    /// <paramref name="rejeitarVinculoExistente"/> distingue os dois fluxos:
+    /// o fluxo por link reaproveita silenciosamente um vínculo já existente
+    /// (decisão documentada em docs/specs/2-convite-whatsapp/implementation.md),
+    /// enquanto o fluxo por código rejeita com
+    /// <see cref="ContatoJaVinculadoException"/> (critério de aceite 5 da
+    /// issue #63) — a checagem roda antes de <see cref="Convite.MarcarUsado"/>,
+    /// preservando o edge point "rejeição não altera nada" já estabelecido
+    /// para <see cref="ObterMatriculaOrigemValidaAsync"/> (achado de
+    /// code-review do PR #29).
+    /// </summary>
+    private async Task<ResultadoAceiteConvite> AceitarResolvidoAsync(
+        Convite convite, string nome, string contatoBruto, bool rejeitarVinculoExistente, CancellationToken cancellationToken)
+    {
         var contatoNormalizado = Contato.Normalizar(contatoBruto);
         if (contatoNormalizado != convite.Contato)
         {
@@ -113,6 +196,11 @@ public sealed class ConviteService
 
         var nomeValidado = NomeUsuario.Validar(nome);
         var matriculaOrigem = await ObterMatriculaOrigemValidaAsync(convite, cancellationToken);
+        if (rejeitarVinculoExistente)
+        {
+            await GarantirContatoNaoVinculadoAsync(convite.ProfessorId, contatoNormalizado, cancellationToken);
+        }
+
         convite.MarcarUsado(_clock);
 
         var (usuario, papelAdicionado) = await ObterOuCriarUsuarioAsync(nomeValidado, convite.Contato, cancellationToken);
@@ -124,17 +212,32 @@ public sealed class ConviteService
         return new ResultadoAceiteConvite(usuario, convite.Id, matriculaPromovida, papelAdicionado);
     }
 
+    /// <summary>
+    /// Normaliza o código informado pelo Aluno para só dígitos, tolerando
+    /// espaços/máscara (ex: "12 345" ou "1-2-3-4-5" viram "12345") — mesmo
+    /// racional de <see cref="Contato.Normalizar"/>. Validação de entrada do
+    /// caller, não invariante de <see cref="Convite"/> (ver edge points de
+    /// docs/specs/63-entrar-turma-codigo/implementation.md).
+    /// </summary>
+    private static string NormalizarCodigo(string codigoBruto)
+    {
+        return new string(codigoBruto.Where(char.IsDigit).ToArray());
+    }
+
     private async Task<(Usuario Usuario, bool PapelAdicionado)> ObterOuCriarUsuarioAsync(
         string nomeValidado, string contatoNormalizado, CancellationToken cancellationToken)
     {
         var usuarioExistente = await _usuarios.BuscarPorContatoAsync(contatoNormalizado, cancellationToken);
         if (usuarioExistente is not null)
         {
-            var papelAdicionado = AdicionarPapelAlunoIdempotente(usuarioExistente);
+            var jaEAluno = usuarioExistente.Papeis.Any(p => p.Papel == PapelUsuario.Aluno);
+            var identificadorAluno = jaEAluno ? null : await _identificadorAluno.GerarUnicoAsync(cancellationToken);
+            var papelAdicionado = AdicionarPapelAlunoIdempotente(usuarioExistente, identificadorAluno);
             return (usuarioExistente, papelAdicionado);
         }
 
-        var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, PapelUsuario.Aluno, _clock);
+        var identificador = await _identificadorAluno.GerarUnicoAsync(cancellationToken);
+        var novoUsuario = Usuario.Cadastrar(nomeValidado, contatoNormalizado, PapelUsuario.Aluno, identificador, _clock);
         await _usuarios.AdicionarAsync(novoUsuario, cancellationToken);
         return (novoUsuario, false);
     }
@@ -147,11 +250,11 @@ public sealed class ConviteService
     /// no-op (<c>false</c>) — usado pelo log estruturado
     /// <c>PapelAdicionado</c> (Critérios técnicos da issue #4).
     /// </summary>
-    private bool AdicionarPapelAlunoIdempotente(Usuario usuario)
+    private bool AdicionarPapelAlunoIdempotente(Usuario usuario, string? identificadorAluno)
     {
         try
         {
-            usuario.AdicionarPapel(PapelUsuario.Aluno, _clock);
+            usuario.AdicionarPapel(PapelUsuario.Aluno, identificadorAluno, _clock);
             return true;
         }
         catch (PapelJaAtribuidoException)
@@ -224,3 +327,11 @@ public sealed class ConviteService
 /// técnicos da issue #4).
 /// </summary>
 public sealed record ResultadoAceiteConvite(Usuario Usuario, Guid ConviteId, bool MatriculaPromovida, bool PapelAdicionado);
+
+/// <summary>
+/// Resultado da geração de convite: o <see cref="Convite"/> criado e quantas
+/// <see cref="Tentativas"/> o gerador de código precisou até achar um código
+/// livre entre os convites ativos — logado como <c>ConviteGerado</c> pela Api
+/// (Critérios técnicos da issue #62).
+/// </summary>
+public sealed record ResultadoGeracaoConvite(Convite Convite, int Tentativas);

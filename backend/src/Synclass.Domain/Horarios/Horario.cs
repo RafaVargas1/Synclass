@@ -7,18 +7,27 @@ namespace Synclass.Domain.Horarios;
 /// hora + duração) — não uma ocorrência datada (ver Regra de Negócio da
 /// issue #6 e a seção "Notas de modelagem" de requisitos-funcionais.md). A
 /// duração é definida uma única vez na criação e nunca é alterável depois
-/// (sem endpoint de update, só create/delete).
+/// (sem endpoint de update, só create/delete) — a única exceção é a política
+/// de marcação, editável via <see cref="AlterarTipoMarcacao"/> (issue #71).
 /// </summary>
 public sealed class Horario
 {
     private Horario(
-        Guid id, Guid professorId, DiaSemana diaSemana, TimeOnly horaInicio, int duracaoMinutos, DateTimeOffset createdAt, int limiteAlunos)
+        Guid id,
+        Guid professorId,
+        DiaSemana diaSemana,
+        TimeOnly horaInicio,
+        int duracaoMinutos,
+        TipoMarcacao tipoMarcacao,
+        DateTimeOffset createdAt,
+        int limiteAlunos)
     {
         Id = id;
         ProfessorId = professorId;
         DiaSemana = diaSemana;
         HoraInicio = horaInicio;
         DuracaoMinutos = duracaoMinutos;
+        TipoMarcacao = tipoMarcacao;
         CreatedAt = createdAt;
         LimiteAlunos = limiteAlunos;
     }
@@ -32,6 +41,13 @@ public sealed class Horario
     public TimeOnly HoraInicio { get; private set; }
 
     public int DuracaoMinutos { get; private set; }
+
+    /// <summary>
+    /// Política de marcação deste Horário específico (issue #73), obrigatória
+    /// na criação — ver <see cref="TipoMarcacao"/>. Editável depois da
+    /// criação via <see cref="AlterarTipoMarcacao"/> (issue #71).
+    /// </summary>
+    public TipoMarcacao TipoMarcacao { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -56,13 +72,21 @@ public sealed class Horario
     /// como aula individual.
     /// </summary>
     public static Horario Criar(
-        Guid professorId, DiaSemana diaSemana, TimeOnly horaInicio, int duracaoMinutos, IClock clock, int? limiteAlunos = null)
+        Guid professorId,
+        DiaSemana diaSemana,
+        TimeOnly horaInicio,
+        int duracaoMinutos,
+        TipoMarcacao tipoMarcacao,
+        IClock clock,
+        int? limiteAlunos = null)
     {
         ValidarDiaSemana(diaSemana);
         DuracaoAula.Validar(duracaoMinutos);
+        ValidarTipoMarcacao(tipoMarcacao);
         var limiteAlunosResolvido = limiteAlunos ?? LimiteAlunosHorario.Padrao;
         LimiteAlunosHorario.Validar(limiteAlunosResolvido);
-        return new Horario(Guid.NewGuid(), professorId, diaSemana, horaInicio, duracaoMinutos, clock.UtcNow, limiteAlunosResolvido);
+        return new Horario(
+            Guid.NewGuid(), professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, clock.UtcNow, limiteAlunosResolvido);
     }
 
     /// <summary>
@@ -86,6 +110,20 @@ public sealed class Horario
     }
 
     /// <summary>
+    /// Altera <see cref="TipoMarcacao"/> de um horário já cadastrado (issue
+    /// #71) — a única propriedade editável de um horário; duração, dia da
+    /// semana, hora de início e <see cref="LimiteAlunos"/> permanecem
+    /// imutáveis (ver docs/spec/business-rules.md#horários-e-política-de-marcação).
+    /// Rejeita valor fora do enum com a mesma exceção usada na criação
+    /// (<see cref="TipoMarcacaoInvalidoException"/>).
+    /// </summary>
+    public void AlterarTipoMarcacao(TipoMarcacao novoTipo)
+    {
+        ValidarTipoMarcacao(novoTipo);
+        TipoMarcacao = novoTipo;
+    }
+
+    /// <summary>
     /// Garante que <paramref name="diaSemana"/> é um dos valores nomeados do
     /// enum. Necessário porque um cast direto de int (ex: no controller, a
     /// partir do contrato de Api) não é validado pelo compilador — um valor
@@ -96,6 +134,18 @@ public sealed class Horario
         if (!Enum.IsDefined(diaSemana))
         {
             throw new DiaSemanaInvalidoException((int)diaSemana);
+        }
+    }
+
+    /// <summary>
+    /// Garante que <paramref name="tipoMarcacao"/> é um dos valores nomeados
+    /// do enum, pelo mesmo motivo de <see cref="ValidarDiaSemana"/>.
+    /// </summary>
+    private static void ValidarTipoMarcacao(TipoMarcacao tipoMarcacao)
+    {
+        if (!Enum.IsDefined(tipoMarcacao))
+        {
+            throw new TipoMarcacaoInvalidoException((int)tipoMarcacao);
         }
     }
 

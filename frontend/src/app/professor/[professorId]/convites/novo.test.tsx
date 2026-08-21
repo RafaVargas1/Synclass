@@ -7,6 +7,17 @@ import { gerarConvite } from '@/lib/api/convites';
 
 import GerarConviteScreen from './novo';
 
+// TopbarAutenticada (#77) monta o MenuNavegacao real, que já tem sua
+// própria suíte (MenuNavegacao.test.tsx). Mockado aqui pra manter este
+// arquivo focado no contrato da própria tela, sem precisar mockar
+// usePathname/useIsTelaLarga/usePerfilLogado só por causa do menu.
+jest.mock('@/components/organisms/TopbarAutenticada', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    TopbarAutenticada: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+  };
+});
+
 jest.mock('@/lib/api/convites', () => ({
   gerarConvite: jest.fn(),
 }));
@@ -31,6 +42,7 @@ describe('GerarConviteScreen', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-alta-entropia',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
     await render(<GerarConviteScreen />);
@@ -40,6 +52,7 @@ describe('GerarConviteScreen', () => {
 
     await waitFor(() => expect(screen.getByText('Convite gerado!')).toBeTruthy());
     expect(screen.getByText(/token-alta-entropia/)).toBeTruthy();
+    expect(screen.getByText(/12345/)).toBeTruthy();
     expect(gerarConviteMock).toHaveBeenCalledWith({
       professorId: 'professor-1',
       contato: '(11) 98765-4321',
@@ -51,6 +64,7 @@ describe('GerarConviteScreen', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-1',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
     await render(<GerarConviteScreen />);
@@ -74,6 +88,7 @@ describe('GerarConviteScreen', () => {
       sucesso: true,
       conviteId: 'convite-1',
       token: 'token-1',
+      codigo: '12345',
       expiraEm: '2026-08-20T00:00:00Z',
     });
     await render(<GerarConviteScreen />);

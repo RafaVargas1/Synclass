@@ -8,7 +8,9 @@ namespace Synclass.Domain.Tests.Matriculas;
 /// Cobre a promoção de matrícula provisória para plena (critério de aceite 4
 /// da issue #3): o vínculo (e o histórico associado via FK) é preservado, a
 /// promoção só define <see cref="Matricula.AlunoUsuarioId"/> na linha
-/// existente, nunca cria uma segunda.
+/// existente, nunca cria uma segunda. Também cobre o
+/// <see cref="Matricula.IdentificadorAluno"/> gravado em
+/// <see cref="Matricula.CriarProvisoria"/> (issue #70).
 /// </summary>
 public sealed class MatriculaTests
 {
@@ -18,7 +20,7 @@ public sealed class MatriculaTests
     public void Promover_MatriculaProvisoria_DefineAlunoUsuarioIdPreservandoMatriculaId()
     {
         var professorId = Guid.NewGuid();
-        var matricula = Matricula.CriarProvisoria(professorId, "João Pedro", "2024-013", Clock);
+        var matricula = Matricula.CriarProvisoria(professorId, "João Pedro", "2024-013", null, Clock);
         var matriculaIdOriginal = matricula.Id;
         var alunoUsuarioId = Guid.NewGuid();
 
@@ -33,7 +35,7 @@ public sealed class MatriculaTests
     [Fact]
     public void Promover_MatriculaJaPromovida_RejeitaComMatriculaJaPromovidaException()
     {
-        var matricula = Matricula.CriarProvisoria(Guid.NewGuid(), "João Pedro", "2024-013", Clock);
+        var matricula = Matricula.CriarProvisoria(Guid.NewGuid(), "João Pedro", "2024-013", null, Clock);
         matricula.Promover(Guid.NewGuid());
 
         var acao = () => matricula.Promover(Guid.NewGuid());
@@ -62,5 +64,20 @@ public sealed class MatriculaTests
         matriculaComB.AlunoUsuarioId.Should().Be(alunoUsuarioId);
         matriculaComA.ProfessorId.Should().Be(professorAId);
         matriculaComB.ProfessorId.Should().Be(professorBId);
+    }
+
+    /// <summary>
+    /// Issue #70: <see cref="Matricula.CriarProvisoria"/> grava o
+    /// <see cref="Matricula.IdentificadorAluno"/> recebido (coluna nova,
+    /// independente de <see cref="Matricula.IdentificadorProvisorio"/>, que é
+    /// o identificador escolhido pelo Professor).
+    /// </summary>
+    [Fact]
+    public void CriarProvisoria_ComIdentificadorAluno_GravaIdentificadorAlunoIndependenteDoProvisorio()
+    {
+        var matricula = Matricula.CriarProvisoria(Guid.NewGuid(), "João Pedro", "2024-013", "ALU-2B7K", Clock);
+
+        matricula.IdentificadorAluno.Should().Be("ALU-2B7K");
+        matricula.IdentificadorProvisorio.Should().Be("2024-013");
     }
 }

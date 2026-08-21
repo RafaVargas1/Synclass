@@ -6,9 +6,11 @@ import { Topbar } from './Topbar';
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 const mockCanGoBack = jest.fn();
+const mockSetOptions = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: mockCanGoBack }),
+  useNavigation: () => ({ setOptions: mockSetOptions }),
 }));
 
 describe('Topbar', () => {
@@ -16,6 +18,7 @@ describe('Topbar', () => {
     mockBack.mockReset();
     mockReplace.mockReset();
     mockCanGoBack.mockReset();
+    mockSetOptions.mockReset();
   });
 
   it('shows the SYNCLASS mark when no titulo is given', async () => {
@@ -78,5 +81,35 @@ describe('Topbar', () => {
     );
 
     expect(screen.getByText('Sair')).toBeTruthy();
+  });
+
+  it('renders the optional menuNavegacao slot (ex: botão de menu no mobile)', async () => {
+    await render(<Topbar menuNavegacao={<Text>Abrir menu</Text>} />);
+
+    expect(screen.getByText('Abrir menu')).toBeTruthy();
+  });
+
+  it('mantém titulo e children ao exibir menuNavegacao, sem quebrar o uso atual', async () => {
+    await render(
+      <Topbar titulo="Meu perfil" menuNavegacao={<Text>Abrir menu</Text>}>
+        <Text>Sair</Text>
+      </Topbar>,
+    );
+
+    expect(screen.getByRole('header', { name: 'Meu perfil' })).toBeTruthy();
+    expect(screen.getByText('Abrir menu')).toBeTruthy();
+    expect(screen.getByText('Sair')).toBeTruthy();
+  });
+
+  it('sets the browser tab title to the titulo, when given (issue #81)', async () => {
+    await render(<Topbar titulo="Valor devido por Aluno" />);
+
+    expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Valor devido por Aluno' });
+  });
+
+  it('sets the browser tab title to Synclass when no titulo is given (issue #81)', async () => {
+    await render(<Topbar />);
+
+    expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Synclass' });
   });
 });

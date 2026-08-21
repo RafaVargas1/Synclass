@@ -6,6 +6,24 @@ import { useSessao } from '@/lib/auth/contexto-sessao';
 import PerfilScreen from './perfil';
 
 const mockRouterReplace = jest.fn();
+// TopbarAutenticada (#77) monta o MenuNavegacao real, que já tem sua
+// própria suíte (MenuNavegacao.test.tsx). Mockado aqui pra manter este
+// arquivo focado no contrato da própria tela, sem precisar mockar
+// usePathname/useIsTelaLarga/usePerfilLogado só por causa do menu. Mantém
+// `titulo` como heading acessível (diferente do mock do Painel, que não usa
+// `titulo`) porque esta tela depende desse contrato (`getByRole('header')`).
+jest.mock('@/components/organisms/TopbarAutenticada', () => {
+  const { Text, View } = jest.requireActual('react-native');
+  return {
+    TopbarAutenticada: ({ titulo, children }: { titulo?: string; children?: React.ReactNode }) => (
+      <View>
+        {titulo ? <Text accessibilityRole="header">{titulo}</Text> : null}
+        {children}
+      </View>
+    ),
+  };
+});
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockRouterReplace, back: jest.fn(), canGoBack: () => false }),
 }));

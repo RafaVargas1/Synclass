@@ -1,0 +1,22 @@
+# Task: Professor edita a política de marcação de um Horário já cadastrado (#71)
+
+Card: https://github.com/RafaVargas1/Synclass/issues/71
+
+## Ordem de execução
+
+- [x] Teste unidade (Domain, `HorarioTests.cs`): `AlterarTipoMarcacao` troca a política de um Horário existente para cada um dos 3 valores válidos (`Livre`/`Fixo`/`Hibrido`).
+- [x] Teste unidade (Domain, `HorarioTests.cs`): `AlterarTipoMarcacao` rejeita valor fora do enum com `TipoMarcacaoInvalidoException` (mesma exceção já usada em `Criar`).
+- [x] Implementação mínima: `Horario.AlterarTipoMarcacao(TipoMarcacao novo)` em `backend/src/Synclass.Domain/Horarios/Horario.cs`, reaproveitando o `private static void ValidarTipoMarcacao` já existente.
+- [x] Teste unidade (Domain, `HorarioServiceTests.cs`): `AlterarPoliticaAsync` persiste a nova política quando o horário pertence ao Professor.
+- [x] Teste unidade (Domain, `HorarioServiceTests.cs`): `AlterarPoliticaAsync` lança `HorarioNaoEncontradoException` quando o horário não existe ou não é do Professor.
+- [x] Implementação mínima: `HorarioService.AlterarPoliticaAsync(Guid professorId, Guid horarioId, TipoMarcacao novo, CancellationToken cancellationToken)` em `backend/src/Synclass.Domain/Horarios/HorarioService.cs`, reaproveitando `BuscarDoProfessorAsync` (já `internal`) e `SalvarAsync`.
+- [x] Teste de fumaça (Api, `HorarioEndpointTests.cs`): `PATCH /professores/{professorId}/horarios/{horarioId}` retorna 200 com o `HorarioResponse` atualizado quando a política muda.
+- [x] Teste de fumaça (Api, `HorarioEndpointTests.cs`): o mesmo endpoint retorna 404 para horário de outro Professor/inexistente, e 400 para `tipoMarcacao` fora do enum.
+- [x] Implementação mínima: endpoint `PATCH` em `backend/src/Synclass.Api/Controllers/HorariosController.cs` (`AlterarPoliticaHorarioRequest(int TipoMarcacao)`), tratando `HorarioNaoEncontradoException` → 404 e `TipoMarcacaoInvalidoException` → 400.
+- [x] Log estruturado: evento `HorarioTipoMarcacaoAlterado` (Information, `TrackId`, `ProfessorId`, `HorarioId`, `TipoMarcacaoAnterior`, `TipoMarcacaoNovo`) no mesmo controller, mesmo padrão de `LogLimiteAlunosAlterado` já existente.
+- [x] Teste de componente (frontend, `HorarioCard.test.tsx`): ação "Editar política" alterna o card para modo de edição com `ChipSelector`, chama `onAlterarPolitica(horarioId, novoTipo)` ao salvar, e volta ao modo normal ao cancelar sem chamar a prop.
+- [x] Implementação mínima: `HorarioCard.tsx` ganha o modo de edição inline descrito acima (reaproveita `ChipSelector`, mesmas opções de `HorarioForm.tsx`) e a prop nova `onAlterarPolitica`.
+- [x] Implementação mínima: `lib/api/horarios.ts` ganha `alterarTipoMarcacaoHorario(professorId, horarioId, tipoMarcacao)` (mesmo padrão de resultado tipado `{ sucesso: true, horario } | { sucesso: false, mensagem }` dos demais métodos do arquivo).
+- [x] Teste de componente (frontend, teste da tela `professor/[professorId]/horarios.test.tsx` se existir, ou criar seguindo o padrão de `criarHandleSubmit`/`criarHandleRemover`): `handleAlterarPolitica` atualiza o horário certo na lista local em caso de sucesso e propaga a mensagem de erro em caso de falha. Ambiguidade resolvida: a tela também renderiza o `ChipSelector` sempre-visível de `HorarioForm` com os mesmos rótulos (`Livre`/`Fixo`/`Híbrido`), então `getByText` sozinho colide — teste passa a usar `getAllByRole('button', { name })[1]` para o chip do modo de edição (mesmo padrão já usado em `selecionarPoliticaEEnviar` para o `[0]` do formulário) e `getByTestId('horario-politica-atual')` para o rótulo exibido no card (novo `testID` em `HorarioCard.tsx`, não usado por `HorarioCard.test.tsx` que já era verde).
+- [x] Implementação mínima: `professor/[professorId]/horarios.tsx` ganha `handleAlterarPolitica` (mesmo padrão de `criarHandleSubmit`/`criarHandleRemover`) e passa `onAlterarPolitica` para `HorarioCard`.
+- [x] Docs: atualizar `docs/spec/business-rules.md#horários-e-política-de-marcação` — a frase "Horários mantêm-se imutáveis após criação (remover e recriar, sem edição)" ganha a exceção explícita desta Task (só `TipoMarcacao` é editável; duração, dia, hora e `LimiteAlunos` continuam imutáveis). `docs/spec/business-rules.md` ainda não existe em `main` (arquivo de referência solto nesta worktree, parte da reestruturação `AGENTS.md`/Quality Contract em andamento em outra branch, fora do escopo desta Task) — não commitado aqui; a frase-alvo deve ser ajustada quando esse arquivo for de fato integrado a `main`.

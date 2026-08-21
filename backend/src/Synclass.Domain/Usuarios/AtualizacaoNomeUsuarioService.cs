@@ -3,7 +3,7 @@ namespace Synclass.Domain.Usuarios;
 /// <summary>
 /// Orquestra a correção do próprio nome (issue #27): valida, busca o
 /// <see cref="Usuario"/> pela identidade da sessão e persiste. Mesmo formato
-/// de <see cref="CadastroProfessorService"/>.
+/// de <see cref="CadastroUsuarioService"/>.
 /// </summary>
 public sealed class AtualizacaoNomeUsuarioService
 {

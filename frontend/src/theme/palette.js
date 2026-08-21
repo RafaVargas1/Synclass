@@ -8,7 +8,7 @@ module.exports = {
   Colors: {
     light: {
       text: '#14161A',
-      background: '#F5F6F8',
+      background: '#F9FAFB',
       backgroundElement: '#E7E9ED',
       backgroundSelected: '#D8DBE1',
       border: '#D3D6DC',

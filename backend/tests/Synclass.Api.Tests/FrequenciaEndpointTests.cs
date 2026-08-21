@@ -58,7 +58,7 @@ public sealed class FrequenciaEndpointTests : IClassFixture<WebApplicationFactor
     {
         var response = await professorClient.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: diaSemana, HoraInicio: horaInicio, DuracaoMinutos: 60, LimiteAlunos: 2));
+            new CriarHorarioRequest(DiaSemana: diaSemana, HoraInicio: horaInicio, DuracaoMinutos: 60, TipoMarcacao: 1, LimiteAlunos: 2));
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         return corpo!.Id;
     }

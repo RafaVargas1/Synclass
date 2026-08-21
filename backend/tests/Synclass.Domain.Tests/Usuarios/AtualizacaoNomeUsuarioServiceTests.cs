@@ -17,7 +17,7 @@ public sealed class AtualizacaoNomeUsuarioServiceTests
     public async Task AtualizarNomeAsync_NomeValido_AtualizaEPersisteUsuario()
     {
         var repositorio = new FakeUsuarioRepository();
-        var usuario = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var usuario = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await repositorio.AdicionarAsync(usuario, CancellationToken.None);
         var servico = new AtualizacaoNomeUsuarioService(repositorio);
 
@@ -42,7 +42,7 @@ public sealed class AtualizacaoNomeUsuarioServiceTests
     public async Task AtualizarNomeAsync_NomeVazio_LancaNomeInvalidoExceptionSemAlterarUsuario()
     {
         var repositorio = new FakeUsuarioRepository();
-        var usuario = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var usuario = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await repositorio.AdicionarAsync(usuario, CancellationToken.None);
         var servico = new AtualizacaoNomeUsuarioService(repositorio);
 

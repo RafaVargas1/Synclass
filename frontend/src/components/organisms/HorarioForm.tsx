@@ -5,9 +5,10 @@ import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { ChipSelector, type ChipSelectorOption } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
-import type { CriarHorarioInput, Horario } from '@/lib/api/horarios';
+import { TipoMarcacao, type CriarHorarioInput, type Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { horariosSeSobrepoe } from '@/lib/horarioConflito';
+import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
 
 const OpcoesDiaSemana: readonly ChipSelectorOption<number>[] = NomesDiaSemana.map((nome, dia) => ({
   valor: dia,
@@ -25,6 +26,7 @@ const MensagemFormatoHoraInvalido = 'Informe a hora no formato HH:mm.';
 const MensagemDuracaoInvalida = 'Informe uma duração em minutos maior que zero.';
 const MensagemLimiteAlunosInvalido = 'Informe um limite de alunos maior que zero.';
 const MensagemConflito = 'Esse horário conflita com um já cadastrado.';
+const MensagemPoliticaObrigatoria = 'Escolha a política de marcação deste horário.';
 
 /**
  * Organismo: formulário de criação de horário disponível (issue #6). Valida
@@ -34,13 +36,21 @@ const MensagemConflito = 'Esse horário conflita com um já cadastrado.';
  */
 export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: HorarioFormProps) {
   const [diaSemana, setDiaSemana] = useState(1);
+  const [tipoMarcacao, setTipoMarcacao] = useState<TipoMarcacao | undefined>(undefined);
   const [horaInicio, setHoraInicio] = useState('');
   const [duracaoMinutos, setDuracaoMinutos] = useState('');
   const [limiteAlunos, setLimiteAlunos] = useState('1');
   const [erroCliente, setErroCliente] = useState<string | undefined>(undefined);
 
   function handleSubmit() {
-    const resultado = validar(diaSemana, horaInicio, duracaoMinutos, limiteAlunos, horariosExistentes);
+    const resultado = validar(
+      diaSemana,
+      tipoMarcacao,
+      horaInicio,
+      duracaoMinutos,
+      limiteAlunos,
+      horariosExistentes,
+    );
     if (!resultado.valido) {
       setErroCliente(resultado.mensagem);
       return;
@@ -57,6 +67,12 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
         opcoes={OpcoesDiaSemana}
         valor={diaSemana}
         onChange={setDiaSemana}
+      />
+      <ChipSelector
+        label="Política de marcação"
+        opcoes={OpcoesTipoMarcacao}
+        valor={tipoMarcacao}
+        onChange={setTipoMarcacao}
       />
       <FormField
         label="Hora de início"
@@ -93,11 +109,16 @@ type ResultadoValidacao =
 
 function validar(
   diaSemana: number,
+  tipoMarcacao: TipoMarcacao | undefined,
   horaInicio: string,
   duracaoMinutos: string,
   limiteAlunos: string,
   horariosExistentes: Horario[],
 ): ResultadoValidacao {
+  if (tipoMarcacao === undefined) {
+    return { valido: false, mensagem: MensagemPoliticaObrigatoria };
+  }
+
   if (!/^\d{2}:\d{2}$/.test(horaInicio)) {
     return { valido: false, mensagem: MensagemFormatoHoraInvalido };
   }
@@ -114,6 +135,7 @@ function validar(
 
   const input: CriarHorarioInput = {
     diaSemana,
+    tipoMarcacao,
     horaInicio: `${horaInicio}:00`,
     duracaoMinutos: duracao,
     limiteAlunos: limite,

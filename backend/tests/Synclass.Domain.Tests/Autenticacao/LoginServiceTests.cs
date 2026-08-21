@@ -30,7 +30,7 @@ public sealed class LoginServiceTests
     public async Task SolicitarCodigoAsync_ContatoComIdentidadePlena_GeraCodigoEEnviaViaNotificador()
     {
         var (servico, usuarios, codigos, notificador) = CriarServico();
-        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
 
         await servico.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
@@ -43,7 +43,7 @@ public sealed class LoginServiceTests
     public async Task SolicitarCodigoAsync_SegundoPedidoAntesDeExpirar_InvalidaOCodigoAnterior()
     {
         var (servico, usuarios, codigos, _) = CriarServico();
-        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
         await servico.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
         var codigoAnterior = codigos.Codigos.Single();
@@ -58,7 +58,7 @@ public sealed class LoginServiceTests
     public async Task ConfirmarCodigoAsync_CodigoCorretoDentroDoPrazo_GeraTokenEInvalidaOCodigo()
     {
         var (servico, usuarios, codigos, _) = CriarServico();
-        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
         await servico.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
 
@@ -72,7 +72,7 @@ public sealed class LoginServiceTests
     public async Task ConfirmarCodigoAsync_CodigoIncorreto_RejeitaSemGerarToken()
     {
         var (servico, usuarios, _, _) = CriarServico();
-        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
         await servico.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
 
@@ -87,7 +87,7 @@ public sealed class LoginServiceTests
         var (usuarios, codigos, notificador) = (new FakeUsuarioRepository(), new FakeCodigoOtpRepository(), new FakeNotificador());
         var relogioNaSolicitacao = Clock;
         var servicoNaSolicitacao = new LoginService(usuarios, codigos, new FakeGeradorDeCodigoOtp(), notificador, new FakeGeradorDeTokenSessao(), relogioNaSolicitacao);
-        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
         await servicoNaSolicitacao.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
         var relogioDepoisDoPrazo = new FixedClock(Clock.UtcNow.AddMinutes(11));
@@ -102,7 +102,7 @@ public sealed class LoginServiceTests
     public async Task ConfirmarCodigoAsync_CodigoJaUsado_Rejeita()
     {
         var (servico, usuarios, _, _) = CriarServico();
-        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
         await servico.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
         await servico.ConfirmarCodigoAsync("maria@exemplo.com", "123456", CancellationToken.None);
@@ -116,7 +116,7 @@ public sealed class LoginServiceTests
     public async Task ConfirmarCodigoAsync_AtingeLimiteDeTentativasErradas_BloqueiaOCodigo()
     {
         var (servico, usuarios, codigos, _) = CriarServico();
-        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, Clock);
+        var professor = Usuario.Cadastrar("Maria Silva", "maria@exemplo.com", PapelUsuario.Professor, null, Clock);
         await usuarios.AdicionarAsync(professor, CancellationToken.None);
         await servico.SolicitarCodigoAsync("maria@exemplo.com", CancellationToken.None);
 

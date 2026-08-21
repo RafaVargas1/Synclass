@@ -78,7 +78,7 @@ não deixam espaço pra esse degradê.
 
 | Token | Light | Dark | Uso |
 |---|---|---|---|
-| `background` | `#F5F6F8` | `#121317` | fundo de tela |
+| `background` | `#F9FAFB` | `#121317` | fundo de tela |
 | `background-element` | `#E7E9ED` | `#1D1F24` | card, input, superfície elevada |
 | `background-selected` | `#D8DBE1` | `#292C33` | chip/item selecionado, hover-equivalente em toque |
 | `border` *(novo)* | `#D3D6DC` | `#34373E` | borda de 1px — substitui sombra como sinal de elevação |
@@ -91,11 +91,15 @@ Mudanças em relação ao `palette.js` atual: `background` sai de branco/preto
 puro; `primary` no light escurece de `#208AEF` para `#1873BD` — o tom atual
 tem contraste apertado quando usado como texto/link sobre fundo claro (ex:
 "Já tenho conta — Entrar" em `HomeHero`), e vai continuar servindo bem como
-fundo de botão com texto branco. Valide contraste (mínimo AA, 4.5:1 para
-texto normal) antes de aplicar — não tenho uma ferramenta de contraste aqui,
-então trate os hexadecimais acima como ponto de partida, não valor final.
-`border` é um token novo — não existe hoje porque nada precisava de linha
-divisória com sombra disponível; agora precisa.
+fundo de botão com texto branco. O valor de `background` no modo claro foi
+clareado de `#F5F6F8` para `#F9FAFB` e validado por teste automatizado
+(`frontend/src/theme/palette.test.ts`): a razão de contraste contra
+`backgroundElement` (`#E7E9ED`) e `backgroundSelected` (`#D8DBE1`) permanece
+>= 1.10 par a par (a escada de elevação fica mais perceptível, não menos), e
+o contraste de `text` (`#14161A`) e `text-secondary` (`#5B616B`) sobre o novo
+fundo permanece >= 4.5:1 (AA). `border` é um token novo — não existe hoje
+porque nada precisava de linha divisória com sombra disponível; agora
+precisa.
 
 Não adicionar cor de "sucesso" enquanto nenhuma tela precisar dela — hoje
 `LoginConfirmado`/`CadastroConfirmado` usam texto normal, e isso está certo.
@@ -151,6 +155,39 @@ Elevação sem sombra é feita só por dois recursos, combináveis:
 2. **Borda de 1px** — `border` (token novo, tabela de cor acima) delimita
    card/input sem precisar de sombra. Estado de foco usa borda de 1–2px na
    cor `primary`, não glow.
+
+## Largura máxima de conteúdo
+
+Tokens de layout em `theme/tokens.ts` para a largura máxima do container de
+uma tela quando ela sobra espaço em monitores web largos.
+
+| Token | Valor | Quando usar |
+|---|---|---|
+| `MaxContentWidth` | `800` | container de formulários (telas de cadastro/editar) |
+| `MaxContentWidthPainel` *(novo)* | `1120` | container do Painel (tela pós-login, issue #69) — mais largo porque distribui ações lado a lado; nome explícito para não confundir com o token genérico de formulário |
+
+## Navegação persistente
+
+`MenuNavegacao` (issue #77) fica no `Topbar`, à esquerda do título/marca, via
+o slot opcional `menuNavegacao` — não é um componente separado colado na
+tela, é parte do cabeçalho. Dois modos conforme `useIsTelaLarga` (breakpoint
+de 1024px): em viewport larga as seções ficam sempre visíveis (painel/lista
+inline, sem exigir toque para abrir); em viewport estreita o menu começa
+fechado e só aparece ao acionar um botão de abrir/fechar (`Abrir menu`/
+`Fechar menu` como `accessibilityLabel`), evitando competir por espaço com o
+conteúdo da tela no celular.
+
+A seção correspondente à rota ativa é destacada com `background-selected`
+(mesma escada de contraste de `## Forma e elevação`, não uma cor nova) — sem
+sublinhado nem ícone extra marcando o item ativo. Quando o usuário acumula
+mais de um papel, o `AlternadorDePapel` aparece dentro do próprio menu, antes
+da lista de seções, em vez de duplicado em outro canto da tela.
+
+Toda tela do fluxo autenticado usa `TopbarAutenticada` (não `Topbar`
+diretamente) para herdar esse menu sem repetir a resolução de sessão em cada
+tela — exceção: telas de fluxo anônimo (`login`, cadastro de Professor,
+tela inicial do Aluno) continuam em `Topbar` puro, sem menu, porque ainda
+não há sessão para derivar seções.
 
 ## Ícones
 

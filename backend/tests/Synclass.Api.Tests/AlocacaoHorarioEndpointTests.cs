@@ -55,11 +55,18 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
             new DefinirModeloAgendamentoRequest(modeloAgendamento));
     }
 
-    private static async Task<Guid> CriarHorarioAsync(HttpClient client, Guid professorId, int limiteAlunos = 1)
+    /// <summary>
+    /// <paramref name="tipoMarcacao"/> é quem controla, desde a issue #74, se
+    /// a alocação/marcação é aceita neste horário (0 = Livre, 1 = Fixo,
+    /// 2 = Híbrido) — o `PUT .../configuracao/modelo-agendamento` continua
+    /// sendo pré-requisito do cadastro do horário (issue #7), mas deixou de
+    /// controlar o cenário testado aqui.
+    /// </summary>
+    private static async Task<Guid> CriarHorarioAsync(HttpClient client, Guid professorId, int limiteAlunos = 1, int tipoMarcacao = 1)
     {
         var response = await client.PostAsJsonAsync(
             $"/professores/{professorId}/horarios",
-            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, LimiteAlunos: limiteAlunos));
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: tipoMarcacao, LimiteAlunos: limiteAlunos));
         var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
         return corpo!.Id;
     }
@@ -92,11 +99,11 @@ public sealed class AlocacaoHorarioEndpointTests : IClassFixture<WebApplicationF
     }
 
     [Fact]
-    public async Task Post_Alocacao_ReturnsBadRequest_QuandoModeloVago()
+    public async Task Post_Alocacao_ReturnsBadRequest_QuandoHorarioLivre()
     {
         var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
         await DefinirModeloAgendamentoAsync(client, professorId, modeloAgendamento: 0);
-        var horarioId = await CriarHorarioAsync(client, professorId);
+        var horarioId = await CriarHorarioAsync(client, professorId, tipoMarcacao: 0);
         var matriculaId = await CriarMatriculaAsync(client);
 
         var response = await client.PostAsJsonAsync(

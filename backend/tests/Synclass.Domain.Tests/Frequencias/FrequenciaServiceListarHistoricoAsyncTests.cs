@@ -39,7 +39,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
             ConfiguracaoProfessor.Criar(ProfessorId, ModeloAgendamento.Vago, Clock));
 
         var horarios = new FakeHorarioRepository();
-        var horarioService = new HorarioService(horarios, configuracoes, Clock);
+        var horarioService = new HorarioService(horarios, Clock);
         var aulas = new FakeAulaRepository();
         var cancelamentos = new FakeCancelamentoAulaRepository();
         var alocacoes = new FakeAlocacaoHorarioRepository();
@@ -47,7 +47,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
         var usuarios = new FakeUsuarioRepository();
         var aulaService = new AulaService(
             aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService, Clock);
-        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, configuracoes, horarioService, Clock);
+        var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);
         var registros = new FakeRegistroFrequenciaRepository();
         var frequenciaService = new FrequenciaService(
             registros, alocacoes, aulaService, alocacaoHorarioService, cancelamentos, horarioService, Clock,
@@ -57,7 +57,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
 
     private static async Task<Horario> CriarHorarioAsync(Cenario cenario, DiaSemana diaSemana)
     {
-        var horario = Horario.Criar(ProfessorId, diaSemana, new TimeOnly(10, 0), 60, Clock);
+        var horario = Horario.Criar(ProfessorId, diaSemana, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
         await cenario.Horarios.AdicionarAsync(horario, CancellationToken.None);
         return horario;
     }
@@ -194,7 +194,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
         var cenario = CriarCenario();
         var professorDois = Guid.NewGuid();
         var horarioUm = await CriarHorarioAsync(cenario, DiaSemana.Terca);
-        var horarioDois = Horario.Criar(professorDois, DiaSemana.Quarta, new TimeOnly(11, 0), 60, Clock);
+        var horarioDois = Horario.Criar(professorDois, DiaSemana.Quarta, new TimeOnly(11, 0), 60, TipoMarcacao.Livre, Clock);
         await cenario.Horarios.AdicionarAsync(horarioDois, CancellationToken.None);
         await CriarMatriculaVinculadaAlocadaAsync(cenario, horarioUm.Id, AlunoUsuarioId);
 

@@ -36,7 +36,7 @@ public sealed class ConsultaCobrancaServiceTests
 
     private static Matricula CriarMatriculaDoProfessor(FakeMatriculaRepository matriculas, Guid professorId)
     {
-        var matricula = Matricula.CriarProvisoria(professorId, "Aluno Teste", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(professorId, "Aluno Teste", $"aluno-{Guid.NewGuid()}", null, Clock);
         matriculas.AdicionarAsync(matricula, CancellationToken.None).GetAwaiter().GetResult();
         return matricula;
     }
@@ -66,7 +66,7 @@ public sealed class ConsultaCobrancaServiceTests
         var regras = new FakeRegraDeCobrancaRepository();
         await regras.SalvarAsync(RegraFixoMensal.Criar(matricula.Id, 300m, Clock), CancellationToken.None);
         var horarios = new FakeHorarioRepository();
-        var horario = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
+        var horario = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
         await horarios.AdicionarAsync(horario, CancellationToken.None);
         var alocacoes = new FakeAlocacaoHorarioRepository();
         await alocacoes.AdicionarAsync(
@@ -89,8 +89,8 @@ public sealed class ConsultaCobrancaServiceTests
         var regras = new FakeRegraDeCobrancaRepository();
         await regras.SalvarAsync(RegraFixoPorAula.Criar(matricula.Id, 50m, Clock), CancellationToken.None);
         var horarios = new FakeHorarioRepository();
-        var horarioTerca = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
-        var horarioQuinta = Horario.Criar(professorId, DiaSemana.Quinta, new TimeOnly(14, 0), 60, Clock);
+        var horarioTerca = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        var horarioQuinta = Horario.Criar(professorId, DiaSemana.Quinta, new TimeOnly(14, 0), 60, TipoMarcacao.Livre, Clock);
         await horarios.AdicionarAsync(horarioTerca, CancellationToken.None);
         await horarios.AdicionarAsync(horarioQuinta, CancellationToken.None);
         var alocacoes = new FakeAlocacaoHorarioRepository();
@@ -176,7 +176,7 @@ public sealed class ConsultaCobrancaServiceTests
         await regras.SalvarAsync(RegraFixoMensal.Criar(matriculaComA.Id, 300m, Clock), CancellationToken.None);
         await regras.SalvarAsync(RegraFixoPorAula.Criar(matriculaComB.Id, 50m, Clock), CancellationToken.None);
         var horarios = new FakeHorarioRepository();
-        var horarioTerca = Horario.Criar(professorB.Id, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
+        var horarioTerca = Horario.Criar(professorB.Id, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
         await horarios.AdicionarAsync(horarioTerca, CancellationToken.None);
         var alocacoes = new FakeAlocacaoHorarioRepository();
         await alocacoes.AdicionarAsync(
@@ -222,7 +222,7 @@ public sealed class ConsultaCobrancaServiceTests
 
     private static Usuario CriarProfessor(string nome)
     {
-        return Usuario.Cadastrar(nome, $"{Guid.NewGuid()}@exemplo.com", PapelUsuario.Professor, Clock);
+        return Usuario.Cadastrar(nome, $"{Guid.NewGuid()}@exemplo.com", PapelUsuario.Professor, null, Clock);
     }
 
     private static FakeUsuarioRepository CriarRepositorioUsuarios(params Usuario[] usuarios)

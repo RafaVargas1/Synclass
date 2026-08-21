@@ -8,7 +8,8 @@ namespace Synclass.Domain.Tests.Horarios;
 /// Cobre a Regra de Negócio central da issue #6 na entidade: criação válida,
 /// rejeição de duração inválida e o cálculo puro de sobreposição de horário
 /// (sem depender de repositório — ver <see cref="HorarioServiceTests"/> para
-/// o fluxo orquestrado com persistência).
+/// o fluxo orquestrado com persistência). Também cobre a alteração da
+/// política de marcação de um horário já cadastrado (issue #71).
 /// </summary>
 public sealed class HorarioTests
 {
@@ -18,7 +19,7 @@ public sealed class HorarioTests
     [Fact]
     public void Criar_DadosValidos_CriaHorarioComCamposInformados()
     {
-        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
 
         horario.ProfessorId.Should().Be(ProfessorId);
         horario.DiaSemana.Should().Be(DiaSemana.Terca);
@@ -29,11 +30,33 @@ public sealed class HorarioTests
     }
 
     [Theory]
+    [InlineData(TipoMarcacao.Livre)]
+    [InlineData(TipoMarcacao.Fixo)]
+    [InlineData(TipoMarcacao.Hibrido)]
+    public void Criar_ComTipoMarcacaoInformado_CarregaOTipoInformado(TipoMarcacao tipoMarcacao)
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, tipoMarcacao, Clock);
+
+        horario.TipoMarcacao.Should().Be(tipoMarcacao);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(3)]
+    [InlineData(99)]
+    public void Criar_TipoMarcacaoForaDoIntervalo_RejeitaComTipoMarcacaoInvalidoException(int tipoMarcacao)
+    {
+        var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, (TipoMarcacao)tipoMarcacao, Clock);
+
+        acao.Should().Throw<TipoMarcacaoInvalidoException>();
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(-15)]
     public void Criar_DuracaoZeroOuNegativa_RejeitaComDuracaoInvalidaException(int duracaoMinutos)
     {
-        var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), duracaoMinutos, Clock);
+        var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), duracaoMinutos, TipoMarcacao.Livre, Clock);
 
         acao.Should().Throw<DuracaoInvalidaException>();
     }
@@ -44,7 +67,7 @@ public sealed class HorarioTests
     [InlineData(99)]
     public void Criar_DiaSemanaForaDoIntervalo_RejeitaComDiaSemanaInvalidoException(int diaSemana)
     {
-        var acao = () => Horario.Criar(ProfessorId, (DiaSemana)diaSemana, new TimeOnly(10, 0), 60, Clock);
+        var acao = () => Horario.Criar(ProfessorId, (DiaSemana)diaSemana, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
 
         acao.Should().Throw<DiaSemanaInvalidoException>();
     }
@@ -52,7 +75,7 @@ public sealed class HorarioTests
     [Fact]
     public void Criar_SemInformarLimiteAlunos_AplicaDefault1()
     {
-        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
 
         horario.LimiteAlunos.Should().Be(1);
     }
@@ -60,7 +83,7 @@ public sealed class HorarioTests
     [Fact]
     public void Criar_ComLimiteAlunosInformado_UsaOValorInformado()
     {
-        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, limiteAlunos: 4);
 
         horario.LimiteAlunos.Should().Be(4);
     }
@@ -70,7 +93,7 @@ public sealed class HorarioTests
     [InlineData(-1)]
     public void Criar_LimiteAlunosZeroOuNegativo_RejeitaComLimiteAlunosInvalidoException(int limiteAlunos)
     {
-        var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos);
+        var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, limiteAlunos);
 
         acao.Should().Throw<LimiteAlunosInvalidoException>();
     }
@@ -78,7 +101,7 @@ public sealed class HorarioTests
     [Fact]
     public void AlterarLimiteAlunos_NovoLimiteMaiorOuIgualAlocados_AplicaNovoValor()
     {
-        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, limiteAlunos: 4);
 
         horario.AlterarLimiteAlunos(3, quantidadeAlunosAlocados: 3);
 
@@ -88,7 +111,7 @@ public sealed class HorarioTests
     [Fact]
     public void AlterarLimiteAlunos_NovoLimiteMenorQueAlocados_RejeitaComLimiteAlunosMenorQueAlocadosException()
     {
-        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, limiteAlunos: 4);
 
         var acao = () => horario.AlterarLimiteAlunos(2, quantidadeAlunosAlocados: 3);
 
@@ -101,18 +124,45 @@ public sealed class HorarioTests
     [InlineData(-1)]
     public void AlterarLimiteAlunos_NovoLimiteZeroOuNegativo_RejeitaComLimiteAlunosInvalidoException(int novoLimite)
     {
-        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock, limiteAlunos: 4);
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, limiteAlunos: 4);
 
         var acao = () => horario.AlterarLimiteAlunos(novoLimite, quantidadeAlunosAlocados: 0);
 
         acao.Should().Throw<LimiteAlunosInvalidoException>();
     }
 
+    [Theory]
+    [InlineData(TipoMarcacao.Livre)]
+    [InlineData(TipoMarcacao.Fixo)]
+    [InlineData(TipoMarcacao.Hibrido)]
+    public void AlterarTipoMarcacao_ValorValido_TrocaAPoliticaDoHorario(TipoMarcacao novoTipo)
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+
+        horario.AlterarTipoMarcacao(novoTipo);
+
+        horario.TipoMarcacao.Should().Be(novoTipo);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(3)]
+    [InlineData(99)]
+    public void Criar_TipoMarcacaoInvalido_RejeitaComTipoMarcacaoInvalidoExceptionNaAlteracao(int tipoMarcacao)
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+
+        var acao = () => horario.AlterarTipoMarcacao((TipoMarcacao)tipoMarcacao);
+
+        acao.Should().Throw<TipoMarcacaoInvalidoException>();
+        horario.TipoMarcacao.Should().Be(TipoMarcacao.Livre);
+    }
+
     [Fact]
     public void Sobrepoe_MesmoDiaComIntervalosQueSeCruzam_RetornaTrue()
     {
-        var existente = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
-        var novo = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 30), 60, Clock);
+        var existente = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        var novo = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 30), 60, TipoMarcacao.Livre, Clock);
 
         novo.Sobrepoe(existente).Should().BeTrue();
     }
@@ -120,8 +170,8 @@ public sealed class HorarioTests
     [Fact]
     public void Sobrepoe_MesmoDiaComBordasQueSoSeTocam_RetornaFalse()
     {
-        var existente = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
-        var novo = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(11, 0), 30, Clock);
+        var existente = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        var novo = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(11, 0), 30, TipoMarcacao.Livre, Clock);
 
         novo.Sobrepoe(existente).Should().BeFalse();
     }
@@ -129,8 +179,8 @@ public sealed class HorarioTests
     [Fact]
     public void Sobrepoe_DiasDiferentes_RetornaFalse()
     {
-        var existente = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, Clock);
-        var novo = Horario.Criar(ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, Clock);
+        var existente = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        var novo = Horario.Criar(ProfessorId, DiaSemana.Quarta, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
 
         novo.Sobrepoe(existente).Should().BeFalse();
     }

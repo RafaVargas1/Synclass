@@ -1,4 +1,4 @@
-import { confirmarCodigo, solicitarCodigo } from '@/lib/api/auth';
+import { confirmarCodigo, loginComGoogle, solicitarCodigo } from '@/lib/api/auth';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -83,6 +83,75 @@ describe('confirmarCodigo', () => {
     }) as jest.Mock;
 
     const resultado = await confirmarCodigo({ contato: 'maria@exemplo.com', codigo: '123456' });
+
+    expect(resultado.sucesso).toBe(false);
+  });
+});
+
+describe('loginComGoogle', () => {
+  it('returns the token, nome and papeis when the idToken matches an existing user', async () => {
+    mockFetchOnce(200, {
+      token: 'token-jwt',
+      usuarioId: 'id-1',
+      nome: 'Maria Silva',
+      papeis: ['Professor'],
+      cadastroPendente: false,
+      email: 'maria@exemplo.com',
+    });
+
+    const resultado = await loginComGoogle('idToken-ficticio');
+
+    expect(resultado).toEqual({
+      sucesso: true,
+      token: 'token-jwt',
+      nome: 'Maria Silva',
+      papeis: ['Professor'],
+    });
+  });
+
+  it('returns cadastroPendente with the email when no user matches the idToken', async () => {
+    mockFetchOnce(200, {
+      token: null,
+      usuarioId: null,
+      nome: null,
+      papeis: null,
+      cadastroPendente: true,
+      email: 'naoexiste@exemplo.com',
+    });
+
+    const resultado = await loginComGoogle('idToken-ficticio');
+
+    expect(resultado).toEqual({ sucesso: false, cadastroPendente: true, email: 'naoexiste@exemplo.com' });
+  });
+
+  it('returns the Api error message when the email is not verified', async () => {
+    mockFetchOnce(400, {
+      mensagem: 'O e-mail da conta do Google não foi verificado. Use uma conta com e-mail verificado.',
+    });
+
+    const resultado = await loginComGoogle('idToken-ficticio');
+
+    expect(resultado).toEqual({
+      sucesso: false,
+      mensagem: 'O e-mail da conta do Google não foi verificado. Use uma conta com e-mail verificado.',
+    });
+  });
+
+  it('returns the Api error message when the token is invalid', async () => {
+    mockFetchOnce(400, { mensagem: 'Token do Google inválido ou expirado.' });
+
+    const resultado = await loginComGoogle('idToken-invalido');
+
+    expect(resultado).toEqual({
+      sucesso: false,
+      mensagem: 'Token do Google inválido ou expirado.',
+    });
+  });
+
+  it('returns a connection error message when fetch throws', async () => {
+    globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
+
+    const resultado = await loginComGoogle('idToken-ficticio');
 
     expect(resultado.sucesso).toBe(false);
   });

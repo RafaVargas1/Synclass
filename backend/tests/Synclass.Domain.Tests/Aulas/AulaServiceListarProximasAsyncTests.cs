@@ -36,7 +36,7 @@ public sealed class AulaServiceListarProximasAsyncTests
             ConfiguracaoProfessor.Criar(ProfessorId, ModeloAgendamento.Vago, Clock, prazoCancelamentoMinutos));
 
         var horarios = new FakeHorarioRepository();
-        var horarioService = new HorarioService(horarios, configuracoes, Clock);
+        var horarioService = new HorarioService(horarios, Clock);
         var aulas = new FakeAulaRepository();
         var cancelamentos = new FakeCancelamentoAulaRepository();
         var alocacoes = new FakeAlocacaoHorarioRepository();
@@ -48,7 +48,7 @@ public sealed class AulaServiceListarProximasAsyncTests
 
     private static async Task<Matricula> CriarMatriculaAlocadaAsync(Cenario cenario, Guid horarioId)
     {
-        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", Clock);
+        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matricula, CancellationToken.None);
         var alocacao = AlocacaoHorario.Criar(horarioId, matricula.Id, OrigemAlocacao.Aluno, Clock);
         await cenario.Alocacoes.AdicionarAsync(alocacao, CancellationToken.None);
@@ -62,7 +62,7 @@ public sealed class AulaServiceListarProximasAsyncTests
         // Terça 10:00 já passou hoje (agora é terça 12:00) -> próxima é a
         // terça seguinte, 25/08.
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
 
         var proximas = await cenario.AulaService.ListarProximasAsync(ProfessorId, matricula.Id, CancellationToken.None);
@@ -78,7 +78,7 @@ public sealed class AulaServiceListarProximasAsyncTests
         var cenario = CriarCenario();
         // Terça 18:00 ainda não começou hoje (agora é terça 12:00).
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(18, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(18, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
 
         var proximas = await cenario.AulaService.ListarProximasAsync(ProfessorId, matricula.Id, CancellationToken.None);
@@ -91,7 +91,7 @@ public sealed class AulaServiceListarProximasAsyncTests
     {
         var cenario = CriarCenario();
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(18, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(18, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
         await cenario.AulaService.CancelarAsync(
             ProfessorId, horario.Id, new DateOnly(2026, 8, 18), matricula.Id, CancellationToken.None);
@@ -106,10 +106,10 @@ public sealed class AulaServiceListarProximasAsyncTests
     {
         var cenario = CriarCenario();
         var primeiroHorario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(18, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(18, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var segundoHorario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Quarta, new TimeOnly(9, 0), 60, CancellationToken.None);
-        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", Clock);
+            ProfessorId, DiaSemana.Quarta, new TimeOnly(9, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+        var matricula = Matricula.CriarProvisoria(ProfessorId, "Aluno Um", $"aluno-{Guid.NewGuid()}", null, Clock);
         await cenario.Matriculas.AdicionarAsync(matricula, CancellationToken.None);
         await cenario.Alocacoes.AdicionarAsync(
             AlocacaoHorario.Criar(primeiroHorario.Id, matricula.Id, OrigemAlocacao.Aluno, Clock), CancellationToken.None);
@@ -129,7 +129,7 @@ public sealed class AulaServiceListarProximasAsyncTests
         var cenario = CriarCenario(prazoCancelamentoMinutos: 24 * 60);
         // Terça 13:00 (hoje) = 1h de antecedência, prazo exige 24h.
         var horario = await cenario.HorarioService.CadastrarAsync(
-            ProfessorId, DiaSemana.Terca, new TimeOnly(13, 0), 60, CancellationToken.None);
+            ProfessorId, DiaSemana.Terca, new TimeOnly(13, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
         var matricula = await CriarMatriculaAlocadaAsync(cenario, horario.Id);
 
         var proximas = await cenario.AulaService.ListarProximasAsync(ProfessorId, matricula.Id, CancellationToken.None);

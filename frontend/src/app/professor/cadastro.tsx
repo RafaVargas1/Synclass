@@ -1,66 +1,58 @@
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BotaoLoginGoogle } from '@/components/molecules/BotaoLoginGoogle';
 import { CadastroConfirmado } from '@/components/molecules/CadastroConfirmado';
-import { CadastroProfessorForm } from '@/components/organisms/CadastroProfessorForm';
+import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
+import { useSessao } from '@/lib/auth/contexto-sessao';
+import { useCadastroUsuario } from '@/lib/useCadastroUsuario';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
- * Verifica, ao sair do campo Contato, se ele já pertence a uma identidade
- * existente (issue #27) — trava o campo Nome com o valor já cadastrado
- * nesse caso, já que a Api descartaria silenciosamente um nome reenviado
- * (RN da issue #20). Separada de `CadastroProfessorScreen` só para caber no
- * limite de 20 linhas por função (`code-style.md`).
- */
-function useVerificacaoDeContato(contato: string, setNome: (nome: string) => void) {
-  const [nomeReadonly, setNomeReadonly] = useState(false);
-
-  async function handleBlurContato() {
-    const resultado = await verificarContatoProfessor(contato);
-    setNomeReadonly(resultado.identidadeExistente);
-    if (resultado.identidadeExistente && resultado.nome) {
-      setNome(resultado.nome);
-    }
-  }
-
-  return { nomeReadonly, setNomeReadonly, handleBlurContato };
-}
-
-/**
  * Tela de cadastro de Professor (issue #1). Após sucesso, mostra uma
- * confirmação inline — não há área logada ainda para navegar (issue #18).
+ * confirmação inline — o login por código acontece depois (issue #18).
+ *
+ * Também aceita a entrada com conta Google (issue #65): o `?email=` da rota
+ * (vindo do login quando o cadastro está pendente) pré-preenche o campo de
+ * contato via `contatoInicial` — sem sobrescrever o que o usuário digitar
+ * depois. Quando o `BotaoLoginGoogle` bem-sucedido encontra um usuário já
+ * existente, persiste a sessão e vai para `/painel`; quando o e-mail ainda
+ * não tem conta, o próprio cadastro é o destino, então só pré-preenche o
+ * contato com o e-mail do Google.
  */
 export default function CadastroProfessorScreen() {
-  const [nome, setNome] = useState('');
-  const [contato, setContato] = useState('');
-  const [erro, setErro] = useState<string | undefined>(undefined);
-  const [enviando, setEnviando] = useState(false);
-  const [concluido, setConcluido] = useState(false);
-  const { nomeReadonly, setNomeReadonly, handleBlurContato } = useVerificacaoDeContato(contato, setNome);
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const router = useRouter();
+  const { definirSessao } = useSessao();
+  const {
+    nome,
+    contato,
+    erro,
+    enviando,
+    concluido,
+    nomeReadonly,
+    setContato,
+    setNome,
+    handleChangeContato,
+    handleBlurContato,
+    handleSubmit,
+  } = useCadastroUsuario(
+    { cadastrar: cadastrarProfessor, verificarContato: verificarContatoProfessor },
+    { contatoInicial: email },
+  );
 
-  function handleChangeContato(contatoNovo: string) {
-    setContato(contatoNovo);
-    // Contato mudou depois de já ter passado pela verificação — o resultado
-    // anterior (readonly com o nome de outra identidade) não vale mais até
-    // o próximo blur confirmar de novo.
-    setNomeReadonly(false);
-  }
-
-  async function handleSubmit() {
-    setEnviando(true);
-    setErro(undefined);
-
-    const resultado = await cadastrarProfessor({ nome, contato });
-
-    setEnviando(false);
-    if (!resultado.sucesso) {
-      setErro(resultado.mensagem);
-      return;
-    }
-    setConcluido(true);
+  async function handleAutenticado({
+    token,
+    papeis,
+  }: {
+    token: string;
+    papeis: string[];
+  }) {
+    await definirSessao(token, papeis);
+    router.replace('/painel');
   }
 
   return (
@@ -71,19 +63,25 @@ export default function CadastroProfessorScreen() {
         style={{ maxWidth: MaxContentWidth }}
       >
         {concluido ? (
-          <CadastroConfirmado />
+          <CadastroConfirmado papel="Professor" />
         ) : (
-          <CadastroProfessorForm
-            nome={nome}
-            contato={contato}
-            erro={erro}
-            enviando={enviando}
-            nomeReadonly={nomeReadonly}
-            onChangeNome={setNome}
-            onChangeContato={handleChangeContato}
-            onBlurContato={handleBlurContato}
-            onSubmit={handleSubmit}
-          />
+          <>
+            <CadastroUsuarioForm
+              nome={nome}
+              contato={contato}
+              erro={erro}
+              enviando={enviando}
+              nomeReadonly={nomeReadonly}
+              onChangeNome={setNome}
+              onChangeContato={handleChangeContato}
+              onBlurContato={handleBlurContato}
+              onSubmit={handleSubmit}
+            />
+            <BotaoLoginGoogle
+              onAutenticado={handleAutenticado}
+              onCadastroPendente={setContato}
+            />
+          </>
         )}
       </View>
     </SafeAreaView>

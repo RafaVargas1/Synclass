@@ -7,7 +7,8 @@ export default function HomeScreen() {
 
   return (
     <HomeTemplate
-      onGetStarted={() => router.push('/professor/cadastro')}
+      onEntrarComoProfessor={() => router.push('/professor/cadastro')}
+      onEntrarComoAluno={() => router.push('/aluno')}
       onLogin={() => router.push('/login')}
     />
   );

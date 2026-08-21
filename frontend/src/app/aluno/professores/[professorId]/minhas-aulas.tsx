@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { AulaProximaCard } from '@/components/organisms/AulaProximaCard';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { cancelarAula, listarProximasAulas, type AulaProxima } from '@/lib/api/cancelamentos';
 import { confirmarPresenca } from '@/lib/api/frequencias';
 import { MaxContentWidth } from '@/theme/tokens';
@@ -28,7 +28,7 @@ export default function MinhasAulasAlunoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Minhas aulas" />
+      <TopbarAutenticada titulo="Minhas aulas" />
       <View
         className="w-full flex-1 self-center gap-four px-four py-four"
         style={{ maxWidth: MaxContentWidth }}

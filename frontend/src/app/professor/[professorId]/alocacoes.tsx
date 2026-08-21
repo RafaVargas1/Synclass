@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { HorarioAlocacaoCard } from '@/components/organisms/HorarioAlocacaoCard';
-import { Topbar } from '@/components/organisms/Topbar';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { alocarAluno, desalocarAluno, listarAlocacoes, type Alocacao } from '@/lib/api/alocacoes';
 import { listarAlunosProvisorios, type AlunoProvisorio } from '@/lib/api/alunosProvisorios';
 import {
@@ -49,7 +49,7 @@ export default function AlocacoesProfessorScreen() {
   }
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar titulo="Alocação de Alunos" />
+      <TopbarAutenticada titulo="Alocação de Alunos" />
       <View
         className="w-full flex-1 self-center gap-four px-four py-four"
         style={{ maxWidth: MaxContentWidth }}
