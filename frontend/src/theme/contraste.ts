@@ -4,8 +4,6 @@
  * dependência de terceiro — usado pelos testes de token (palette.test.ts).
  */
 
-type Canal = 0 | 1 | 2;
-
 /** Converte um canal RGB (0..255) no componente linear usado na fórmula WCAG. */
 function componenteLinear(canal: number): number {
   const s = canal / 255;
