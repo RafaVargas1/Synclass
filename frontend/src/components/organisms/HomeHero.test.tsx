@@ -73,6 +73,20 @@ describe('HomeHero', () => {
     expect(screen.queryByText('sou Aluno')).toBeNull();
   });
 
+  it('shows the erro message when given, near the Google button', async () => {
+    await renderHero({ erro: 'Não foi possível concluir o login neste dispositivo. Tente novamente.' });
+
+    expect(
+      screen.getByText('Não foi possível concluir o login neste dispositivo. Tente novamente.'),
+    ).toBeTruthy();
+  });
+
+  it('não mostra mensagem de erro quando erro não é passado', async () => {
+    await renderHero();
+
+    expect(screen.queryByText(/Não foi possível/)).toBeNull();
+  });
+
   it('mostra "Entrar com Google" antes dos CTAs de cadastro, com peso visual maior (issue #111)', async () => {
     await renderHero();
 

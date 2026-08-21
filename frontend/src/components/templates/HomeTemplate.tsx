@@ -11,6 +11,7 @@ export type HomeTemplateProps = {
   onEntrarComoProfessor: () => void;
   onEntrarComoAluno: () => void;
   onLogin: () => void;
+  erro?: string;
 };
 
 /**
@@ -25,6 +26,7 @@ export function HomeTemplate({
   onEntrarComoProfessor,
   onEntrarComoAluno,
   onLogin,
+  erro,
 }: HomeTemplateProps) {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
@@ -40,6 +42,7 @@ export function HomeTemplate({
           onEntrarComoProfessor={onEntrarComoProfessor}
           onEntrarComoAluno={onEntrarComoAluno}
           onLogin={onLogin}
+          erro={erro}
         />
       </View>
     </SafeAreaView>

@@ -126,7 +126,7 @@ describe('LoginScreen', () => {
     expect(
       screen.getByText('Seu e-mail ainda não tem uma conta. Continue o cadastro como:'),
     ).toBeTruthy();
-    await fireEvent.press(screen.getByText('sou Professor'));
+    await fireEvent.press(screen.getByText('Cadastrar como Professor'));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/professor/cadastro',
       params: { email: 'nao.cadastrado@gmail.com' },
@@ -142,7 +142,7 @@ describe('LoginScreen', () => {
       screen.getByText('Seu e-mail ainda não tem uma conta. Continue o cadastro como:'),
     ).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('sou Professor'));
+    await fireEvent.press(screen.getByText('Cadastrar como Professor'));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/professor/cadastro',
       params: { email: 'vindo.do.google@exemplo.com' },
@@ -156,7 +156,7 @@ describe('LoginScreen', () => {
       botaoProps.onCadastroPendente('nao.cadastrado@gmail.com');
     });
 
-    await fireEvent.press(screen.getByText('sou Aluno'));
+    await fireEvent.press(screen.getByText('Cadastrar como Aluno'));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/aluno',
       params: { email: 'nao.cadastrado@gmail.com' },

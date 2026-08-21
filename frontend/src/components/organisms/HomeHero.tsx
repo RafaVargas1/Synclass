@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import { Divisor } from '@/components/atoms/Divisor';
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Marca } from '@/components/atoms/Marca';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import {
@@ -16,6 +17,8 @@ export type HomeHeroProps = {
   onEntrarComoProfessor: () => void;
   onEntrarComoAluno: () => void;
   onLogin: () => void;
+  /** Erro ao concluir o login Google já autenticado (ex: falha ao persistir a sessão no dispositivo). */
+  erro?: string;
 };
 
 /**
@@ -42,6 +45,7 @@ export function HomeHero({
   onEntrarComoProfessor,
   onEntrarComoAluno,
   onLogin,
+  erro,
 }: HomeHeroProps) {
   return (
     <View className="w-full max-w-[480px] items-center gap-five">
@@ -52,6 +56,7 @@ export function HomeHero({
       </Paragraph>
       <View className="w-full gap-three">
         <BotaoLoginGoogle onAutenticado={onAutenticadoGoogle} onCadastroPendente={onCadastroPendenteGoogle} />
+        {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
         <Pressable accessibilityRole="button" onPress={onLogin} className="items-center py-two">
           <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
             Entrar com código

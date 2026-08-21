@@ -87,7 +87,7 @@ export default function LoginScreen() {
               Seu e-mail ainda não tem uma conta. Continue o cadastro como:
             </Paragraph>
             <Button
-              label="sou Professor"
+              label="Cadastrar como Professor"
               onPress={() => {
                 handleEscolhaCadastro();
                 router.push({
@@ -97,7 +97,7 @@ export default function LoginScreen() {
               }}
             />
             <Button
-              label="sou Aluno"
+              label="Cadastrar como Aluno"
               onPress={() => {
                 handleEscolhaCadastro();
                 router.push({
