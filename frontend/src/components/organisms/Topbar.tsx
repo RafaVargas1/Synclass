@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { Crown } from '@/components/atoms/Crown';
+import { Marca } from '@/components/atoms/Marca';
 import { Fonts, MaxContentWidth } from '@/theme/tokens';
 
 export type TopbarProps = {
@@ -25,17 +25,17 @@ export function Topbar({ titulo, children }: TopbarProps) {
         className="w-full flex-row items-center justify-between self-center px-four py-three"
         style={{ maxWidth: MaxContentWidth }}
       >
-        {titulo ? <TituloComVoltar titulo={titulo} /> : <Marca />}
+        {titulo ? <TituloComVoltar titulo={titulo} /> : <Logotipo />}
         {children ? <View className="flex-row items-center gap-three">{children}</View> : null}
       </View>
     </View>
   );
 }
 
-function Marca() {
+function Logotipo() {
   return (
     <View className="flex-row items-center gap-two">
-      <Crown degraus={[10, 16, 20]} />
+      <Marca escala={0.7} />
       <Text
         accessibilityRole="header"
         className="text-lg font-bold tracking-widest text-text dark:text-dark-text"
