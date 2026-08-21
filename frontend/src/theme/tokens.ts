@@ -47,4 +47,17 @@ export const Fonts = Platform.select({
   },
 });
 
+/**
+ * Largura máxima do container de formulários (telas de cadastro/editar).
+ * O Painel usa `MaxContentWidthPainel`, mais largo, por ser a tela pós-login
+ * em telas grandes — ver docs/spec/design-system.md#largura-máxima-de-conteúdo.
+ */
 export const MaxContentWidth = 800;
+
+/**
+ * Largura máxima do container do Painel (issue #69): mais largo que
+ * `MaxContentWidth` de formulário, porque o Painel distribui ações lado a
+ * lado e sobra espaço em telas web largas. Nome explícito para não ser
+ * confundido com o token genérico de formulário.
+ */
+export const MaxContentWidthPainel = 1120;

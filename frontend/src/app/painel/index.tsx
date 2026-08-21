@@ -12,7 +12,7 @@ import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
-import { MaxContentWidth } from '@/theme/tokens';
+import { MaxContentWidthPainel } from '@/theme/tokens';
 
 const MensagemErroUsuarioId =
   'Não foi possível carregar suas ações de Professor. Tente novamente.';
@@ -173,7 +173,7 @@ export default function PainelScreen() {
       </Topbar>
       <View
         className="w-full flex-1 self-center gap-five px-four py-five"
-        style={{ maxWidth: MaxContentWidth }}
+        style={{ maxWidth: MaxContentWidthPainel }}
       >
         {nome ? <Saudacao nome={nome} /> : null}
         <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={definirPapelAtivo} />

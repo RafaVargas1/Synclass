@@ -27,7 +27,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/69
       `PainelScreen`, usando `Heading` (ou `Text` com o mesmo estilo de
       título já usado nas outras telas) — sem novo componente/molecule
       dedicado, é um `Heading` + `periodoDoDia`.
-- [ ] Implementação mínima: `theme/tokens.ts` ganha
+- [x] Implementação mínima: `theme/tokens.ts` ganha
       `MaxContentWidthPainel = 1120` (nome explícito — não é o
       `MaxContentWidth` genérico de formulário); `PainelScreen` passa a
       usar esse valor em vez de `MaxContentWidth` no `style={{ maxWidth
