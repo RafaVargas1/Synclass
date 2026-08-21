@@ -56,4 +56,25 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(screen.getByRole('link', { name: 'Gerenciar horários', selected: false })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Cadastrar Aluno', selected: false })).toBeTruthy();
   });
+
+  it('navega direto entre as seções via Link, sem passar por /painel', async () => {
+    mockUsePathname.mockReturnValue('/aluno/historico-frequencia');
+
+    await render(<MenuNavegacao papeis={['Aluno']} papelAtivo="Aluno" onSelecionarPapel={jest.fn()} />);
+
+    // Cada seção é um Link apontando para a própria rota — não para o Painel.
+    expect(screen.getByTestId('secao-link-/aluno/historico-frequencia')).toBeTruthy();
+    expect(screen.getByTestId('secao-link-/aluno/valor-devido')).toBeTruthy();
+    expect(screen.queryByTestId('secao-link-/painel')).toBeNull();
+  });
+
+  it('liga seções de Professor ao segmento dinâmico do próprio usuarioId', async () => {
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+
+    await render(<MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />);
+
+    expect(screen.getByTestId('secao-link-/professor/abc-123/horarios')).toBeTruthy();
+    expect(screen.getByTestId('secao-link-/professor/abc-123/alocacoes')).toBeTruthy();
+    expect(screen.queryByTestId('secao-link-/painel')).toBeNull();
+  });
 });
