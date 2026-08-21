@@ -33,10 +33,3 @@ Card: https://github.com/RafaVargas1/Synclass/issues/89
 - [x] `appsettings.json`: valores padrão de
   `RateLimiting:ConvitesAnonimos` (`PermissoesPorJanela: 5`,
   `JanelaEmSegundos: 60` — ver decisão em `implementation.md`).
-
-## Inconsistências encontradas
-
-Nenhuma até o momento da escrita desta spec — se a implementação encontrar
-ambiguidade real não coberta por este arquivo ou por `implementation.md`,
-registre aqui antes de continuar (não decida sozinho, ver
-`AGENTS.md#antes-de-modificar-código`).
