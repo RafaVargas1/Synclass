@@ -14,8 +14,8 @@ touch target of at least 44x44").
 
 - [x] Teste de componente: `ChipSelector` — cada chip (`Chip` interno) tem `minWidth`/`minHeight` de 44 efetivos
 - [x] Implementação: `frontend/src/components/molecules/ChipSelector.tsx` — `Chip` ganha `style={{ minWidth: 44, minHeight: 44 }}` e `items-center justify-center` na className, mantendo `px-two py-one rounded-small`
-- [ ] Teste de componente: `AlternadorDePapel` — cada aba (`Aba` interno) tem `minWidth`/`minHeight` de 44 efetivos
-- [ ] Implementação: `frontend/src/components/organisms/AlternadorDePapel.tsx` — mesmo tratamento em `Aba`
+- [x] Teste de componente: `AlternadorDePapel` — cada aba (`Aba` interno) tem `minWidth`/`minHeight` de 44 efetivos
+- [x] Implementação: `frontend/src/components/organisms/AlternadorDePapel.tsx` — mesmo tratamento em `Aba`
 - [ ] Teste de componente: `professor/[professorId]/valor-devido.tsx` — cada opção do filtro de modo (`ChipDeModo` ou equivalente interno) tem `minWidth`/`minHeight` de 44 efetivos
 - [ ] Implementação: aplicar o mesmo padrão ao componente de filtro de período nessa tela (localizar o `Pressable` do chip "Todos"/"Este mês"/"Personalizado" e aplicar o mesmo tratamento — sem duplicar o `Chip`/`Aba` já existentes, reaproveitar `ChipSelector` se a estrutura permitir, senão aplicar o padrão localmente)
 - [ ] Teste de componente: `HorarioCard` — botões "Cancelar"/"Salvar"/"Editar política"/"Remover" têm `minWidth`/`minHeight` de 44 efetivos
