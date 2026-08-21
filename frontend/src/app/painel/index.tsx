@@ -179,8 +179,8 @@ export default function PainelScreen() {
         <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={definirPapelAtivo} />
         {erro ? <ErroAcoesProfessor onTentarNovamente={tentarNovamente} /> : null}
         <ListaDeAcoes acoes={acoesDoPapel(papelAtivo, usuarioId)} />
-        <Link href="/perfil" className="text-primary underline dark:text-dark-primary">
-          Meu perfil
+        <Link href="/perfil" asChild>
+          <Button label="Meu perfil" />
         </Link>
       </View>
     </SafeAreaView>
