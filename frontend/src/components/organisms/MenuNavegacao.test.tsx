@@ -108,6 +108,23 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(screen.getByLabelText('Fechar menu')).toBeTruthy();
   });
 
+  it('em viewport estreita e menu fechado, o AlternadorDePapel não aparece solto (só junto das seções)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(false);
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+
+    await render(
+      <MenuNavegacao papeis={['Professor', 'Aluno']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Professor' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Aluno' })).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText('Abrir menu'));
+
+    expect(screen.getByRole('button', { name: 'Professor', selected: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Aluno', selected: false })).toBeTruthy();
+  });
+
   it('com dois papéis mostra as seções do papel ativo e inclui AlternadorDePapel', async () => {
     mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
     const onSelecionarPapel = jest.fn();

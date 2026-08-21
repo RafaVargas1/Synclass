@@ -25,7 +25,11 @@ function encontrarSecaoAtiva(secoes: Secao[], pathname: string): Secao | undefin
  * (mesma assinatura de props de `AlternadorDePapel` — decisão do task.md),
  * deriva a lista de seções via `secoesDoPapel` e destaca a seção ativa com
  * base em `usePathname` (match por segmento dinâmico). Quando há mais de um
- * papel, inclui `AlternadorDePapel` para trocar o papel ativo (issue #4).
+ * papel, inclui `AlternadorDePapel` para trocar o papel ativo (issue #4) —
+ * junto com as seções, não solto: em viewport estreita e menu fechado, nem
+ * o alternador nem as seções aparecem (achado de dev-review, PR #107:
+ * o alternador não pode flutuar independente do estado aberto/fechado do
+ * próprio menu que o contém).
  *
  * Dois modos de exibição conforme `useIsTelaLarga`: em viewport larga as
  * seções ficam sempre visíveis; em estreita o menu começa fechado e só
@@ -49,7 +53,7 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
       {telaLarga ? null : (
         <BotaoAlternarMenu aberto={aberto} aoAlternar={() => setAberto((atual) => !atual)} />
       )}
-      {temVariosPapeis ? (
+      {exibirSeccoes && temVariosPapeis ? (
         <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={onSelecionarPapel} />
       ) : null}
       {exibirSeccoes ? (
