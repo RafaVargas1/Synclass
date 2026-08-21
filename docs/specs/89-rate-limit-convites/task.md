@@ -21,7 +21,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/89
   `429` ao exceder o mesmo limite, na mesma janela — ainda falha.
 - [x] Implementação mínima: aplica `[EnableRateLimiting("ConvitesAnonimos")]`
   em `ConvitesController.AceitarPorCodigo` — faz o teste anterior passar.
-- [ ] Teste de fumaça (Api): dentro do limite configurado, `Aceitar` e
+- [x] Teste de fumaça (Api): dentro do limite configurado, `Aceitar` e
   `AceitarPorCodigo` continuam respondendo normalmente (200 ou 400, conforme
   os cenários já cobertos por `ConvitesEndpointTests`) — prova que o limiter
   não interfere no caso não excedido.
