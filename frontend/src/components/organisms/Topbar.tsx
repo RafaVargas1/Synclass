@@ -85,7 +85,14 @@ function Logotipo() {
 
 function TituloComVoltar({ titulo }: { titulo: string }) {
   const router = useRouter();
-  const voltar = () => (router.canGoBack() ? router.back() : router.replace('/painel'));
+  // '/' (Home), não '/painel': Topbar é usado tanto em telas autenticadas
+  // quanto públicas (login, cadastro) — sem histórico de navegação (ex:
+  // acessou /login direto pela URL), cair em '/painel' sem sessão fazia
+  // useRedirecionarSemSessao mandar de volta pro /login imediatamente,
+  // travando o usuário num loop (achado do usuário, ver issue #141). '/'
+  // é seguro nos dois casos: sem sessão mostra as opções de entrar/
+  // cadastrar; com sessão, não quebra nada — só não pula direto pro Painel.
+  const voltar = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   return (
     <View className="flex-row items-center gap-three">
