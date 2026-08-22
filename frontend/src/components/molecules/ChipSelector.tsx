@@ -25,6 +25,9 @@ export type ChipSelectorProps<T> = {
  * agendamento) para não duplicar o par View/Pressable com estado
  * selecionado/não selecionado entre os dois organismos (ver
  * docs/spec/code-style.md#estilo-de-código — "sem duplicação de código").
+ * `key` usa `opcao.valor`, nunca `opcao.rotulo` — dois Alunos podem ter o
+ * mesmo nome (rótulo duplicado), mas `valor` é o identificador
+ * (`matriculaId` nos seletores de Aluno), garantido único pelo chamador.
  */
 export function ChipSelector<T>({ label, descricao, opcoes, valor, onChange }: ChipSelectorProps<T>) {
   return (
@@ -36,7 +39,7 @@ export function ChipSelector<T>({ label, descricao, opcoes, valor, onChange }: C
       <View className="flex-row flex-wrap gap-one">
         {opcoes.map((opcao) => (
           <Chip
-            key={opcao.rotulo}
+            key={String(opcao.valor)}
             rotulo={opcao.rotulo}
             selecionado={opcao.valor === valor}
             onPress={() => onChange(opcao.valor)}

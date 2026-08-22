@@ -37,4 +37,17 @@ describe('ChipSelector', () => {
       });
     }
   });
+
+  it('renders both chips when two options share the same rótulo (ex: dois Alunos chamados Jose) — key usa valor, não rótulo', async () => {
+    const opcoesComRotuloDuplicado: readonly ChipSelectorOption<string>[] = [
+      { valor: 'matricula-1', rotulo: 'Jose' },
+      { valor: 'matricula-2', rotulo: 'Jose' },
+    ];
+
+    await render(
+      <ChipSelector label="Aluno" opcoes={opcoesComRotuloDuplicado} valor="matricula-1" onChange={jest.fn()} />,
+    );
+
+    expect(screen.getAllByText('Jose')).toHaveLength(2);
+  });
 });
