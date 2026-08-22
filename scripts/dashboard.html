@@ -136,7 +136,7 @@
 </div>
 
 <div class="section">
-  <h2>HISTÓRICO (últimas execuções)</h2>
+  <h2>HISTÓRICO (últimas execuções desde que este dashboard subiu)</h2>
   <div class="card">
     <table>
       <thead>
@@ -146,6 +146,21 @@
         <tr><td colspan="6" class="empty">Nenhuma execução registrada ainda.</td></tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>LOGS ANTIGOS (disco, sobrevive a restart do dashboard)</h2>
+  <div class="card" style="display:flex; gap:16px; flex-wrap:wrap;">
+    <table style="flex: 1 1 320px;">
+      <thead>
+        <tr><th>Spec</th><th>Worktree</th><th>Atualizado</th></tr>
+      </thead>
+      <tbody id="logListBody">
+        <tr><td colspan="3" class="empty">Carregando…</td></tr>
+      </tbody>
+    </table>
+    <pre id="logViewer" class="events" style="flex: 2 1 480px; white-space: pre-wrap; padding: 10px; border: 1px solid var(--border); border-radius: 8px; min-height: 120px;">Clique num log à esquerda pra ver o conteúdo.</pre>
   </div>
 </div>
 
@@ -319,6 +334,17 @@ function formatMeta(meta) {
   return parts.length ? `<div class="event-meta">${parts.join(' · ')}</div>` : '';
 }
 
+// Heartbeat: guarda o último snapshot renderizado pra reusar o texto de
+// status ao atualizar só o "última atualização" — sem isso, o usuário não
+// tem como distinguir "conectado e sem nada acontecendo" de "travou".
+let ultimoSnapshotAtivas = 0;
+function atualizarConnStatus(extra) {
+  const badge = ultimoSnapshotAtivas
+    ? `<span class="status-badge status-running">CONECTADO</span> ${ultimoSnapshotAtivas} execução(ões) em andamento`
+    : `<span class="status-badge status-idle">CONECTADO</span> nenhuma execução em andamento`;
+  document.getElementById('connStatus').innerHTML = `${badge} · ${esc(extra)}`;
+}
+
 // SSE
 const es = new EventSource('/events');
 es.onopen = () => {
@@ -327,17 +353,63 @@ es.onopen = () => {
 es.onmessage = (event) => {
   const payload = JSON.parse(event.data);
   if (payload.type === 'snapshot') {
+    ultimoSnapshotAtivas = (payload.execucoesAtivas || []).length;
     renderSnapshot(payload);
+    atualizarConnStatus(`última atualização ${shortTime(new Date().toISOString())}`);
     return;
   }
   if (payload.type === 'event') {
     appendEvent(payload.executionId, payload.evento);
+    atualizarConnStatus(`última atualização ${shortTime(new Date().toISOString())}`);
+    return;
+  }
+  if (payload.type === 'heartbeat') {
+    atualizarConnStatus(`nada novo — última verificação ${shortTime(payload.now)}`);
     return;
   }
 };
 es.onerror = () => {
   document.getElementById('connStatus').innerHTML = '<span class="status-badge status-failed">DESCONECTADO</span> tentando reconectar…';
 };
+
+// Logs antigos (persistem no disco, independem do dashboard estar de pé)
+async function carregarListaDeLogs() {
+  const body = document.getElementById('logListBody');
+  try {
+    const resposta = await fetch('/api/logs');
+    const logs = await resposta.json();
+    if (!logs.length) {
+      body.innerHTML = '<tr><td colspan="3" class="empty">Nenhum deepseek-run.log encontrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = logs.map((log) => `
+      <tr class="log-row" data-id="${esc(log.id)}" style="cursor:pointer">
+        <td>${esc(log.slug)}</td>
+        <td class="sub">${esc(log.worktree)}</td>
+        <td class="sub">${esc(shortTime(log.atualizadoEm))}</td>
+      </tr>
+    `).join('');
+    for (const linha of body.querySelectorAll('.log-row')) {
+      linha.addEventListener('click', () => abrirLog(linha.dataset.id));
+    }
+  } catch {
+    body.innerHTML = '<tr><td colspan="3" class="empty">Falha ao listar logs.</td></tr>';
+  }
+}
+
+async function abrirLog(id) {
+  const viewer = document.getElementById('logViewer');
+  viewer.textContent = 'Carregando…';
+  try {
+    const resposta = await fetch(`/api/logs/tail?id=${encodeURIComponent(id)}`);
+    viewer.textContent = resposta.ok ? await resposta.text() : `Erro ao carregar (${resposta.status}).`;
+  } catch {
+    viewer.textContent = 'Falha ao carregar o log.';
+  }
+}
+
+carregarListaDeLogs();
+setInterval(carregarListaDeLogs, 30000);
 </script>
 </body>
 </html>

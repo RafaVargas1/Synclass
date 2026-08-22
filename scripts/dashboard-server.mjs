@@ -20,13 +20,16 @@
 
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ingerir, pegarEstado, inscreverOuvinte } from './dashboard-store.mjs';
+import { listarLogsHistoricos, lerCaudaDoLog } from './dashboard-historico.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const RAIZ_DO_REPO = resolve(__dirname, '..');
 const PORT = Number(process.argv[2] ?? process.env.DASHBOARD_PORT ?? 8085);
 const LIMITE_CORPO_BYTES = 200_000;
+const INTERVALO_HEARTBEAT_MS = 10_000;
 
 let paginaHtml = '';
 try {
@@ -92,6 +95,25 @@ const server = createServer((req, res) => {
     return;
   }
 
+  if (url.pathname === '/api/logs' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(listarLogsHistoricos(RAIZ_DO_REPO)));
+    return;
+  }
+
+  if (url.pathname === '/api/logs/tail' && req.method === 'GET') {
+    const id = url.searchParams.get('id') ?? '';
+    const conteudo = lerCaudaDoLog(RAIZ_DO_REPO, id);
+    if (conteudo === null) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('log não encontrado');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(conteudo);
+    return;
+  }
+
   if (url.pathname === '/events') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -147,7 +169,25 @@ const removerOuvinte = inscreverOuvinte((payload) => {
   }
 });
 
-server.listen(PORT, () => {
+// Heartbeat: sem isso, o navegador não tem como distinguir "nada
+// aconteceu ainda" de "a conexão SSE morreu" — manda um pulso periódico
+// pra todo cliente conectado, mesmo sem nenhuma execução ativa.
+const heartbeatIntervalId = setInterval(() => {
+  const pulso = { type: 'heartbeat', now: new Date().toISOString() };
+  for (const cliente of sseClientes) {
+    try {
+      enviarParaCliente(cliente, pulso);
+    } catch {
+      sseClientes.delete(cliente);
+    }
+  }
+}, INTERVALO_HEARTBEAT_MS);
+heartbeatIntervalId.unref();
+
+// Bind só em loopback: ferramenta interna, só usada localmente por quem
+// roda scripts/deepseek-agent.mjs na própria máquina — não precisa estar
+// acessível por outros hosts da rede (docs/spec/security-rules.md).
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`Dashboard disponível em http://localhost:${PORT}`);
 });
 
@@ -157,6 +197,7 @@ server.on('error', (erro) => {
 });
 
 function parar() {
+  clearInterval(heartbeatIntervalId);
   removerOuvinte();
   for (const cliente of sseClientes) {
     try { cliente.end(); } catch { /* ignore */ }
