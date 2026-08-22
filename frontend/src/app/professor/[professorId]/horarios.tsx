@@ -7,6 +7,7 @@ import { HorarioCard } from '@/components/organisms/HorarioCard';
 import { HorarioForm } from '@/components/organisms/HorarioForm';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import {
+  alterarPrazoCancelamentoHorario,
   alterarTipoMarcacaoHorario,
   criarHorario,
   listarHorarios,
@@ -34,7 +35,7 @@ export default function HorariosProfessorScreen() {
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <TopbarAutenticada titulo="Horários disponíveis" />
       <View
-        className="w-full flex-1 self-center gap-four px-four py-four"
+        className="w-full flex-1 gap-four self-center px-four py-four"
         style={{ maxWidth: MaxContentWidth }}
       >
         <HorariosConteudo professorId={professorId} />
@@ -62,6 +63,7 @@ function HorariosConteudo({ professorId }: { professorId: string }) {
             horario={item}
             onRemover={estado.handleRemover}
             onAlterarPolitica={estado.handleAlterarPolitica}
+            onAlterarPrazoCancelamento={estado.handleAlterarPrazoCancelamento}
           />
         )}
         contentContainerClassName="gap-two"
@@ -91,6 +93,11 @@ function useGerenciamentoHorarios(professorId: string) {
   const handleSubmit = criarHandleSubmit(professorId, setHorarios, setErro, setEnviando);
   const handleRemover = criarHandleRemover(professorId, setHorarios, setErro);
   const handleAlterarPolitica = criarHandleAlterarPolitica(professorId, setHorarios, setErro);
+  const handleAlterarPrazoCancelamento = criarHandleAlterarPrazoCancelamento(
+    professorId,
+    setHorarios,
+    setErro,
+  );
 
   useEffect(() => {
     let cancelado = false;
@@ -102,7 +109,15 @@ function useGerenciamentoHorarios(professorId: string) {
     };
   }, [professorId]);
 
-  return { horarios, erro, enviando, handleSubmit, handleRemover, handleAlterarPolitica };
+  return {
+    horarios,
+    erro,
+    enviando,
+    handleSubmit,
+    handleRemover,
+    handleAlterarPolitica,
+    handleAlterarPrazoCancelamento,
+  };
 }
 
 function criarHandleSubmit(
@@ -148,6 +163,28 @@ function criarHandleAlterarPolitica(
   return async (horarioId: string, tipoMarcacao: TipoMarcacao) => {
     setErro(undefined);
     const resultado = await alterarTipoMarcacaoHorario(professorId, horarioId, tipoMarcacao);
+    if (!resultado.sucesso) {
+      setErro(resultado.mensagem);
+      return;
+    }
+    setHorarios((atual) =>
+      atual.map((horario) => (horario.id === horarioId ? resultado.horario : horario)),
+    );
+  };
+}
+
+function criarHandleAlterarPrazoCancelamento(
+  professorId: string,
+  setHorarios: Dispatch<SetStateAction<Horario[]>>,
+  setErro: Dispatch<SetStateAction<string | undefined>>,
+) {
+  return async (horarioId: string, prazoCancelamentoMinutos: number) => {
+    setErro(undefined);
+    const resultado = await alterarPrazoCancelamentoHorario(
+      professorId,
+      horarioId,
+      prazoCancelamentoMinutos,
+    );
     if (!resultado.sucesso) {
       setErro(resultado.mensagem);
       return;

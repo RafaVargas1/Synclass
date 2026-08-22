@@ -13,6 +13,7 @@ const horarioTerça: Horario = {
   duracaoMinutos: 60,
   limiteAlunos: 1,
   tipoMarcacao: 1,
+  prazoCancelamentoMinutos: 0,
 };
 const horarioQuinta: Horario = {
   id: 'h2',
@@ -21,10 +22,16 @@ const horarioQuinta: Horario = {
   duracaoMinutos: 60,
   limiteAlunos: 1,
   tipoMarcacao: 1,
+  prazoCancelamentoMinutos: 0,
 };
 
 function alocacao(horarioId: string, matriculaId: string): Alocacao {
-  return { id: `al-${horarioId}-${matriculaId}`, horarioId, matriculaId, createdAt: '2026-01-01T00:00:00Z' };
+  return {
+    id: `al-${horarioId}-${matriculaId}`,
+    horarioId,
+    matriculaId,
+    createdAt: '2026-01-01T00:00:00Z',
+  };
 }
 
 describe('agruparAlocacoesPorAluno (issue #160)', () => {

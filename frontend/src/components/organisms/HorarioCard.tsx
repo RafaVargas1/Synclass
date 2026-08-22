@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ChipSelector } from '@/components/molecules/ChipSelector';
+import { FormField } from '@/components/molecules/FormField';
 import { TipoMarcacao, type Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
@@ -13,6 +14,7 @@ export type HorarioCardProps = {
   horario: Horario;
   onRemover: (horarioId: string) => void;
   onAlterarPolitica: (horarioId: string, tipoMarcacao: TipoMarcacao) => void;
+  onAlterarPrazoCancelamento: (horarioId: string, prazoCancelamentoMinutos: number) => void;
 };
 
 const RotulosTipoMarcacao: Record<TipoMarcacao, string> = {
@@ -31,17 +33,31 @@ const RotulosTipoMarcacao: Record<TipoMarcacao, string> = {
  * com `ChipSelector` (mesmas opções de `HorarioForm`), salvando via
  * `onAlterarPolitica` ou retornando ao modo normal em `Cancelar`.
  */
-export function HorarioCard({ professorId, horario, onRemover, onAlterarPolitica }: HorarioCardProps) {
+export function HorarioCard({
+  professorId,
+  horario,
+  onRemover,
+  onAlterarPolitica,
+  onAlterarPrazoCancelamento,
+}: HorarioCardProps) {
   const [editando, setEditando] = useState(false);
   const [tipoSelecionado, setTipoSelecionado] = useState(horario.tipoMarcacao);
+  const [prazoSelecionado, setPrazoSelecionado] = useState(
+    String(horario.prazoCancelamentoMinutos),
+  );
 
   function handleEditar() {
     setTipoSelecionado(horario.tipoMarcacao);
+    setPrazoSelecionado(String(horario.prazoCancelamentoMinutos));
     setEditando(true);
   }
 
   function handleSalvar() {
     onAlterarPolitica(horario.id, tipoSelecionado);
+    const prazo = Number(prazoSelecionado);
+    if (Number.isInteger(prazo) && prazo >= 0) {
+      onAlterarPrazoCancelamento(horario.id, prazo);
+    }
     setEditando(false);
   }
 
@@ -56,6 +72,13 @@ export function HorarioCard({ professorId, horario, onRemover, onAlterarPolitica
             opcoes={OpcoesTipoMarcacao}
             valor={tipoSelecionado}
             onChange={setTipoSelecionado}
+          />
+          <FormField
+            label="Prazo de cancelamento (minutos)"
+            value={prazoSelecionado}
+            onChangeText={setPrazoSelecionado}
+            placeholder="0"
+            keyboardType="numeric"
           />
           <View className="flex-row justify-end gap-two">
             <Pressable
@@ -133,7 +156,9 @@ function CardCorpo({
             className="items-center justify-center"
             style={AlvoDeToqueMinimo}
           >
-            <Text className="text-sm font-semibold text-primary dark:text-dark-primary">Chamada</Text>
+            <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
+              Chamada
+            </Text>
           </Pressable>
         </Link>
         <Pressable

@@ -27,6 +27,7 @@ const horario = {
   duracaoMinutos: 60,
   limiteAlunos: 1,
   tipoMarcacao: TipoMarcacao.Fixo,
+  prazoCancelamentoMinutos: 0,
 };
 
 describe('AlunoVinculadoCard (issue #160)', () => {
@@ -67,6 +68,9 @@ describe('AlunoVinculadoCard (issue #160)', () => {
   it('gives the Regra de cobrança link a touch target of at least 44x44 (Fitts/HIG)', async () => {
     await render(<AlunoVinculadoCard professorId="prof-1" aluno={aluno} />);
 
-    expect(screen.getByText('Regra de cobrança').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
+    expect(screen.getByText('Regra de cobrança').parent).toHaveStyle({
+      minWidth: 44,
+      minHeight: 44,
+    });
   });
 });

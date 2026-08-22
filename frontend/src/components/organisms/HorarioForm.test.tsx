@@ -102,6 +102,7 @@ describe('HorarioForm', () => {
         duracaoMinutos: 60,
         limiteAlunos: 1,
         tipoMarcacao: TipoMarcacao.Livre,
+        prazoCancelamentoMinutos: 0,
       },
     ];
     await render(

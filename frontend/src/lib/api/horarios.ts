@@ -18,6 +18,7 @@ export type Horario = {
   duracaoMinutos: number;
   limiteAlunos: number;
   tipoMarcacao: TipoMarcacao;
+  prazoCancelamentoMinutos: number;
 };
 
 export type CriarHorarioInput = {
@@ -26,6 +27,7 @@ export type CriarHorarioInput = {
   duracaoMinutos: number;
   limiteAlunos: number;
   tipoMarcacao: TipoMarcacao;
+  prazoCancelamentoMinutos?: number;
 };
 
 export type CriarHorarioResultado =
@@ -37,6 +39,9 @@ export type ListarHorariosResultado =
 export type RemoverHorarioResultado = { sucesso: true } | { sucesso: false; mensagem: string };
 
 export type AlterarTipoMarcacaoResultado =
+  { sucesso: true; horario: Horario } | { sucesso: false; mensagem: string };
+
+export type AlterarPrazoCancelamentoResultado =
   { sucesso: true; horario: Horario } | { sucesso: false; mensagem: string };
 
 const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente novamente.';
@@ -116,6 +121,32 @@ export async function alterarTipoMarcacaoHorario(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipoMarcacao }),
     });
+  } catch {
+    return { sucesso: false, mensagem: MensagemErroConexao };
+  }
+
+  const corpo = await response.json().catch(() => null);
+  if (!response.ok) {
+    return { sucesso: false, mensagem: corpo?.mensagem ?? MensagemErroGenerica };
+  }
+  return { sucesso: true, horario: corpo as Horario };
+}
+
+export async function alterarPrazoCancelamentoHorario(
+  professorId: string,
+  horarioId: string,
+  prazoCancelamentoMinutos: number,
+): Promise<AlterarPrazoCancelamentoResultado> {
+  let response: Response;
+  try {
+    response = await fetchComTimeout(
+      `/professores/${professorId}/horarios/${horarioId}/prazo-cancelamento`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prazoCancelamentoMinutos }),
+      },
+    );
   } catch {
     return { sucesso: false, mensagem: MensagemErroConexao };
   }
