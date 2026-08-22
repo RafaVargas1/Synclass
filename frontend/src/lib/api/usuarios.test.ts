@@ -10,11 +10,16 @@ function mockFetchOnce(status: number, body: unknown) {
 
 describe('buscarPerfil', () => {
   it('returns sucesso with the nome when the Api responds with 200', async () => {
-    mockFetchOnce(200, { usuarioId: 'id-1', nome: 'Maria Silva' });
+    mockFetchOnce(200, { usuarioId: 'id-1', nome: 'Maria Silva', contato: 'maria@exemplo.com' });
 
     const resultado = await buscarPerfil();
 
-    expect(resultado).toEqual({ sucesso: true, usuarioId: 'id-1', nome: 'Maria Silva' });
+    expect(resultado).toEqual({
+      sucesso: true,
+      usuarioId: 'id-1',
+      nome: 'Maria Silva',
+      contato: 'maria@exemplo.com',
+    });
   });
 
   it('returns a connection error message when fetch throws', async () => {
