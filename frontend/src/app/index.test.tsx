@@ -42,7 +42,7 @@ describe('HomeScreen', () => {
     definirSessaoMock.mockReset();
     definirSessaoMock.mockResolvedValue(undefined);
     useSessaoMock.mockReset();
-    useSessaoMock.mockReturnValue({ definirSessao: definirSessaoMock });
+    useSessaoMock.mockReturnValue({ carregando: false, token: null, definirSessao: definirSessaoMock });
     mockTituloDaAba.mockReset();
   });
 
@@ -88,5 +88,23 @@ describe('HomeScreen', () => {
       pathname: '/login',
       params: { email: 'novo@exemplo.com' },
     });
+  });
+
+  it('redirects to /painel and renders nothing when there is already a saved session (usabilidade)', async () => {
+    useSessaoMock.mockReturnValue({ carregando: false, token: 'token-salvo', definirSessao: definirSessaoMock });
+
+    await render(<HomeScreen />);
+
+    expect(mockRouterReplace).toHaveBeenCalledWith('/painel');
+    expect(screen.queryByText('Entrar com Google')).toBeNull();
+  });
+
+  it('renders nothing while the saved session is still loading, avoiding a flash of the public Home', async () => {
+    useSessaoMock.mockReturnValue({ carregando: true, token: null, definirSessao: definirSessaoMock });
+
+    await render(<HomeScreen />);
+
+    expect(mockRouterReplace).not.toHaveBeenCalled();
+    expect(screen.queryByText('Entrar com Google')).toBeNull();
   });
 });

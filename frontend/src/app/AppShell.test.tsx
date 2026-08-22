@@ -4,6 +4,7 @@ import RootLayout from './_layout';
 
 const mockUseSessao = jest.fn();
 const mockUseIsTelaLarga = jest.fn();
+const mockUsePathname = jest.fn();
 
 jest.mock('@/global.css', () => ({}));
 
@@ -12,6 +13,7 @@ jest.mock('expo-router', () => ({
   DefaultTheme: { dark: false, colors: {} },
   ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
   Stack: () => null,
+  usePathname: () => mockUsePathname(),
 }));
 
 jest.mock('expo-status-bar', () => ({
@@ -39,7 +41,9 @@ describe('AppShell (_layout.tsx, issue #161)', () => {
   beforeEach(() => {
     mockUseSessao.mockReset();
     mockUseIsTelaLarga.mockReset();
+    mockUsePathname.mockReset();
     mockUseSessao.mockReturnValue({ token: 'token-jwt', papeis: ['Professor'] });
+    mockUsePathname.mockReturnValue('/painel');
   });
 
   it('mostra a coluna lateral com sessão ativa + tela larga', async () => {
@@ -50,6 +54,18 @@ describe('AppShell (_layout.tsx, issue #161)', () => {
     expect(screen.getByTestId('coluna-lateral-menu')).toBeTruthy();
     expect(screen.getByTestId('menu-navegacao-coluna')).toBeTruthy();
   });
+
+  it.each(['/', '/login', '/login/verificar', '/professor/cadastro', '/aluno', '/convite/abc123'])(
+    'não mostra a coluna lateral em rota pública (%s), mesmo com sessão ativa e tela larga',
+    async (pathname) => {
+      mockUseIsTelaLarga.mockReturnValue(true);
+      mockUsePathname.mockReturnValue(pathname);
+
+      await render(<RootLayout />);
+
+      expect(screen.queryByTestId('coluna-lateral-menu')).toBeNull();
+    },
+  );
 
   it('não mostra a coluna lateral sem sessão (token nulo), mesmo em tela larga', async () => {
     mockUseIsTelaLarga.mockReturnValue(true);
