@@ -13,7 +13,10 @@ export type ProximoHorario = {
  * #165). `proximoHorario` já chega resolvido pela tela (aggregate das
  * próximas aulas por todos os vínculos) — este componente só formata e
  * exibe. Mesma família visual de `ResumoValorReceber.tsx` (issue #166):
- * `View` puro, não-tocável, mesmas classes de borda/fundo.
+ * `View` puro, não-tocável, mesmas classes de borda/fundo. `horaInicio`
+ * (achado de dev-review, PR #176) truncado com `.slice(0, 5)` — mesmo
+ * padrão `HH:MM` de todo outro componente que já consome esse campo
+ * (`AulaProximaCard.tsx`, `HorarioCard.tsx`, etc.), nunca `HH:MM:SS` cru.
  */
 export function ResumoProximoHorario({ proximoHorario }: { proximoHorario: ProximoHorario | null }) {
   return (
@@ -21,7 +24,7 @@ export function ResumoProximoHorario({ proximoHorario }: { proximoHorario: Proxi
       <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">Próximo horário</Text>
       {proximoHorario ? (
         <Text className="text-base font-semibold text-text dark:text-dark-text">
-          {`${proximoHorario.professorNome} — ${formatarData(proximoHorario.data)} às ${proximoHorario.horaInicio}`}
+          {`${proximoHorario.professorNome} — ${formatarData(proximoHorario.data)} às ${proximoHorario.horaInicio.slice(0, 5)}`}
         </Text>
       ) : (
         <Text className="text-base text-text-secondary dark:text-dark-text-secondary">

@@ -55,19 +55,21 @@ function useProximoHorario(habilitado: boolean, token: string | null): ProximoHo
       if (cancelado || !vinculosResultado.sucesso) {
         return;
       }
-      const aulasPorProfessor = new Map<string, AulaProxima[]>();
-      for (const vinculo of vinculosResultado.vinculos) {
-        const aulasResultado = await listarProximasAulas(vinculo.professorId);
-        if (cancelado) {
-          return;
-        }
-        if (aulasResultado.sucesso) {
-          aulasPorProfessor.set(vinculo.professorId, aulasResultado.aulas);
-        }
-      }
+      // Em paralelo (achado de dev-review, PR #176): um Aluno com N
+      // Professores pagava N× a latência de rede em série antes disso.
+      const resultadosPorVinculo = await Promise.all(
+        vinculosResultado.vinculos.map((vinculo) => listarProximasAulas(vinculo.professorId)),
+      );
       if (cancelado) {
         return;
       }
+      const aulasPorProfessor = new Map<string, AulaProxima[]>();
+      vinculosResultado.vinculos.forEach((vinculo, indice) => {
+        const aulasResultado = resultadosPorVinculo[indice];
+        if (aulasResultado.sucesso) {
+          aulasPorProfessor.set(vinculo.professorId, aulasResultado.aulas);
+        }
+      });
       setProximoHorario(agregarProximoHorario(vinculosResultado.vinculos, aulasPorProfessor));
     })();
     return () => {

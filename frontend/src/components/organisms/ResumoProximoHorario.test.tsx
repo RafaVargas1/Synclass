@@ -10,7 +10,7 @@ describe('ResumoProximoHorario', () => {
       />,
     );
 
-    expect(screen.getByText('Professor A — 20/08/2026 às 18:00:00')).toBeTruthy();
+    expect(screen.getByText('Professor A — 20/08/2026 às 18:00')).toBeTruthy();
   });
 
   it('shows o estado vazio quando proximoHorario é null', async () => {
