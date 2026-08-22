@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -8,6 +9,7 @@ import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
 import { AlvoDeToqueMinimo } from '@/theme/tokens';
 
 export type HorarioCardProps = {
+  professorId: string;
   horario: Horario;
   onRemover: (horarioId: string) => void;
   onAlterarPolitica: (horarioId: string, tipoMarcacao: TipoMarcacao) => void;
@@ -29,7 +31,7 @@ const RotulosTipoMarcacao: Record<TipoMarcacao, string> = {
  * com `ChipSelector` (mesmas opções de `HorarioForm`), salvando via
  * `onAlterarPolitica` ou retornando ao modo normal em `Cancelar`.
  */
-export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCardProps) {
+export function HorarioCard({ professorId, horario, onRemover, onAlterarPolitica }: HorarioCardProps) {
   const [editando, setEditando] = useState(false);
   const [tipoSelecionado, setTipoSelecionado] = useState(horario.tipoMarcacao);
 
@@ -45,7 +47,7 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
 
   return (
     <View className="w-full rounded-medium border border-background-selected bg-background-element px-four py-three dark:border-dark-background-selected dark:bg-dark-background-element">
-      <CardCorpo horario={horario} onRemover={onRemover} />
+      <CardCorpo professorId={professorId} horario={horario} onRemover={onRemover} />
       {editando ? (
         <View className="mt-two w-full gap-two">
           <ChipSelector
@@ -94,7 +96,15 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
   );
 }
 
-function CardCorpo({ horario, onRemover }: { horario: Horario; onRemover: (id: string) => void }) {
+function CardCorpo({
+  professorId,
+  horario,
+  onRemover,
+}: {
+  professorId: string;
+  horario: Horario;
+  onRemover: (id: string) => void;
+}) {
   const horaFormatada = horario.horaInicio.slice(0, 5);
   const rotuloLimiteAlunos =
     horario.limiteAlunos > 1 ? `Grupo até ${horario.limiteAlunos}` : 'Individual';
@@ -116,14 +126,25 @@ function CardCorpo({ horario, onRemover }: { horario: Horario; onRemover: (id: s
           {rotuloPolitica}
         </Text>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => onRemover(horario.id)}
-        className="items-center justify-center"
-        style={AlvoDeToqueMinimo}
-      >
-        <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
-      </Pressable>
+      <View className="flex-row items-center gap-two">
+        <Link href={`/professor/${professorId}/horarios/${horario.id}/chamada`} asChild>
+          <Pressable
+            accessibilityRole="button"
+            className="items-center justify-center"
+            style={AlvoDeToqueMinimo}
+          >
+            <Text className="text-sm font-semibold text-primary dark:text-dark-primary">Chamada</Text>
+          </Pressable>
+        </Link>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onRemover(horario.id)}
+          className="items-center justify-center"
+          style={AlvoDeToqueMinimo}
+        >
+          <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
