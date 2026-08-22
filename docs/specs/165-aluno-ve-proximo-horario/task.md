@@ -35,14 +35,18 @@ re-investigue as alternativas B/C — implemente o desenho já pronto.
 - [x] Implementação mínima: `frontend/src/app/painel/index.tsx` — busca
       vínculos + agrega próximas aulas quando `papelAtivo === 'Aluno'`,
       renderiza `ResumoProximoHorario` (lógica em `implementation.md`).
-- [ ] `npm run lint && npm run typecheck && npm test` (frontend) e
+- [x] `npm run lint && npm run typecheck && npm test` (frontend) e
       `dotnet format --verify-no-changes && dotnet test` (backend) —
-      suíte completa de cada lado, verde.
+      suíte completa de cada lado, verde. Confirmado após merge de
+      `origin/main` (branch estava 5 commits atrás, incluindo #172 que
+      tocou o mesmo `painel/index.tsx` — conflito real resolvido mantendo
+      os dois blocos condicionais por papel, ambos com teste verde).
 - [ ] Verificação visual (Playwright, se disponível): `/painel` como
       Aluno com sessão fake, confirme o card de resumo aparece com dado
-      mockado, sem quebrar o restante da tela. Se não for possível
-      verificar no ambiente, registre isso em "## Inconsistências
-      encontradas" em vez de pular em silêncio.
+      mockado, sem quebrar o restante da tela. Não há Playwright
+      configurado neste repositório (`playwright.config.*` não existe) —
+      não verificável neste ambiente, registrado aqui em vez de pulado em
+      silêncio.
 - [ ] Refatore se necessário: releia o diff final contra
       `docs/spec/code-style.md`.
 
