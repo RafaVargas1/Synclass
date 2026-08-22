@@ -19,23 +19,24 @@ import { MaxContentWidth } from '@/theme/tokens';
  */
 export default function CadastroAlunoProvisorioScreen() {
   const [nome, setNome] = useState('');
-  const [identificador, setIdentificador] = useState('');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
-  const [nomeConfirmado, setNomeConfirmado] = useState<string | undefined>(undefined);
+  const [confirmado, setConfirmado] = useState<{ nome: string; identificador: string } | undefined>(
+    undefined,
+  );
 
   async function handleSubmit() {
     setEnviando(true);
     setErro(undefined);
 
-    const resultado = await cadastrarAlunoProvisorio({ nome, identificador });
+    const resultado = await cadastrarAlunoProvisorio({ nome });
 
     setEnviando(false);
     if (!resultado.sucesso) {
       setErro(resultado.mensagem);
       return;
     }
-    setNomeConfirmado(resultado.nome);
+    setConfirmado({ nome: resultado.nome, identificador: resultado.identificador });
   }
 
   return (
@@ -45,16 +46,14 @@ export default function CadastroAlunoProvisorioScreen() {
         className="w-full flex-1 items-center justify-center self-center px-four"
         style={{ maxWidth: MaxContentWidth }}
       >
-        {nomeConfirmado ? (
-          <AlunoProvisorioConfirmado nome={nomeConfirmado} />
+        {confirmado ? (
+          <AlunoProvisorioConfirmado nome={confirmado.nome} identificador={confirmado.identificador} />
         ) : (
           <CadastroAlunoProvisorioForm
             nome={nome}
-            identificador={identificador}
             erro={erro}
             enviando={enviando}
             onChangeNome={setNome}
-            onChangeIdentificador={setIdentificador}
             onSubmit={handleSubmit}
           />
         )}

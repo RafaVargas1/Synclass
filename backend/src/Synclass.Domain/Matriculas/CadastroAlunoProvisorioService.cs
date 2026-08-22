@@ -5,12 +5,13 @@ using Synclass.Domain.Usuarios;
 namespace Synclass.Domain.Matriculas;
 
 /// <summary>
-/// Orquestra o cadastro de Aluno provisório: valida nome e identificador,
-/// garante unicidade do identificador por Professor, gera o
-/// <see cref="Matricula.IdentificadorAluno"/> único (issue #70) e cria a
-/// <see cref="Matricula"/> (issue #3). Nunca exige contato/login do Aluno —
-/// diferente de <c>CadastroUsuarioService</c> (issue #1), que cria
-/// identidade de usuário plena.
+/// Orquestra o cadastro de Aluno provisório: valida nome, gera o
+/// identificador único (issue #70/#159 — o mesmo valor preenche
+/// <see cref="Matricula.IdentificadorProvisorio"/> e
+/// <see cref="Matricula.IdentificadorAluno"/>, não é mais digitado pelo
+/// Professor) e cria a <see cref="Matricula"/> (issue #3). Nunca exige
+/// contato/login do Aluno — diferente de <c>CadastroUsuarioService</c>
+/// (issue #1), que cria identidade de usuário plena.
 /// </summary>
 public sealed class CadastroAlunoProvisorioService
 {
@@ -28,16 +29,14 @@ public sealed class CadastroAlunoProvisorioService
     }
 
     public async Task<Matricula> CadastrarAsync(
-        Guid professorId, string nome, string identificador, CancellationToken cancellationToken)
+        Guid professorId, string nome, CancellationToken cancellationToken)
     {
         var nomeValidado = ValidarNome(nome);
-        var identificadorValidado = IdentificadorProvisorio.Validar(identificador);
 
         await GarantirProfessorExisteAsync(professorId, cancellationToken);
-        await GarantirIdentificadorDisponivelAsync(professorId, identificadorValidado, cancellationToken);
 
-        var identificadorAluno = await _identificadorAluno.GerarUnicoAsync(cancellationToken);
-        var matricula = Matricula.CriarProvisoria(professorId, nomeValidado, identificadorValidado, identificadorAluno, _clock);
+        var identificadorGerado = await _identificadorAluno.GerarUnicoAsync(cancellationToken);
+        var matricula = Matricula.CriarProvisoria(professorId, nomeValidado, identificadorGerado, identificadorGerado, _clock);
         await _matriculas.AdicionarAsync(matricula, cancellationToken);
         await _matriculas.SalvarAsync(cancellationToken);
         return matricula;
@@ -79,13 +78,4 @@ public sealed class CadastroAlunoProvisorioService
         }
     }
 
-    private async Task GarantirIdentificadorDisponivelAsync(
-        Guid professorId, string identificadorValidado, CancellationToken cancellationToken)
-    {
-        var existente = await _matriculas.BuscarPorIdentificadorAsync(professorId, identificadorValidado, cancellationToken);
-        if (existente is not null)
-        {
-            throw new IdentificadorProvisorioDuplicadoException(identificadorValidado);
-        }
-    }
 }

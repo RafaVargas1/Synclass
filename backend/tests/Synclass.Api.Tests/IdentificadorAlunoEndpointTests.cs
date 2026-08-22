@@ -86,19 +86,20 @@ public sealed class IdentificadorAlunoEndpointTests : IClassFixture<WebApplicati
 
         var response = await client.PostAsJsonAsync(
             "/professores/alunos-provisorios",
-            new CadastroAlunoProvisorioRequest("João Pedro", "2024-014"));
+            new CadastroAlunoProvisorioRequest("João Pedro"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<CadastroAlunoProvisorioResponse>();
         corpo!.Nome.Should().Be("João Pedro");
-        corpo.Identificador.Should().Be("2024-014");
+        // Identificador não é mais digitado pelo Professor (issue #159) — o
+        // sistema gera, mesmo formato de IdentificadorAluno (ALU-XXXX).
+        corpo.Identificador.Should().MatchRegex("^ALU-[2-9A-HJ-NP-Z]{4}$");
 
         using (var scope = _factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
             var matricula = await dbContext.Matriculas.SingleAsync(m => m.Id == corpo.MatriculaId);
-            matricula.IdentificadorAluno.Should().NotBeNullOrEmpty();
-            matricula.IdentificadorAluno.Should().MatchRegex("^ALU-[2-9A-HJ-NP-Z]{4}$");
+            matricula.IdentificadorAluno.Should().Be(corpo.Identificador);
         }
 
         // Listagem (issue #8) continua funcionando sem quebrar o contrato
@@ -106,6 +107,6 @@ public sealed class IdentificadorAlunoEndpointTests : IClassFixture<WebApplicati
         var listagem = await client.GetAsync("/professores/alunos-provisorios");
         listagem.StatusCode.Should().Be(HttpStatusCode.OK);
         var lista = await listagem.Content.ReadFromJsonAsync<List<AlunoProvisorioResponse>>();
-        lista.Should().ContainSingle(a => a.Nome == "João Pedro" && a.Identificador == "2024-014");
+        lista.Should().ContainSingle(a => a.Nome == "João Pedro" && a.Identificador == corpo.Identificador);
     }
 }

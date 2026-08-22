@@ -12,10 +12,7 @@ describe('cadastrarAlunoProvisorio', () => {
   it('returns sucesso when the Api responds with 200', async () => {
     mockFetchOnce(200, { matriculaId: 'id-1', nome: 'João Pedro', identificador: '2024-013' });
 
-    const resultado = await cadastrarAlunoProvisorio({
-      nome: 'João Pedro',
-      identificador: '2024-013',
-    });
+    const resultado = await cadastrarAlunoProvisorio({ nome: 'João Pedro' });
 
     expect(resultado).toEqual({ sucesso: true, nome: 'João Pedro', identificador: '2024-013' });
   });
@@ -23,10 +20,7 @@ describe('cadastrarAlunoProvisorio', () => {
   it('posts to the professor-scoped route', async () => {
     mockFetchOnce(200, { matriculaId: 'id-1', nome: 'João Pedro', identificador: '2024-013' });
 
-    await cadastrarAlunoProvisorio({
-      nome: 'João Pedro',
-      identificador: '2024-013',
-    });
+    await cadastrarAlunoProvisorio({ nome: 'João Pedro' });
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/professores/alunos-provisorios'),
@@ -39,10 +33,7 @@ describe('cadastrarAlunoProvisorio', () => {
       mensagem: 'Já existe um Aluno provisório com o identificador "2024-013" para este Professor.',
     });
 
-    const resultado = await cadastrarAlunoProvisorio({
-      nome: 'João Pedro',
-      identificador: '2024-013',
-    });
+    const resultado = await cadastrarAlunoProvisorio({ nome: 'João Pedro' });
 
     expect(resultado).toEqual({
       sucesso: false,
@@ -53,10 +44,7 @@ describe('cadastrarAlunoProvisorio', () => {
   it('returns a connection error message when fetch throws', async () => {
     globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
 
-    const resultado = await cadastrarAlunoProvisorio({
-      nome: 'João Pedro',
-      identificador: '2024-013',
-    });
+    const resultado = await cadastrarAlunoProvisorio({ nome: 'João Pedro' });
 
     expect(resultado.sucesso).toBe(false);
   });
@@ -70,10 +58,7 @@ describe('cadastrarAlunoProvisorio', () => {
         }),
     ) as jest.Mock;
 
-    const resultadoPromise = cadastrarAlunoProvisorio({
-      nome: 'João Pedro',
-      identificador: '2024-013',
-    });
+    const resultadoPromise = cadastrarAlunoProvisorio({ nome: 'João Pedro' });
     await jest.runAllTimersAsync();
     const resultado = await resultadoPromise;
 

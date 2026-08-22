@@ -6,20 +6,19 @@ import { FormField } from '@/components/molecules/FormField';
 
 export type CadastroAlunoProvisorioFormProps = {
   nome: string;
-  identificador: string;
   erro?: string;
   enviando: boolean;
   onChangeNome: (nome: string) => void;
-  onChangeIdentificador: (identificador: string) => void;
   onSubmit: () => void;
 };
 
 /**
- * Organismo: formulário de cadastro de Aluno provisório (nome +
- * identificador, issue #3) — sem campo de contato, diferente de
- * `CadastroProfessorForm` (issue #1): um Aluno provisório nunca exige
- * e-mail, telefone ou login. Não conhece a Api — apenas emite os callbacks
- * recebidos por prop.
+ * Organismo: formulário de cadastro de Aluno provisório (issue #3, campo
+ * de identificador removido na issue #159 — o sistema gera e mostra o
+ * identificador depois do cadastro, o Professor não digita mais um) — sem
+ * campo de contato, diferente de `CadastroProfessorForm` (issue #1): um
+ * Aluno provisório nunca exige e-mail, telefone ou login. Não conhece a
+ * Api — apenas emite os callbacks recebidos por prop.
  *
  * `erro` é exibido como mensagem geral do formulário, mesmo racional de
  * `CadastroProfessorForm`: a Api devolve só uma mensagem de texto, sem
@@ -27,11 +26,9 @@ export type CadastroAlunoProvisorioFormProps = {
  */
 export function CadastroAlunoProvisorioForm({
   nome,
-  identificador,
   erro,
   enviando,
   onChangeNome,
-  onChangeIdentificador,
   onSubmit,
 }: CadastroAlunoProvisorioFormProps) {
   return (
@@ -41,12 +38,6 @@ export function CadastroAlunoProvisorioForm({
         value={nome}
         onChangeText={onChangeNome}
         placeholder="Nome do Aluno"
-      />
-      <FormField
-        label="Identificador"
-        value={identificador}
-        onChangeText={onChangeIdentificador}
-        placeholder="Identificador (ex: número de matrícula)"
       />
       {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
       <Button
