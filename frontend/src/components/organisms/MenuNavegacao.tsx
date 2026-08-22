@@ -96,7 +96,7 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
           testID="dropdown-menu-navegacao"
           className={
             telaLarga
-              ? 'flex-row flex-wrap items-center gap-three border-t border-border py-two dark:border-dark-border'
+              ? 'gap-one p-three'
               : 'z-20 w-[280px] gap-two border-r border-border bg-background p-four shadow-lg dark:border-dark-border dark:bg-dark-background'
           }
           style={telaLarga ? undefined : { position: 'fixed' as 'absolute', top: 0, left: 0, bottom: 0 }}
@@ -109,7 +109,7 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
               key={secao.label}
               secao={secao}
               ativo={secao.label === secaoAtiva?.label}
-              largoTotal={!telaLarga}
+              largoTotal
             />
           ))}
         </View>
@@ -172,11 +172,9 @@ function ItemDeSecao({
 }: {
   secao: Secao;
   ativo: boolean;
-  /** Dropdown mobile: cada item ocupa a largura toda da caixa (coluna).
-   *  Faixa desktop: os itens ficam lado a lado (`flex-row flex-wrap` do
-   *  pai), então não podem forçar `w-full` sob pena de empilhar um por
-   *  linha (achado ao verificar visualmente esta correção — a primeira
-   *  versão do fix de #129 aplicava `w-full` sempre e quebrou o desktop). */
+  /** Sempre `true` (issue #161): tanto o dropdown mobile quanto a coluna
+   *  lateral desktop empilham os itens verticalmente, então cada item
+   *  sempre ocupa a largura toda do container. */
   largoTotal: boolean;
 }) {
   const destaque = ativo ? 'bg-background-selected dark:bg-dark-background-selected' : '';
