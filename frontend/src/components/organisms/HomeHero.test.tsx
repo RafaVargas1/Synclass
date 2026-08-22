@@ -43,11 +43,11 @@ describe('HomeHero', () => {
     expect(onEntrarComoAluno).toHaveBeenCalled();
   });
 
-  it('calls onLogin when the "Entrar com código" link is pressed', async () => {
+  it('calls onLogin when the "Entrar com código ou e-mail" link is pressed', async () => {
     const onLogin = jest.fn();
     await renderHero({ onLogin });
 
-    await fireEvent.press(screen.getByText('Entrar com código'));
+    await fireEvent.press(screen.getByText('Entrar com código ou e-mail'));
 
     expect(onLogin).toHaveBeenCalled();
   });

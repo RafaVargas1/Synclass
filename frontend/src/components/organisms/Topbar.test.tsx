@@ -7,10 +7,15 @@ const mockBack = jest.fn();
 const mockReplace = jest.fn();
 const mockCanGoBack = jest.fn();
 const mockSetOptions = jest.fn();
+const mockUseIsTelaLarga = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: mockCanGoBack }),
   useNavigation: () => ({ setOptions: mockSetOptions }),
+}));
+
+jest.mock('@/lib/useIsTelaLarga', () => ({
+  useIsTelaLarga: () => mockUseIsTelaLarga(),
 }));
 
 describe('Topbar', () => {
@@ -19,6 +24,7 @@ describe('Topbar', () => {
     mockReplace.mockReset();
     mockCanGoBack.mockReset();
     mockSetOptions.mockReset();
+    mockUseIsTelaLarga.mockReturnValue(false);
   });
 
   it('shows the SYNCLASS mark when no titulo is given', async () => {
@@ -125,5 +131,35 @@ describe('Topbar', () => {
     await render(<Topbar />);
 
     expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Synclass' });
+  });
+
+  it('em tela larga, o menu aparece antes do Voltar, numa linha própria separada por borda (issue #145 revisitada)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(true);
+
+    const resultado = await render(
+      <Topbar titulo="Valor devido por Aluno" menuNavegacao={<Text testID="menu-secoes">Seções</Text>} />,
+    );
+
+    // RNTL não expõe `compareDocumentPosition` (API de DOM); a árvore
+    // serializada por `toJSON()` já reflete a ordem visual (JSX top-down),
+    // então comparar a posição das duas strings na serialização é
+    // suficiente pra confirmar "o menu vem antes do Voltar".
+    const arvore = JSON.stringify(resultado.toJSON());
+    const indiceDoMenu = arvore.indexOf('menu-secoes');
+    const indiceDoVoltar = arvore.indexOf('Voltar');
+    expect(indiceDoMenu).toBeGreaterThan(-1);
+    expect(indiceDoVoltar).toBeGreaterThan(-1);
+    expect(indiceDoMenu).toBeLessThan(indiceDoVoltar);
+  });
+
+  it('a linha do cabeçalho no mobile tem z-index elevado, pra o painel fixo do menu não ficar atrás do título/Voltar (issue #146 revisitada)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(false);
+
+    await render(
+      <Topbar titulo="Valor devido por Aluno" menuNavegacao={<Text testID="menu">Abrir menu</Text>} />,
+    );
+
+    const linhaDoCabecalho = screen.getByTestId('menu').parent?.parent;
+    expect(linhaDoCabecalho?.props.className).toContain('z-20');
   });
 });
