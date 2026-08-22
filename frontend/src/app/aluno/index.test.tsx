@@ -29,11 +29,17 @@ jest.mock('@/components/molecules/BotaoLoginGoogle', () => {
 
 const mockReplace = jest.fn();
 const mockRouteParams: Record<string, string> = {};
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockReplace }),
-  useLocalSearchParams: () => ({ ...mockRouteParams }),
-  useNavigation: () => ({ setOptions: jest.fn() }),
-}));
+jest.mock('expo-router', () => {
+  const { Text } = jest.requireActual('react-native');
+  return {
+    useRouter: () => ({ replace: mockReplace }),
+    useLocalSearchParams: () => ({ ...mockRouteParams }),
+    useNavigation: () => ({ setOptions: jest.fn() }),
+    Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+      <Text testID={`link-${href}`}>{children}</Text>
+    ),
+  };
+});
 
 const aceitarConvitePorCodigoMock = aceitarConvitePorCodigo as jest.Mock;
 const cadastrarAlunoMock = cadastrarAluno as jest.Mock;

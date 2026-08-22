@@ -6,11 +6,17 @@ import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/profess
 
 import CadastroProfessorScreen from './cadastro';
 
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: jest.fn(), replace: mockReplace, canGoBack: () => false }),
-  useLocalSearchParams: () => ({ ...mockRouteParams }),
-  useNavigation: () => ({ setOptions: jest.fn() }),
-}));
+jest.mock('expo-router', () => {
+  const { Text } = jest.requireActual('react-native');
+  return {
+    useRouter: () => ({ back: jest.fn(), replace: mockReplace, canGoBack: () => false }),
+    useLocalSearchParams: () => ({ ...mockRouteParams }),
+    useNavigation: () => ({ setOptions: jest.fn() }),
+    Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+      <Text testID={`link-${href}`}>{children}</Text>
+    ),
+  };
+});
 
 jest.mock('@/lib/auth/contexto-sessao', () => ({
   useSessao: jest.fn(),
