@@ -181,7 +181,7 @@ function ItemDeSecao({
         accessibilityState={{ selected: ativo }}
         className="px-four py-three"
       >
-        <Text>{secao.label}</Text>
+        <Text className="text-text dark:text-dark-text">{secao.label}</Text>
       </Link>
     </View>
   );

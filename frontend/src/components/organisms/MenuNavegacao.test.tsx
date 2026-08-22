@@ -243,4 +243,19 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(classeDaRaiz).not.toContain('w-full');
     expect(classeDaRaiz).not.toContain('flex-1');
   });
+
+  it('rótulo de cada seção tem cor de texto explícita, legível no modo escuro (issue #136)', async () => {
+    mockUsePathname.mockReturnValue('/outra-rota');
+
+    await render(
+      <MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    // Sem `dark:text-dark-text` explícito, o texto herda a cor padrão do
+    // navegador — legível no claro por acidente, ilegível no escuro (fundo
+    // quase preto, texto quase preto). Achado do usuário via screenshot
+    // real em modo escuro, ver issue #136.
+    const rotulo = screen.getByText('Cadastrar Aluno');
+    expect(rotulo.props.className).toContain('dark:text-dark-text');
+  });
 });
