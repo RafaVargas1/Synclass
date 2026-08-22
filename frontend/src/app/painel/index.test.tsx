@@ -399,24 +399,6 @@ describe('PainelScreen resumo de frequência', () => {
   });
 
   it('does not show the resumo when papelAtivo is Professor', async () => {
-      vinculos: [
-        { professorId: 'p1', nome: 'Professor A' },
-        { professorId: 'p2', nome: 'Professor B' },
-      ],
-    });
-    listarProximasAulasMock.mockImplementation(async (professorId: string) => {
-      if (professorId === 'p1') {
-        return { sucesso: true, aulas: [aulaProxima('2026-09-01', '10:00:00')] };
-      }
-      return { sucesso: true, aulas: [aulaProxima('2026-08-20', '18:00:00')] };
-    });
-
-    await render(<PainelScreen />);
-
-    await waitFor(() => expect(screen.getByText('Professor B — 20/08/2026 às 18:00:00')).toBeTruthy());
-  });
-
-  it('does not show the resumo when papelAtivo is Professor', async () => {
     useSessaoMock.mockReturnValue({
       carregando: false,
       token: 'token-jwt',
