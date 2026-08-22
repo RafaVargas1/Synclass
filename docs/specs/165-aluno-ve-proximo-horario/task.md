@@ -20,10 +20,10 @@ re-investigue as alternativas B/C — implemente o desenho já pronto.
       sucesso, lista vazia, erro de rede.
 - [x] Implementação mínima: cria `frontend/src/lib/api/vinculosAluno.ts`
       (código exato em `implementation.md`).
-- [ ] Teste (`ResumoProximoHorario.test.tsx`, criar): com dado preenchido
+- [x] Teste (`ResumoProximoHorario.test.tsx`, criar): com dado preenchido
       mostra Professor+data+hora formatados; com `null` mostra "Nenhum
       horário marcado no momento."
-- [ ] Implementação mínima: cria
+- [x] Implementação mínima: cria
       `frontend/src/components/organisms/ResumoProximoHorario.tsx`
       (código exato em `implementation.md` — siga o padrão visual de
       `ResumoValorReceber.tsx`, issue #166).
