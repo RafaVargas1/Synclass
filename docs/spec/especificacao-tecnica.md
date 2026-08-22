@@ -174,6 +174,19 @@ da Task:
   - Para **complexa**, some-se a isso uma revisão de arquitetura do
     Claude (mesmo raciocínio da Fase 2, não uma segunda aprovação
     burocrática) antes do `APPROVED` valer.
+  - **Sem sessão Claude disponível** (uso direto do terminal, fora deste
+    fluxo): `scripts/deepseek-spec.mjs <número-da-issue>` faz o rascunho
+    com tool-calling real (lê o repositório de verdade antes de escrever
+    "antes"/"depois", não inventa) e já cria a worktree — sem o
+    `APPROVED`/`CHANGES_REQUESTED` de Claude nesse caminho. Recusa
+    épicos e, ao encontrar ambiguidade genuína, escreve `##
+    Inconsistências encontradas` no `task.md` e abre uma issue de
+    bloqueio em vez de adivinhar (mesmo padrão de
+    `scripts/pipeline-orchestrator.sh`). `scripts/deepseek-develop.sh
+    <número-da-issue>` encadeia isso com a implementação
+    (`deepseek-agent.mjs`), o gate completo, PR e autorrevisão
+    (`deepseek-review.sh`) — do zero ao PR aberto/mergeado num único
+    comando, sem nenhuma sessão Claude no caminho.
 
 ## Ciclo de vida
 
