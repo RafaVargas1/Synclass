@@ -64,6 +64,13 @@ function HorariosConteudo({ professorId }: { professorId: string }) {
           />
         )}
         contentContainerClassName="gap-two"
+        // Sem altura mínima, o FlatList (dentro do mesmo `flex-1` coluna
+        // que o HorarioForm, bem mais alto) encolhia pra ~90px de altura
+        // visível — rolagem interna preservada, mas a lista virava uma
+        // fresta minúscula mesmo com poucos horários cadastrados (achado
+        // do usuário). `minHeight` garante uma área de leitura razoável;
+        // `flexGrow` deixa crescer além disso se houver espaço sobrando.
+        style={{ minHeight: 420, flexGrow: 1 }}
       />
     </>
   );
