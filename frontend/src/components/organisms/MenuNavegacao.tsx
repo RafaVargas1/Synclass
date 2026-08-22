@@ -91,8 +91,9 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
           className={
             telaLarga
               ? 'flex-row flex-wrap items-center gap-three border-t border-border py-two dark:border-dark-border'
-              : 'absolute left-0 top-full z-20 min-w-[220px] gap-two rounded-medium border border-border bg-background p-three shadow-md dark:border-dark-border dark:bg-dark-background'
+              : 'z-20 w-[280px] gap-two border-r border-border bg-background p-four shadow-lg dark:border-dark-border dark:bg-dark-background'
           }
+          style={telaLarga ? undefined : { position: 'fixed' as 'absolute', top: 0, left: 0, bottom: 0 }}
         >
           {temVariosPapeis ? (
             <AlternadorDePapel papeis={papeis} papelAtivo={papelAtivo} onSelecionarPapel={onSelecionarPapel} />

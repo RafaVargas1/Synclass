@@ -225,6 +225,45 @@ describe('MenuNavegacao (issue #77)', () => {
     ]);
   });
 
+  it('em modo mobile aberto, o dropdown usa position fixed ocupando a altura cheia da tela (issue #146)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(false);
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+
+    await render(
+      <MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Abrir menu'));
+
+    // O painel mobile escapa do container do cabeçalho (bastava `absolute`
+    // ancorado no botão) e passa a cobrir o viewport inteiro na vertical —
+    // mesmo padrão de `position: 'fixed'` já usado no backdrop. RNTL não
+    // mede layout real, mas confirma que o style pretendido está no
+    // elemento (ver suíte desta Task em implementation.md).
+    const dropdown = screen.getByTestId('dropdown-menu-navegacao');
+
+    expect(dropdown.props.style).toMatchObject({ position: 'fixed', top: 0, left: 0, bottom: 0 });
+  });
+
+  it('em modo mobile aberto, o dropdown não usa a forma antiga de popover (sem rounded-medium nem min-w-[220px]) (issue #146)', async () => {
+    mockUseIsTelaLarga.mockReturnValue(false);
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+
+    await render(
+      <MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Abrir menu'));
+
+    // Confirma que a forma antiga de "caixinha flutuante" foi removida do
+    // painel mobile, não apenas escondida atrás da nova (issue #146).
+    const dropdown = screen.getByTestId('dropdown-menu-navegacao');
+    const classeMobile: string = dropdown.props.className;
+
+    expect(classeMobile).not.toContain('rounded-medium');
+    expect(classeMobile).not.toContain('min-w-[220px]');
+  });
+
   it('em modo desktop, a raiz do MenuNavegacao não força largura total sozinha (issue #129)', async () => {
     mockUseIsTelaLarga.mockReturnValue(true);
     mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
