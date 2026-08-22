@@ -21,6 +21,7 @@ describe('secoesPorPapel (issue #77)', () => {
       expect(secoesProfessor('prof-1')).toEqual([
         { label: 'Cadastrar Aluno', href: '/professor/alunos/cadastro' },
         { label: 'Gerenciar horários', href: '/professor/prof-1/horarios' },
+        { label: 'Meus Alunos', href: '/professor/prof-1/alunos' },
         { label: 'Alocar Aluno em horário', href: '/professor/prof-1/alocacoes' },
         { label: 'Convidar Aluno', href: '/professor/prof-1/convites/novo' },
         { label: 'Ver valor devido', href: '/professor/prof-1/valor-devido' },
