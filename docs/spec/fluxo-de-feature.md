@@ -180,6 +180,31 @@ sozinha), como qualquer outra decisão de produto (mesmo espírito da Fase
 
 ## Fase 2.5 — Spec técnica
 
+### Princípio: especificação densa em vez de mais ciclos
+
+Quando a DeepSeek entrega algo ruim ou trava sem convergir, o reflexo
+errado é aumentar `--max-iterations` ou torcer pra próxima tentativa
+adivinhar melhor. **O reflexo certo é reescrever a spec com mais
+densidade.** A DeepSeek executa exatamente o que o `task.md`/
+`implementation.md` diz — quando o resultado é ruim (hierarquia visual
+errada, padrão de UI reinventado do zero, mensagem de erro com o
+vocabulário errado), quase sempre a causa é uma decisão de design que
+devia estar no arquivo e não estava, não falta de tentativas. Mais
+iterações sobre uma spec vaga produzem mais variações da mesma decisão
+ruim, não uma decisão melhor.
+
+Antes de liberar qualquer Task pra Fase 3, `implementation.md` precisa
+deixar quem só sabe ler código (não o domínio do produto) capaz de
+implementar sem inventar nada — isso inclui, quando a mudança é de UI:
+trecho de código do estado atual (lido de verdade do arquivo) e do estado
+desejado, e uma citação explícita de qual componente/arquivo já existente
+serve de padrão de estilo a seguir (ver
+[`especificacao-tecnica.md#implementationmd--desenho-técnico`](especificacao-tecnica.md#implementationmd--desenho-técnico)).
+Escrever esse nível de detalhe é trabalho seu (ou da DeepSeek rascunhando
+sob sua revisão) na Fase 2.5 — mais caro em tokens agora, mas mais barato
+que uma Task que trava duas vezes no teto de iterações ou que sai errada e
+só é pega no `dev-review`/pelo usuário depois de mergeada.
+
 Só depois do(s) card(s) finalizados no GitHub: para cada Task (ou para o
 card único, se não houve quebra em épico), gere a pasta
 `docs/specs/<n>-<slug>/{task.md,implementation.md}` descrita em

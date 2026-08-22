@@ -102,10 +102,38 @@ vez de escrever um item vago e empurrar a decisão pra DeepSeek.
 
 ### `implementation.md` — desenho técnico
 
-Prosa curta + bullets, direcionado a quem vai ler o código, não o card:
+Prosa curta + bullets, direcionado a quem vai ler o código, não o card. O
+princípio geral (ver
+[`fluxo-de-feature.md#princípio-especificação-densa-em-vez-de-mais-ciclos`](fluxo-de-feature.md#princípio-especificação-densa-em-vez-de-mais-ciclos)):
+**este arquivo carrega o peso da decisão de design, não o loop de
+implementação da DeepSeek.** Se ele deixa uma decisão de UI/arquitetura em
+aberto, a DeepSeek preenche a lacuna com a própria decisão — imprevisível,
+inconsistente entre Tasks, e o que já causou pelo menos duas rodadas
+inteiras de retrabalho nesta sessão (menu de navegação, seleção de hora).
 
 - **Entidades/classes afetadas** (novas ou modificadas), com a camada
-  (`Domain`/`Infrastructure`/`Api`/componente frontend).
+  (`Domain`/`Infrastructure`/`Api`/componente frontend) e o **caminho de
+  arquivo exato** (`frontend/src/components/organisms/MenuNavegacao.tsx`,
+  não "o componente de menu").
+- **Ponto de inserção exato**: para cada arquivo tocado, cite a
+  função/componente que muda e, quando a mudança for de UI/estrutura (não
+  só lógica), inclua o trecho de código **antes** (o que existe hoje, via
+  leitura real do arquivo — não invente) e o trecho **depois** (a versão
+  desejada, escrita por você). Não é obrigatório escrever o diff inteiro
+  linha a linha de arquivos grandes, mas qualquer decisão de layout,
+  hierarquia visual, ou nome de prop/classe nova precisa aparecer como
+  código de exemplo, não como descrição em prosa ("ajuste o estilo para
+  ficar mais parecido") — prosa sem código é exatamente o tipo de item
+  vago que a seção anterior proíbe.
+- **Padrão de estilo a seguir**: cite um arquivo/componente já existente e
+  aprovado que resolve um problema visual/estrutural parecido, e diga
+  explicitamente "siga o padrão de `<arquivo>:<linha>`" — nunca deixe a
+  DeepSeek inventar um padrão novo quando um já existe no repositório (ex:
+  "use `ChipSelector.tsx`, não crie um novo componente de chip/aba — a
+  tela de valor devido já duplicou esse padrão uma vez, ver achado da
+  Task #<n>"). Se não existir um padrão prévio pra seguir, diga isso
+  explicitamente ("sem precedente no repo, decisão nova: ...") em vez de
+  deixar a ausência de precedente implícita.
 - **Contrato de API** (se houver): rota, DTO de entrada/saída — mesmo que
   ainda não implementado, escrito aqui primeiro para o backend e o frontend
   convergirem sem precisar conversar durante o desenvolvimento paralelo
