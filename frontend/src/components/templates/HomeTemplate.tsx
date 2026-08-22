@@ -32,7 +32,7 @@ export function HomeTemplate({
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <Topbar>
         <Text onPress={onLogin} className="text-sm font-semibold text-primary dark:text-dark-primary">
-          Entrar com código
+          Entrar com código ou e-mail
         </Text>
       </Topbar>
       <View className="flex-1 items-center justify-center px-four py-six">

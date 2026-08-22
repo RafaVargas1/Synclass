@@ -51,7 +51,16 @@ export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
     // conteúdo do Painel aparecendo através do menu mobile aberto).
     <View className="z-20 border-b border-border bg-background dark:border-dark-border dark:bg-dark-background">
       <View
-        className="w-full flex-row items-center justify-between self-center px-four py-three"
+        // z-20 aqui também: essa linha é a única que contém o
+        // `menuNavegacao` no mobile (painel `position: fixed`, issue #146).
+        // Sem elevar esta linha, o `Voltar` (irmão desta View dentro do
+        // Topbar, adicionado depois no DOM) pinta por cima do painel fixo —
+        // mesma causa raiz já documentada acima, um nível mais superficial:
+        // duas Views irmãs sem z-index explícito pintam na ordem do DOM, e
+        // a que vem depois (Voltar) venceria mesmo o painel tendo seu
+        // próprio z-index (que só vale dentro da stacking context desta
+        // linha, não contra uma irmã dela).
+        className="z-20 w-full flex-row items-center justify-between self-center px-four py-three"
         style={{ maxWidth: MaxContentWidth }}
       >
         <View className="flex-row items-center gap-three">
@@ -60,19 +69,34 @@ export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
         </View>
         {children ? <View className="flex-row items-center gap-three">{children}</View> : null}
       </View>
-      {titulo ? (
-        <View className="w-full self-center px-four pb-three" style={{ maxWidth: MaxContentWidth }}>
-          <BotaoVoltar />
-        </View>
-      ) : null}
-      {telaLarga && menuNavegacao ? (
-        <View
-          className="w-full self-center"
-          style={{ maxWidth: MaxContentWidth }}
-        >
-          {menuNavegacao}
-        </View>
-      ) : null}
+      {telaLarga ? (
+        // Tela larga: o menu vem ANTES do Voltar (issue #145 revisitada) —
+        // a faixa de seções é a navegação principal, o Voltar é uma ação
+        // secundária de saída da tela atual; inverter a ordem deixa a
+        // hierarquia de importância mais clara. O Voltar ganha sua própria
+        // linha separada por `border-t`, abaixo do menu.
+        <>
+          {menuNavegacao ? (
+            <View className="w-full self-center" style={{ maxWidth: MaxContentWidth }}>
+              {menuNavegacao}
+            </View>
+          ) : null}
+          {titulo ? (
+            <View
+              className="w-full self-center border-t border-border px-four py-three dark:border-dark-border"
+              style={{ maxWidth: MaxContentWidth }}
+            >
+              <BotaoVoltar />
+            </View>
+          ) : null}
+        </>
+      ) : (
+        titulo ? (
+          <View className="w-full self-center px-four pb-three" style={{ maxWidth: MaxContentWidth }}>
+            <BotaoVoltar />
+          </View>
+        ) : null
+      )}
     </View>
   );
 }

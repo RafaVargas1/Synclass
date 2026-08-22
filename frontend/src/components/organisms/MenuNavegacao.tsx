@@ -61,7 +61,13 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
   const temVariosPapeis = papeis.length > 1;
 
   return (
-    <View testID="menu-navegacao-raiz" className={telaLarga ? '' : 'relative'}>
+    // z-20 no mobile: esta raiz é irmã do título/marca dentro do cabeçalho
+    // (Topbar.tsx) — sem elevação própria, o título (que vem depois no
+    // JSX) pintaria por cima do painel `position: fixed` aninhado aqui
+    // dentro, mesmo o painel tendo seu próprio z-index (só vale dentro
+    // desta stacking context, não contra uma irmã dela). Mesma causa raiz
+    // documentada em Topbar.tsx, um nível mais fundo.
+    <View testID="menu-navegacao-raiz" className={telaLarga ? '' : 'relative z-20'}>
       {telaLarga ? null : (
         <BotaoAlternarMenu aberto={aberto} aoAlternar={() => setAberto((atual) => !atual)} />
       )}

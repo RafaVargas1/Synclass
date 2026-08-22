@@ -59,7 +59,7 @@ export function HomeHero({
         {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
         <Pressable accessibilityRole="button" onPress={onLogin} className="items-center py-two">
           <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
-            Entrar com código
+            Entrar com código ou e-mail
           </Text>
         </Pressable>
       </View>
