@@ -15,6 +15,9 @@ module.exports = {
         'text-secondary': Colors.light.textSecondary,
         primary: Colors.light.primary,
         error: Colors.light.error,
+        warning: Colors.light.warning,
+        success: Colors.light.success,
+        info: Colors.light.info,
         dark: {
           text: Colors.dark.text,
           background: Colors.dark.background,
@@ -24,6 +27,9 @@ module.exports = {
           'text-secondary': Colors.dark.textSecondary,
           primary: Colors.dark.primary,
           error: Colors.dark.error,
+          warning: Colors.dark.warning,
+          success: Colors.dark.success,
+          info: Colors.dark.info,
         },
       },
       spacing: {

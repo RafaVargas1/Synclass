@@ -15,6 +15,9 @@ module.exports = {
       textSecondary: '#5B616B',
       primary: '#1873BD',
       error: '#DC2626',
+      warning: '#D97706',
+      success: '#16A34A',
+      info: '#1873BD',
     },
     dark: {
       text: '#F5F6F8',
@@ -25,6 +28,9 @@ module.exports = {
       textSecondary: '#A6ACB6',
       primary: '#4DA3F5',
       error: '#F87171',
+      warning: '#FBBF24',
+      success: '#4ADE80',
+      info: '#4DA3F5',
     },
   },
   Spacing: {
