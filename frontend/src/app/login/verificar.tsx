@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Topbar } from '@/components/organisms/Topbar';
 import { VerificarCodigoForm } from '@/components/organisms/VerificarCodigoForm';
 import { confirmarCodigo, solicitarCodigo } from '@/lib/api/auth';
 import { useSessao } from '@/lib/auth/contexto-sessao';
+import { MaxContentWidth } from '@/theme/tokens';
 
 /**
  * Tela de confirmação do código OTP (issue #18). Recebe o contato da tela
@@ -55,7 +57,11 @@ export default function VerificarCodigoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className="flex-1 items-center justify-center px-four">
+      <Topbar titulo="Confirmar código" />
+      <View
+        className="w-full flex-1 self-center items-center justify-center px-four"
+        style={{ maxWidth: MaxContentWidth }}
+      >
         <VerificarCodigoForm
           codigo={codigo}
           erro={erro}
