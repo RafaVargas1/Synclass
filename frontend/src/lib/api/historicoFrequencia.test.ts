@@ -1,4 +1,4 @@
-import { listarHistoricoFrequenciaDoAluno } from '@/lib/api/historicoFrequencia';
+import { calcularPeriodoUltimosNDias, listarHistoricoFrequenciaDoAluno } from '@/lib/api/historicoFrequencia';
 
 function mockFetchOnce(status: number, body: unknown) {
   globalThis.fetch = jest.fn().mockResolvedValue({
@@ -65,5 +65,19 @@ describe('listarHistoricoFrequenciaDoAluno', () => {
     const resultado = await listarHistoricoFrequenciaDoAluno();
 
     expect(resultado.sucesso).toBe(false);
+  });
+});
+
+describe('calcularPeriodoUltimosNDias', () => {
+  it('spans [hoje-dias+1, day after hoje]', () => {
+    const hoje = new Date(2026, 7, 20);
+
+    expect(calcularPeriodoUltimosNDias(hoje, 30)).toEqual({ inicio: '2026-07-22', fim: '2026-08-21' });
+  });
+
+  it('rolls inicio back over the month boundary', () => {
+    const hoje = new Date(2026, 7, 2);
+
+    expect(calcularPeriodoUltimosNDias(hoje, 30)).toEqual({ inicio: '2026-07-04', fim: '2026-08-03' });
   });
 });
