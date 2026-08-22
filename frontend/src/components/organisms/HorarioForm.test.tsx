@@ -5,10 +5,7 @@ import { TipoMarcacao } from '@/lib/api/horarios';
 import { HorarioForm } from './HorarioForm';
 
 async function selecionarHora(hora: string, minuto: string) {
-  await fireEvent.press(screen.getByText('Selecionar hora'));
-  await fireEvent.press(screen.getByLabelText(`Hora ${hora}`));
-  await fireEvent.press(screen.getByLabelText(`Minuto ${minuto}`));
-  await fireEvent.press(screen.getByText('Confirmar'));
+  await fireEvent.changeText(screen.getByLabelText('Hora de início'), `${hora}${minuto}`);
 }
 
 async function preencherEEnviar(hora: string, minuto: string, duracaoMinutos: string) {
@@ -19,12 +16,12 @@ async function preencherEEnviar(hora: string, minuto: string, duracaoMinutos: st
 }
 
 describe('HorarioForm', () => {
-  it('uses SeletorDeHora for the start time instead of a free text input', async () => {
+  it('uses SeletorDeHora as a masked HH:mm text field for the start time', async () => {
     await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={jest.fn()} />);
 
     expect(screen.getByText('Hora de início')).toBeTruthy();
-    expect(screen.getByText('Selecionar hora')).toBeTruthy();
-    expect(screen.queryByPlaceholderText('HH:mm')).toBeNull();
+    expect(screen.getByPlaceholderText('HH:mm')).toBeTruthy();
+    expect(screen.queryByText('Selecionar hora')).toBeNull();
   });
 
   it('calls onSubmit with valid data and no conflict', async () => {
