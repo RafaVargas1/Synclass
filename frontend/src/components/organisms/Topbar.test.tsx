@@ -56,13 +56,15 @@ describe('Topbar', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it('replaces with /painel when there is no history to go back to', async () => {
+  it('replaces with / (Home) when there is no history to go back to (issue #141)', async () => {
+    // '/' funciona sem sessão (login) e com sessão — '/painel' travava o
+    // usuário num loop de redirecionamento quando não havia sessão ainda.
     mockCanGoBack.mockReturnValue(false);
     await render(<Topbar titulo="Perfil" />);
 
     await fireEvent.press(screen.getByLabelText('Voltar'));
 
-    expect(mockReplace).toHaveBeenCalledWith('/painel');
+    expect(mockReplace).toHaveBeenCalledWith('/');
     expect(mockBack).not.toHaveBeenCalled();
   });
 
