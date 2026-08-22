@@ -40,7 +40,7 @@ public sealed class UsuariosController : ControllerBase
             return NotFound(new UsuarioPerfilErrorResponse($"Usuario não encontrado: {usuarioId}."));
         }
 
-        return Ok(new UsuarioPerfilResponse(usuario.Id, usuario.Nome));
+        return Ok(new UsuarioPerfilResponse(usuario.Id, usuario.Nome, usuario.Contato));
     }
 
     [HttpPut("me/nome")]
@@ -53,7 +53,7 @@ public sealed class UsuariosController : ControllerBase
         {
             var usuario = await _atualizacaoNome.AtualizarNomeAsync(usuarioId, request.Nome, cancellationToken);
             LogNomeAtualizado(trackId, usuarioId);
-            return Ok(new UsuarioPerfilResponse(usuario.Id, usuario.Nome));
+            return Ok(new UsuarioPerfilResponse(usuario.Id, usuario.Nome, usuario.Contato));
         }
         catch (NomeInvalidoException ex)
         {
@@ -78,7 +78,7 @@ public sealed class UsuariosController : ControllerBase
     }
 }
 
-public sealed record UsuarioPerfilResponse(Guid UsuarioId, string Nome);
+public sealed record UsuarioPerfilResponse(Guid UsuarioId, string Nome, string Contato);
 
 public sealed record UsuarioPerfilErrorResponse(string Mensagem);
 

@@ -39,9 +39,10 @@ public sealed class UsuariosControllerTests : IClassFixture<WebApplicationFactor
     }
 
     [Fact]
-    public async Task Get_UsuariosMe_RetornaNomeAtual()
+    public async Task Get_UsuariosMe_RetornaNomeEContatoAtual()
     {
         var (client, usuarioId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var contatoCadastrado = await ContatoDoUsuarioAsync(usuarioId);
 
         var response = await client.GetAsync("/usuarios/me");
 
@@ -49,6 +50,7 @@ public sealed class UsuariosControllerTests : IClassFixture<WebApplicationFactor
         var corpo = await response.Content.ReadFromJsonAsync<UsuarioPerfilResponse>();
         corpo!.UsuarioId.Should().Be(usuarioId);
         corpo.Nome.Should().Be("Usuário de Teste");
+        corpo.Contato.Should().Be(contatoCadastrado);
     }
 
     [Fact]
@@ -95,5 +97,13 @@ public sealed class UsuariosControllerTests : IClassFixture<WebApplicationFactor
         var response = await client.PutAsJsonAsync("/usuarios/me/nome", new AtualizarNomeRequest("Maria Souza"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    private async Task<string> ContatoDoUsuarioAsync(Guid usuarioId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
+        var usuario = await dbContext.Usuarios.SingleAsync(u => u.Id == usuarioId);
+        return usuario.Contato;
     }
 }
