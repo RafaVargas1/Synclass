@@ -34,6 +34,18 @@ describe('Topbar', () => {
     expect(screen.queryByText('SYNCLASS')).toBeNull();
   });
 
+  it('shows the "Voltar" label as visible text when a titulo is given (issue #145)', async () => {
+    await render(<Topbar titulo="Valor devido por Aluno" />);
+
+    expect(screen.getByText('Voltar')).toBeTruthy();
+  });
+
+  it('renders no "Voltar" button when no titulo is given (root screens show the mark)', async () => {
+    await render(<Topbar />);
+
+    expect(screen.queryByLabelText('Voltar')).toBeNull();
+  });
+
   it('exposes the titulo as an accessible heading, for screen-reader heading navigation', async () => {
     await render(<Topbar titulo="Valor devido por Aluno" />);
 
