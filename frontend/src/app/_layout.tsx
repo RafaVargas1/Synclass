@@ -6,6 +6,7 @@ import { useColorScheme, View } from 'react-native';
 
 import { MenuNavegacao } from '@/components/organisms/MenuNavegacao';
 import { SessaoProvider, useSessao } from '@/lib/auth/contexto-sessao';
+import { NotificacoesProvider } from '@/lib/notificacoes/contexto-notificacoes';
 import { useIsTelaLarga } from '@/lib/useIsTelaLarga';
 
 /**
@@ -30,10 +31,12 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <SessaoProvider>
-        <AppShell />
-        <StatusBar style="auto" />
-      </SessaoProvider>
+      <NotificacoesProvider>
+        <SessaoProvider>
+          <AppShell />
+          <StatusBar style="auto" />
+        </SessaoProvider>
+      </NotificacoesProvider>
     </ThemeProvider>
   );
 }

@@ -122,6 +122,48 @@ lista única com todas as ações de todos os papéis misturadas.
 
 ---
 
+## Feedback do sistema (erros, avisos, confirmações)
+
+**Regra: toda ação assíncrona (rede, autenticação, salvamento) que pode
+falhar ou ter um desfecho não óbvio precisa de feedback visível — nunca
+fica muda entre o toque e o resultado** (Nielsen #1, visibilidade do
+status do sistema). Quando esse feedback é um erro, ele precisa ajudar a
+pessoa a entender o que houve e como seguir, não só apontar que algo deu
+errado (Nielsen #9, ajudar a reconhecer/diagnosticar/recuperar de erros).
+
+**Como aplicar**: use `Notificacao`
+(`frontend/src/components/organisms/Notificacao.tsx`) via
+`useNotificacoes()` (`frontend/src/lib/notificacoes/contexto-notificacoes.tsx`)
+como a forma padrão de mostrar erro/aviso/informação/sucesso em qualquer
+tela nova ou tocada por uma Task — **antes de inventar um padrão novo ou
+reaproveitar só `ErrorMessage` para um caso que não é erro de campo de
+formulário**, prefira este componente:
+
+- `ErrorMessage` continua certo para erro de validação **inline, junto do
+  campo** (ex: "Informe um valor maior que zero." abaixo de um
+  `FormField`) — o erro precisa aparecer perto de onde a pessoa vai
+  corrigi-lo, não flutuando longe do campo.
+- `Notificacao`/`useNotificacoes` é a forma certa para qualquer feedback
+  que não é sobre um campo específico: falha de rede, sucesso de uma
+  operação assíncrona, aviso sobre algo que vai acontecer, confirmação de
+  uma ação concluída — `notificar({ tipo: 'erro' | 'aviso' | 'informacao'
+  | 'sucesso', mensagem, duracaoMs? })`.
+
+**Por que um componente único, não um `Alert`/toast improvisado por
+tela**: cor sozinha nunca é o único sinal (WCAG) — `Notificacao` sempre
+mostra um rótulo textual ("Erro"/"Aviso"/...) junto da cor, então basta
+usar o `tipo` certo pra herdar isso automaticamente. `duracaoMs`
+configurável por chamada, mas com default por severidade: erro **não**
+soma sozinho por padrão (precisa de dispensa manual — um erro que some
+antes de ser lido derrota o propósito de mostrá-lo), os demais tipos
+somem em 5s. Sempre com botão de fechar visível, independente da
+duração — controle do usuário sobre quando dispensar (Nielsen #3; WCAG
+2.2.1, conteúdo com prazo precisa poder ser dispensado/estendido pela
+pessoa, não só por timer). Só uma notificação ativa por vez (Hick's
+Law) — mostrar uma nova substitui a anterior, em vez de empilhar.
+
+---
+
 ## Aplicação: revisão do botão de voltar (`Topbar`)
 
 Auditoria de `frontend/src/components/organisms/Topbar.tsx` contra as
