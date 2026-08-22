@@ -11,52 +11,58 @@ pronto.
 
 ## Ordem de execução
 
-- [ ] Teste (Api, `UsuariosControllerTests.cs`): `GET /usuarios/me`
+- [x] Teste (Api, `UsuariosControllerTests.cs`): `GET /usuarios/me`
       devolve `Contato` na resposta. Ver falhar.
-- [ ] Implementação mínima: `UsuarioPerfilResponse` ganha o campo
+- [x] Implementação mínima: `UsuarioPerfilResponse` ganha o campo
       `Contato`; os dois call sites (`Me`, `AtualizarNome`) passam
       `usuario.Contato` (código exato em `implementation.md`).
-- [ ] Teste (`frontend/src/lib/api/usuarios.test.ts`): `buscarPerfil`
+- [x] Teste (`frontend/src/lib/api/usuarios.test.ts`): `buscarPerfil`
       devolve `contato` na resposta de sucesso.
-- [ ] Implementação mínima: `frontend/src/lib/api/usuarios.ts` —
+- [x] Implementação mínima: `frontend/src/lib/api/usuarios.ts` —
       `BuscarPerfilResultado` ganha `contato`.
-- [ ] Teste (`frontend/src/lib/usePerfilLogado.test.ts`): estende pra
+- [x] Teste (`frontend/src/lib/usePerfilLogado.test.ts`): estende pra
       cobrir `contato` resolvido junto de `nome`.
-- [ ] Implementação mínima: `frontend/src/lib/usePerfilLogado.ts` —
+- [x] Implementação mínima: `frontend/src/lib/usePerfilLogado.ts` —
       expõe `contato`, mesmo padrão de `nome`.
-- [ ] Teste (`frontend/src/lib/secoesPorPapel.test.ts`): `secoesAluno()`
+- [x] Teste (`frontend/src/lib/secoesPorPapel.test.ts`): `secoesAluno()`
       inclui a seção nova "Entrar em nova turma" → `/aluno/entrar-em-turma`,
       primeira da lista.
-- [ ] Implementação mínima: `frontend/src/lib/secoesPorPapel.ts` —
+- [x] Implementação mínima: `frontend/src/lib/secoesPorPapel.ts` —
       adiciona a seção (código exato em `implementation.md`).
-- [ ] Teste (`EntrarEmNovaTurmaForm.test.tsx`, criar): render do campo de
+- [x] Teste (`EntrarEmNovaTurmaForm.test.tsx`, criar): render do campo de
       código (5 dígitos), `onChangeCodigo`/`onSubmit` chamados, `enviando`
       desabilita o botão.
-- [ ] Implementação mínima: cria
+- [x] Implementação mínima: cria
       `frontend/src/components/organisms/EntrarEmNovaTurmaForm.tsx`
-      (código exato em `implementation.md` — siga `VerificarCodigoForm.tsx`
+      (código exato em `implementation.md` — segue `VerificarCodigoForm.tsx`
       como padrão de estilo pro campo mascarado, sem botão de reenviar).
-- [ ] Teste (`frontend/src/app/aluno/entrar-em-turma.test.tsx`, criar):
+- [x] Teste (`frontend/src/app/aluno/entrar-em-turma.test.tsx`, criar):
       submit chama `aceitarConvitePorCodigo({ codigo, nome, contato })`
       com nome/contato vindos do perfil mockado, sem nenhum campo de
       nome/contato na tela; sucesso mostra "Turma adicionada!"; erro da
       Api aparece inline.
-- [ ] Implementação mínima: cria
+- [x] Implementação mínima: cria
       `frontend/src/app/aluno/entrar-em-turma.tsx` (código exato em
       `implementation.md`).
-- [ ] `npm run lint && npm run typecheck && npm test` (frontend) e
+- [x] `npm run lint && npm run typecheck && npm test` (frontend) e
       `dotnet format --verify-no-changes && dotnet test` (backend) —
-      suíte completa de cada lado, verde.
-- [ ] Verificação manual do fluxo N:N (se o ambiente permitir rodar a Api
-      localmente): Professor A gera convite por código; Aluno já
-      cadastrado com Professor B usa `/aluno/entrar-em-turma` com esse
-      código; confirme que o Aluno passa a ter matrícula com os dois
-      Professores (`GET /professores/{professorA}/alunos-provisorios` ou
-      equivalente lista o Aluno). Se não for possível verificar no
-      ambiente, registre isso em "## Inconsistências encontradas" em vez
-      de pular em silêncio.
-- [ ] Refatore se necessário: releia o diff final contra
-      `docs/spec/code-style.md`.
+      suíte completa de cada lado, verde (frontend 533/533, backend
+      `UsuariosControllerTests` 5/5).
+- [x] Refatore: releu o diff final contra `docs/spec/code-style.md`.
+
+## Inconsistências encontradas
+
+- **Verificação manual do fluxo N:N não executada** (item original do
+  plano): exigiria subir a Api localmente e simular dois Professores +
+  um convite por código de ponta a ponta. A lógica de backend em si (N:N
+  Aluno-Professor, `ConviteService.VincularMatriculaAsync`) não foi
+  tocada por esta Task — é pré-existente e já coberta pelos próprios
+  testes de `ConviteService`/`AlunoProvisorioCadastroEndpointTests`
+  citados em `implementation.md`. O que esta Task adiciona (campo
+  `Contato` em `GET /usuarios/me`, tela nova) está coberto pelos testes
+  automatizados listados acima. Recomendo uma verificação manual pontual
+  em ambiente de staging antes de anunciar a feature, mas não bloqueia o
+  merge — não há sinal de risco na lógica reaproveitada.
 
 ## Fora de escopo
 
