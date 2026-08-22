@@ -2,8 +2,9 @@ import { secoesAluno, secoesProfessor, secoesDoPapel } from './secoesPorPapel';
 
 describe('secoesPorPapel (issue #77)', () => {
   describe('secoesAluno', () => {
-    it('expõe as duas telas do Aluno sem depender de usuarioId', () => {
+    it('expõe as telas do Aluno sem depender de usuarioId, com "Entrar em nova turma" primeiro', () => {
       expect(secoesAluno()).toEqual([
+        { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma' },
         { label: 'Ver histórico de frequência', href: '/aluno/historico-frequencia' },
         { label: 'Ver valor devido', href: '/aluno/valor-devido' },
       ]);

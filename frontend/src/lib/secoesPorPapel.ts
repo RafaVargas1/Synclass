@@ -3,16 +3,20 @@ import type { Href } from 'expo-router';
 export type Secao = { label: string; href: Href };
 
 /**
- * Seções do Aluno (issue #44 e #77): as duas únicas telas do Aluno sem
- * segmento dinâmico na rota — `/aluno/historico-frequencia` e
- * `/aluno/valor-devido`. As telas de Professor da matrícula do Aluno
- * (`/aluno/professores/[professorId]/...`) continuam fora daqui porque
- * `professorId`, nesse caso, identifica o Professor da matrícula, não o
- * próprio Aluno logado, e a sessão (`useSessao`) não carrega esse vínculo
- * hoje — ver nota de limitação conhecida no PR.
+ * Seções do Aluno (issue #44, #77 e #144): telas do Aluno sem segmento
+ * dinâmico na rota — `/aluno/entrar-em-turma`, `/aluno/historico-frequencia`
+ * e `/aluno/valor-devido`. "Entrar em nova turma" (issue #144) fica
+ * primeiro: é ação de aquisição de vínculo novo, mais próxima do fluxo de
+ * "primeira vez" do que as duas telas de consulta (ver
+ * docs/spec/ux-heuristics.md#agrupamento-visual). As telas de Professor da
+ * matrícula do Aluno (`/aluno/professores/[professorId]/...`) continuam fora
+ * daqui porque `professorId`, nesse caso, identifica o Professor da
+ * matrícula, não o próprio Aluno logado, e a sessão (`useSessao`) não
+ * carrega esse vínculo hoje — ver nota de limitação conhecida no PR.
  */
 export function secoesAluno(): Secao[] {
   return [
+    { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma' },
     { label: 'Ver histórico de frequência', href: '/aluno/historico-frequencia' },
     { label: 'Ver valor devido', href: '/aluno/valor-devido' },
   ];
