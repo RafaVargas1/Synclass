@@ -93,8 +93,11 @@ public sealed class AlocacaoHorarioServiceTests
 
         var acao = () => cenario.AlocacaoHorarioService.AlocarAsync(ProfessorId, horario.Id, segundaMatricula.Id, CancellationToken.None);
 
-        await acao.Should().ThrowAsync<HorarioLotadoException>();
+        var excecao = await acao.Should().ThrowAsync<HorarioLotadoException>();
         cenario.Alocacoes.Alocacoes.Should().ContainSingle();
+        // Mensagem identifica o horário por dia+hora, não pelo Guid cru —
+        // o Guid não significa nada pra quem lê o erro (achado do usuário).
+        excecao.Which.Message.Should().Contain("Terca").And.Contain("10:00").And.NotContain(horario.Id.ToString());
     }
 
     [Fact]

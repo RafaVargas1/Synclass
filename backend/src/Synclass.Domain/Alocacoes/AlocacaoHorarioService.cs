@@ -57,7 +57,7 @@ public sealed class AlocacaoHorarioService
         var quantidadeAlocada = await _alocacoes.ContarPorHorarioAsync(horario.Id, cancellationToken);
         if (quantidadeAlocada >= horario.LimiteAlunos)
         {
-            throw new HorarioLotadoException(horario.Id, horario.LimiteAlunos);
+            throw new HorarioLotadoException(horario, horario.LimiteAlunos);
         }
     }
 
