@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,41 +9,33 @@ import { HorarioAlocacaoCard } from '@/components/organisms/HorarioAlocacaoCard'
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { alocarAluno, desalocarAluno, listarAlocacoes, type Alocacao } from '@/lib/api/alocacoes';
 import { listarAlunosProvisorios, type AlunoProvisorio } from '@/lib/api/alunosProvisorios';
-import {
-  ModeloAgendamento,
-  obterConfiguracao,
-  type ObterConfiguracaoResultado,
-} from '@/lib/api/configuracao';
+import { ModeloAgendamento, obterConfiguracao } from '@/lib/api/configuracao';
 import { listarHorarios, type Horario } from '@/lib/api/horarios';
 import { MaxContentWidth } from '@/theme/tokens';
 
-const MensagemModeloVagoTexto =
-  'O modelo de agendamento Vago não usa atribuição fixa de Aluno a horário.';
-
 /**
- * Tela de alocação de Aluno em horário (issue #8): gate de modelo de
- * agendamento na frente, igual a `horarios.tsx` (issue #7) — mas aqui, em
- * vez de exigir definir um modelo, bloqueia o conteúdo com uma mensagem
- * quando o modelo é Vago (ou ainda não definido), já que esse fluxo
- * pressupõe atribuição fixa (ver docs/specs/8-aluno-horario/implementation.md).
+ * Tela de alocação de Aluno em horário (issue #8). Desde a issue #139 o
+ * gate de modelo é substituído por uma decisão de estado
+ * (`resolverEstadoAlocacao`) que combina a situação da configuração, a
+ * existência de horários e (no caso de modelo Livre) a presença de alguma
+ * alocação — cada cenário mostra a mensagem com a causa raiz, em vez de
+ * uma única frase sobre "modelo" (ver docs/specs/139-mensagem-alocacao-clara/implementation.md).
  * `professorId` continua vindo da rota (issue #23 não muda `horarios.tsx`/
  * `HorariosController` nem `configuracao.ts`/`ConfiguracoesController`,
- * chamados aqui também — fora de escopo). Deixou de ser repassado às
- * chamadas de `alocacoes.ts`/`alunosProvisorios.ts`: essas Api's agora
- * derivam o Professor da sessão autenticada.
+ * chamados aqui também — fora de escopo).
  */
 export default function AlocacoesProfessorScreen() {
   const { professorId } = useLocalSearchParams<{ professorId: string }>();
-  const carregamento = useCarregamentoConfiguracao(professorId);
+  const estado = useEstadoAlocacao(professorId);
 
-  if (carregamento.status === 'carregando') {
+  if (estado.tipo === 'carregando') {
     return <TelaCarregando />;
   }
-  if (carregamento.status === 'falha') {
+  if (estado.tipo === 'falha') {
     return (
       <TelaErroConfiguracao
-        mensagem={carregamento.mensagem}
-        onTentarNovamente={carregamento.tentarNovamente}
+        mensagem={estado.mensagem}
+        onTentarNovamente={estado.tentarNovamente}
       />
     );
   }
@@ -54,10 +46,10 @@ export default function AlocacoesProfessorScreen() {
         className="w-full flex-1 self-center gap-four px-four py-four"
         style={{ maxWidth: MaxContentWidth }}
       >
-        {permiteAlocacao(carregamento) ? (
+        {estado.tipo === 'permite-alocacao' ? (
           <AlocacoesConteudo professorId={professorId} />
         ) : (
-          <ErrorMessage>{MensagemModeloVagoTexto}</ErrorMessage>
+          <MensagemDoEstado estado={estado} professorId={professorId} />
         )}
       </View>
     </SafeAreaView>
@@ -69,17 +61,53 @@ type EstadoCarregamento =
   | { status: 'falha'; mensagem: string; tentarNovamente: () => void }
   | { status: 'carregada'; definida: boolean; modeloAgendamento?: ModeloAgendamento };
 
-function permiteAlocacao(carregamento: Extract<EstadoCarregamento, { status: 'carregada' }>) {
-  return carregamento.definida && carregamento.modeloAgendamento !== ModeloAgendamento.Vago;
+type EstadoAlocacaoResolvido =
+  | { tipo: 'sem-horarios' }
+  | { tipo: 'modelo-nao-configurado' }
+  | { tipo: 'modelo-livre'; temAlunosInscritos: boolean }
+  | { tipo: 'permite-alocacao' };
+
+type EstadoAlocacao =
+  | { tipo: 'carregando' }
+  | { tipo: 'falha'; mensagem: string; tentarNovamente: () => void }
+  | EstadoAlocacaoResolvido;
+
+/**
+ * Decisão de estado da tela (issue #139): a ordem importa — sem horários
+ * cadastrados sempre aparece primeiro (é a causa raiz mais frequente),
+ * depois modelo não configurado, depois modelo Livre explicado à parte;
+ * qualquer modelo Fixo/Híbrido libera a grade de alocação como antes.
+ */
+function resolverEstadoAlocacao(
+  carregamento: Extract<EstadoCarregamento, { status: 'carregada' }>,
+  horarios: Horario[],
+  totalAlocacoes: number,
+): EstadoAlocacaoResolvido {
+  if (horarios.length === 0) {
+    return { tipo: 'sem-horarios' };
+  }
+  if (!carregamento.definida) {
+    return { tipo: 'modelo-nao-configurado' };
+  }
+  if (carregamento.modeloAgendamento === ModeloAgendamento.Vago) {
+    return { tipo: 'modelo-livre', temAlunosInscritos: totalAlocacoes > 0 };
+  }
+  return { tipo: 'permite-alocacao' };
 }
+
+type CarregarEstadoResultado =
+  | { sucesso: true; estado: EstadoAlocacaoResolvido }
+  | { sucesso: false; mensagem: string };
 
 /**
  * Mesma estratégia de `horarios.tsx#useCarregamentoConfiguracao` (achado do
  * dev-review/qa-review no PR #26, ver issue #1 Cenário 6): reage a falha de
  * rede com um estado próprio + retry, em vez de deixar a tela em branco.
+ * Agora os horários são buscados junto da configuração (issue #139) para a
+ * decisão de estado levar em conta os dois antes de renderizar.
  */
-function useCarregamentoConfiguracao(professorId: string): EstadoCarregamento {
-  const [resultado, setResultado] = useState<ObterConfiguracaoResultado | undefined>(undefined);
+function useEstadoAlocacao(professorId: string): EstadoAlocacao {
+  const [resultado, setResultado] = useState<CarregarEstadoResultado | undefined>(undefined);
   const [tentativa, setTentativa] = useState(0);
   const tentarNovamente = () => {
     setResultado(undefined);
@@ -87,30 +115,98 @@ function useCarregamentoConfiguracao(professorId: string): EstadoCarregamento {
   };
   useEffect(() => {
     let cancelado = false;
-    obterConfiguracao(professorId).then((res) => {
+    carregarEstadoAlocacao(professorId).then((res) => {
       if (!cancelado) setResultado(res);
     });
     return () => {
       cancelado = true;
     };
   }, [professorId, tentativa]);
-  return paraEstadoCarregamento(resultado, tentarNovamente);
+  return paraEstadoAlocacao(resultado, tentarNovamente);
 }
 
-function paraEstadoCarregamento(
-  resultado: ObterConfiguracaoResultado | undefined,
+function paraEstadoAlocacao(
+  resultado: CarregarEstadoResultado | undefined,
   tentarNovamente: () => void,
-): EstadoCarregamento {
+): EstadoAlocacao {
   if (resultado === undefined) {
-    return { status: 'carregando' };
+    return { tipo: 'carregando' };
   }
   if (!resultado.sucesso) {
-    return { status: 'falha', mensagem: resultado.mensagem, tentarNovamente };
+    return { tipo: 'falha', mensagem: resultado.mensagem, tentarNovamente };
   }
-  if (!resultado.definida) {
-    return { status: 'carregada', definida: false };
+  return resultado.estado;
+}
+
+async function carregarEstadoAlocacao(professorId: string): Promise<CarregarEstadoResultado> {
+  const [resultadoConfiguracao, resultadoHorarios] = await Promise.all([
+    obterConfiguracao(professorId),
+    listarHorarios(professorId),
+  ]);
+  if (!resultadoConfiguracao.sucesso) {
+    return { sucesso: false, mensagem: resultadoConfiguracao.mensagem };
   }
-  return { status: 'carregada', definida: true, modeloAgendamento: resultado.modeloAgendamento };
+  if (!resultadoHorarios.sucesso) {
+    return { sucesso: false, mensagem: resultadoHorarios.mensagem };
+  }
+  const carregamento: Extract<EstadoCarregamento, { status: 'carregada' }> =
+    resultadoConfiguracao.definida
+      ? {
+          status: 'carregada',
+          definida: true,
+          modeloAgendamento: resultadoConfiguracao.modeloAgendamento,
+        }
+      : { status: 'carregada', definida: false };
+
+  const totalAlocacoes =
+    carregamento.definida && carregamento.modeloAgendamento === ModeloAgendamento.Vago
+      ? await calcularTotalAlocacoes(resultadoHorarios.horarios)
+      : 0;
+  return {
+    sucesso: true,
+    estado: resolverEstadoAlocacao(carregamento, resultadoHorarios.horarios, totalAlocacoes),
+  };
+}
+
+async function calcularTotalAlocacoes(horarios: Horario[]): Promise<number> {
+  const alocacoesPorHorario = await carregarAlocacoes(horarios);
+  return Object.values(alocacoesPorHorario).reduce((total, alocacoes) => total + alocacoes.length, 0);
+}
+
+/**
+ * Mensagem por estado (issue #139). Rótulos exatos definidos em
+ * docs/specs/139-mensagem-alocacao-clara/implementation.md — não usar o
+ * nome interno do enum ("Vago") em texto visível; o rótulo público do
+ * modelo é "Livre" (mesmo termo de `HorarioForm`/`HorarioCard`).
+ */
+function MensagemDoEstado({
+  estado,
+  professorId,
+}: {
+  estado: Extract<EstadoAlocacao, { tipo: 'sem-horarios' | 'modelo-nao-configurado' | 'modelo-livre' }>;
+  professorId: string;
+}) {
+  switch (estado.tipo) {
+    case 'sem-horarios':
+      return (
+        <View className="items-center gap-three">
+          <ErrorMessage>Nenhum horário cadastrado ainda.</ErrorMessage>
+          <Link href={`/professor/${professorId}/horarios`} asChild>
+            <Button label="Cadastrar horários" variante="secundario" />
+          </Link>
+        </View>
+      );
+    case 'modelo-nao-configurado':
+      return <ErrorMessage>Configure o modelo de agendamento antes de alocar Alunos.</ErrorMessage>;
+    case 'modelo-livre':
+      return (
+        <ErrorMessage>
+          {estado.temAlunosInscritos
+            ? 'No modelo Livre, os Alunos se inscrevem sozinhos — não há atribuição manual pelo Professor.'
+            : 'No modelo Livre, os Alunos se inscrevem sozinhos. Ainda ninguém se inscreveu em nenhum horário.'}
+        </ErrorMessage>
+      );
+  }
 }
 
 function TelaCarregando() {
