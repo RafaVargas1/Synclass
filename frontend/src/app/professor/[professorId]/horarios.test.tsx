@@ -48,11 +48,10 @@ const horarioExistente = {
   tipoMarcacao: TipoMarcacao.Livre,
 };
 
+// SeletorDeHora virou um campo de texto mascarado HH:mm (issue #138) — não
+// mais um painel de listas roláveis com botão "Confirmar".
 async function selecionarHora(hora: string, minuto: string) {
-  await fireEvent.press(screen.getByText('Selecionar hora'));
-  await fireEvent.press(screen.getByLabelText(`Hora ${hora}`));
-  await fireEvent.press(screen.getByLabelText(`Minuto ${minuto}`));
-  await fireEvent.press(screen.getByText('Confirmar'));
+  await fireEvent.changeText(screen.getByLabelText('Hora de início'), `${hora}${minuto}`);
 }
 
 async function selecionarPoliticaEEnviar() {

@@ -9,6 +9,7 @@ import { SeletorDeHora } from '@/components/molecules/SeletorDeHora';
 import { TipoMarcacao, type CriarHorarioInput, type Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { horariosSeSobrepoe } from '@/lib/horarioConflito';
+import { horaEstaCompleta } from '@/lib/mascararHora';
 import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
 
 const OpcoesDiaSemana: readonly ChipSelectorOption<number>[] = NomesDiaSemana.map((nome, dia) => ({
@@ -34,9 +35,9 @@ const MensagemPoliticaObrigatoria = 'Escolha a política de marcação deste hor
  * duração e conflito no cliente antes de chamar `onSubmit` — feedback
  * imediato para casos óbvios, sem esperar o round-trip da Api (ver
  * Critérios técnicos da issue #6). A hora de início é escolhida pelo
- * `SeletorDeHora` (issue #117), que não permite formato inválido por
- * construção, então só resta garantir que ela foi de fato escolhida.
- * A Api continua sendo a fonte de verdade.
+ * `SeletorDeHora` (issue #138), que não permite formato inválido por
+ * construção, então só resta garantir que ela de fato estava completa na
+ * hora de confirmar. A Api continua sendo a fonte de verdade.
  */
 export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: HorarioFormProps) {
   const [diaSemana, setDiaSemana] = useState(1);
@@ -119,7 +120,7 @@ function validar(
     return { valido: false, mensagem: MensagemPoliticaObrigatoria };
   }
 
-  if (horaInicio === undefined) {
+  if (!horaEstaCompleta(horaInicio ?? '')) {
     return { valido: false, mensagem: MensagemHoraObrigatoria };
   }
 
