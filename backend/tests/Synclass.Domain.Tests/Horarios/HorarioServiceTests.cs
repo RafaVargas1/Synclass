@@ -213,4 +213,41 @@ public sealed class HorarioServiceTests
         await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
         repositorio.Horarios.Should().ContainSingle(h => h.Id == horario.Id && h.TipoMarcacao == TipoMarcacao.Livre);
     }
+
+    [Fact]
+    public async Task AlterarPrazoCancelamentoAsync_QuandoHorarioPertenceAoProfessor_PersisteONovoPrazo()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = new HorarioService(repositorio, Clock);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+
+        var atualizado = await servico.AlterarPrazoCancelamentoAsync(ProfessorId, horario.Id, 120, CancellationToken.None);
+
+        atualizado.PrazoCancelamentoMinutos.Should().Be(120);
+        repositorio.Horarios.Should().ContainSingle(h => h.Id == horario.Id && h.PrazoCancelamentoMinutos == 120);
+    }
+
+    [Fact]
+    public async Task AlterarPrazoCancelamentoAsync_HorarioInexistente_RejeitaComHorarioNaoEncontradoException()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = new HorarioService(repositorio, Clock);
+
+        var acao = () => servico.AlterarPrazoCancelamentoAsync(ProfessorId, Guid.NewGuid(), 60, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
+    }
+
+    [Fact]
+    public async Task AlterarPrazoCancelamentoAsync_HorarioDeOutroProfessor_RejeitaComHorarioNaoEncontradoException()
+    {
+        var repositorio = new FakeHorarioRepository();
+        var servico = new HorarioService(repositorio, Clock);
+        var horario = await servico.CadastrarAsync(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, CancellationToken.None);
+
+        var acao = () => servico.AlterarPrazoCancelamentoAsync(Guid.NewGuid(), horario.Id, 60, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<HorarioNaoEncontradoException>();
+        repositorio.Horarios.Should().ContainSingle(h => h.Id == horario.Id && h.PrazoCancelamentoMinutos == 0);
+    }
 }

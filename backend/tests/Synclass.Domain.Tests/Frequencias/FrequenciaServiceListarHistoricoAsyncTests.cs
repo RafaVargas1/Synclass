@@ -2,7 +2,6 @@ using FluentAssertions;
 using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Aulas;
 using Synclass.Domain.Cobrancas;
-using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
@@ -34,10 +33,6 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
 
     private static Cenario CriarCenario()
     {
-        var configuracoes = new FakeConfiguracaoProfessorRepository();
-        configuracoes.Configuracoes.Add(
-            ConfiguracaoProfessor.Criar(ProfessorId, ModeloAgendamento.Vago, Clock));
-
         var horarios = new FakeHorarioRepository();
         var horarioService = new HorarioService(horarios, Clock);
         var aulas = new FakeAulaRepository();
@@ -45,8 +40,7 @@ public sealed class FrequenciaServiceListarHistoricoAsyncTests
         var alocacoes = new FakeAlocacaoHorarioRepository();
         var matriculas = new FakeMatriculaRepository();
         var usuarios = new FakeUsuarioRepository();
-        var aulaService = new AulaService(
-            aulas, cancelamentos, alocacoes, matriculas, configuracoes, horarioService, Clock);
+        var aulaService = new AulaService(aulas, cancelamentos, alocacoes, matriculas, horarioService, Clock);
         var alocacaoHorarioService = new AlocacaoHorarioService(alocacoes, matriculas, horarioService, Clock);
         var registros = new FakeRegistroFrequenciaRepository();
         var frequenciaService = new FrequenciaService(
