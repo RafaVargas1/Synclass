@@ -6,14 +6,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
 import { ResumoFrequenciaCard } from '@/components/organisms/ResumoFrequenciaCard';
+import { ResumoProximoHorario, type ProximoHorario } from '@/components/organisms/ResumoProximoHorario';
 import { ResumoValorReceber } from '@/components/organisms/ResumoValorReceber';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
+import { listarProximasAulas, type AulaProxima } from '@/lib/api/cancelamentos';
 import {
   calcularPeriodoUltimosNDias,
   listarHistoricoFrequenciaDoAluno,
   type HistoricoFrequenciaPorProfessor,
 } from '@/lib/api/historicoFrequencia';
 import { listarValorDevido, type ListarValorDevidoResultado } from '@/lib/api/valorDevido';
+import { listarVinculosAluno, type VinculoProfessor } from '@/lib/api/vinculosAluno';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
@@ -30,6 +33,85 @@ import { AlvoDeToqueMinimo, MaxContentWidthPainel } from '@/theme/tokens';
 function Saudacao({ nome }: { nome: string }) {
   const saudacao = saudacaoPorPeriodo[periodoDoDia(new Date().getHours())];
   return <Heading>{`${saudacao}, ${nome}`}</Heading>;
+}
+
+/**
+ * Busca vínculos do Aluno (`GET /alunos/professores`, issue #165) e agrega
+ * por todos eles as próximas aulas (`GET /professores/{id}/horarios/proximas-aulas`)
+ * até chegar no `ProximoHorario` mais próximo no tempo. Não bloqueia o
+ * Painel: erro de qualquer chamada cai no estado vazio (`null`), mesmo
+ * tratamento não-bloqueante de `ResumoValorReceber` (issue #166).
+ */
+function useProximoHorario(habilitado: boolean, token: string | null): ProximoHorario | null {
+  const [proximoHorario, setProximoHorario] = useState<ProximoHorario | null>(null);
+
+  useEffect(() => {
+    if (!habilitado || !token) {
+      return;
+    }
+    let cancelado = false;
+    void (async () => {
+      const vinculosResultado = await listarVinculosAluno();
+      if (cancelado || !vinculosResultado.sucesso) {
+        return;
+      }
+      // Em paralelo (achado de dev-review, PR #176): um Aluno com N
+      // Professores pagava N× a latência de rede em série antes disso.
+      const resultadosPorVinculo = await Promise.all(
+        vinculosResultado.vinculos.map((vinculo) => listarProximasAulas(vinculo.professorId)),
+      );
+      if (cancelado) {
+        return;
+      }
+      const aulasPorProfessor = new Map<string, AulaProxima[]>();
+      vinculosResultado.vinculos.forEach((vinculo, indice) => {
+        const aulasResultado = resultadosPorVinculo[indice];
+        if (aulasResultado.sucesso) {
+          aulasPorProfessor.set(vinculo.professorId, aulasResultado.aulas);
+        }
+      });
+      setProximoHorario(agregarProximoHorario(vinculosResultado.vinculos, aulasPorProfessor));
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [habilitado, token]);
+
+  return proximoHorario;
+}
+
+/** Data+hora de uma aula em formato ordenável (`YYYY-MM-DDTHH:MM:SS`). */
+function dataHoraDaAula(aula: AulaProxima): string {
+  return `${aula.data}T${aula.horaInicio}`;
+}
+
+/**
+ * Reduz vínculos + aulas já buscadas pela tela no único `ProximoHorario`
+ * (a aula mais próxima no tempo entre todos os Professores), ou `null`
+ * quando não há vínculo nem aula futura. A comparação lexicográfica de
+ * `YYYY-MM-DDTHH:MM:SS` é suficiente porque `data` chega em `YYYY-MM-DD`
+ * e `horaInicio` em `HH:MM:SS` (confirmado no contrato de `AulaProxima`).
+ */
+function agregarProximoHorario(
+  vinculos: VinculoProfessor[],
+  aulasPorProfessor: Map<string, AulaProxima[]>,
+): ProximoHorario | null {
+  let maisProxima: { aula: AulaProxima; professorNome: string } | null = null;
+  for (const vinculo of vinculos) {
+    for (const aula of aulasPorProfessor.get(vinculo.professorId) ?? []) {
+      if (!maisProxima || dataHoraDaAula(aula) < dataHoraDaAula(maisProxima.aula)) {
+        maisProxima = { aula, professorNome: vinculo.nome };
+      }
+    }
+  }
+  if (!maisProxima) {
+    return null;
+  }
+  return {
+    professorNome: maisProxima.professorNome,
+    data: maisProxima.aula.data,
+    horaInicio: maisProxima.aula.horaInicio,
+  };
 }
 
 /**
@@ -50,6 +132,7 @@ export default function PainelScreen() {
   const { carregando, token, papelAtivo, sair } = useSessao();
   useRedirecionarSemSessao(carregando, token);
   const { usuarioId, nome } = usePerfilLogado(token);
+  const proximoHorario = useProximoHorario(papelAtivo === 'Aluno', token);
   const acoes = secoesDoPapel(papelAtivo, usuarioId);
 
   if (carregando || !token) {
@@ -70,6 +153,7 @@ export default function PainelScreen() {
           <ResumoValorReceberComConsulta professorId={usuarioId} />
         ) : null}
         {papelAtivo === 'Aluno' ? <ResumoDeFrequenciaDoAluno /> : null}
+        {papelAtivo === 'Aluno' ? <ResumoProximoHorario proximoHorario={proximoHorario} /> : null}
         <View className="w-full flex-row flex-wrap gap-three">
           {acoes.map((acao) => (
             <CardDeAcao key={acao.label} acao={acao} />
