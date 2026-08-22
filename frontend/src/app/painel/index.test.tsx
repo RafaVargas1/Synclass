@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { listarValorDevido } from '@/lib/api/valorDevido';
 import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { periodoDoDia } from '@/lib/periodoDoDia';
@@ -41,6 +42,10 @@ jest.mock('@/lib/api/usuarios', () => ({
   buscarPerfil: jest.fn(),
 }));
 
+jest.mock('@/lib/api/valorDevido', () => ({
+  listarValorDevido: jest.fn(),
+}));
+
 jest.mock('@/lib/periodoDoDia', () => {
   const actual = jest.requireActual('@/lib/periodoDoDia');
   return { ...actual, periodoDoDia: jest.fn() };
@@ -48,6 +53,7 @@ jest.mock('@/lib/periodoDoDia', () => {
 
 const useSessaoMock = useSessao as jest.Mock;
 const buscarPerfilMock = buscarPerfil as jest.Mock;
+const listarValorDevidoMock = listarValorDevido as jest.Mock;
 const periodoDoDiaMock = periodoDoDia as jest.Mock;
 
 describe('PainelScreen', () => {
@@ -172,5 +178,98 @@ describe('PainelScreen saudação', () => {
     await render(<PainelScreen />);
 
     expect(screen.queryByText(/^(Bom dia|Boa tarde|Boa noite),/)).toBeNull();
+  });
+});
+
+describe('PainelScreen resumo de valor a receber', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    periodoDoDiaMock.mockReturnValue('manha');
+    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
+    listarValorDevidoMock.mockResolvedValue({ sucesso: true, valoresDevidos: [] });
+  });
+
+  it('mostra o total somado dos Alunos no mês e o rótulo "A receber este mês"', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Professor',
+      sair: jest.fn(),
+    });
+    listarValorDevidoMock.mockResolvedValue({
+      sucesso: true,
+      valoresDevidos: [
+        { matriculaId: 'm1', alunoUsuarioId: 'a1', nome: 'Bia', valor: 300, semRegraDefinida: false },
+        { matriculaId: 'm2', alunoUsuarioId: 'a2', nome: 'Caio', valor: 450, semRegraDefinida: false },
+      ],
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText('A receber este mês')).toBeTruthy());
+    expect(screen.getByText('R$ 750,00')).toBeTruthy();
+  });
+
+  it('mostra a mensagem de valor zerado sem valor em destaque quando a lista é vazia', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Professor',
+      sair: jest.fn(),
+    });
+    listarValorDevidoMock.mockResolvedValue({ sucesso: true, valoresDevidos: [] });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText('Nenhum valor a receber neste mês.')).toBeTruthy());
+    expect(screen.queryByText('R$ 0,00')).toBeNull();
+  });
+
+  it('mostra a mesma mensagem de valor zerado quando todos os Alunos estão sem regra definida', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Professor',
+      sair: jest.fn(),
+    });
+    listarValorDevidoMock.mockResolvedValue({
+      sucesso: true,
+      valoresDevidos: [{ matriculaId: 'm1', alunoUsuarioId: 'a1', nome: 'Bia', valor: null, semRegraDefinida: true }],
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText('Nenhum valor a receber neste mês.')).toBeTruthy());
+    expect(screen.queryByText(/^R\$/)).toBeNull();
+  });
+
+  it('chama listarValorDevido com o usuarioId do Professor sem query string de período', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Professor',
+      sair: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(listarValorDevidoMock).toHaveBeenCalledWith('prof-1'));
+    expect(listarValorDevidoMock).toHaveBeenCalledTimes(1);
+    expect(listarValorDevidoMock.mock.calls[0][1]).toBeUndefined();
+  });
+
+  it('não mostra a seção "a receber" para o papel ativo Aluno', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Aluno',
+      sair: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('link-/aluno/historico-frequencia')).toBeTruthy());
+    expect(screen.queryByText('A receber este mês')).toBeNull();
+    expect(listarValorDevidoMock).not.toHaveBeenCalled();
   });
 });
