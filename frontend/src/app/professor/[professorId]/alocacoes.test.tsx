@@ -158,4 +158,54 @@ describe('AlocacoesProfessorScreen', () => {
     expect(screen.queryByText('Configure o modelo de agendamento antes de alocar Alunos.')).toBeNull();
     expect(screen.queryByText('Nenhum horário cadastrado ainda.')).toBeNull();
   });
+
+  // As três a seguir preexistiam à issue #139 (cobertura de
+  // AlocacoesConteudo/useGerenciamentoAlocacoes, fora de escopo desta
+  // Task) — restauradas após terem sido removidas sem substituição
+  // durante a implementação do gate de estado acima.
+  it('shows an error message when listarHorarios fails, instead of a silent blank grid', async () => {
+    obterConfiguracaoMock.mockResolvedValue({
+      sucesso: true,
+      definida: true,
+      modeloAgendamento: ModeloAgendamento.Fixo,
+    });
+    listarHorariosMock.mockResolvedValue({ sucesso: false, mensagem: 'Erro de conexão.' });
+
+    await render(<AlocacoesProfessorScreen />);
+
+    await waitFor(() => expect(screen.getByText('Erro de conexão.')).toBeTruthy());
+  });
+
+  it('allocates the selected aluno and updates the card on success', async () => {
+    obterConfiguracaoMock.mockResolvedValue({
+      sucesso: true,
+      definida: true,
+      modeloAgendamento: ModeloAgendamento.Hibrido,
+    });
+    alocarAlunoMock.mockResolvedValue({ sucesso: true, alocacao });
+    await render(<AlocacoesProfessorScreen />);
+    await waitFor(() => expect(screen.getByText('Ana')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Alocar'));
+
+    expect(alocarAlunoMock).toHaveBeenCalledWith('h1', 'a1');
+    await waitFor(() => expect(screen.getByText('1/2')).toBeTruthy());
+  });
+
+  it('deallocates the aluno and updates the card on success', async () => {
+    obterConfiguracaoMock.mockResolvedValue({
+      sucesso: true,
+      definida: true,
+      modeloAgendamento: ModeloAgendamento.Fixo,
+    });
+    listarAlocacoesMock.mockResolvedValue({ sucesso: true, alocacoes: [alocacao] });
+    desalocarAlunoMock.mockResolvedValue({ sucesso: true });
+    await render(<AlocacoesProfessorScreen />);
+    await waitFor(() => expect(screen.getByText('1/2')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Remover'));
+
+    expect(desalocarAlunoMock).toHaveBeenCalledWith('h1', 'a1');
+    await waitFor(() => expect(screen.getByText('0/2')).toBeTruthy());
+  });
 });

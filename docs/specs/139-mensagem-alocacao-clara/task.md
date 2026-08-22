@@ -26,11 +26,11 @@ horários. Implemente exatamente isso.
 - [x] Teste: cenário "modelo Fixo/Híbrido, horários existem" → comporta-se
       como hoje (`AlocacoesConteudo` renderiza normalmente, sem
       `ErrorMessage`) — não regredir.
-- [ ] `grep -in "vago" frontend/src/app/professor/\[professorId\]/alocacoes.tsx
+- [x] `grep -in "vago" frontend/src/app/professor/\[professorId\]/alocacoes.tsx
       frontend/src/app/professor/\[professorId\]/alocacoes.test.tsx` —
       confirme que não sobrou nenhuma ocorrência (nem no código nem nos
       testes) antes de marcar concluído.
-- [ ] Refatore se necessário: releia o diff final contra
+- [x] Refatore se necessário: releia o diff final contra
       `docs/spec/code-style.md` e `docs/spec/engenharia-de-qualidade.md`.
 
 ## Inconsistências encontradas
