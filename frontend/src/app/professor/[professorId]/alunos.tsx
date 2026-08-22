@@ -43,7 +43,7 @@ export default function MeusAlunosScreen() {
           <FlatList
             data={estado.alunos}
             keyExtractor={(item) => item.matriculaId}
-            renderItem={({ item }) => <AlunoVinculadoCard aluno={item} />}
+            renderItem={({ item }) => <AlunoVinculadoCard professorId={professorId} aluno={item} />}
             contentContainerClassName="gap-two"
             style={{ minHeight: 420, flexGrow: 1 }}
           />

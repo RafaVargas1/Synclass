@@ -58,6 +58,7 @@ function HorariosConteudo({ professorId }: { professorId: string }) {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <HorarioCard
+            professorId={professorId}
             horario={item}
             onRemover={estado.handleRemover}
             onAlterarPolitica={estado.handleAlterarPolitica}

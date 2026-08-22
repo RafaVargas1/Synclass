@@ -21,10 +21,15 @@ jest.mock('@/components/organisms/TopbarAutenticada', () => {
   };
 });
 
-jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ professorId: 'professor-1' }),
-  useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
-}));
+jest.mock('expo-router', () => {
+  const React = jest.requireActual('react');
+  return {
+    useLocalSearchParams: () => ({ professorId: 'professor-1' }),
+    useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+    Link: ({ href, children }: { href: string; children: React.ReactElement }) =>
+      React.cloneElement(children, { accessibilityHint: href }),
+  };
+});
 
 jest.mock('@/lib/api/horarios', () => ({
   alterarTipoMarcacaoHorario: jest.fn(),

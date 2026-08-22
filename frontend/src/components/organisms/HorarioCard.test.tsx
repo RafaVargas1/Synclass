@@ -4,6 +4,14 @@ import { TipoMarcacao } from '@/lib/api/horarios';
 
 import { HorarioCard } from './HorarioCard';
 
+jest.mock('expo-router', () => {
+  const React = jest.requireActual('react');
+  return {
+    Link: ({ href, children }: { href: string; children: React.ReactElement }) =>
+      React.cloneElement(children, { accessibilityHint: href }),
+  };
+});
+
 const horario = {
   id: 'h1',
   diaSemana: 2,
@@ -16,6 +24,7 @@ const horario = {
 async function renderComCard(overrides = {}) {
   return render(
     <HorarioCard
+      professorId="prof-1"
       horario={horario}
       onRemover={jest.fn()}
       onAlterarPolitica={jest.fn()}
@@ -41,7 +50,7 @@ describe('HorarioCard', () => {
 
   it('shows "Grupo até N" when limiteAlunos is greater than 1', async () => {
     const horarioEmGrupo = { ...horario, limiteAlunos: 4 };
-    await render(<HorarioCard horario={horarioEmGrupo} onRemover={jest.fn()} onAlterarPolitica={jest.fn()} />);
+    await renderComCard({ horario: horarioEmGrupo });
 
     expect(screen.getByText(/Grupo até 4/)).toBeTruthy();
   });
@@ -52,24 +61,34 @@ describe('HorarioCard', () => {
     [TipoMarcacao.Hibrido, 'Híbrido'],
   ])('shows the rótulo of tipoMarcacao %s as %s', async (tipoMarcacao, rotulo) => {
     const horarioComPolitica = { ...horario, tipoMarcacao };
-    await render(<HorarioCard horario={horarioComPolitica} onRemover={jest.fn()} onAlterarPolitica={jest.fn()} />);
+    await renderComCard({ horario: horarioComPolitica });
 
     expect(screen.getByText(rotulo)).toBeTruthy();
   });
 
   it('calls onRemover with the horario id when the remove button is pressed', async () => {
     const onRemover = jest.fn();
-    await render(<HorarioCard horario={horario} onRemover={onRemover} onAlterarPolitica={jest.fn()} />);
+    await renderComCard({ onRemover });
 
     await fireEvent.press(screen.getByText('Remover'));
 
     expect(onRemover).toHaveBeenCalledWith('h1');
   });
 
-  it('gives the Remover and Editar política buttons a touch target of at least 44x44 (Fitts/HIG)', async () => {
+  it('links to the Chamada screen of this horario (issue #184)', async () => {
+    await renderComCard();
+
+    expect(screen.getByText('Chamada').parent).toHaveProp(
+      'accessibilityHint',
+      '/professor/prof-1/horarios/h1/chamada',
+    );
+  });
+
+  it('gives the Remover, Chamada and Editar política buttons a touch target of at least 44x44 (Fitts/HIG)', async () => {
     await renderComCard();
 
     expect(screen.getByText('Remover').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
+    expect(screen.getByText('Chamada').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
     expect(screen.getByText('Editar política').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
   });
 
