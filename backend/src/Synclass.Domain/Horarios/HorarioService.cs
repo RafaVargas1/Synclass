@@ -34,9 +34,11 @@ public sealed class HorarioService
         int duracaoMinutos,
         TipoMarcacao tipoMarcacao,
         CancellationToken cancellationToken,
-        int? limiteAlunos = null)
+        int? limiteAlunos = null,
+        int? prazoCancelamentoMinutos = null)
     {
-        var horario = Horario.Criar(professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, _clock, limiteAlunos);
+        var horario = Horario.Criar(
+            professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, _clock, limiteAlunos, prazoCancelamentoMinutos);
         var horariosDoDia = await _horarios.ListarPorProfessorEDiaAsync(professorId, diaSemana, cancellationToken);
         var conflitante = horariosDoDia.FirstOrDefault(existente => horario.Sobrepoe(existente));
         if (conflitante is not null)
@@ -88,6 +90,35 @@ public sealed class HorarioService
     {
         var horario = await BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
         horario.AlterarTipoMarcacao(novoTipo);
+        await _horarios.SalvarAsync(cancellationToken);
+        return horario;
+    }
+
+    /// <summary>
+    /// Devolve o prazo de cancelamento atual de um horário do Professor
+    /// (issue #187), mesmo padrão de <see cref="BuscarTipoMarcacaoAsync"/> —
+    /// usado pelo controller para registrar o valor anterior no log
+    /// <c>HorarioPrazoCancelamentoAlterado</c>.
+    /// </summary>
+    public async Task<int> BuscarPrazoCancelamentoAsync(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
+    {
+        var horario = await BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        return horario.PrazoCancelamentoMinutos;
+    }
+
+    /// <summary>
+    /// Altera <see cref="Horario.PrazoCancelamentoMinutos"/> de um horário já
+    /// cadastrado do Professor (issue #187), mesmo padrão de
+    /// <see cref="AlterarPoliticaAsync"/>.
+    /// </summary>
+    public async Task<Horario> AlterarPrazoCancelamentoAsync(
+        Guid professorId,
+        Guid horarioId,
+        int novoPrazoCancelamentoMinutos,
+        CancellationToken cancellationToken)
+    {
+        var horario = await BuscarDoProfessorAsync(professorId, horarioId, cancellationToken);
+        horario.AlterarPrazoCancelamento(novoPrazoCancelamentoMinutos);
         await _horarios.SalvarAsync(cancellationToken);
         return horario;
     }

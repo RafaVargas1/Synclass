@@ -102,6 +102,7 @@ describe('HorarioForm', () => {
         duracaoMinutos: 60,
         limiteAlunos: 1,
         tipoMarcacao: TipoMarcacao.Livre,
+        prazoCancelamentoMinutos: 0,
       },
     ];
     await render(
@@ -135,5 +136,62 @@ describe('HorarioForm', () => {
     );
 
     expect(screen.getByText('Não foi possível concluir a operação.')).toBeTruthy();
+  });
+
+  describe('prazo de cancelamento (issue #187)', () => {
+    it('shows the Prazo de cancelamento field after Limite de alunos', async () => {
+      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={jest.fn()} />);
+
+      expect(screen.getByText('Prazo de cancelamento (minutos)')).toBeTruthy();
+      expect(screen.getByPlaceholderText('0')).toBeTruthy();
+    });
+
+    it('includes the informed prazoCancelamentoMinutos in onSubmit when filled', async () => {
+      const onSubmit = jest.fn();
+      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+      await fireEvent.changeText(screen.getByPlaceholderText('0'), '120');
+      await preencherEEnviar('10', '00', '60');
+
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ prazoCancelamentoMinutos: 120 }),
+      );
+    });
+
+    it('does not include prazoCancelamentoMinutos in onSubmit when left empty', async () => {
+      const onSubmit = jest.fn();
+      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+      await preencherEEnviar('10', '00', '60');
+
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ prazoCancelamentoMinutos: undefined }),
+      );
+    });
+
+    it('shows a client-side error and does not call onSubmit when prazo is negative', async () => {
+      const onSubmit = jest.fn();
+      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+      await fireEvent.changeText(screen.getByPlaceholderText('0'), '-1');
+      await preencherEEnviar('10', '00', '60');
+
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(
+        screen.getByText('Informe um prazo de cancelamento maior ou igual a zero.'),
+      ).toBeTruthy();
+    });
+
+    it('accepts zero as a valid prazo de cancelamento', async () => {
+      const onSubmit = jest.fn();
+      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+
+      await fireEvent.changeText(screen.getByPlaceholderText('0'), '0');
+      await preencherEEnviar('10', '00', '60');
+
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ prazoCancelamentoMinutos: 0 }),
+      );
+    });
   });
 });

@@ -8,7 +8,9 @@ namespace Synclass.Domain.Horarios;
 /// issue #6 e a seção "Notas de modelagem" de requisitos-funcionais.md). A
 /// duração é definida uma única vez na criação e nunca é alterável depois
 /// (sem endpoint de update, só create/delete) — a única exceção é a política
-/// de marcação, editável via <see cref="AlterarTipoMarcacao"/> (issue #71).
+/// de marcação, editável via <see cref="AlterarTipoMarcacao"/> (issue #71) e
+/// o prazo de cancelamento, editável via <see cref="AlterarPrazoCancelamento"/>
+/// (issue #187).
 /// </summary>
 public sealed class Horario
 {
@@ -20,7 +22,8 @@ public sealed class Horario
         int duracaoMinutos,
         TipoMarcacao tipoMarcacao,
         DateTimeOffset createdAt,
-        int limiteAlunos)
+        int limiteAlunos,
+        int prazoCancelamentoMinutos)
     {
         Id = id;
         ProfessorId = professorId;
@@ -30,6 +33,7 @@ public sealed class Horario
         TipoMarcacao = tipoMarcacao;
         CreatedAt = createdAt;
         LimiteAlunos = limiteAlunos;
+        PrazoCancelamentoMinutos = prazoCancelamentoMinutos;
     }
 
     public Guid Id { get; private set; }
@@ -59,6 +63,16 @@ public sealed class Horario
     public int LimiteAlunos { get; private set; }
 
     /// <summary>
+    /// Antecedência mínima, em minutos, exigida do Aluno para cancelar uma
+    /// aula deste Horário (issue #187) — <c>0</c> significa "sem antecedência
+    /// mínima exigida", default quando o Professor não informa nada na
+    /// criação (mesmo comportamento de hoje via <c>ConfiguracaoProfessor</c>,
+    /// issue #10). Editável depois da criação via
+    /// <see cref="AlterarPrazoCancelamento"/>.
+    /// </summary>
+    public int PrazoCancelamentoMinutos { get; private set; }
+
+    /// <summary>
     /// Horário de término, calculado a partir de <see cref="HoraInicio"/> e
     /// <see cref="DuracaoMinutos"/>. Não trata horários que cruzam a meia-
     /// noite (fora de escopo da issue #6 — ver implementation.md#edge-points).
@@ -69,7 +83,9 @@ public sealed class Horario
     /// <paramref name="limiteAlunos"/> nulo aplica o default de
     /// <see cref="LimiteAlunosHorario.Padrao"/> (issue #17) — o Professor
     /// pode cadastrar um horário sem se preocupar com esse campo e ele nasce
-    /// como aula individual.
+    /// como aula individual. <paramref name="prazoCancelamentoMinutos"/> nulo
+    /// aplica <c>0</c> (issue #187), mesmo default do
+    /// <c>ConfiguracaoProfessor.PrazoCancelamentoMinutos</c> (issue #10).
     /// </summary>
     public static Horario Criar(
         Guid professorId,
@@ -78,15 +94,18 @@ public sealed class Horario
         int duracaoMinutos,
         TipoMarcacao tipoMarcacao,
         IClock clock,
-        int? limiteAlunos = null)
+        int? limiteAlunos = null,
+        int? prazoCancelamentoMinutos = null)
     {
         ValidarDiaSemana(diaSemana);
         DuracaoAula.Validar(duracaoMinutos);
         ValidarTipoMarcacao(tipoMarcacao);
         var limiteAlunosResolvido = limiteAlunos ?? LimiteAlunosHorario.Padrao;
         LimiteAlunosHorario.Validar(limiteAlunosResolvido);
+        var prazoCancelamentoResolvido = prazoCancelamentoMinutos ?? 0;
+        ValidarPrazoCancelamentoMinutos(prazoCancelamentoResolvido);
         return new Horario(
-            Guid.NewGuid(), professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, clock.UtcNow, limiteAlunosResolvido);
+            Guid.NewGuid(), professorId, diaSemana, horaInicio, duracaoMinutos, tipoMarcacao, clock.UtcNow, limiteAlunosResolvido, prazoCancelamentoResolvido);
     }
 
     /// <summary>
@@ -124,6 +143,21 @@ public sealed class Horario
     }
 
     /// <summary>
+    /// Altera <see cref="PrazoCancelamentoMinutos"/> de um horário já
+    /// cadastrado (issue #187), mesmo padrão de
+    /// <see cref="AlterarTipoMarcacao"/>. Não afeta cancelamentos já feitos,
+    /// só os próximos: <c>AulaService</c> sempre lê o valor vigente do
+    /// Horário no momento do cancelamento, nunca cacheia. Rejeita valor
+    /// negativo com a mesma exceção usada na criação
+    /// (<see cref="PrazoCancelamentoInvalidoException"/>).
+    /// </summary>
+    public void AlterarPrazoCancelamento(int novoPrazoCancelamentoMinutos)
+    {
+        ValidarPrazoCancelamentoMinutos(novoPrazoCancelamentoMinutos);
+        PrazoCancelamentoMinutos = novoPrazoCancelamentoMinutos;
+    }
+
+    /// <summary>
     /// Garante que <paramref name="diaSemana"/> é um dos valores nomeados do
     /// enum. Necessário porque um cast direto de int (ex: no controller, a
     /// partir do contrato de Api) não é validado pelo compilador — um valor
@@ -146,6 +180,20 @@ public sealed class Horario
         if (!Enum.IsDefined(tipoMarcacao))
         {
             throw new TipoMarcacaoInvalidoException((int)tipoMarcacao);
+        }
+    }
+
+    /// <summary>
+    /// Garante que <paramref name="prazoCancelamentoMinutos"/> não é
+    /// negativo (issue #187) — um prazo negativo não tem significado de
+    /// negócio. Mesmo padrão de
+    /// <c>ConfiguracaoProfessor.ValidarPrazoCancelamentoMinutos</c>.
+    /// </summary>
+    private static void ValidarPrazoCancelamentoMinutos(int prazoCancelamentoMinutos)
+    {
+        if (prazoCancelamentoMinutos < 0)
+        {
+            throw new PrazoCancelamentoInvalidoException(prazoCancelamentoMinutos);
         }
     }
 

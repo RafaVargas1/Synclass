@@ -11,6 +11,7 @@ const horario = {
   duracaoMinutos: 60,
   limiteAlunos: 2,
   tipoMarcacao: TipoMarcacao.Livre,
+  prazoCancelamentoMinutos: 0,
 };
 
 const alunos = [
@@ -18,7 +19,9 @@ const alunos = [
   { matriculaId: 'a2', nome: 'Bruno', identificador: 'bruno@x.com' },
 ];
 
-const alocacoes = [{ id: 'al1', horarioId: 'h1', matriculaId: 'a1', createdAt: '2026-01-01T00:00:00Z' }];
+const alocacoes = [
+  { id: 'al1', horarioId: 'h1', matriculaId: 'a1', createdAt: '2026-01-01T00:00:00Z' },
+];
 
 describe('HorarioAlocacaoCard', () => {
   it('shows the day, start time and occupied/total vagas', async () => {
@@ -138,7 +141,10 @@ describe('HorarioAlocacaoCard', () => {
       <HorarioAlocacaoCard
         horario={{ ...horario, limiteAlunos: 3 }}
         alunos={[...alunos, { matriculaId: 'a3', nome: 'Carla', identificador: 'carla@x.com' }]}
-        alocacoes={[...alocacoes, { id: 'al2', horarioId: 'h1', matriculaId: 'a2', createdAt: '2026-01-01T00:00:00Z' }]}
+        alocacoes={[
+          ...alocacoes,
+          { id: 'al2', horarioId: 'h1', matriculaId: 'a2', createdAt: '2026-01-01T00:00:00Z' },
+        ]}
         onAlocar={onAlocar}
         onDesalocar={jest.fn()}
       />,

@@ -136,6 +136,84 @@ public sealed class HorarioEndpointTests : IClassFixture<WebApplicationFactory<P
     }
 
     [Fact]
+    public async Task Post_Horario_SemInformarPrazoCancelamento_AplicaDefault0()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
+
+        var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
+        corpo!.PrazoCancelamentoMinutos.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Post_Horario_ComPrazoCancelamentoInformado_UsaOValorInformado()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(
+                DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0, PrazoCancelamentoMinutos: 120));
+
+        var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
+        corpo!.PrazoCancelamentoMinutos.Should().Be(120);
+    }
+
+    [Fact]
+    public async Task Patch_Horario_PrazoCancelamento_ReturnsOkComHorarioAtualizado()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+        var horarioResponse = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
+        var horarioId = (await horarioResponse.Content.ReadFromJsonAsync<HorarioResponse>())!.Id;
+
+        var response = await client.PatchAsJsonAsync(
+            $"/professores/{professorId}/horarios/{horarioId}/prazo-cancelamento",
+            new AlterarPrazoCancelamentoHorarioRequest(PrazoCancelamentoMinutos: 90));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<HorarioResponse>();
+        corpo!.PrazoCancelamentoMinutos.Should().Be(90);
+    }
+
+    [Fact]
+    public async Task Patch_Horario_PrazoCancelamento_ReturnsNotFound_QuandoHorarioNaoExiste()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+
+        var response = await client.PatchAsJsonAsync(
+            $"/professores/{professorId}/horarios/{Guid.NewGuid()}/prazo-cancelamento",
+            new AlterarPrazoCancelamentoHorarioRequest(PrazoCancelamentoMinutos: 90));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Patch_Horario_PrazoCancelamento_ReturnsBadRequest_QuandoValorNegativo()
+    {
+        var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorAsync(client);
+        var horarioResponse = await client.PostAsJsonAsync(
+            $"/professores/{professorId}/horarios",
+            new CriarHorarioRequest(DiaSemana: 2, HoraInicio: new TimeOnly(10, 0), DuracaoMinutos: 60, TipoMarcacao: 0));
+        var horarioId = (await horarioResponse.Content.ReadFromJsonAsync<HorarioResponse>())!.Id;
+
+        var response = await client.PatchAsJsonAsync(
+            $"/professores/{professorId}/horarios/{horarioId}/prazo-cancelamento",
+            new AlterarPrazoCancelamentoHorarioRequest(PrazoCancelamentoMinutos: -1));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Post_Horario_ReturnsBadRequest_QuandoLimiteAlunosZeroOuNegativo()
     {
         var client = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);

@@ -9,7 +9,8 @@ namespace Synclass.Domain.Tests.Horarios;
 /// rejeição de duração inválida e o cálculo puro de sobreposição de horário
 /// (sem depender de repositório — ver <see cref="HorarioServiceTests"/> para
 /// o fluxo orquestrado com persistência). Também cobre a alteração da
-/// política de marcação de um horário já cadastrado (issue #71).
+/// política de marcação de um horário já cadastrado (issue #71) e, desde a
+/// issue #187, o prazo de cancelamento configurável por Horário.
 /// </summary>
 public sealed class HorarioTests
 {
@@ -96,6 +97,43 @@ public sealed class HorarioTests
         var acao = () => Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, limiteAlunos);
 
         acao.Should().Throw<LimiteAlunosInvalidoException>();
+    }
+
+    [Fact]
+    public void Criar_SemInformarPrazoCancelamento_AplicaDefault0()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+
+        horario.PrazoCancelamentoMinutos.Should().Be(0);
+    }
+
+    [Fact]
+    public void Criar_ComPrazoCancelamentoInformado_UsaOValorInformado()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, prazoCancelamentoMinutos: 90);
+
+        horario.PrazoCancelamentoMinutos.Should().Be(90);
+    }
+
+    [Fact]
+    public void AlterarPrazoCancelamento_ValorValido_AtualizaOPrazo()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, prazoCancelamentoMinutos: 30);
+
+        horario.AlterarPrazoCancelamento(90);
+
+        horario.PrazoCancelamentoMinutos.Should().Be(90);
+    }
+
+    [Fact]
+    public void AlterarPrazoCancelamento_ValorNegativo_RejeitaComPrazoCancelamentoInvalidoException()
+    {
+        var horario = Horario.Criar(ProfessorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock, prazoCancelamentoMinutos: 30);
+
+        var acao = () => horario.AlterarPrazoCancelamento(-1);
+
+        acao.Should().Throw<PrazoCancelamentoInvalidoException>();
+        horario.PrazoCancelamentoMinutos.Should().Be(30);
     }
 
     [Fact]

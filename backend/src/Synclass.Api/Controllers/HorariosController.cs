@@ -32,7 +32,8 @@ public sealed class HorariosController : ControllerBase
                 request.DuracaoMinutos,
                 (TipoMarcacao)request.TipoMarcacao,
                 cancellationToken,
-                request.LimiteAlunos);
+                request.LimiteAlunos,
+                request.PrazoCancelamentoMinutos);
             LogHorarioCriado(trackId, horario);
             LogLimiteAlunosAlterado(trackId, horario);
             return Ok(ParaResponse(horario));
@@ -84,6 +85,34 @@ public sealed class HorariosController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Altera o prazo de cancelamento (<c>prazoCancelamentoMinutos</c>) de um
+    /// horário já cadastrado (issue #187) — mesmo padrão de
+    /// <see cref="AlterarPolitica"/>.
+    /// </summary>
+    [HttpPatch("{horarioId:guid}/prazo-cancelamento")]
+    public async Task<IActionResult> AlterarPrazoCancelamento(
+        Guid professorId, Guid horarioId, [FromBody] AlterarPrazoCancelamentoHorarioRequest request, CancellationToken cancellationToken)
+    {
+        var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+        try
+        {
+            var prazoAnterior = await _horarioService.BuscarPrazoCancelamentoAsync(professorId, horarioId, cancellationToken);
+            var horario = await _horarioService.AlterarPrazoCancelamentoAsync(
+                professorId, horarioId, request.PrazoCancelamentoMinutos, cancellationToken);
+            LogHorarioPrazoCancelamentoAlterado(trackId, horario, prazoAnterior);
+            return Ok(ParaResponse(horario));
+        }
+        catch (HorarioNaoEncontradoException)
+        {
+            return NotFound();
+        }
+        catch (HorarioRejeitadoException ex)
+        {
+            return BadRequest(new HorarioErrorResponse(ex.Message));
+        }
+    }
+
     [HttpDelete("{horarioId:guid}")]
     public async Task<IActionResult> Remover(Guid professorId, Guid horarioId, CancellationToken cancellationToken)
     {
@@ -107,7 +136,8 @@ public sealed class HorariosController : ControllerBase
     private static HorarioResponse ParaResponse(Horario horario)
     {
         return new HorarioResponse(
-            horario.Id, (int)horario.DiaSemana, horario.HoraInicio, horario.DuracaoMinutos, (int)horario.TipoMarcacao, horario.LimiteAlunos);
+            horario.Id, (int)horario.DiaSemana, horario.HoraInicio, horario.DuracaoMinutos, (int)horario.TipoMarcacao,
+            horario.LimiteAlunos, horario.PrazoCancelamentoMinutos);
     }
 
     private void LogHorarioCriado(string trackId, Horario horario)
@@ -136,6 +166,13 @@ public sealed class HorariosController : ControllerBase
             trackId, horario.ProfessorId, horario.Id, (int)tipoAnterior, (int)horario.TipoMarcacao);
     }
 
+    private void LogHorarioPrazoCancelamentoAlterado(string trackId, Horario horario, int prazoAnterior)
+    {
+        _logger.LogInformation(
+            "HorarioPrazoCancelamentoAlterado {TrackId} {ProfessorId} {HorarioId} {PrazoAnterior} {PrazoNovo}",
+            trackId, horario.ProfessorId, horario.Id, prazoAnterior, horario.PrazoCancelamentoMinutos);
+    }
+
     private void LogRejeicaoPorConflito(string trackId, Guid professorId, HorarioConflitanteException ex)
     {
         _logger.LogWarning(
@@ -151,10 +188,14 @@ public sealed class HorariosController : ControllerBase
     }
 }
 
-public sealed record CriarHorarioRequest(int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int? LimiteAlunos = null);
+public sealed record CriarHorarioRequest(
+    int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int? LimiteAlunos = null, int? PrazoCancelamentoMinutos = null);
 
 public sealed record AlterarPoliticaHorarioRequest(int TipoMarcacao);
 
-public sealed record HorarioResponse(Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int LimiteAlunos);
+public sealed record AlterarPrazoCancelamentoHorarioRequest(int PrazoCancelamentoMinutos);
+
+public sealed record HorarioResponse(
+    Guid Id, int DiaSemana, TimeOnly HoraInicio, int DuracaoMinutos, int TipoMarcacao, int LimiteAlunos, int PrazoCancelamentoMinutos);
 
 public sealed record HorarioErrorResponse(string Mensagem);

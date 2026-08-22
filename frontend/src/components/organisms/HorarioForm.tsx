@@ -29,6 +29,7 @@ const MensagemDuracaoInvalida = 'Informe uma duração em minutos maior que zero
 const MensagemLimiteAlunosInvalido = 'Informe um limite de alunos maior que zero.';
 const MensagemConflito = 'Esse horário conflita com um já cadastrado.';
 const MensagemPoliticaObrigatoria = 'Escolha a política de marcação deste horário.';
+const MensagemPrazoCancelamentoInvalido = 'Informe um prazo de cancelamento maior ou igual a zero.';
 
 /**
  * Organismo: formulário de criação de horário disponível (issue #6). Valida
@@ -45,6 +46,7 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
   const [horaInicio, setHoraInicio] = useState<string | undefined>(undefined);
   const [duracaoMinutos, setDuracaoMinutos] = useState('');
   const [limiteAlunos, setLimiteAlunos] = useState('1');
+  const [prazoCancelamentoMinutos, setPrazoCancelamentoMinutos] = useState('');
   const [erroCliente, setErroCliente] = useState<string | undefined>(undefined);
 
   function handleSubmit() {
@@ -54,6 +56,7 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
       horaInicio,
       duracaoMinutos,
       limiteAlunos,
+      prazoCancelamentoMinutos,
       horariosExistentes,
     );
     if (!resultado.valido) {
@@ -95,6 +98,13 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
         placeholder="1"
         keyboardType="numeric"
       />
+      <FormField
+        label="Prazo de cancelamento (minutos)"
+        value={prazoCancelamentoMinutos}
+        onChangeText={setPrazoCancelamentoMinutos}
+        placeholder="0"
+        keyboardType="numeric"
+      />
       {(erroCliente ?? erro) ? <ErrorMessage>{erroCliente ?? erro}</ErrorMessage> : null}
       <Button
         label={enviando ? 'Salvando...' : 'Adicionar horário'}
@@ -114,6 +124,7 @@ function validar(
   horaInicio: string | undefined,
   duracaoMinutos: string,
   limiteAlunos: string,
+  prazoCancelamentoMinutos: string,
   horariosExistentes: Horario[],
 ): ResultadoValidacao {
   if (tipoMarcacao === undefined) {
@@ -134,12 +145,21 @@ function validar(
     return { valido: false, mensagem: MensagemLimiteAlunosInvalido };
   }
 
+  let prazoCancelamento: number | undefined;
+  if (prazoCancelamentoMinutos.trim() !== '') {
+    prazoCancelamento = Number(prazoCancelamentoMinutos);
+    if (!Number.isInteger(prazoCancelamento) || prazoCancelamento < 0) {
+      return { valido: false, mensagem: MensagemPrazoCancelamentoInvalido };
+    }
+  }
+
   const input: CriarHorarioInput = {
     diaSemana,
     tipoMarcacao,
     horaInicio: `${horaInicio}:00`,
     duracaoMinutos: duracao,
     limiteAlunos: limite,
+    prazoCancelamentoMinutos: prazoCancelamento,
   };
   const conflita = horariosExistentes.some((existente) => horariosSeSobrepoe(input, existente));
   return conflita ? { valido: false, mensagem: MensagemConflito } : { valido: true, input };

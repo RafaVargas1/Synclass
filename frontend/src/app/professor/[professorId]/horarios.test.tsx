@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import {
+  alterarPrazoCancelamentoHorario,
   alterarTipoMarcacaoHorario,
   criarHorario,
   listarHorarios,
@@ -32,6 +33,7 @@ jest.mock('expo-router', () => {
 });
 
 jest.mock('@/lib/api/horarios', () => ({
+  alterarPrazoCancelamentoHorario: jest.fn(),
   alterarTipoMarcacaoHorario: jest.fn(),
   criarHorario: jest.fn(),
   listarHorarios: jest.fn(),
@@ -39,6 +41,7 @@ jest.mock('@/lib/api/horarios', () => ({
   TipoMarcacao: { Livre: 0, Fixo: 1, Hibrido: 2 },
 }));
 
+const alterarPrazoCancelamentoHorarioMock = alterarPrazoCancelamentoHorario as jest.Mock;
 const alterarTipoMarcacaoHorarioMock = alterarTipoMarcacaoHorario as jest.Mock;
 const criarHorarioMock = criarHorario as jest.Mock;
 const listarHorariosMock = listarHorarios as jest.Mock;
@@ -51,6 +54,7 @@ const horarioExistente = {
   duracaoMinutos: 60,
   limiteAlunos: 1,
   tipoMarcacao: TipoMarcacao.Livre,
+  prazoCancelamentoMinutos: 0,
 };
 
 // SeletorDeHora virou um campo de texto mascarado HH:mm (issue #138) — não
@@ -66,11 +70,20 @@ async function selecionarPoliticaEEnviar() {
 
 describe('HorariosProfessorScreen', () => {
   beforeEach(() => {
+    alterarPrazoCancelamentoHorarioMock.mockReset();
     alterarTipoMarcacaoHorarioMock.mockReset();
     criarHorarioMock.mockReset();
     listarHorariosMock.mockReset();
     removerHorarioMock.mockReset();
     listarHorariosMock.mockResolvedValue({ sucesso: true, horarios: [horarioExistente] });
+    // "Salvar" no painel de edição sempre dispara os dois handlers (política
+    // + prazo, issue #187) — default de sucesso pros dois, sobrescrito nos
+    // testes que verificam o comportamento específico de cada um.
+    alterarTipoMarcacaoHorarioMock.mockResolvedValue({ sucesso: true, horario: horarioExistente });
+    alterarPrazoCancelamentoHorarioMock.mockResolvedValue({
+      sucesso: true,
+      horario: horarioExistente,
+    });
   });
 
   it('shows the horarios form directly on mount, without any gate, even without a ConfiguracaoProfessor', async () => {
@@ -157,6 +170,13 @@ describe('HorariosProfessorScreen', () => {
         sucesso: true,
         horario: horarioComPoliticaAlterada,
       });
+      // Mesma linha no backend real: a resposta do PATCH de prazo (disparado
+      // junto no mesmo "Salvar", issue #187) sempre reflete o estado cheio e
+      // atual do Horario, então também carrega a política já alterada.
+      alterarPrazoCancelamentoHorarioMock.mockResolvedValue({
+        sucesso: true,
+        horario: horarioComPoliticaAlterada,
+      });
       await render(<HorariosProfessorScreen />);
       await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
 
@@ -188,6 +208,41 @@ describe('HorariosProfessorScreen', () => {
 
       await waitFor(() => expect(screen.getByText('Tipo de marcação inválido.')).toBeTruthy());
       expect(screen.getByTestId('horario-politica-atual')).toHaveTextContent('Livre');
+    });
+  });
+
+  describe('handleAlterarPrazoCancelamento (issue #187)', () => {
+    it('updates the local list with the returned horario when the prazo changes', async () => {
+      const horarioComPrazoAlterado = { ...horarioExistente, prazoCancelamentoMinutos: 120 };
+      alterarPrazoCancelamentoHorarioMock.mockResolvedValue({
+        sucesso: true,
+        horario: horarioComPrazoAlterado,
+      });
+      await render(<HorariosProfessorScreen />);
+      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+
+      await fireEvent.press(screen.getByText('Editar política'));
+      const camposDeZero = screen.getAllByPlaceholderText('0');
+      await fireEvent.changeText(camposDeZero[camposDeZero.length - 1], '120');
+      await fireEvent.press(screen.getByText('Salvar'));
+
+      expect(alterarPrazoCancelamentoHorarioMock).toHaveBeenCalledWith('professor-1', 'h1', 120);
+    });
+
+    it('shows the Api error message when the prazo change fails', async () => {
+      alterarPrazoCancelamentoHorarioMock.mockResolvedValue({
+        sucesso: false,
+        mensagem: 'Prazo de cancelamento inválido.',
+      });
+      await render(<HorariosProfessorScreen />);
+      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+
+      await fireEvent.press(screen.getByText('Editar política'));
+      const camposDeZero = screen.getAllByPlaceholderText('0');
+      await fireEvent.changeText(camposDeZero[camposDeZero.length - 1], '120');
+      await fireEvent.press(screen.getByText('Salvar'));
+
+      await waitFor(() => expect(screen.getByText('Prazo de cancelamento inválido.')).toBeTruthy());
     });
   });
 });

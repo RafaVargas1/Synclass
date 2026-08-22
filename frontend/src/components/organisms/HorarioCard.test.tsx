@@ -19,6 +19,7 @@ const horario = {
   duracaoMinutos: 60,
   limiteAlunos: 1,
   tipoMarcacao: TipoMarcacao.Livre,
+  prazoCancelamentoMinutos: 0,
 };
 
 async function renderComCard(overrides = {}) {
@@ -28,6 +29,7 @@ async function renderComCard(overrides = {}) {
       horario={horario}
       onRemover={jest.fn()}
       onAlterarPolitica={jest.fn()}
+      onAlterarPrazoCancelamento={jest.fn()}
       {...overrides}
     />,
   );
@@ -132,6 +134,30 @@ describe('HorarioCard', () => {
 
       expect(onAlterarPolitica).not.toHaveBeenCalled();
       expect(screen.queryByText('Salvar')).toBeNull();
+    });
+  });
+
+  describe('edição de prazo de cancelamento (issue #187)', () => {
+    it('calls onAlterarPrazoCancelamento with the horario id and the typed value when saved', async () => {
+      const onAlterarPrazoCancelamento = jest.fn();
+      await renderComCard({ onAlterarPrazoCancelamento });
+
+      await fireEvent.press(screen.getByText('Editar política'));
+      await fireEvent.changeText(screen.getByPlaceholderText('0'), '90');
+      await fireEvent.press(screen.getByText('Salvar'));
+
+      expect(onAlterarPrazoCancelamento).toHaveBeenCalledWith('h1', 90);
+    });
+
+    it('does not call onAlterarPrazoCancelamento when cancelled', async () => {
+      const onAlterarPrazoCancelamento = jest.fn();
+      await renderComCard({ onAlterarPrazoCancelamento });
+
+      await fireEvent.press(screen.getByText('Editar política'));
+      await fireEvent.changeText(screen.getByPlaceholderText('0'), '90');
+      await fireEvent.press(screen.getByText('Cancelar'));
+
+      expect(onAlterarPrazoCancelamento).not.toHaveBeenCalled();
     });
   });
 });

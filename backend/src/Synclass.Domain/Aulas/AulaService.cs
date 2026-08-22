@@ -1,6 +1,5 @@
 using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Common;
-using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 
@@ -20,7 +19,6 @@ public sealed class AulaService
     private readonly ICancelamentoAulaRepository _cancelamentos;
     private readonly IAlocacaoHorarioRepository _alocacoes;
     private readonly IMatriculaRepository _matriculas;
-    private readonly IConfiguracaoProfessorRepository _configuracoes;
     private readonly HorarioService _horarioService;
     private readonly IClock _clock;
 
@@ -29,7 +27,6 @@ public sealed class AulaService
         ICancelamentoAulaRepository cancelamentos,
         IAlocacaoHorarioRepository alocacoes,
         IMatriculaRepository matriculas,
-        IConfiguracaoProfessorRepository configuracoes,
         HorarioService horarioService,
         IClock clock)
     {
@@ -37,7 +34,6 @@ public sealed class AulaService
         _cancelamentos = cancelamentos;
         _alocacoes = alocacoes;
         _matriculas = matriculas;
-        _configuracoes = configuracoes;
         _horarioService = horarioService;
         _clock = clock;
     }
@@ -55,7 +51,7 @@ public sealed class AulaService
             return cancelamento;
         }
 
-        await GarantirDentroDoPrazoAsync(professorId, aula, horario.HoraInicio, cancellationToken);
+        GarantirDentroDoPrazo(aula, horario);
 
         var novoCancelamento = CancelamentoAula.Criar(aula.Id, matriculaId, _clock);
         await _cancelamentos.AdicionarAsync(novoCancelamento, cancellationToken);
@@ -86,19 +82,19 @@ public sealed class AulaService
 
     /// <summary>
     /// Compara o instante atual com <c>Aula.Data + Horario.HoraInicio -
-    /// PrazoCancelamentoMinutos</c> (issue #10, AC1/AC2) — lê a configuração
-    /// vigente a cada chamada, nunca cacheia o prazo em <see cref="AlocacaoHorario"/>
-    /// ou <see cref="Aula"/> (AC5: mudança de prazo não reavalia cancelamentos
-    /// antigos, só afeta os próximos). Ausência de configuração usa 0
-    /// minutos (mesmo default de <c>ConfiguracaoProfessor.Criar</c>).
+    /// Horario.PrazoCancelamentoMinutos</c> (issue #10, AC1/AC2; prazo
+    /// migrado de <c>ConfiguracaoProfessor</c> para <see cref="Horario"/> na
+    /// issue #187, para ser configurável por Horário em vez de único por
+    /// Professor) — lê o valor vigente do <see cref="Horario"/> a cada
+    /// chamada, nunca cacheia em <see cref="AlocacaoHorario"/> ou
+    /// <see cref="Aula"/> (AC5: mudança de prazo não reavalia cancelamentos
+    /// antigos, só afeta os próximos).
     /// </summary>
-    private async Task GarantirDentroDoPrazoAsync(
-        Guid professorId, Aula aula, TimeOnly horaInicio, CancellationToken cancellationToken)
+    private void GarantirDentroDoPrazo(Aula aula, Horario horario)
     {
-        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
-        var prazoCancelamentoMinutos = configuracao?.PrazoCancelamentoMinutos ?? 0;
+        var prazoCancelamentoMinutos = horario.PrazoCancelamentoMinutos;
 
-        var limite = CalcularLimiteCancelamento(aula.Data, horaInicio, prazoCancelamentoMinutos);
+        var limite = CalcularLimiteCancelamento(aula.Data, horario.HoraInicio, prazoCancelamentoMinutos);
         if (_clock.UtcNow > limite)
         {
             throw new PrazoCancelamentoExpiradoException(aula.Id, prazoCancelamentoMinutos, limite);
@@ -144,15 +140,12 @@ public sealed class AulaService
     {
         await GarantirMatriculaVinculadaAsync(professorId, matriculaId, cancellationToken);
 
-        var configuracao = await _configuracoes.BuscarPorProfessorAsync(professorId, cancellationToken);
-        var prazoCancelamentoMinutos = configuracao?.PrazoCancelamentoMinutos ?? 0;
-
         var alocacoes = await _alocacoes.ListarPorMatriculaAsync(matriculaId, cancellationToken);
         var proximas = new List<AulaProxima>();
         foreach (var alocacao in alocacoes)
         {
             var horario = await _horarioService.BuscarDoProfessorAsync(professorId, alocacao.HorarioId, cancellationToken);
-            var proxima = await CalcularProximaOcorrenciaAsync(horario, matriculaId, prazoCancelamentoMinutos, cancellationToken);
+            var proxima = await CalcularProximaOcorrenciaAsync(horario, matriculaId, cancellationToken);
             proximas.Add(proxima);
         }
 
@@ -165,7 +158,7 @@ public sealed class AulaService
     /// desta matrícula — não mostra uma aula já cancelada como "próxima".
     /// </summary>
     private async Task<AulaProxima> CalcularProximaOcorrenciaAsync(
-        Horario horario, Guid matriculaId, int prazoCancelamentoMinutos, CancellationToken cancellationToken)
+        Horario horario, Guid matriculaId, CancellationToken cancellationToken)
     {
         var data = ProximaDataDoDiaSemana(horario.DiaSemana, horario.HoraInicio);
         while (await ExisteCancelamentoAsync(horario.Id, data, matriculaId, cancellationToken))
@@ -173,6 +166,7 @@ public sealed class AulaService
             data = data.AddDays(7);
         }
 
+        var prazoCancelamentoMinutos = horario.PrazoCancelamentoMinutos;
         var cancelavelAte = CalcularLimiteCancelamento(data, horario.HoraInicio, prazoCancelamentoMinutos);
         var podeCancelar = _clock.UtcNow <= cancelavelAte;
         return new AulaProxima(

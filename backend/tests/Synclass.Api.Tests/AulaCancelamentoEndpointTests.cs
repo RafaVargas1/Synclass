@@ -104,11 +104,12 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
             new CriarAlocacaoHorarioRequest(matriculaId));
     }
 
-    private static async Task DefinirPrazoCancelamentoAsync(HttpClient professorClient, Guid professorId, int prazoCancelamentoMinutos)
+    private static async Task DefinirPrazoCancelamentoAsync(
+        HttpClient professorClient, Guid professorId, Guid horarioId, int prazoCancelamentoMinutos)
     {
-        await professorClient.PutAsJsonAsync(
-            $"/professores/{professorId}/configuracao/prazo-cancelamento",
-            new DefinirPrazoCancelamentoRequest(prazoCancelamentoMinutos));
+        await professorClient.PatchAsJsonAsync(
+            $"/professores/{professorId}/horarios/{horarioId}/prazo-cancelamento",
+            new AlterarPrazoCancelamentoHorarioRequest(prazoCancelamentoMinutos));
     }
 
     [Fact]
@@ -121,7 +122,7 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
         var (alunoClient, alunoUsuarioId) = await AutenticacaoTestHelper.ClienteAutenticadoComoAlunoPersistidoAsync(_factory);
         var matriculaId = await VincularAlunoAoProfessorAsync(professorId, alunoUsuarioId);
         await AlocarAsync(professorClient, horarioId, matriculaId);
-        await DefinirPrazoCancelamentoAsync(professorClient, professorId, prazoCancelamentoMinutos: 24 * 60);
+        await DefinirPrazoCancelamentoAsync(professorClient, professorId, horarioId, prazoCancelamentoMinutos: 24 * 60);
 
         var response = await alunoClient.PostAsync(
             $"/professores/{professorId}/horarios/{horarioId}/aulas/2026-08-20/cancelamentos", null);
@@ -141,7 +142,7 @@ public sealed class AulaCancelamentoEndpointTests : IClassFixture<WebApplication
         var (alunoClient, alunoUsuarioId) = await AutenticacaoTestHelper.ClienteAutenticadoComoAlunoPersistidoAsync(_factory);
         var matriculaId = await VincularAlunoAoProfessorAsync(professorId, alunoUsuarioId);
         await AlocarAsync(professorClient, horarioId, matriculaId);
-        await DefinirPrazoCancelamentoAsync(professorClient, professorId, prazoCancelamentoMinutos: 24 * 60);
+        await DefinirPrazoCancelamentoAsync(professorClient, professorId, horarioId, prazoCancelamentoMinutos: 24 * 60);
 
         var response = await alunoClient.PostAsync(
             $"/professores/{professorId}/horarios/{horarioId}/aulas/2026-08-18/cancelamentos", null);

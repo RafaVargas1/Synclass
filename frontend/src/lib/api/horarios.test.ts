@@ -1,4 +1,5 @@
 import {
+  alterarPrazoCancelamentoHorario,
   alterarTipoMarcacaoHorario,
   criarHorario,
   listarHorarios,
@@ -179,6 +180,64 @@ describe('alterarTipoMarcacaoHorario', () => {
       'h1',
       TipoMarcacao.Fixo,
     );
+
+    expect(resultado.sucesso).toBe(false);
+  });
+});
+
+describe('alterarPrazoCancelamentoHorario', () => {
+  it('returns sucesso with the updated horario when the Api responds with 200', async () => {
+    mockFetchOnce(200, {
+      id: 'h1',
+      diaSemana: 2,
+      horaInicio: '10:00:00',
+      duracaoMinutos: 60,
+      limiteAlunos: 1,
+      tipoMarcacao: TipoMarcacao.Livre,
+      prazoCancelamentoMinutos: 120,
+    });
+
+    const resultado = await alterarPrazoCancelamentoHorario('professor-1', 'h1', 120);
+
+    expect(resultado).toEqual({
+      sucesso: true,
+      horario: {
+        id: 'h1',
+        diaSemana: 2,
+        horaInicio: '10:00:00',
+        duracaoMinutos: 60,
+        limiteAlunos: 1,
+        tipoMarcacao: TipoMarcacao.Livre,
+        prazoCancelamentoMinutos: 120,
+      },
+    });
+  });
+
+  it('returns the Api error message when the Api rejects with 400 (prazo negativo)', async () => {
+    mockFetchOnce(400, {
+      mensagem: 'Prazo de cancelamento inválido: -1. Esperado um valor maior ou igual a 0.',
+    });
+
+    const resultado = await alterarPrazoCancelamentoHorario('professor-1', 'h1', -1);
+
+    expect(resultado).toEqual({
+      sucesso: false,
+      mensagem: 'Prazo de cancelamento inválido: -1. Esperado um valor maior ou igual a 0.',
+    });
+  });
+
+  it('returns sucesso false when the Api responds with 404', async () => {
+    mockFetchOnce(404, { mensagem: 'Horário não encontrado.' });
+
+    const resultado = await alterarPrazoCancelamentoHorario('professor-1', 'h1', 120);
+
+    expect(resultado.sucesso).toBe(false);
+  });
+
+  it('returns a connection error message when fetch throws', async () => {
+    globalThis.fetch = jest.fn().mockRejectedValue(new Error('network error')) as jest.Mock;
+
+    const resultado = await alterarPrazoCancelamentoHorario('professor-1', 'h1', 120);
 
     expect(resultado.sucesso).toBe(false);
   });
