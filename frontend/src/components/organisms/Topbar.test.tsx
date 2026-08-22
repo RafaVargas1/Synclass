@@ -145,6 +145,12 @@ describe('Topbar', () => {
     expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Synclass' });
   });
 
+  it('prefers titulo over tituloDaAba when both are given (achado de dev-review, PR #168)', async () => {
+    await render(<Topbar titulo="Chamada" tituloDaAba="Painel" />);
+
+    expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Chamada' });
+  });
+
   // O teste "em tela larga, o menu aparece antes do Voltar" (issue #145)
   // foi removido na issue #161: em viewport larga o `Topbar` não renderiza
   // mais `menuNavegacao` (esse branch inteiro deixou de existir) — o menu

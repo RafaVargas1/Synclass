@@ -47,7 +47,7 @@ export function Topbar({ titulo, tituloDaAba, children, menuNavegacao }: TopbarP
 
   return (
     <>
-      <TituloDaAba titulo={tituloDaAba ?? titulo ?? 'Synclass'} />
+      <TituloDaAba titulo={titulo ?? tituloDaAba ?? 'Synclass'} />
       {/* z-20: React Native Web dá a toda `View` um `z-index: 0` implícito,
           o que faz `position: relative` (default do RN-Web) criar uma
           stacking context em cada nível — sem um z-index explícito aqui, o
