@@ -17,12 +17,12 @@ uma variação.
 - [x] Implementação mínima: crie `frontend/src/lib/mascararHora.ts` com o
       código de `implementation.md` (`mascararHora`, `formatarHoraParcial`,
       `horaEstaCompleta`).
-- [ ] Teste (`frontend/src/components/molecules/SeletorDeHora.test.tsx`):
+- [x] Teste (`frontend/src/components/molecules/SeletorDeHora.test.tsx`):
       **substitua o arquivo inteiro** pelos casos descritos em
       `implementation.md` (o componente muda de forma, os testes antigos
       testam uma UI que deixa de existir — não tente manter os testes
       antigos passando).
-- [ ] Implementação mínima: reescreva
+- [x] Implementação mínima: reescreva
       `frontend/src/components/molecules/SeletorDeHora.tsx` com o código de
       `implementation.md`.
 - [ ] Ajuste em `frontend/src/components/organisms/HorarioForm.tsx`
@@ -56,3 +56,13 @@ ao caractere apagado. Exemplo com o código verbatim:
 `mascararHora('1030', '10:30')` → `'10:3'` (remove o último dígito, o `0`
 de minuto). Segui o código fornecido (design source of truth), não a
 literalidade da frase; o teste reflete o comportamento real do código.
+
+### Comentário "sem chamar onSelecionar" × código que propaga o parcial
+
+O comentário inline de `implementation.md` (mantido verbatim no
+`SeletorDeHora.tsx`) diz "sem chamar onSelecionar" para o valor parcial,
+mas a própria seção "Edge point: valor parcial propagado pro pai" explica
+que o desenho propaga QUALQUER valor mascarado pro pai, completo ou não —
+e o código termina com `onSelecionar(mascarado)` no caso parcial. O
+comentário contradiz o código/Edge point; mantive o código verbatim (fonte
+da decisão) e os testes refletem a propagação do parcial.
