@@ -8,7 +8,7 @@ import { useTituloDaAba } from '@/lib/useTituloDaAba';
 import { AlvoDeToqueMinimo, Fonts, MaxContentWidth } from '@/theme/tokens';
 
 export type TopbarProps = {
-  /** Quando presente, mostra seta de voltar + este título em vez da marca. */
+  /** Quando presente, mostra o botão Voltar + este título em vez da marca. */
   titulo?: string;
   /** Conteúdo à direita (links de navegação, usuário + Sair, etc). */
   children?: ReactNode;
@@ -26,11 +26,15 @@ export type TopbarProps = {
  * Organismo: cabeçalho consistente de toda tela (issue de usabilidade —
  * antes desta issue nenhuma tela tinha forma de voltar). Duas variantes:
  * marca (sem `titulo`, usada na Home e no Painel — telas raiz de
- * navegação) ou voltar+título (demais telas). `menuNavegacao` (#77) é um
- * slot opcional: em viewport estreita fica à esquerda da marca (botão de
- * abrir o menu); em viewport larga vira uma segunda linha de largura total
- * abaixo do cabeçalho, para a faixa de seções não competir no mesmo
- * `flex-row` da marca (issue #129). A API (`titulo`/`children`) não muda.
+ * navegação) ou voltar+título (demais telas). Quando há `titulo`, o botão
+ * Voltar (seta + texto "Voltar", issue #145) fica numa linha própria abaixo
+ * da linha do cabeçalho — não mais ao lado do título —, reforçando com o
+ * rótulo visível o que antes era só uma seta abstrata. `menuNavegacao`
+ * (#77) é um slot opcional: em viewport estreita fica à esquerda da marca
+ * (botão de abrir o menu); em viewport larga vira uma segunda linha de
+ * largura total abaixo do cabeçalho, para a faixa de seções não competir
+ * no mesmo `flex-row` da marca (issue #129). A API (`titulo`/`children`)
+ * não muda.
  */
 export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
   useTituloDaAba(titulo ?? 'Synclass');
@@ -52,10 +56,15 @@ export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
       >
         <View className="flex-row items-center gap-three">
           {!telaLarga && menuNavegacao ? menuNavegacao : null}
-          {titulo ? <TituloComVoltar titulo={titulo} /> : <Logotipo />}
+          {titulo ? <Titulo titulo={titulo} /> : <Logotipo />}
         </View>
         {children ? <View className="flex-row items-center gap-three">{children}</View> : null}
       </View>
+      {titulo ? (
+        <View className="w-full self-center px-four pb-three" style={{ maxWidth: MaxContentWidth }}>
+          <BotaoVoltar />
+        </View>
+      ) : null}
       {telaLarga && menuNavegacao ? (
         <View
           className="w-full self-center"
@@ -83,7 +92,15 @@ function Logotipo() {
   );
 }
 
-function TituloComVoltar({ titulo }: { titulo: string }) {
+function Titulo({ titulo }: { titulo: string }) {
+  return (
+    <Text accessibilityRole="header" className="text-lg font-bold text-text dark:text-dark-text">
+      {titulo}
+    </Text>
+  );
+}
+
+function BotaoVoltar() {
   const router = useRouter();
   // '/' (Home), não '/painel': Topbar é usado tanto em telas autenticadas
   // quanto públicas (login, cadastro) — sem histórico de navegação (ex:
@@ -95,22 +112,18 @@ function TituloComVoltar({ titulo }: { titulo: string }) {
   const voltar = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   return (
-    <View className="flex-row items-center gap-three">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Voltar"
-        onPress={voltar}
-        className="items-center justify-center"
-        style={AlvoDeToqueMinimo}
-      >
-        <View
-          className="border-l-2 border-t-2 border-text dark:border-dark-text"
-          style={{ width: 12, height: 12, transform: [{ rotate: '-45deg' }] }}
-        />
-      </Pressable>
-      <Text accessibilityRole="header" className="text-lg font-bold text-text dark:text-dark-text">
-        {titulo}
-      </Text>
-    </View>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Voltar"
+      onPress={voltar}
+      className="flex-row items-center gap-two self-start"
+      style={AlvoDeToqueMinimo}
+    >
+      <View
+        className="border-l-2 border-t-2 border-text dark:border-dark-text"
+        style={{ width: 10, height: 10, transform: [{ rotate: '-45deg' }] }}
+      />
+      <Text className="text-sm font-semibold text-text dark:text-dark-text">Voltar</Text>
+    </Pressable>
   );
 }
