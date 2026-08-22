@@ -5,8 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
+import { ResumoFrequenciaCard } from '@/components/organisms/ResumoFrequenciaCard';
 import { ResumoValorReceber } from '@/components/organisms/ResumoValorReceber';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
+import {
+  calcularPeriodoUltimosNDias,
+  listarHistoricoFrequenciaDoAluno,
+  type HistoricoFrequenciaPorProfessor,
+} from '@/lib/api/historicoFrequencia';
 import { listarValorDevido, type ListarValorDevidoResultado } from '@/lib/api/valorDevido';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
@@ -63,6 +69,7 @@ export default function PainelScreen() {
         {papelAtivo === 'Professor' && usuarioId ? (
           <ResumoValorReceberComConsulta professorId={usuarioId} />
         ) : null}
+        {papelAtivo === 'Aluno' ? <ResumoDeFrequenciaDoAluno /> : null}
         <View className="w-full flex-row flex-wrap gap-three">
           {acoes.map((acao) => (
             <CardDeAcao key={acao.label} acao={acao} />
@@ -132,4 +139,64 @@ function BotaoSair({ onPress }: { onPress: () => void }) {
       <Text className="text-sm font-semibold text-text dark:text-dark-text">Sair</Text>
     </Pressable>
   );
+}
+
+/**
+ * Resumo de frequência recente do Aluno (issue #167): consulta os últimos
+ * 30 dias do mesmo `GET /alunos/historico-frequencia` da tela de histórico e
+ * deriva as contagens de `Presente`/`Ausente` — sem duplicar a lógica de
+ * cálculo (quem define os status é o backend, via `FrequenciaService`).
+ * `NaoRegistrada`/`Cancelada` não entram no par "compareceu/faltou", então
+ * ambas zero → estado vazio (mensagem clara, não seção em branco). Só monta
+ * quando `papelAtivo === 'Aluno'` (o cartão não existe para o Professor).
+ */
+function ResumoDeFrequenciaDoAluno() {
+  const [resumo, setResumo] = useState<{ presentes: number; ausentes: number } | undefined>(undefined);
+  const [erro, setErro] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    listarHistoricoFrequenciaDoAluno(calcularPeriodoUltimosNDias(new Date(), 30)).then((dados) => {
+      if (cancelado) return;
+      if (!dados.sucesso) {
+        setErro(true);
+        return;
+      }
+      const { presentes, ausentes } = calcularResumo(dados.historico);
+      setResumo({ presentes, ausentes });
+      setErro(false);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  if (erro) {
+    return null; // sem resumo em falha de rede; as ações do Painel continuam inteiras
+  }
+  if (resumo === undefined) {
+    return (
+      <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">
+        Carregando…
+      </Text>
+    );
+  }
+  return <ResumoFrequenciaCard presentes={resumo.presentes} ausentes={resumo.ausentes} />;
+}
+
+/**
+ * Conta `Presente` e `Ausente` no histórico agregado por Professor — nunca
+ * mistura Professores, só soma o mesmo status entre eles (mesmo racional da
+ * RN de valor devido, issue #13). Pura e fácil de testar isoladamente.
+ */
+function calcularResumo(historico: HistoricoFrequenciaPorProfessor[]): { presentes: number; ausentes: number } {
+  let presentes = 0;
+  let ausentes = 0;
+  for (const porProfessor of historico) {
+    for (const aula of porProfessor.aulas) {
+      if (aula.status === 'Presente') presentes += 1;
+      if (aula.status === 'Ausente') ausentes += 1;
+    }
+  }
+  return { presentes, ausentes };
 }

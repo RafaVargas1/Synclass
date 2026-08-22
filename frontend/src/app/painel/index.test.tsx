@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { calcularPeriodoUltimosNDias, listarHistoricoFrequenciaDoAluno } from '@/lib/api/historicoFrequencia';
 import { listarValorDevido } from '@/lib/api/valorDevido';
 import { buscarPerfil } from '@/lib/api/usuarios';
 import { useSessao } from '@/lib/auth/contexto-sessao';
@@ -46,6 +47,11 @@ jest.mock('@/lib/api/valorDevido', () => ({
   listarValorDevido: jest.fn(),
 }));
 
+jest.mock('@/lib/api/historicoFrequencia', () => {
+  const actual = jest.requireActual('@/lib/api/historicoFrequencia');
+  return { ...actual, listarHistoricoFrequenciaDoAluno: jest.fn() };
+});
+
 jest.mock('@/lib/periodoDoDia', () => {
   const actual = jest.requireActual('@/lib/periodoDoDia');
   return { ...actual, periodoDoDia: jest.fn() };
@@ -55,6 +61,17 @@ const useSessaoMock = useSessao as jest.Mock;
 const buscarPerfilMock = buscarPerfil as jest.Mock;
 const listarValorDevidoMock = listarValorDevido as jest.Mock;
 const periodoDoDiaMock = periodoDoDia as jest.Mock;
+const listarHistoricoFrequenciaDoAlunoMock = listarHistoricoFrequenciaDoAluno as jest.Mock;
+
+function aula(status: string) {
+  return {
+    horarioId: 'h1',
+    data: '2026-08-04',
+    diaSemana: 2,
+    horaInicio: '10:00:00',
+    status,
+  };
+}
 
 describe('PainelScreen', () => {
   beforeEach(() => {
@@ -64,6 +81,11 @@ describe('PainelScreen', () => {
     buscarPerfilMock.mockResolvedValue({ sucesso: false, mensagem: 'erro' });
     periodoDoDiaMock.mockReturnValue('manha');
     mockTopbarAutenticada.mockReset();
+    // O Painel com papelAtivo 'Aluno' monta o resumo (#167) que consulta o
+    // histórico — resolver com lista vazia mantém este suite focada no
+    // contrato do corpo do Painel (cards de ação, sair, saudações).
+    listarHistoricoFrequenciaDoAlunoMock.mockReset();
+    listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({ sucesso: true, historico: [] });
   });
 
   it('sets the tab title to Painel (issue #133)', async () => {
@@ -158,6 +180,8 @@ describe('PainelScreen saudação', () => {
     buscarPerfilMock.mockReset();
     buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
     useSessaoMock.mockReturnValue({ carregando: false, token: 'token-jwt', sair: jest.fn() });
+    listarHistoricoFrequenciaDoAlunoMock.mockReset();
+    listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({ sucesso: true, historico: [] });
   });
 
   it.each([
@@ -271,5 +295,122 @@ describe('PainelScreen resumo de valor a receber', () => {
     await waitFor(() => expect(screen.getByTestId('link-/aluno/historico-frequencia')).toBeTruthy());
     expect(screen.queryByText('A receber este mês')).toBeNull();
     expect(listarValorDevidoMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('PainelScreen resumo de frequência', () => {
+  beforeEach(() => {
+    mockRouterReplace.mockReset();
+    useSessaoMock.mockReset();
+    buscarPerfilMock.mockReset();
+    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'aluno-1', nome: 'Ana' });
+    periodoDoDiaMock.mockReturnValue('manha');
+    listarHistoricoFrequenciaDoAlunoMock.mockReset();
+  });
+
+  it('shows the resumo with 3 presenças and 1 falta when papelAtivo is Aluno', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Aluno',
+      sair: jest.fn(),
+    });
+    listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({
+      sucesso: true,
+      historico: [
+        {
+          professorId: 'p1',
+          nomeProfessor: 'Professor A',
+          aulas: [
+            aula('Presente'),
+            aula('Presente'),
+            aula('Presente'),
+            aula('Ausente'),
+          ],
+        },
+      ],
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText(/3 presenças · 1 falta/)).toBeTruthy());
+  });
+
+  it('shows the empty message when all aulas are NaoRegistrada/Cancelada', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Aluno',
+      sair: jest.fn(),
+    });
+    listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({
+      sucesso: true,
+      historico: [
+        {
+          professorId: 'p1',
+          nomeProfessor: 'Professor A',
+          aulas: [aula('NaoRegistrada'), aula('Cancelada')],
+        },
+      ],
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          'Você ainda não tem frequência registrada nos últimos 30 dias. Suas aulas aparecem aqui assim que alguma presença ou falta for marcada.',
+        ),
+      ).toBeTruthy(),
+    );
+  });
+
+  it('does not show the resumo when papelAtivo is Professor', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Professor',
+      sair: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText('Bom dia, Ana')).toBeTruthy());
+    expect(screen.queryByText(/presença|presenças/)).toBeNull();
+    expect(listarHistoricoFrequenciaDoAlunoMock).not.toHaveBeenCalled();
+  });
+
+  it('degrades to null (no resumo) on network failure but keeps the actions visible', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Aluno',
+      sair: jest.fn(),
+    });
+    listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({
+      sucesso: false,
+      mensagem: 'erro',
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver histórico de frequência' })).toBeTruthy());
+    expect(screen.queryByText(/presença|presenças/)).toBeNull();
+    expect(screen.queryByText(/Carregando/)).toBeNull();
+  });
+
+  it('calls listarHistoricoFrequenciaDoAluno with the last 30 days period', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Aluno',
+      sair: jest.fn(),
+    });
+    listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({ sucesso: true, historico: [] });
+
+    await render(<PainelScreen />);
+
+    const esperado = calcularPeriodoUltimosNDias(new Date(), 30);
+    await waitFor(() => expect(listarHistoricoFrequenciaDoAlunoMock).toHaveBeenCalledWith(esperado));
   });
 });
