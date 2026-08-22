@@ -218,6 +218,7 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(etiquetas).toEqual([
       'secao-link-/professor/alunos/cadastro',
       'secao-link-/professor/abc-123/horarios',
+      'secao-link-/professor/abc-123/alunos',
       'secao-link-/professor/abc-123/alocacoes',
       'secao-link-/professor/abc-123/convites/novo',
       'secao-link-/professor/abc-123/valor-devido',

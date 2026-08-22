@@ -32,6 +32,7 @@ export function secoesProfessor(usuarioId: string | undefined): Secao[] {
   if (usuarioId) {
     secoes.push(
       { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` as Href },
+      { label: 'Meus Alunos', href: `/professor/${usuarioId}/alunos` as Href },
       { label: 'Alocar Aluno em horário', href: `/professor/${usuarioId}/alocacoes` as Href },
       { label: 'Convidar Aluno', href: `/professor/${usuarioId}/convites/novo` as Href },
       { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href },
