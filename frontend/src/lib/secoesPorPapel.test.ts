@@ -5,6 +5,7 @@ describe('secoesPorPapel (issue #77)', () => {
     it('expõe as telas do Aluno sem depender de usuarioId, com "Entrar em nova turma" primeiro', () => {
       expect(secoesAluno()).toEqual([
         { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma' },
+        { label: 'Meus Professores', href: '/aluno/professores' },
         { label: 'Ver histórico de frequência', href: '/aluno/historico-frequencia' },
         { label: 'Ver valor devido', href: '/aluno/valor-devido' },
       ]);

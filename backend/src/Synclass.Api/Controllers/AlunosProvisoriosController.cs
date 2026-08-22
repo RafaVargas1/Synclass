@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
 using Synclass.Domain.Matriculas;
+using Synclass.Domain.Usuarios;
 
 namespace Synclass.Api.Controllers;
 
@@ -21,15 +22,18 @@ public sealed class AlunosProvisoriosController : ControllerBase
 {
     private readonly CadastroAlunoProvisorioService _cadastroAlunoProvisorio;
     private readonly IMatriculaRepository _matriculas;
+    private readonly IUsuarioRepository _usuarios;
     private readonly ILogger<AlunosProvisoriosController> _logger;
 
     public AlunosProvisoriosController(
         CadastroAlunoProvisorioService cadastroAlunoProvisorio,
         IMatriculaRepository matriculas,
+        IUsuarioRepository usuarios,
         ILogger<AlunosProvisoriosController> logger)
     {
         _cadastroAlunoProvisorio = cadastroAlunoProvisorio;
         _matriculas = matriculas;
+        _usuarios = usuarios;
         _logger = logger;
     }
 
@@ -62,20 +66,42 @@ public sealed class AlunosProvisoriosController : ControllerBase
     {
         var professorId = User.GetUsuarioId();
         var matriculas = await _matriculas.ListarPorProfessorAsync(professorId, cancellationToken);
-        return Ok(matriculas.Select(ParaResponse));
+        var respostas = new List<AlunoProvisorioResponse>();
+        foreach (var matricula in matriculas)
+        {
+            respostas.Add(await ParaResponseAsync(matricula, cancellationToken));
+        }
+
+        return Ok(respostas);
     }
 
     /// <summary>
     /// Provisórias e plenas são listadas igualmente (issue #8 — a
     /// distinção não importa para o seletor de alocação). Matrículas plenas
     /// não têm <see cref="Matricula.NomeProvisorio"/>/<see cref="Matricula.IdentificadorProvisorio"/>
-    /// (nasceram do aceite de convite, issue #2) — <c>string.Empty</c> é o
-    /// melhor-esforço até um endpoint dedicado buscar o nome do Usuario
-    /// vinculado, fora do escopo desta issue.
+    /// (nasceram do aceite de convite, issue #2) — nesse caso o nome vem do
+    /// <see cref="Usuario"/> vinculado (<see cref="Matricula.AlunoUsuarioId"/>),
+    /// senão a linha aparecia com nome em branco em "Meus Alunos" mesmo com
+    /// o vínculo criado corretamente (achado de bug reportado pelo usuário).
+    /// N+1 em <see cref="IUsuarioRepository.BuscarPorIdAsync"/>: mesmo
+    /// "melhor esforço aceitável na escala atual" já usado em
+    /// <c>ConsultaCobrancaService.ResolverNomeProfessorAsync</c>.
     /// </summary>
-    private static AlunoProvisorioResponse ParaResponse(Matricula matricula)
+    private async Task<AlunoProvisorioResponse> ParaResponseAsync(Matricula matricula, CancellationToken cancellationToken)
     {
-        return new AlunoProvisorioResponse(matricula.Id, matricula.NomeProvisorio ?? string.Empty, matricula.IdentificadorProvisorio ?? string.Empty);
+        if (matricula.NomeProvisorio is not null)
+        {
+            return new AlunoProvisorioResponse(matricula.Id, matricula.NomeProvisorio, matricula.IdentificadorProvisorio ?? string.Empty);
+        }
+
+        var nome = string.Empty;
+        if (matricula.AlunoUsuarioId is Guid alunoUsuarioId)
+        {
+            var usuario = await _usuarios.BuscarPorIdAsync(alunoUsuarioId, cancellationToken);
+            nome = usuario?.Nome ?? string.Empty;
+        }
+
+        return new AlunoProvisorioResponse(matricula.Id, nome, matricula.IdentificadorProvisorio ?? string.Empty);
     }
 
     private void LogCadastroSucesso(string trackId, Matricula matricula)
