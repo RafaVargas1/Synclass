@@ -9,20 +9,20 @@ import { HorarioAlocacaoCard } from '@/components/organisms/HorarioAlocacaoCard'
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { alocarAluno, desalocarAluno, listarAlocacoes, type Alocacao } from '@/lib/api/alocacoes';
 import { listarAlunosProvisorios, type AlunoProvisorio } from '@/lib/api/alunosProvisorios';
-import { ModeloAgendamento, obterConfiguracao } from '@/lib/api/configuracao';
-import { listarHorarios, type Horario } from '@/lib/api/horarios';
+import { listarHorarios, TipoMarcacao, type Horario } from '@/lib/api/horarios';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
- * Tela de alocação de Aluno em horário (issue #8). Desde a issue #139 o
- * gate de modelo é substituído por uma decisão de estado
- * (`resolverEstadoAlocacao`) que combina a situação da configuração, a
- * existência de horários e (no caso de modelo Livre) a presença de alguma
- * alocação — cada cenário mostra a mensagem com a causa raiz, em vez de
- * uma única frase sobre "modelo" (ver docs/specs/139-mensagem-alocacao-clara/implementation.md).
+ * Tela de alocação de Aluno em horário (issue #8). O gate de estado
+ * (`resolverEstadoAlocacao`, issue #139/#157) decide por HORÁRIO, não mais
+ * por Professor: cada horário já carrega seu próprio `tipoMarcacao`
+ * (issue #76) — não existe mais um "modelo de agendamento" único por
+ * Professor (`ConfiguracaoProfessor`/`ModeloAgendamentoForm` foram
+ * removidos de `horarios.tsx` na própria issue #76 e nunca substituídos
+ * por outra tela; a issue #157 corrigiu esta tela, que ainda checava esse
+ * conceito morto e por isso nunca saía do estado "configure o modelo").
  * `professorId` continua vindo da rota (issue #23 não muda `horarios.tsx`/
- * `HorariosController` nem `configuracao.ts`/`ConfiguracoesController`,
- * chamados aqui também — fora de escopo).
+ * `HorariosController`, chamado aqui também — fora de escopo).
  */
 export default function AlocacoesProfessorScreen() {
   const { professorId } = useLocalSearchParams<{ professorId: string }>();
@@ -47,7 +47,7 @@ export default function AlocacoesProfessorScreen() {
         style={{ maxWidth: MaxContentWidth }}
       >
         {estado.tipo === 'permite-alocacao' ? (
-          <AlocacoesConteudo professorId={professorId} />
+          <AlocacoesConteudo professorId={professorId} horariosAlocaveis={estado.horariosAlocaveis} />
         ) : (
           <MensagemDoEstado estado={estado} professorId={professorId} />
         )}
@@ -56,16 +56,10 @@ export default function AlocacoesProfessorScreen() {
   );
 }
 
-type EstadoCarregamento =
-  | { status: 'carregando' }
-  | { status: 'falha'; mensagem: string; tentarNovamente: () => void }
-  | { status: 'carregada'; definida: boolean; modeloAgendamento?: ModeloAgendamento };
-
 type EstadoAlocacaoResolvido =
   | { tipo: 'sem-horarios' }
-  | { tipo: 'modelo-nao-configurado' }
-  | { tipo: 'modelo-livre'; temAlunosInscritos: boolean }
-  | { tipo: 'permite-alocacao' };
+  | { tipo: 'todos-livres' }
+  | { tipo: 'permite-alocacao'; horariosAlocaveis: Horario[] };
 
 type EstadoAlocacao =
   | { tipo: 'carregando' }
@@ -73,26 +67,20 @@ type EstadoAlocacao =
   | EstadoAlocacaoResolvido;
 
 /**
- * Decisão de estado da tela (issue #139): a ordem importa — sem horários
- * cadastrados sempre aparece primeiro (é a causa raiz mais frequente),
- * depois modelo não configurado, depois modelo Livre explicado à parte;
- * qualquer modelo Fixo/Híbrido libera a grade de alocação como antes.
+ * Decisão de estado da tela, POR HORÁRIO (issue #157 — cada horário já
+ * carrega seu próprio `tipoMarcacao`, não existe mais um modelo único por
+ * Professor). Horários Livre não entram na grade de alocação (o Aluno se
+ * inscreve sozinho nesse tipo); Fixo/Híbrido entram.
  */
-function resolverEstadoAlocacao(
-  carregamento: Extract<EstadoCarregamento, { status: 'carregada' }>,
-  horarios: Horario[],
-  totalAlocacoes: number,
-): EstadoAlocacaoResolvido {
+function resolverEstadoAlocacao(horarios: Horario[]): EstadoAlocacaoResolvido {
   if (horarios.length === 0) {
     return { tipo: 'sem-horarios' };
   }
-  if (!carregamento.definida) {
-    return { tipo: 'modelo-nao-configurado' };
+  const horariosAlocaveis = horarios.filter((horario) => horario.tipoMarcacao !== TipoMarcacao.Livre);
+  if (horariosAlocaveis.length === 0) {
+    return { tipo: 'todos-livres' };
   }
-  if (carregamento.modeloAgendamento === ModeloAgendamento.Vago) {
-    return { tipo: 'modelo-livre', temAlunosInscritos: totalAlocacoes > 0 };
-  }
-  return { tipo: 'permite-alocacao' };
+  return { tipo: 'permite-alocacao', horariosAlocaveis };
 }
 
 type CarregarEstadoResultado =
@@ -103,8 +91,6 @@ type CarregarEstadoResultado =
  * Mesma estratégia de `horarios.tsx#useCarregamentoConfiguracao` (achado do
  * dev-review/qa-review no PR #26, ver issue #1 Cenário 6): reage a falha de
  * rede com um estado próprio + retry, em vez de deixar a tela em branco.
- * Agora os horários são buscados junto da configuração (issue #139) para a
- * decisão de estado levar em conta os dois antes de renderizar.
  */
 function useEstadoAlocacao(professorId: string): EstadoAlocacao {
   const [resultado, setResultado] = useState<CarregarEstadoResultado | undefined>(undefined);
@@ -139,51 +125,23 @@ function paraEstadoAlocacao(
 }
 
 async function carregarEstadoAlocacao(professorId: string): Promise<CarregarEstadoResultado> {
-  const [resultadoConfiguracao, resultadoHorarios] = await Promise.all([
-    obterConfiguracao(professorId),
-    listarHorarios(professorId),
-  ]);
-  if (!resultadoConfiguracao.sucesso) {
-    return { sucesso: false, mensagem: resultadoConfiguracao.mensagem };
-  }
+  const resultadoHorarios = await listarHorarios(professorId);
   if (!resultadoHorarios.sucesso) {
     return { sucesso: false, mensagem: resultadoHorarios.mensagem };
   }
-  const carregamento: Extract<EstadoCarregamento, { status: 'carregada' }> =
-    resultadoConfiguracao.definida
-      ? {
-          status: 'carregada',
-          definida: true,
-          modeloAgendamento: resultadoConfiguracao.modeloAgendamento,
-        }
-      : { status: 'carregada', definida: false };
-
-  const totalAlocacoes =
-    carregamento.definida && carregamento.modeloAgendamento === ModeloAgendamento.Vago
-      ? await calcularTotalAlocacoes(resultadoHorarios.horarios)
-      : 0;
-  return {
-    sucesso: true,
-    estado: resolverEstadoAlocacao(carregamento, resultadoHorarios.horarios, totalAlocacoes),
-  };
-}
-
-async function calcularTotalAlocacoes(horarios: Horario[]): Promise<number> {
-  const alocacoesPorHorario = await carregarAlocacoes(horarios);
-  return Object.values(alocacoesPorHorario).reduce((total, alocacoes) => total + alocacoes.length, 0);
+  return { sucesso: true, estado: resolverEstadoAlocacao(resultadoHorarios.horarios) };
 }
 
 /**
- * Mensagem por estado (issue #139). Rótulos exatos definidos em
- * docs/specs/139-mensagem-alocacao-clara/implementation.md — não usar o
- * nome interno do enum ("Vago") em texto visível; o rótulo público do
- * modelo é "Livre" (mesmo termo de `HorarioForm`/`HorarioCard`).
+ * Mensagem por estado (issue #139/#157). Não usar o nome interno do enum
+ * ("Vago") em texto visível — o rótulo público do tipo é "Livre" (mesmo
+ * termo de `HorarioForm`/`HorarioCard`).
  */
 function MensagemDoEstado({
   estado,
   professorId,
 }: {
-  estado: Extract<EstadoAlocacao, { tipo: 'sem-horarios' | 'modelo-nao-configurado' | 'modelo-livre' }>;
+  estado: Extract<EstadoAlocacao, { tipo: 'sem-horarios' | 'todos-livres' }>;
   professorId: string;
 }) {
   switch (estado.tipo) {
@@ -196,14 +154,11 @@ function MensagemDoEstado({
           </Link>
         </View>
       );
-    case 'modelo-nao-configurado':
-      return <ErrorMessage>Configure o modelo de agendamento antes de alocar Alunos.</ErrorMessage>;
-    case 'modelo-livre':
+    case 'todos-livres':
       return (
         <ErrorMessage>
-          {estado.temAlunosInscritos
-            ? 'No modelo Livre, os Alunos se inscrevem sozinhos — não há atribuição manual pelo Professor.'
-            : 'No modelo Livre, os Alunos se inscrevem sozinhos. Ainda ninguém se inscreveu em nenhum horário.'}
+          Nenhum dos seus horários aceita atribuição manual — todos são do tipo Livre, os Alunos se
+          inscrevem sozinhos.
         </ErrorMessage>
       );
   }
@@ -232,8 +187,14 @@ function TelaErroConfiguracao({
   );
 }
 
-function AlocacoesConteudo({ professorId }: { professorId: string }) {
-  const estado = useGerenciamentoAlocacoes(professorId);
+function AlocacoesConteudo({
+  professorId,
+  horariosAlocaveis,
+}: {
+  professorId: string;
+  horariosAlocaveis: Horario[];
+}) {
+  const estado = useGerenciamentoAlocacoes(professorId, horariosAlocaveis);
   return (
     <>
       {estado.erro ? <ErrorMessage>{estado.erro}</ErrorMessage> : null}
@@ -258,22 +219,22 @@ function AlocacoesConteudo({ professorId }: { professorId: string }) {
 type AlocacoesPorHorario = Record<string, Alocacao[]>;
 
 /**
- * Carrega horários, Alunos e alocações do Professor ao montar e expõe os
- * handlers de alocar/desalocar — extraído de `AlocacoesConteudo` no mesmo
- * padrão de `horarios.tsx#useGerenciamentoHorarios` (achado de tamanho de
- * função do dev-review, PR #26).
+ * Alunos e alocações dos horários já filtrados (Fixo/Híbrido, resolvidos
+ * por `resolverEstadoAlocacao` antes deste componente montar) — extraído
+ * de `AlocacoesConteudo` no mesmo padrão de
+ * `horarios.tsx#useGerenciamentoHorarios` (achado de tamanho de função do
+ * dev-review, PR #26). Não busca horários de novo (já vieram prontos do
+ * gate de estado, issue #157) — só Alunos e alocações.
  */
-function useGerenciamentoAlocacoes(professorId: string) {
-  const [horarios, setHorarios] = useState<Horario[]>([]);
+function useGerenciamentoAlocacoes(professorId: string, horarios: Horario[]) {
   const [alunos, setAlunos] = useState<AlunoProvisorio[]>([]);
   const [alocacoesPorHorario, setAlocacoesPorHorario] = useState<AlocacoesPorHorario>({});
   const [erro, setErro] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     let cancelado = false;
-    carregarTudo(professorId).then((dados) => {
+    carregarAlunosEAlocacoes(horarios).then((dados) => {
       if (!cancelado) {
-        setHorarios(dados.horarios);
         setAlunos(dados.alunos);
         setAlocacoesPorHorario(dados.alocacoesPorHorario);
         setErro(dados.erro);
@@ -282,7 +243,7 @@ function useGerenciamentoAlocacoes(professorId: string) {
     return () => {
       cancelado = true;
     };
-  }, [professorId]);
+  }, [professorId, horarios]);
 
   const handleAlocar = criarHandleAlocar(setAlocacoesPorHorario, setErro);
   const handleDesalocar = criarHandleDesalocar(setAlocacoesPorHorario, setErro);
@@ -291,26 +252,19 @@ function useGerenciamentoAlocacoes(professorId: string) {
 }
 
 /**
- * Falha em `listarHorarios`/`listarAlunosProvisorios` antes era descartada
- * silenciosamente (`resultado.sucesso ? ... : []`), deixando a tela em
- * branco sem mensagem nem retry — achado de UX do qa-review no PR #30.
- * Agora a primeira falha encontrada vira `erro` e é exibida via
- * `<ErrorMessage>`, mesmo padrão já usado no gate de configuração acima.
+ * Falha em `listarAlunosProvisorios` antes era descartada silenciosamente
+ * (`resultado.sucesso ? ... : []`), deixando a tela em branco sem mensagem
+ * nem retry — achado de UX do qa-review no PR #30. A primeira falha
+ * encontrada vira `erro` e é exibida via `<ErrorMessage>`.
  */
-async function carregarTudo(professorId: string) {
-  const [resultadoHorarios, resultadoAlunos] = await Promise.all([
-    listarHorarios(professorId),
+async function carregarAlunosEAlocacoes(horarios: Horario[]) {
+  const [resultadoAlunos, alocacoesPorHorario] = await Promise.all([
     listarAlunosProvisorios(),
+    carregarAlocacoes(horarios),
   ]);
-  const horarios = resultadoHorarios.sucesso ? resultadoHorarios.horarios : [];
   const alunos = resultadoAlunos.sucesso ? resultadoAlunos.alunos : [];
-  const alocacoesPorHorario = await carregarAlocacoes(horarios);
-  const erro = !resultadoHorarios.sucesso
-    ? resultadoHorarios.mensagem
-    : !resultadoAlunos.sucesso
-      ? resultadoAlunos.mensagem
-      : undefined;
-  return { horarios, alunos, alocacoesPorHorario, erro };
+  const erro = !resultadoAlunos.sucesso ? resultadoAlunos.mensagem : undefined;
+  return { alunos, alocacoesPorHorario, erro };
 }
 
 async function carregarAlocacoes(horarios: Horario[]): Promise<AlocacoesPorHorario> {
