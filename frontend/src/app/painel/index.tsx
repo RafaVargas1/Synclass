@@ -1,9 +1,13 @@
 import { Link } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Heading } from '@/components/atoms/Heading';
+import { ResumoValorReceber } from '@/components/organisms/ResumoValorReceber';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
+import { listarValorDevido, type ListarValorDevidoResultado } from '@/lib/api/valorDevido';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
@@ -56,6 +60,9 @@ export default function PainelScreen() {
         style={{ maxWidth: MaxContentWidthPainel }}
       >
         {nome ? <Saudacao nome={nome} /> : null}
+        {papelAtivo === 'Professor' && usuarioId ? (
+          <ResumoValorReceberComConsulta professorId={usuarioId} />
+        ) : null}
         <View className="w-full flex-row flex-wrap gap-three">
           {acoes.map((acao) => (
             <CardDeAcao key={acao.label} acao={acao} />
@@ -64,6 +71,40 @@ export default function PainelScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+/**
+ * Estado de consulta do total a receber do mês no Painel (issue #166).
+ * Reaproveita `listarValorDevido(professorId)` sem período — mesma chamada
+ * que o filtro "Este mês" da tela de valor devido, então o backend resolve
+ * o mês corrente (contrato do filtro "Este mês"). A tela compõe o estado de
+ * consulta; `ResumoValorReceber` é só apresentação (mesma separação de
+ * `valor-devido.tsx`/`ValorDevidoCard`).
+ */
+function ResumoValorReceberComConsulta({ professorId }: { professorId: string }) {
+  const [resultado, setResultado] = useState<ListarValorDevidoResultado | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelado = false;
+    listarValorDevido(professorId).then((dados) => {
+      if (!cancelado) setResultado(dados);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [professorId]);
+
+  if (!resultado) {
+    return <ActivityIndicator accessibilityLabel="Carregando" />;
+  }
+  if (!resultado.sucesso) {
+    return <ErrorMessage>{resultado.mensagem}</ErrorMessage>;
+  }
+  const total = resultado.valoresDevidos.reduce(
+    (soma, item) => (item.valor === null ? soma : soma + item.valor),
+    0,
+  );
+  return <ResumoValorReceber total={total} />;
 }
 
 function CardDeAcao({ acao }: { acao: Secao }) {
