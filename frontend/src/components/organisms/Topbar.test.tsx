@@ -133,23 +133,20 @@ describe('Topbar', () => {
     expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Synclass' });
   });
 
-  it('em tela larga, o menu aparece antes do Voltar, numa linha própria separada por borda (issue #145 revisitada)', async () => {
+  // O teste "em tela larga, o menu aparece antes do Voltar" (issue #145)
+  // foi removido na issue #161: em viewport larga o `Topbar` não renderiza
+  // mais `menuNavegacao` (esse branch inteiro deixou de existir) — o menu
+  // virou uma coluna lateral persistente montada uma única vez em
+  // `AppShell` (`frontend/src/app/_layout.tsx`), fora do `Topbar`. O
+  // Voltar agora fica sempre na mesma linha/posição, independente de
+  // viewport (ver teste seguinte, adaptado dessa mudança).
+  it('em tela larga, o Voltar aparece mesmo sem o menu (a coluna lateral vive fora do Topbar, issue #161)', async () => {
     mockUseIsTelaLarga.mockReturnValue(true);
 
-    const resultado = await render(
-      <Topbar titulo="Valor devido por Aluno" menuNavegacao={<Text testID="menu-secoes">Seções</Text>} />,
-    );
+    await render(<Topbar titulo="Valor devido por Aluno" menuNavegacao={<Text testID="menu-secoes">Seções</Text>} />);
 
-    // RNTL não expõe `compareDocumentPosition` (API de DOM); a árvore
-    // serializada por `toJSON()` já reflete a ordem visual (JSX top-down),
-    // então comparar a posição das duas strings na serialização é
-    // suficiente pra confirmar "o menu vem antes do Voltar".
-    const arvore = JSON.stringify(resultado.toJSON());
-    const indiceDoMenu = arvore.indexOf('menu-secoes');
-    const indiceDoVoltar = arvore.indexOf('Voltar');
-    expect(indiceDoMenu).toBeGreaterThan(-1);
-    expect(indiceDoVoltar).toBeGreaterThan(-1);
-    expect(indiceDoMenu).toBeLessThan(indiceDoVoltar);
+    expect(screen.queryByTestId('menu-secoes')).toBeNull();
+    expect(screen.getByText('Voltar')).toBeTruthy();
   });
 
   it('a linha do cabeçalho no mobile tem z-index elevado, pra o painel fixo do menu não ficar atrás do título/Voltar (issue #146 revisitada)', async () => {

@@ -12,13 +12,12 @@ export type TopbarProps = {
   titulo?: string;
   /** Conteúdo à direita (links de navegação, usuário + Sair, etc). */
   children?: ReactNode;
-  /** Menu de navegação (#77). Slot opcional: no mobile o `MenuNavegacao`
-   *  renderiza o próprio botão de abrir/fechar; no desktop, a faixa de
-   *  seções de largura total. Fica dentro do cabeçalho junto da marca no
-   *  mobile; no desktop vira uma segunda linha abaixo do cabeçalho, fora
-   *  do `flex-row` que contém a `Logotipo` — sem isso a faixa de seções,
-   *  mais larga que o cabeçalho, empurraria a marca para longe do canto
-   *  superior esquerdo (regressão do PR #125, issue #129). */
+  /** Menu de navegação (#77). Slot opcional, só relevante em viewport
+   *  estreita: `MenuNavegacao` renderiza o próprio botão de abrir/fechar
+   *  o painel mobile, montado dentro do cabeçalho junto da marca. Em
+   *  viewport larga não é usado aqui — a coluna lateral persistente
+   *  (`AppShell`, `frontend/src/app/_layout.tsx`, issue #161) monta
+   *  `MenuNavegacao` uma única vez fora do `Topbar`. */
   menuNavegacao?: ReactNode;
 };
 
@@ -29,12 +28,14 @@ export type TopbarProps = {
  * navegação) ou voltar+título (demais telas). Quando há `titulo`, o botão
  * Voltar (seta + texto "Voltar", issue #145) fica numa linha própria abaixo
  * da linha do cabeçalho — não mais ao lado do título —, reforçando com o
- * rótulo visível o que antes era só uma seta abstrata. `menuNavegacao`
- * (#77) é um slot opcional: em viewport estreita fica à esquerda da marca
- * (botão de abrir o menu); em viewport larga vira uma segunda linha de
- * largura total abaixo do cabeçalho, para a faixa de seções não competir
- * no mesmo `flex-row` da marca (issue #129). A API (`titulo`/`children`)
- * não muda.
+ * rótulo visível o que antes era só uma seta abstrata, sempre nessa mesma
+ * posição independente de viewport (issue #161 — a distinção que existia
+ * entre viewport larga/estreita aqui era só sobre onde o menu entrava; o
+ * menu de viewport larga migrou para a coluna lateral persistente em
+ * `AppShell`, então o Voltar não tem mais motivo pra mudar de lugar).
+ * `menuNavegacao` (#77) é um slot opcional só usado em viewport estreita
+ * (botão de abrir o menu mobile, à esquerda da marca). A API
+ * (`titulo`/`children`) não muda.
  */
 export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
   useTituloDaAba(titulo ?? 'Synclass');
@@ -69,34 +70,11 @@ export function Topbar({ titulo, children, menuNavegacao }: TopbarProps) {
         </View>
         {children ? <View className="flex-row items-center gap-three">{children}</View> : null}
       </View>
-      {telaLarga ? (
-        // Tela larga: o menu vem ANTES do Voltar (issue #145 revisitada) —
-        // a faixa de seções é a navegação principal, o Voltar é uma ação
-        // secundária de saída da tela atual; inverter a ordem deixa a
-        // hierarquia de importância mais clara. O Voltar ganha sua própria
-        // linha separada por `border-t`, abaixo do menu.
-        <>
-          {menuNavegacao ? (
-            <View className="w-full self-center" style={{ maxWidth: MaxContentWidth }}>
-              {menuNavegacao}
-            </View>
-          ) : null}
-          {titulo ? (
-            <View
-              className="w-full self-center border-t border-border px-four py-three dark:border-dark-border"
-              style={{ maxWidth: MaxContentWidth }}
-            >
-              <BotaoVoltar />
-            </View>
-          ) : null}
-        </>
-      ) : (
-        titulo ? (
-          <View className="w-full self-center px-four pb-three" style={{ maxWidth: MaxContentWidth }}>
-            <BotaoVoltar />
-          </View>
-        ) : null
-      )}
+      {titulo ? (
+        <View className="w-full self-center px-four pb-three" style={{ maxWidth: MaxContentWidth }}>
+          <BotaoVoltar />
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -55,6 +55,20 @@ chamadas de API). A regra:
   [`security-rules.md`](security-rules.md#débitos-conhecidos). Até existir
   um número-alvo decidido, a régua é "toda função nova tem teste", não uma
   porcentagem.
+- **Nunca nomeie um teste co-localizado em `frontend/src/app/` a partir de
+  um nome de arquivo reservado do Expo Router** (`_layout`, `+not-found`,
+  qualquer prefixo `_`/`+`). O `blockList` de `metro.config.js` exclui
+  `*.test.tsx` normalmente (ex: `cadastro.test.tsx` ao lado de
+  `cadastro.tsx` funciona sem problema), mas o Expo Router varre esses
+  nomes especiais por fora do resolver do Metro pra montar a árvore de
+  rotas — `_layout.test.tsx` colide com `_layout.tsx` e trava o dev server
+  web (`Metro error: The layouts ... conflict on the route`), mesmo com
+  Jest passando normalmente (achado da issue #161: teste renomeado pra
+  `AppShell.test.tsx`, mesmo diretório, mesmo conteúdo, sem o prefixo
+  reservado). Ao escrever `task.md`/`implementation.md` para uma Task que
+  cria teste para um arquivo `_layout.tsx`/`+not-found.tsx`, já nomeie o
+  teste por um nome descritivo do componente (ex: `AppShell.test.tsx`),
+  não pelo nome do arquivo de rota.
 
 ## Mocks e fakes
 
