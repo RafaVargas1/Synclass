@@ -3,20 +3,23 @@ import type { Href } from 'expo-router';
 export type Secao = { label: string; href: Href };
 
 /**
- * Seções do Aluno (issue #44, #77 e #144): telas do Aluno sem segmento
- * dinâmico na rota — `/aluno/entrar-em-turma`, `/aluno/historico-frequencia`
- * e `/aluno/valor-devido`. "Entrar em nova turma" (issue #144) fica
- * primeiro: é ação de aquisição de vínculo novo, mais próxima do fluxo de
- * "primeira vez" do que as duas telas de consulta (ver
- * docs/spec/ux-heuristics.md#agrupamento-visual). As telas de Professor da
- * matrícula do Aluno (`/aluno/professores/[professorId]/...`) continuam fora
- * daqui porque `professorId`, nesse caso, identifica o Professor da
- * matrícula, não o próprio Aluno logado, e a sessão (`useSessao`) não
- * carrega esse vínculo hoje — ver nota de limitação conhecida no PR.
+ * Seções do Aluno (issue #44, #77, #144 e #182): telas do Aluno sem
+ * segmento dinâmico na rota — `/aluno/entrar-em-turma`,
+ * `/aluno/historico-frequencia` e `/aluno/valor-devido`. "Entrar em nova
+ * turma" (issue #144) fica primeiro: é ação de aquisição de vínculo novo,
+ * mais próxima do fluxo de "primeira vez" do que as telas de consulta (ver
+ * docs/spec/ux-heuristics.md#agrupamento-visual). "Meus Professores"
+ * (issue #182) é o ponto de entrada para as telas por Professor da
+ * matrícula (`/aluno/professores/[professorId]/...`, ex: minhas aulas,
+ * horários disponíveis) — antes dela essas rotas existiam mas eram
+ * inalcançáveis por navegação, porque `professorId` nesse caso identifica
+ * o Professor da matrícula, não o Aluno logado, e não havia tela que
+ * resolvesse esse `professorId` a partir da sessão.
  */
 export function secoesAluno(): Secao[] {
   return [
     { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma' },
+    { label: 'Meus Professores', href: '/aluno/professores' },
     { label: 'Ver histórico de frequência', href: '/aluno/historico-frequencia' },
     { label: 'Ver valor devido', href: '/aluno/valor-devido' },
   ];
