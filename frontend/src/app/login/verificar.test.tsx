@@ -18,7 +18,8 @@ jest.mock('@/lib/auth/contexto-sessao', () => ({
 const mockRouterReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ contato: 'maria@exemplo.com' }),
-  useRouter: () => ({ replace: mockRouterReplace }),
+  useRouter: () => ({ replace: mockRouterReplace, back: jest.fn(), canGoBack: () => false }),
+  useNavigation: () => ({ setOptions: jest.fn() }),
 }));
 
 const confirmarCodigoMock = confirmarCodigo as jest.Mock;
