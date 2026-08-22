@@ -11,8 +11,16 @@ jest.mock('expo-router/head', () => ({
   },
 }));
 
+const mockSetOptions = jest.fn();
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ setOptions: mockSetOptions }),
+}));
+
 describe('TituloDaAba', () => {
-  beforeEach(() => mockHead.mockReset());
+  beforeEach(() => {
+    mockHead.mockReset();
+    mockSetOptions.mockReset();
+  });
 
   it('renderiza <title> prefixado por "Synclass - "', async () => {
     await render(<TituloDaAba titulo="Valor devido" />);
@@ -27,5 +35,11 @@ describe('TituloDaAba', () => {
 
     const children = mockHead.mock.calls[0][0].children;
     expect(children.props.children).toBe('Synclass - Início');
+  });
+
+  it('também chama setOptions com o mesmo título, pra empatar com o fallback embutido do NavigationContainer (issue #133)', async () => {
+    await render(<TituloDaAba titulo="Painel" />);
+
+    expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Synclass - Painel' });
   });
 });

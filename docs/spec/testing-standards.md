@@ -69,6 +69,20 @@ chamadas de API). A regra:
   cria teste para um arquivo `_layout.tsx`/`+not-found.tsx`, já nomeie o
   teste por um nome descritivo do componente (ex: `AppShell.test.tsx`),
   não pelo nome do arquivo de rota.
+- **Variável capturada dentro de `jest.mock(...)` precisa começar com
+  `mock` (prefixo, não sufixo)** — o babel-plugin-jest-hoist só permite
+  referenciar, de dentro do factory de `jest.mock`, variáveis cujo nome
+  COMEÇA com `mock` (case-insensitive); `tituloDaAbaMock`/`headMock` (mock
+  como sufixo) falham em runtime com `ReferenceError: The module factory
+  of jest.mock() is not allowed to reference any out-of-scope variables`,
+  mesmo compilando limpo (achado da issue #133: gerou um teto de
+  iterações inteiro do harness até a causa ser vista no
+  `deepseek-run.log`). Siga sempre `mockNomeDoQueEstaSendoTestado` (ex:
+  `mockSetOptions`, `mockUseIsTelaLarga`, já usados em `Topbar.test.tsx`)
+  — nunca `nomeMock`. Ao escrever exemplo de teste em `implementation.md`
+  que declara uma variável pra capturar props/chamadas dentro de um
+  `jest.mock(...)`, já escreva com o prefixo certo — não deixe a
+  DeepSeek/quem implementa descobrir isso rodando o teste.
 
 ## Mocks e fakes
 

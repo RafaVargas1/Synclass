@@ -16,9 +16,11 @@ export type HomeTemplateProps = {
 
 /**
  * Template: define o layout da tela (sem dados reais) — `Topbar` sem
- * `titulo` mostra a marca (é a tela raiz, não tem pra onde voltar). Sem
- * largura máxima o conteúdo esticava a tela inteira no web, com cara de
- * app mobile mal adaptado — daí o `items-center` no container do conteúdo.
+ * `titulo` mostra a marca (é a tela raiz, não tem pra onde voltar);
+ * `tituloDaAba="Início"` (issue #133) dá um título de aba distinto sem
+ * mudar essa variante visual. Sem largura máxima o conteúdo esticava a
+ * tela inteira no web, com cara de app mobile mal adaptado — daí o
+ * `items-center` no container do conteúdo.
  */
 export function HomeTemplate({
   onAutenticadoGoogle,
@@ -30,7 +32,7 @@ export function HomeTemplate({
 }: HomeTemplateProps) {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <Topbar>
+      <Topbar tituloDaAba="Início">
         <Text onPress={onLogin} className="text-sm font-semibold text-primary dark:text-dark-primary">
           Entrar com código ou e-mail
         </Text>

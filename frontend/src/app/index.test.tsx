@@ -16,6 +16,14 @@ jest.mock('@/lib/auth/contexto-sessao', () => ({
   useSessao: jest.fn(),
 }));
 
+const mockTituloDaAba = jest.fn();
+jest.mock('@/lib/TituloDaAba', () => ({
+  TituloDaAba: (props: { titulo: string }) => {
+    mockTituloDaAba(props);
+    return null;
+  },
+}));
+
 const mockPush = jest.fn();
 const mockRouterReplace = jest.fn();
 jest.mock('expo-router', () => ({
@@ -35,6 +43,13 @@ describe('HomeScreen', () => {
     definirSessaoMock.mockResolvedValue(undefined);
     useSessaoMock.mockReset();
     useSessaoMock.mockReturnValue({ definirSessao: definirSessaoMock });
+    mockTituloDaAba.mockReset();
+  });
+
+  it('sets the tab title to Início (issue #133)', async () => {
+    await render(<HomeScreen />);
+
+    expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Início' });
   });
 
   it('persists the session and navigates to /painel when Google login succeeds directly from Home (issue #114)', async () => {

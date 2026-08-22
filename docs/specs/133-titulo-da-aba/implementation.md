@@ -173,41 +173,37 @@ export function TopbarAutenticada({ titulo, tituloDaAba, children }: TopbarAuten
 sem mudar mais nada (continua sem mostrar título visível, só marca — só o
 título da ABA muda).
 
-### `frontend/src/app/index.tsx` (Home)
+### `frontend/src/components/templates/HomeTemplate.tsx` (não `app/index.tsx`)
 
-Não usa `Topbar`/`TopbarAutenticada` nenhum — hoje não seta título de aba
-nenhum. Adiciona `<TituloDaAba titulo="Início" />` como irmão de
-`<HomeTemplate>`, importando de `@/lib/TituloDaAba`:
+**Correção do plano original** (ver "Inconsistências encontradas" em
+`task.md`): `app/index.tsx` não usa `Topbar` diretamente, mas
+`HomeTemplate` (o template que ele monta) já renderiza seu PRÓPRIO
+`<Topbar>` internamente, sem `titulo`. Um `<TituloDaAba>` solto em
+`app/index.tsx`, irmão de `<HomeTemplate>`, criaria DOIS `TituloDaAba`
+montados na mesma tela — o de dentro do `Topbar` (sem `tituloDaAba`,
+fallback `'Synclass'` puro) corre contra o nosso e vence. A correção
+certa é passar `tituloDaAba="Início"` pro `Topbar` que já existe dentro
+de `HomeTemplate`, não criar um segundo:
 
-**Antes**:
+**Antes** (`HomeTemplate.tsx`):
 ```tsx
-  return (
-    <HomeTemplate
-      onAutenticadoGoogle={handleAutenticadoGoogle}
-      onCadastroPendenteGoogle={handleCadastroPendenteGoogle}
-      onEntrarComoProfessor={() => router.push('/professor/cadastro')}
-      onEntrarComoAluno={() => router.push('/aluno')}
-      onLogin={() => router.push('/login')}
-      erro={erroGoogle}
-    />
-  );
+      <Topbar>
+        <Text onPress={onLogin} className="text-sm font-semibold text-primary dark:text-dark-primary">
+          Entrar com código ou e-mail
+        </Text>
+      </Topbar>
 ```
 
 **Depois**:
 ```tsx
-  return (
-    <>
-      <TituloDaAba titulo="Início" />
-      <HomeTemplate
-        onAutenticadoGoogle={handleAutenticadoGoogle}
-        onCadastroPendenteGoogle={handleCadastroPendenteGoogle}
-        onEntrarComoProfessor={() => router.push('/professor/cadastro')}
-        onEntrarComoAluno={() => router.push('/aluno')}
-        onLogin={() => router.push('/login')}
-        erro={erroGoogle}
-      />
-    </>
-  );
+      <Topbar tituloDaAba="Início">
+        <Text onPress={onLogin} className="text-sm font-semibold text-primary dark:text-dark-primary">
+          Entrar com código ou e-mail
+        </Text>
+      </Topbar>
+```
+
+`app/index.tsx` não muda nada.
 ```
 
 Os demais 15 call sites de `Topbar`/`TopbarAutenticada` (todos já passam
@@ -228,22 +224,22 @@ import { render } from '@testing-library/react-native';
 
 import { TituloDaAba } from './TituloDaAba';
 
-const headMock = jest.fn();
+const mockHead = jest.fn();
 jest.mock('expo-router/head', () => ({
   __esModule: true,
   default: (props: { children: React.ReactElement }) => {
-    headMock(props);
+    mockHead(props);
     return null;
   },
 }));
 
 describe('TituloDaAba', () => {
-  beforeEach(() => headMock.mockReset());
+  beforeEach(() => mockHead.mockReset());
 
   it('renderiza <title> prefixado por "Synclass - "', () => {
     render(<TituloDaAba titulo="Valor devido" />);
 
-    const children = headMock.mock.calls[0][0].children;
+    const children = mockHead.mock.calls[0][0].children;
     expect(children.type).toBe('title');
     expect(children.props.children).toBe('Synclass - Valor devido');
   });
@@ -251,7 +247,7 @@ describe('TituloDaAba', () => {
   it('não duplica o prefixo se o título já começar com Synclass', () => {
     render(<TituloDaAba titulo="Synclass - Início" />);
 
-    const children = headMock.mock.calls[0][0].children;
+    const children = mockHead.mock.calls[0][0].children;
     expect(children.props.children).toBe('Synclass - Início');
   });
 });
@@ -266,32 +262,32 @@ mock de `TituloDaAba` (padrão já usado neste arquivo pra outros
 sub-componentes) e dois testes novos equivalentes:
 
 ```tsx
-const tituloDaAbaMock = jest.fn();
+const mockTituloDaAba = jest.fn();
 jest.mock('@/lib/TituloDaAba', () => ({
   TituloDaAba: (props: { titulo: string }) => {
-    tituloDaAbaMock(props);
+    mockTituloDaAba(props);
     return null;
   },
 }));
 
-// ...dentro do describe, no beforeEach: tituloDaAbaMock.mockReset();
+// ...dentro do describe, no beforeEach: mockTituloDaAba.mockReset();
 
 it('passes titulo as the tab title when given (issue #81/#133)', async () => {
   await render(<Topbar titulo="Valor devido por Aluno" />);
 
-  expect(tituloDaAbaMock).toHaveBeenCalledWith({ titulo: 'Valor devido por Aluno' });
+  expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Valor devido por Aluno' });
 });
 
 it('falls back to tituloDaAba when given and titulo is absent (issue #133)', async () => {
   await render(<Topbar tituloDaAba="Painel" />);
 
-  expect(tituloDaAbaMock).toHaveBeenCalledWith({ titulo: 'Painel' });
+  expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Painel' });
 });
 
 it('falls back to the bare Synclass tab title when neither titulo nor tituloDaAba is given', async () => {
   await render(<Topbar />);
 
-  expect(tituloDaAbaMock).toHaveBeenCalledWith({ titulo: 'Synclass' });
+  expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Synclass' });
 });
 ```
 
@@ -309,12 +305,12 @@ renderiza `children` (ver topo do arquivo) — troca o mock por uma versão
 que também captura as props recebidas, e adiciona um teste:
 
 ```tsx
-const topbarAutenticadaMock = jest.fn();
+const mockTopbarAutenticada = jest.fn();
 jest.mock('@/components/organisms/TopbarAutenticada', () => {
   const { View } = jest.requireActual('react-native');
   return {
     TopbarAutenticada: (props: { children?: React.ReactNode; tituloDaAba?: string }) => {
-      topbarAutenticadaMock(props);
+      mockTopbarAutenticada(props);
       return <View>{props.children}</View>;
     },
   };
@@ -324,7 +320,7 @@ it('sets the tab title to Painel (issue #133)', async () => {
   // ...mesmo setup de useSessao/buscarPerfil já usado nos outros testes deste arquivo...
   await render(<PainelScreen />);
 
-  expect(topbarAutenticadaMock).toHaveBeenCalledWith(expect.objectContaining({ tituloDaAba: 'Painel' }));
+  expect(mockTopbarAutenticada).toHaveBeenCalledWith(expect.objectContaining({ tituloDaAba: 'Painel' }));
 });
 ```
 
@@ -334,10 +330,10 @@ Adiciona mock de `TituloDaAba` (`HomeTemplate` não é mockado neste
 arquivo hoje — não mude isso) e um teste:
 
 ```tsx
-const tituloDaAbaMock = jest.fn();
+const mockTituloDaAba = jest.fn();
 jest.mock('@/lib/TituloDaAba', () => ({
   TituloDaAba: (props: { titulo: string }) => {
-    tituloDaAbaMock(props);
+    mockTituloDaAba(props);
     return null;
   },
 }));
@@ -345,7 +341,7 @@ jest.mock('@/lib/TituloDaAba', () => ({
 it('sets the tab title to Início (issue #133)', async () => {
   await render(<HomeScreen />);
 
-  expect(tituloDaAbaMock).toHaveBeenCalledWith({ titulo: 'Início' });
+  expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Início' });
 });
 ```
 
