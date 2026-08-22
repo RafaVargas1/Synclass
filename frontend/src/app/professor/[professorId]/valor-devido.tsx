@@ -1,10 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { Paragraph } from '@/components/atoms/Paragraph';
+import { ChipSelector, type ChipSelectorOption } from '@/components/molecules/ChipSelector';
 import { SeletorDeData } from '@/components/molecules/SeletorDeData';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
 import { ValorDevidoCard } from '@/components/organisms/ValorDevidoCard';
@@ -16,9 +17,15 @@ import {
   type ValorDevidoPorMatricula,
 } from '@/lib/api/valorDevido';
 import { proximoDia } from '@/lib/formatarData';
-import { AlvoDeToqueMinimo, MaxContentWidth } from '@/theme/tokens';
+import { MaxContentWidth } from '@/theme/tokens';
 
 type Modo = 'todos' | 'mes' | 'personalizado';
+
+const OpcoesDeModo: readonly ChipSelectorOption<Modo>[] = [
+  { valor: 'todos', rotulo: 'Todos' },
+  { valor: 'mes', rotulo: 'Este mês' },
+  { valor: 'personalizado', rotulo: 'Personalizado' },
+];
 
 /**
  * Tela de consulta do valor devido por Aluno (issue #12, revisitada por
@@ -36,7 +43,7 @@ export default function ValorDevidoScreen() {
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
       <TopbarAutenticada titulo="Valor devido por Aluno" />
       <View className="w-full flex-1 self-center gap-four px-four py-five" style={{ maxWidth: MaxContentWidth }}>
-        <FiltroDePeriodo modo={estado.modo} onMudarModo={estado.setModo} />
+        <ChipSelector label="Período" opcoes={OpcoesDeModo} valor={estado.modo} onChange={estado.setModo} />
         {estado.modo === 'personalizado' ? (
           <PeriodoPersonalizado
             inicio={estado.inicioP}
@@ -48,39 +55,6 @@ export default function ValorDevidoScreen() {
         <ConteudoDaConsulta estado={estado} />
       </View>
     </SafeAreaView>
-  );
-}
-
-function FiltroDePeriodo({ modo, onMudarModo }: { modo: Modo; onMudarModo: (modo: Modo) => void }) {
-  const opcoes: { valor: Modo; label: string }[] = [
-    { valor: 'todos', label: 'Todos' },
-    { valor: 'mes', label: 'Este mês' },
-    { valor: 'personalizado', label: 'Personalizado' },
-  ];
-
-  return (
-    <View accessibilityRole="tablist" className="flex-row self-start border border-text dark:border-dark-text">
-      {opcoes.map((opcao) => (
-        <ChipDeModo key={opcao.valor} label={opcao.label} selecionado={modo === opcao.valor} onPress={() => onMudarModo(opcao.valor)} />
-      ))}
-    </View>
-  );
-}
-
-function ChipDeModo({ label, selecionado, onPress }: { label: string; selecionado: boolean; onPress: () => void }) {
-  const fundo = selecionado ? 'bg-text dark:bg-dark-text' : 'bg-transparent';
-  const texto = selecionado ? 'text-background dark:text-dark-background' : 'text-text dark:text-dark-text';
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: selecionado }}
-      onPress={onPress}
-      className={`px-three py-two items-center justify-center ${fundo}`}
-      style={AlvoDeToqueMinimo}
-    >
-      <Text className={`text-sm font-semibold ${texto}`}>{label}</Text>
-    </Pressable>
   );
 }
 
