@@ -44,3 +44,17 @@ Fase 3 é inteira no frontend.
 ## Inconsistências encontradas
 
 (nenhuma)
+
+
+## Bloqueado — ver issue #171
+
+2026-08-22T11:35:33-03:00 — Harness saiu com código 1 (teto de iterações, ou seção '## Inconsistências encontradas' no task.md). Ver `/home/rafael/Desktop/synclass-professor-ve-valor-a/docs/specs/166-professor-ve-valor-a/deepseek-run.log` e o próprio task.md para o motivo detalhado.
+
+**Resolvido (revisão manual, Etapa B):** o teto de iterações foi atingido
+porque o harness ficou reconfirmando "TASK_CONCLUIDA" repetidamente sem
+nunca ter rodado o gate completo (`npm run lint && npm run typecheck &&
+npm test`) — só a suíte escopada do Painel. Implementação já estava
+completa e correta (todos os itens `- [x]`, sem inconsistência real).
+Rodei o gate completo manualmente: lint e typecheck verdes, suíte
+completa 87/87 suites (530/530 testes) verde. Task concluída, PR aberto
+fechando #166 e #171.
