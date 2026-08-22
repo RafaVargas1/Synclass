@@ -79,7 +79,7 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
         // overlay, Nielsen #3 — controle e liberdade do usuário).
         <Pressable
           testID="fundo-menu-navegacao"
-          accessibilityLabel="Fechar menu"
+          accessibilityLabel="Fechar menu ao tocar fora"
           onPress={() => setAberto(false)}
           className="z-10 bg-black/40"
           style={{ position: 'fixed' as 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
