@@ -21,6 +21,9 @@ jest.mock('@/components/organisms/TopbarAutenticada', () => {
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ professorId: 'professor-1' }),
   useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+  // `Link` monta um `asChild` renderizando o filho (padrão do Painel) — aqui
+  // apenas repassa os filhos pra não precisar navegar de verdade no teste.
+  Link: ({ children }: { children?: React.ReactNode }) => children,
 }));
 
 jest.mock('@/lib/api/horarios', () => ({ listarHorarios: jest.fn() }));
@@ -76,20 +79,8 @@ describe('AlocacoesProfessorScreen', () => {
     expect(screen.getByText('Tentar novamente')).toBeTruthy();
   });
 
-  it('shows a message instead of the grid when modelo is Vago', async () => {
-    obterConfiguracaoMock.mockResolvedValue({
-      sucesso: true,
-      definida: true,
-      modeloAgendamento: ModeloAgendamento.Vago,
-    });
-
-    await render(<AlocacoesProfessorScreen />);
-
-    await waitFor(() => expect(screen.getByText(/não usa atribuição fixa/)).toBeTruthy());
-    expect(listarHorariosMock).not.toHaveBeenCalled();
-  });
-
-  it('shows the grid of HorarioAlocacaoCard when modelo is Fixo', async () => {
+  it('shows a message with a CTA instead of the grid when there are no horarios', async () => {
+    listarHorariosMock.mockResolvedValue({ sucesso: true, horarios: [] });
     obterConfiguracaoMock.mockResolvedValue({
       sucesso: true,
       definida: true,
@@ -98,10 +89,80 @@ describe('AlocacoesProfessorScreen', () => {
 
     await render(<AlocacoesProfessorScreen />);
 
-    await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
-    expect(screen.getByText('Ana')).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByText('Nenhum horário cadastrado ainda.')).toBeTruthy(),
+    );
+    expect(screen.getByText('Cadastrar horários')).toBeTruthy();
+    expect(screen.queryByText(/configure o modelo/i)).toBeNull();
   });
 
+  it('asks to configure the model when it is not defined and horarios exist', async () => {
+    obterConfiguracaoMock.mockResolvedValue({ sucesso: true, definida: false });
+
+    await render(<AlocacoesProfessorScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Configure o modelo de agendamento antes de alocar Alunos.')).toBeTruthy(),
+    );
+  });
+
+  it('explains the Livre model without the ninguém se inscreveu line when nobody joined', async () => {
+    obterConfiguracaoMock.mockResolvedValue({
+      sucesso: true,
+      definida: true,
+      modeloAgendamento: ModeloAgendamento.Vago,
+    });
+    listarAlocacoesMock.mockResolvedValue({ sucesso: true, alocacoes: [] });
+
+    await render(<AlocacoesProfessorScreen />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('No modelo Livre, os Alunos se inscrevem sozinhos. Ainda ninguém se inscreveu em nenhum horário.'),
+      ).toBeTruthy(),
+    );
+    expect(screen.queryByText(/vago/i)).toBeNull();
+  });
+
+  it('explains the Livre model without the ninguém se inscreveu line when there is an alocacao', async () => {
+    obterConfiguracaoMock.mockResolvedValue({
+      sucesso: true,
+      definida: true,
+      modeloAgendamento: ModeloAgendamento.Vago,
+    });
+    listarAlocacoesMock.mockResolvedValue({ sucesso: true, alocacoes: [alocacao] });
+
+    await render(<AlocacoesProfessorScreen />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('No modelo Livre, os Alunos se inscrevem sozinhos — não há atribuição manual pelo Professor.'),
+      ).toBeTruthy(),
+    );
+    expect(screen.queryByText(/ninguém se inscreveu/i)).toBeNull();
+  });
+
+  it.each([
+    [ModeloAgendamento.Fixo, 'Fixo'],
+    [ModeloAgendamento.Hibrido, 'Híbrido'],
+  ])('renders the alocacao grid untouched for model %s', async (modeloAgendamento) => {
+    obterConfiguracaoMock.mockResolvedValue({
+      sucesso: true,
+      definida: true,
+      modeloAgendamento,
+    });
+
+    await render(<AlocacoesProfessorScreen />);
+
+    await waitFor(() => expect(screen.getByText('Ana')).toBeTruthy());
+    expect(screen.queryByText('Configure o modelo de agendamento antes de alocar Alunos.')).toBeNull();
+    expect(screen.queryByText('Nenhum horário cadastrado ainda.')).toBeNull();
+  });
+
+  // As três a seguir preexistiam à issue #139 (cobertura de
+  // AlocacoesConteudo/useGerenciamentoAlocacoes, fora de escopo desta
+  // Task) — restauradas após terem sido removidas sem substituição
+  // durante a implementação do gate de estado acima.
   it('shows an error message when listarHorarios fails, instead of a silent blank grid', async () => {
     obterConfiguracaoMock.mockResolvedValue({
       sucesso: true,
