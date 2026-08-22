@@ -10,15 +10,15 @@ re-investigue as alternativas B/C — implemente o desenho já pronto.
 
 ## Ordem de execução
 
-- [ ] Teste (Api, `VinculosAlunoEndpointTests.cs`, criar): Aluno com
+- [x] Teste (Api, `VinculosAlunoEndpointTests.cs`, criar): Aluno com
       matrícula em dois Professores → lista os dois; Aluno sem matrícula
       → lista vazia (200, não 404). Ver falhar.
-- [ ] Implementação mínima: cria
+- [x] Implementação mínima: cria
       `backend/src/Synclass.Api/Controllers/VinculosAlunoController.cs`
       (`GET /alunos/professores`, código exato em `implementation.md`).
-- [ ] Teste (`frontend/src/lib/api/vinculosAluno.test.ts`, criar):
+- [x] Teste (`frontend/src/lib/api/vinculosAluno.test.ts`, criar):
       sucesso, lista vazia, erro de rede.
-- [ ] Implementação mínima: cria `frontend/src/lib/api/vinculosAluno.ts`
+- [x] Implementação mínima: cria `frontend/src/lib/api/vinculosAluno.ts`
       (código exato em `implementation.md`).
 - [ ] Teste (`ResumoProximoHorario.test.tsx`, criar): com dado preenchido
       mostra Professor+data+hora formatados; com `null` mostra "Nenhum
