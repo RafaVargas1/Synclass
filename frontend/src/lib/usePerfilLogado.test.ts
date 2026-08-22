@@ -21,13 +21,19 @@ describe('usePerfilLogado', () => {
     expect(buscarPerfilMock).not.toHaveBeenCalled();
   });
 
-  it('resolve usuarioId e nome quando o perfil carrega com sucesso', async () => {
-    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
+  it('resolve usuarioId, nome e contato quando o perfil carrega com sucesso', async () => {
+    buscarPerfilMock.mockResolvedValue({
+      sucesso: true,
+      usuarioId: 'prof-1',
+      nome: 'Ana',
+      contato: 'ana@exemplo.com',
+    });
 
     const { result } = await renderHook(() => usePerfilLogado('token-jwt'));
 
     await waitFor(() => expect(result.current.usuarioId).toBe('prof-1'));
     expect(result.current.nome).toBe('Ana');
+    expect(result.current.contato).toBe('ana@exemplo.com');
     expect(result.current.erro).toBe(false);
   });
 
