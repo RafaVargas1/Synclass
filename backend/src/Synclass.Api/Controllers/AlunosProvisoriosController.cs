@@ -43,7 +43,7 @@ public sealed class AlunosProvisoriosController : ControllerBase
         try
         {
             var matricula = await _cadastroAlunoProvisorio.CadastrarAsync(
-                professorId, request.Nome, request.Identificador, cancellationToken);
+                professorId, request.Nome, cancellationToken);
             LogCadastroSucesso(trackId, matricula);
             return Ok(new CadastroAlunoProvisorioResponse(matricula.Id, matricula.NomeProvisorio!, matricula.IdentificadorProvisorio!));
         }
@@ -109,7 +109,7 @@ public sealed class AlunosProvisoriosController : ControllerBase
     }
 }
 
-public sealed record CadastroAlunoProvisorioRequest(string Nome, string Identificador);
+public sealed record CadastroAlunoProvisorioRequest(string Nome);
 
 public sealed record CadastroAlunoProvisorioResponse(Guid MatriculaId, string Nome, string Identificador);
 

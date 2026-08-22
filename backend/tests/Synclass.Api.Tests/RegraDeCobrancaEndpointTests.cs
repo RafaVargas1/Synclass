@@ -48,7 +48,7 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
     {
         var response = await client.PostAsJsonAsync(
             "/professores/alunos-provisorios",
-            new CadastroAlunoProvisorioRequest("Aluno Teste", $"aluno-{Guid.NewGuid()}"));
+            new CadastroAlunoProvisorioRequest("Aluno Teste"));
         var corpo = await response.Content.ReadFromJsonAsync<CadastroAlunoProvisorioResponse>();
         return corpo!.MatriculaId;
     }

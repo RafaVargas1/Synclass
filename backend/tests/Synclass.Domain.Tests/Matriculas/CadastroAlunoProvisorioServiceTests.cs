@@ -17,16 +17,28 @@ public sealed class CadastroAlunoProvisorioServiceTests
     private static readonly FixedClock Clock = new(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero));
 
     [Fact]
-    public async Task CadastrarAsync_NomeEIdentificadorValidos_CriaMatriculaProvisoriaSemContato()
+    public async Task CadastrarAsync_NomeValido_SemIdentificador_CriaMatriculaProvisoriaSemContato()
     {
         var (servico, repositorio, professorId) = await CriarServicoComProfessorExistenteAsync();
 
-        var matricula = await servico.CadastrarAsync(professorId, "João Pedro", "2024-013", CancellationToken.None);
+        var matricula = await servico.CadastrarAsync(professorId, "João Pedro", CancellationToken.None);
 
         matricula.ProfessorId.Should().Be(professorId);
         matricula.NomeProvisorio.Should().Be("João Pedro");
-        matricula.IdentificadorProvisorio.Should().Be("2024-013");
         matricula.AlunoUsuarioId.Should().BeNull();
+        repositorio.Matriculas.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task CadastrarAsync_SemIdentificadorInformado_IdentificadorProvisorioIgualaAoIdentificadorAlunoGerado()
+    {
+        var (servico, identificadorAluno, repositorio, professorId) = await CriarServicoComProfessorEIdentificadorAsync();
+
+        var matricula = await servico.CadastrarAsync(professorId, "João Pedro", CancellationToken.None);
+
+        identificadorAluno.VezesGerado.Should().Be(1);
+        matricula.IdentificadorAluno.Should().NotBeNull();
+        matricula.IdentificadorProvisorio.Should().Be(matricula.IdentificadorAluno);
         repositorio.Matriculas.Should().ContainSingle();
     }
 
@@ -35,50 +47,10 @@ public sealed class CadastroAlunoProvisorioServiceTests
     {
         var (servico, repositorio, professorId) = await CriarServicoComProfessorExistenteAsync();
 
-        var acao = () => servico.CadastrarAsync(professorId, "   ", "2024-013", CancellationToken.None);
+        var acao = () => servico.CadastrarAsync(professorId, "   ", CancellationToken.None);
 
         await acao.Should().ThrowAsync<NomeProvisorioInvalidoException>();
         repositorio.Matriculas.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task CadastrarAsync_IdentificadorVazio_RejeitaSemCriarMatricula()
-    {
-        var (servico, repositorio, professorId) = await CriarServicoComProfessorExistenteAsync();
-
-        var acao = () => servico.CadastrarAsync(professorId, "João Pedro", "   ", CancellationToken.None);
-
-        await acao.Should().ThrowAsync<IdentificadorProvisorioInvalidoException>();
-        repositorio.Matriculas.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task CadastrarAsync_IdentificadorJaUsadoPeloMesmoProfessor_RejeitaComMensagemClara()
-    {
-        var (servico, repositorio, professorId) = await CriarServicoComProfessorExistenteAsync();
-        await servico.CadastrarAsync(professorId, "João Pedro", "2024-013", CancellationToken.None);
-
-        var acao = () => servico.CadastrarAsync(professorId, "Outro Aluno", "2024-013", CancellationToken.None);
-
-        await acao.Should().ThrowAsync<IdentificadorProvisorioDuplicadoException>()
-            .WithMessage("*2024-013*");
-        repositorio.Matriculas.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task CadastrarAsync_IdentificadorRepetidoEntreProfessoresDiferentes_NaoRejeita()
-    {
-        var usuarios = new FakeUsuarioRepository();
-        var repositorio = new FakeMatriculaRepository();
-        var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock, new IdentificadorAlunoFake().Servico);
-        var professorId = await AdicionarProfessorAsync(usuarios, "professor1@exemplo.com");
-        await servico.CadastrarAsync(professorId, "João Pedro", "2024-013", CancellationToken.None);
-
-        var outroProfessorId = await AdicionarProfessorAsync(usuarios, "professor2@exemplo.com");
-        var matricula = await servico.CadastrarAsync(outroProfessorId, "Outro Aluno", "2024-013", CancellationToken.None);
-
-        matricula.ProfessorId.Should().Be(outroProfessorId);
-        repositorio.Matriculas.Should().HaveCount(2);
     }
 
     /// <summary>
@@ -96,28 +68,11 @@ public sealed class CadastroAlunoProvisorioServiceTests
         var servico = new CadastroAlunoProvisorioService(repositorio, usuarios, Clock, new IdentificadorAlunoFake().Servico);
         var professorIdInexistente = Guid.NewGuid();
 
-        var acao = () => servico.CadastrarAsync(professorIdInexistente, "João Pedro", "2024-013", CancellationToken.None);
+        var acao = () => servico.CadastrarAsync(professorIdInexistente, "João Pedro", CancellationToken.None);
 
         await acao.Should().ThrowAsync<ProfessorNaoEncontradoException>()
             .WithMessage($"*{professorIdInexistente}*");
         repositorio.Matriculas.Should().BeEmpty();
-    }
-
-    // Cenário específico da issue #70: o cadastro de Aluno provisório gera
-    // um IdentificadorAluno único via IdentificadorAlunoService e o grava na
-    // Matricula provisória, independente do IdentificadorProvisorio escolhido
-    // pelo Professor.
-
-    [Fact]
-    public async Task CadastrarAsync_GeraIdentificadorAlunoNaMatriculaProvisoria()
-    {
-        var (servico, identificadorAluno, repositorio, professorId) = await CriarServicoComProfessorEIdentificadorAsync();
-
-        var matricula = await servico.CadastrarAsync(professorId, "João Pedro", "2024-013", CancellationToken.None);
-
-        identificadorAluno.VezesGerado.Should().Be(1);
-        matricula.IdentificadorAluno.Should().NotBeNull();
-        repositorio.Matriculas.Should().ContainSingle();
     }
 
     private static async Task<(CadastroAlunoProvisorioService Servico, FakeMatriculaRepository Matriculas, Guid ProfessorId)>
@@ -134,7 +89,9 @@ public sealed class CadastroAlunoProvisorioServiceTests
     /// Monta um <see cref="CadastroAlunoProvisorioService"/> com Professor já
     /// existente e um <see cref="IdentificadorAlunoService"/> real (fakes de
     /// gerador e checador), devolvendo junto o fake para que o teste da issue
-    /// #70 prove que o identificador é gerado na Matricula provisória.
+    /// #159 prove que o identificador gerado preenche tanto
+    /// <see cref="Matricula.IdentificadorProvisorio"/> quanto
+    /// <see cref="Matricula.IdentificadorAluno"/> da Matricula provisória.
     /// </summary>
     private static async Task<(CadastroAlunoProvisorioService Servico, IdentificadorAlunoFake IdentificadorAluno, FakeMatriculaRepository Matriculas, Guid ProfessorId)>
         CriarServicoComProfessorEIdentificadorAsync()

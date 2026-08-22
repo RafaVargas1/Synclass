@@ -48,15 +48,17 @@ public sealed class AlunosProvisoriosListagemEndpointTests : IClassFixture<WebAp
         var (outroClient, _) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
         await client.PostAsJsonAsync(
             "/professores/alunos-provisorios",
-            new CadastroAlunoProvisorioRequest("João Pedro", "2024-001"));
+            new CadastroAlunoProvisorioRequest("João Pedro"));
         await outroClient.PostAsJsonAsync(
             "/professores/alunos-provisorios",
-            new CadastroAlunoProvisorioRequest("Outro Aluno", "2024-002"));
+            new CadastroAlunoProvisorioRequest("Outro Aluno"));
 
         var response = await client.GetAsync("/professores/alunos-provisorios");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await response.Content.ReadFromJsonAsync<List<AlunoProvisorioResponse>>();
-        corpo.Should().ContainSingle(a => a.Nome == "João Pedro" && a.Identificador == "2024-001");
+        // Identificador é gerado pelo sistema (issue #159), não mais
+        // digitado — só confirma que veio preenchido, não um valor exato.
+        corpo.Should().ContainSingle(a => a.Nome == "João Pedro" && !string.IsNullOrWhiteSpace(a.Identificador));
     }
 }

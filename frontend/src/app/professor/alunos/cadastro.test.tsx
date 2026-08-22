@@ -30,45 +30,35 @@ describe('CadastroAlunoProvisorioScreen', () => {
     cadastrarAlunoProvisorioMock.mockReset();
   });
 
-  it('shows an inline confirmation when the Api responds with success', async () => {
+  it('shows an inline confirmation with the system-generated identifier when the Api responds with success', async () => {
     cadastrarAlunoProvisorioMock.mockResolvedValue({
       sucesso: true,
       nome: 'João Pedro',
-      identificador: '2024-013',
+      identificador: 'ALU-4F2A',
     });
     await render(<CadastroAlunoProvisorioScreen />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('Nome do Aluno'), 'João Pedro');
-    await fireEvent.changeText(
-      screen.getByPlaceholderText('Identificador (ex: número de matrícula)'),
-      '2024-013',
-    );
     await fireEvent.press(screen.getByText('Cadastrar'));
 
     await waitFor(() => expect(screen.getByText('Aluno provisório cadastrado!')).toBeTruthy());
-    expect(cadastrarAlunoProvisorioMock).toHaveBeenCalledWith({
-      nome: 'João Pedro',
-      identificador: '2024-013',
-    });
+    expect(cadastrarAlunoProvisorioMock).toHaveBeenCalledWith({ nome: 'João Pedro' });
+    expect(screen.getByText('ALU-4F2A')).toBeTruthy();
   });
 
   it('shows the Api error message without crashing when the Api rejects the cadastro', async () => {
     cadastrarAlunoProvisorioMock.mockResolvedValue({
       sucesso: false,
-      mensagem: 'Já existe um Aluno provisório com o identificador "2024-013" para este Professor.',
+      mensagem: 'Não foi possível concluir a operação. Tente novamente.',
     });
     await render(<CadastroAlunoProvisorioScreen />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('Nome do Aluno'), 'João Pedro');
-    await fireEvent.changeText(
-      screen.getByPlaceholderText('Identificador (ex: número de matrícula)'),
-      '2024-013',
-    );
     await fireEvent.press(screen.getByText('Cadastrar'));
 
     await waitFor(() =>
       expect(
-        screen.getByText('Já existe um Aluno provisório com o identificador "2024-013" para este Professor.'),
+        screen.getByText('Não foi possível concluir a operação. Tente novamente.'),
       ).toBeTruthy(),
     );
     expect(screen.getByText('Cadastrar')).toBeTruthy();

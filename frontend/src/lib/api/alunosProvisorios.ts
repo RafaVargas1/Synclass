@@ -2,7 +2,6 @@ import { fetchComTimeout, MensagemErroConexao } from './httpClient';
 
 export type CadastroAlunoProvisorioInput = {
   nome: string;
-  identificador: string;
 };
 
 export type CadastroAlunoProvisorioResultado =
@@ -23,11 +22,11 @@ const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente no
 /**
  * Envolve o `fetch` de POST /professores/alunos-provisorios atrás de uma
  * interface própria (ver docs/spec/code-style.md#dependências): nunca lança
- * para erros de negócio (nome/identificador inválido, identificador
- * duplicado) ou de rede — sempre devolve um resultado tipado, para a tela
- * exibir a mensagem sem travar. `professorId` não é mais enviado pelo
- * cliente (issue #23) — a Api deriva o Professor do token da sessão
- * (`Authorization: Bearer`, anexado por `fetchComTimeout`).
+ * para erros de negócio (nome inválido) ou de rede — sempre devolve um
+ * resultado tipado, para a tela exibir a mensagem sem travar. `professorId`
+ * não é mais enviado pelo cliente (issue #23) — a Api deriva o Professor do
+ * token da sessão (`Authorization: Bearer`, anexado por `fetchComTimeout`).
+ * O identificador não é mais enviado (issue #159) — a Api gera e devolve.
  */
 export async function cadastrarAlunoProvisorio(
   input: CadastroAlunoProvisorioInput,
@@ -46,7 +45,7 @@ function postCadastro(input: CadastroAlunoProvisorioInput): Promise<Response> {
   return fetchComTimeout('/professores/alunos-provisorios', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nome: input.nome, identificador: input.identificador }),
+    body: JSON.stringify({ nome: input.nome }),
   });
 }
 
