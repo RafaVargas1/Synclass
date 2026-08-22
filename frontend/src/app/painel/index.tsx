@@ -151,25 +151,7 @@ function BotaoSair({ onPress }: { onPress: () => void }) {
  * quando `papelAtivo === 'Aluno'` (o cartão não existe para o Professor).
  */
 function ResumoDeFrequenciaDoAluno() {
-  const [resumo, setResumo] = useState<{ presentes: number; ausentes: number } | undefined>(undefined);
-  const [erro, setErro] = useState(false);
-
-  useEffect(() => {
-    let cancelado = false;
-    listarHistoricoFrequenciaDoAluno(calcularPeriodoUltimosNDias(new Date(), 30)).then((dados) => {
-      if (cancelado) return;
-      if (!dados.sucesso) {
-        setErro(true);
-        return;
-      }
-      const { presentes, ausentes } = calcularResumo(dados.historico);
-      setResumo({ presentes, ausentes });
-      setErro(false);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, []);
+  const { resumo, erro } = useResumoDeFrequencia();
 
   if (erro) {
     return null; // sem resumo em falha de rede; as ações do Painel continuam inteiras
@@ -182,6 +164,35 @@ function ResumoDeFrequenciaDoAluno() {
     );
   }
   return <ResumoFrequenciaCard presentes={resumo.presentes} ausentes={resumo.ausentes} />;
+}
+
+/**
+ * Busca o histórico dos últimos 30 dias e reduz pro resumo de
+ * presenças/faltas (achado de dev-review no PR #173: extraído de
+ * `ResumoDeFrequenciaDoAluno` pra caber no limite de 20 linhas por
+ * função de `docs/spec/code-style.md`).
+ */
+function useResumoDeFrequencia(): { resumo?: { presentes: number; ausentes: number }; erro: boolean } {
+  const [resumo, setResumo] = useState<{ presentes: number; ausentes: number } | undefined>(undefined);
+  const [erro, setErro] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    listarHistoricoFrequenciaDoAluno(calcularPeriodoUltimosNDias(new Date(), 30)).then((dados) => {
+      if (cancelado) return;
+      if (!dados.sucesso) {
+        setErro(true);
+        return;
+      }
+      setResumo(calcularResumo(dados.historico));
+      setErro(false);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  return { resumo, erro };
 }
 
 /**
