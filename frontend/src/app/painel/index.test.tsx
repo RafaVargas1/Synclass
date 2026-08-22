@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { calcularPeriodoUltimosNDias, listarHistoricoFrequenciaDoAluno } from '@/lib/api/historicoFrequencia';
 import { listarValorDevido } from '@/lib/api/valorDevido';
 import { buscarPerfil } from '@/lib/api/usuarios';
+import { listarVinculosAluno } from '@/lib/api/vinculosAluno';
+import { listarProximasAulas } from '@/lib/api/cancelamentos';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { periodoDoDia } from '@/lib/periodoDoDia';
 
@@ -52,6 +54,14 @@ jest.mock('@/lib/api/historicoFrequencia', () => {
   return { ...actual, listarHistoricoFrequenciaDoAluno: jest.fn() };
 });
 
+jest.mock('@/lib/api/vinculosAluno', () => ({
+  listarVinculosAluno: jest.fn(),
+}));
+
+jest.mock('@/lib/api/cancelamentos', () => ({
+  listarProximasAulas: jest.fn(),
+}));
+
 jest.mock('@/lib/periodoDoDia', () => {
   const actual = jest.requireActual('@/lib/periodoDoDia');
   return { ...actual, periodoDoDia: jest.fn() };
@@ -60,6 +70,8 @@ jest.mock('@/lib/periodoDoDia', () => {
 const useSessaoMock = useSessao as jest.Mock;
 const buscarPerfilMock = buscarPerfil as jest.Mock;
 const listarValorDevidoMock = listarValorDevido as jest.Mock;
+const listarVinculosAlunoMock = listarVinculosAluno as jest.Mock;
+const listarProximasAulasMock = listarProximasAulas as jest.Mock;
 const periodoDoDiaMock = periodoDoDia as jest.Mock;
 const listarHistoricoFrequenciaDoAlunoMock = listarHistoricoFrequenciaDoAluno as jest.Mock;
 
@@ -73,12 +85,29 @@ function aula(status: string) {
   };
 }
 
+function aulaProxima(data: string, horaInicio: string) {
+  return {
+    horarioId: 'h1',
+    data,
+    diaSemana: 4,
+    horaInicio,
+    duracaoMinutos: 60,
+    podeCancelar: true,
+    cancelavelAte: '2026-08-19T18:00:00',
+    prazoCancelamentoMinutos: 120,
+  };
+}
+
 describe('PainelScreen', () => {
   beforeEach(() => {
     mockRouterReplace.mockReset();
     useSessaoMock.mockReset();
     buscarPerfilMock.mockReset();
     buscarPerfilMock.mockResolvedValue({ sucesso: false, mensagem: 'erro' });
+    listarVinculosAlunoMock.mockReset();
+    listarVinculosAlunoMock.mockResolvedValue({ sucesso: true, vinculos: [] });
+    listarProximasAulasMock.mockReset();
+    listarProximasAulasMock.mockResolvedValue({ sucesso: true, aulas: [] });
     periodoDoDiaMock.mockReturnValue('manha');
     mockTopbarAutenticada.mockReset();
     // O Painel com papelAtivo 'Aluno' monta o resumo (#167) que consulta o
@@ -179,6 +208,10 @@ describe('PainelScreen saudação', () => {
     useSessaoMock.mockReset();
     buscarPerfilMock.mockReset();
     buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'prof-1', nome: 'Ana' });
+    listarVinculosAlunoMock.mockReset();
+    listarVinculosAlunoMock.mockResolvedValue({ sucesso: true, vinculos: [] });
+    listarProximasAulasMock.mockReset();
+    listarProximasAulasMock.mockResolvedValue({ sucesso: true, aulas: [] });
     useSessaoMock.mockReturnValue({ carregando: false, token: 'token-jwt', sair: jest.fn() });
     listarHistoricoFrequenciaDoAlunoMock.mockReset();
     listarHistoricoFrequenciaDoAlunoMock.mockResolvedValue({ sucesso: true, historico: [] });
@@ -366,6 +399,24 @@ describe('PainelScreen resumo de frequência', () => {
   });
 
   it('does not show the resumo when papelAtivo is Professor', async () => {
+      vinculos: [
+        { professorId: 'p1', nome: 'Professor A' },
+        { professorId: 'p2', nome: 'Professor B' },
+      ],
+    });
+    listarProximasAulasMock.mockImplementation(async (professorId: string) => {
+      if (professorId === 'p1') {
+        return { sucesso: true, aulas: [aulaProxima('2026-09-01', '10:00:00')] };
+      }
+      return { sucesso: true, aulas: [aulaProxima('2026-08-20', '18:00:00')] };
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText('Professor B — 20/08/2026 às 18:00:00')).toBeTruthy());
+  });
+
+  it('does not show the resumo when papelAtivo is Professor', async () => {
     useSessaoMock.mockReturnValue({
       carregando: false,
       token: 'token-jwt',
@@ -412,5 +463,129 @@ describe('PainelScreen resumo de frequência', () => {
 
     const esperado = calcularPeriodoUltimosNDias(new Date(), 30);
     await waitFor(() => expect(listarHistoricoFrequenciaDoAlunoMock).toHaveBeenCalledWith(esperado));
+  });
+});
+
+describe('PainelScreen próximo horário do Aluno (issue #165)', () => {
+  beforeEach(() => {
+    mockRouterReplace.mockReset();
+    useSessaoMock.mockReset();
+    buscarPerfilMock.mockReset();
+    buscarPerfilMock.mockResolvedValue({ sucesso: true, usuarioId: 'aluno-1', nome: 'Ana' });
+    listarVinculosAlunoMock.mockReset();
+    listarVinculosAlunoMock.mockResolvedValue({ sucesso: true, vinculos: [] });
+    listarProximasAulasMock.mockReset();
+    listarProximasAulasMock.mockResolvedValue({ sucesso: true, aulas: [] });
+    periodoDoDiaMock.mockReturnValue('manha');
+    useSessaoMock.mockReturnValue({ carregando: false, token: 'token-jwt', papelAtivo: 'Aluno', sair: jest.fn() });
+  });
+
+  it('Aluno com um Professor mostra o próximo horário dele', async () => {
+    listarVinculosAlunoMock.mockResolvedValue({
+      sucesso: true,
+      vinculos: [{ professorId: 'p1', nome: 'Professor A' }],
+    });
+    listarProximasAulasMock.mockResolvedValue({
+      sucesso: true,
+      aulas: [aulaProxima('2026-08-20', '18:00:00')],
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Professor A — 20/08/2026 às 18:00')).toBeTruthy(),
+    );
+    expect(listarProximasAulasMock).toHaveBeenCalledWith('p1');
+  });
+
+  it('Aluno com dois Professores mostra o horário mais próximo, não o do primeiro da lista', async () => {
+    listarVinculosAlunoMock.mockResolvedValue({
+      sucesso: true,
+      vinculos: [
+        { professorId: 'p1', nome: 'Professor A' },
+        { professorId: 'p2', nome: 'Professor B' },
+      ],
+    });
+    listarProximasAulasMock.mockImplementation(async (professorId: string) => {
+      if (professorId === 'p1') {
+        return { sucesso: true, aulas: [aulaProxima('2026-09-01', '10:00:00')] };
+      }
+      return { sucesso: true, aulas: [aulaProxima('2026-08-20', '18:00:00')] };
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText('Professor B — 20/08/2026 às 18:00')).toBeTruthy());
+  });
+
+  it('Aluno sem vínculo mostra o estado vazio', async () => {
+    listarVinculosAlunoMock.mockResolvedValue({ sucesso: true, vinculos: [] });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Nenhum horário marcado no momento.')).toBeTruthy(),
+    );
+    expect(listarProximasAulasMock).not.toHaveBeenCalled();
+  });
+
+  it('Aluno com vínculo mas sem aula futura mostra o estado vazio', async () => {
+    listarVinculosAlunoMock.mockResolvedValue({
+      sucesso: true,
+      vinculos: [{ professorId: 'p1', nome: 'Professor A' }],
+    });
+    listarProximasAulasMock.mockResolvedValue({ sucesso: true, aulas: [] });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Nenhum horário marcado no momento.')).toBeTruthy(),
+    );
+  });
+
+  it('mostra o estado vazio sem quebrar a tela quando listarVinculosAluno falha (achado de dev-review, PR #176)', async () => {
+    listarVinculosAlunoMock.mockResolvedValue({ sucesso: false, mensagem: 'erro de rede' });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Nenhum horário marcado no momento.')).toBeTruthy(),
+    );
+    expect(listarProximasAulasMock).not.toHaveBeenCalled();
+  });
+
+  it('ignora só o Professor cuja consulta falhou, sem quebrar os demais (achado de dev-review, PR #176)', async () => {
+    listarVinculosAlunoMock.mockResolvedValue({
+      sucesso: true,
+      vinculos: [
+        { professorId: 'p1', nome: 'Professor A' },
+        { professorId: 'p2', nome: 'Professor B' },
+      ],
+    });
+    listarProximasAulasMock.mockImplementation(async (professorId: string) => {
+      if (professorId === 'p1') {
+        return { sucesso: false, mensagem: 'erro de rede' };
+      }
+      return { sucesso: true, aulas: [aulaProxima('2026-08-20', '18:00:00')] };
+    });
+
+    await render(<PainelScreen />);
+
+    await waitFor(() => expect(screen.getByText('Professor B — 20/08/2026 às 18:00')).toBeTruthy());
+  });
+
+  it('não rende o resumo nem chama as funções novas quando o papel ativo é Professor', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Professor',
+      sair: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    expect(screen.queryByText('Próximo horário')).toBeNull();
+    expect(listarVinculosAlunoMock).not.toHaveBeenCalled();
+    expect(listarProximasAulasMock).not.toHaveBeenCalled();
   });
 });

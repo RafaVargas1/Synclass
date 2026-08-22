@@ -27,12 +27,12 @@ re-investigue as alternativas B/C — implemente o desenho já pronto.
       `frontend/src/components/organisms/ResumoProximoHorario.tsx`
       (código exato em `implementation.md` — siga o padrão visual de
       `ResumoValorReceber.tsx`, issue #166).
-- [ ] Teste (`frontend/src/app/painel/index.test.tsx`): estende a suíte
+- [x] Teste (`frontend/src/app/painel/index.test.tsx`): estende a suíte
       existente com os 4 cenários descritos em `implementation.md`
       (um Professor; dois Professores, mostra o mais próximo; sem
       vínculo/sem aula, estado vazio; papel Professor não chama as
       funções novas).
-- [ ] Implementação mínima: `frontend/src/app/painel/index.tsx` — busca
+- [x] Implementação mínima: `frontend/src/app/painel/index.tsx` — busca
       vínculos + agrega próximas aulas quando `papelAtivo === 'Aluno'`,
       renderiza `ResumoProximoHorario` (lógica em `implementation.md`).
 - [ ] `npm run lint && npm run typecheck && npm test` (frontend) e
