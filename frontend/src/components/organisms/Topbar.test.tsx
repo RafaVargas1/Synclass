@@ -6,16 +6,22 @@ import { Topbar } from './Topbar';
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 const mockCanGoBack = jest.fn();
-const mockSetOptions = jest.fn();
 const mockUseIsTelaLarga = jest.fn();
+const mockTituloDaAba = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: mockCanGoBack }),
-  useNavigation: () => ({ setOptions: mockSetOptions }),
 }));
 
 jest.mock('@/lib/useIsTelaLarga', () => ({
   useIsTelaLarga: () => mockUseIsTelaLarga(),
+}));
+
+jest.mock('@/lib/TituloDaAba', () => ({
+  TituloDaAba: (props: { titulo: string }) => {
+    mockTituloDaAba(props);
+    return null;
+  },
 }));
 
 describe('Topbar', () => {
@@ -23,8 +29,8 @@ describe('Topbar', () => {
     mockBack.mockReset();
     mockReplace.mockReset();
     mockCanGoBack.mockReset();
-    mockSetOptions.mockReset();
     mockUseIsTelaLarga.mockReturnValue(false);
+    mockTituloDaAba.mockReset();
   });
 
   it('shows the SYNCLASS mark when no titulo is given', async () => {
@@ -121,16 +127,28 @@ describe('Topbar', () => {
     expect(screen.getByText('Sair')).toBeTruthy();
   });
 
-  it('sets the browser tab title to the titulo, when given (issue #81)', async () => {
+  it('passes titulo as the tab title when given (issue #81/#133)', async () => {
     await render(<Topbar titulo="Valor devido por Aluno" />);
 
-    expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Valor devido por Aluno' });
+    expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Valor devido por Aluno' });
   });
 
-  it('sets the browser tab title to Synclass when no titulo is given (issue #81)', async () => {
+  it('falls back to tituloDaAba when given and titulo is absent (issue #133)', async () => {
+    await render(<Topbar tituloDaAba="Painel" />);
+
+    expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Painel' });
+  });
+
+  it('falls back to the bare Synclass tab title when neither titulo nor tituloDaAba is given', async () => {
     await render(<Topbar />);
 
-    expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Synclass' });
+    expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Synclass' });
+  });
+
+  it('prefers titulo over tituloDaAba when both are given (achado de dev-review, PR #168)', async () => {
+    await render(<Topbar titulo="Chamada" tituloDaAba="Painel" />);
+
+    expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Chamada' });
   });
 
   // O teste "em tela larga, o menu aparece antes do Voltar" (issue #145)

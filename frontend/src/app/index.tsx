@@ -9,7 +9,10 @@ import { useAutenticadoGoogle } from '@/lib/auth/useAutenticadoGoogle';
  * aparecer (Hick's Law, `docs/spec/ux-heuristics.md`). `useAutenticadoGoogle`
  * (compartilhado com `login/index.tsx`) resolve o desfecho de sucesso —
  * persistir sessão + navegar pra `/painel`, com o mesmo tratamento de falha
- * ao gravar no dispositivo.
+ * ao gravar no dispositivo. Título da aba (issue #133) vem do próprio
+ * `Topbar` dentro de `HomeTemplate` (`tituloDaAba="Início"`), não daqui —
+ * um segundo `TituloDaAba` aqui fora colidiria com o de dentro do
+ * `Topbar` (dois efeitos escrevendo em `document.title` na mesma tela).
  */
 export default function HomeScreen() {
   const router = useRouter();

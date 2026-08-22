@@ -13,6 +13,14 @@ jest.mock('expo-router', () => ({
   useNavigation: () => ({ setOptions: jest.fn() }),
 }));
 
+const mockTituloDaAba = jest.fn();
+jest.mock('@/lib/TituloDaAba', () => ({
+  TituloDaAba: (props: { titulo: string }) => {
+    mockTituloDaAba(props);
+    return null;
+  },
+}));
+
 // Espião do MenuNavegacao: a integração (item 15) só precisa que o wrapper
 // repasse papeis/papelAtivo/onSelecionarPapel vindos de useSessao() para o
 // slot menuNavegacao do Topbar. O comportamento do menu em si já é coberto
@@ -45,6 +53,7 @@ jest.mock('@/components/organisms/MenuNavegacao', () => {
 describe('TopbarAutenticada (recebe MenuNavegacao de useSessao)', () => {
   beforeEach(() => {
     mockUseSessao.mockReset();
+    mockTituloDaAba.mockReset();
   });
 
   it('repassa papeis/papelAtivo/onSelecionarPapel de useSessao para o MenuNavegacao', async () => {
@@ -80,5 +89,17 @@ describe('TopbarAutenticada (recebe MenuNavegacao de useSessao)', () => {
     expect(screen.getByRole('header', { name: 'Horários' })).toBeTruthy();
     expect(screen.getByText('Sair')).toBeTruthy();
     expect(screen.getByText('menu-papel-ativo:Professor')).toBeTruthy();
+  });
+
+  it('repassa tituloDaAba para o Topbar (issue #133)', async () => {
+    mockUseSessao.mockReturnValue({
+      papeis: ['Professor'],
+      papelAtivo: 'Professor',
+      definirPapelAtivo: jest.fn(),
+    });
+
+    await render(<TopbarAutenticada tituloDaAba="Painel" />);
+
+    expect(mockTituloDaAba).toHaveBeenCalledWith({ titulo: 'Painel' });
   });
 });

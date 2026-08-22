@@ -48,7 +48,7 @@ export default function PainelScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <TopbarAutenticada>
+      <TopbarAutenticada tituloDaAba="Painel">
         <BotaoSair onPress={sair} />
       </TopbarAutenticada>
       <View

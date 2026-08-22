@@ -20,11 +20,16 @@ jest.mock('expo-router', () => {
 // TopbarAutenticada (#77) monta o MenuNavegacao real, que já tem sua
 // própria suíte (MenuNavegacao.test.tsx e TopbarAutenticada.test.tsx).
 // Mockado aqui pra manter este arquivo focado no contrato do próprio
-// Painel (conteúdo do corpo).
+// Painel (conteúdo do corpo) — captura as props recebidas pra também
+// cobrir o título da aba repassado (issue #133).
+const mockTopbarAutenticada = jest.fn();
 jest.mock('@/components/organisms/TopbarAutenticada', () => {
   const { View } = jest.requireActual('react-native');
   return {
-    TopbarAutenticada: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+    TopbarAutenticada: (props: { children?: React.ReactNode; tituloDaAba?: string }) => {
+      mockTopbarAutenticada(props);
+      return <View>{props.children}</View>;
+    },
   };
 });
 
@@ -52,6 +57,22 @@ describe('PainelScreen', () => {
     buscarPerfilMock.mockReset();
     buscarPerfilMock.mockResolvedValue({ sucesso: false, mensagem: 'erro' });
     periodoDoDiaMock.mockReturnValue('manha');
+    mockTopbarAutenticada.mockReset();
+  });
+
+  it('sets the tab title to Painel (issue #133)', async () => {
+    useSessaoMock.mockReturnValue({
+      carregando: false,
+      token: 'token-jwt',
+      papelAtivo: 'Professor',
+      sair: jest.fn(),
+    });
+
+    await render(<PainelScreen />);
+
+    expect(mockTopbarAutenticada).toHaveBeenCalledWith(
+      expect.objectContaining({ tituloDaAba: 'Painel' }),
+    );
   });
 
   it('redirects to /login when there is no saved session', async () => {
