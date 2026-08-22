@@ -2,6 +2,13 @@
 
 Card: https://github.com/RafaVargas1/Synclass/issues/138
 
+## Concluída
+
+Implementada e mergeada via PR #149 — todos os itens abaixo já foram
+feitos, checkboxes atualizados retroativamente (spec ficou órfã sem
+marcação completa, causando falso positivo de Task pendente no
+orquestrador mecânico, ADR-0003).
+
 Leia `implementation.md` (ao lado deste arquivo) ANTES do primeiro item —
 ele já resolve a decisão de design (campo de texto mascarado, não input
 nativo), traz o código de `mascararHora`/`SeletorDeHora` prontos, e explica
@@ -25,18 +32,18 @@ uma variação.
 - [x] Implementação mínima: reescreva
       `frontend/src/components/molecules/SeletorDeHora.tsx` com o código de
       `implementation.md`.
-- [ ] Ajuste em `frontend/src/components/organisms/HorarioForm.tsx`
+- [x] Ajuste em `frontend/src/components/organisms/HorarioForm.tsx`
       (função `validar`): troque a checagem `horaInicio === undefined` por
       `!horaEstaCompleta(horaInicio ?? '')`, importando `horaEstaCompleta`
       de `@/lib/mascararHora` — ver "Edge point" em `implementation.md`.
       Rode `HorarioForm.test.tsx` depois — se algum teste quebrar por causa
       dessa mudança de contrato, ajuste o teste (não a regra), consultando
       o teste atual pra entender o que ele espera.
-- [ ] `grep -rn "SeletorDeHora" frontend/src` — confirme que `HorarioForm`
+- [x] `grep -rn "SeletorDeHora" frontend/src` — confirme que `HorarioForm`
       é o único consumidor e que não sobrou nenhum outro lugar referenciando
       a UI antiga (ex: nenhum outro teste importa `SeletorDeHora` esperando
       o painel de 2 listas).
-- [ ] Refatore se necessário: releia o diff final contra
+- [x] Refatore se necessário: releia o diff final contra
       `docs/spec/code-style.md` e `docs/spec/engenharia-de-qualidade.md`
       antes de marcar a Task concluída.
 
