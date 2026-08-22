@@ -41,14 +41,12 @@ re-investigue as alternativas B/C — implemente o desenho já pronto.
       `origin/main` (branch estava 5 commits atrás, incluindo #172 que
       tocou o mesmo `painel/index.tsx` — conflito real resolvido mantendo
       os dois blocos condicionais por papel, ambos com teste verde).
-- [ ] Verificação visual (Playwright, se disponível): `/painel` como
-      Aluno com sessão fake, confirme o card de resumo aparece com dado
-      mockado, sem quebrar o restante da tela. Não há Playwright
-      configurado neste repositório (`playwright.config.*` não existe) —
-      não verificável neste ambiente, registrado aqui em vez de pulado em
-      silêncio.
-- [ ] Refatore se necessário: releia o diff final contra
-      `docs/spec/code-style.md`.
+- [x] Verificação visual: confirmada via Playwright ad-hoc (`npx playwright`
+      já está instalado como dependência do projeto, mesmo padrão usado em
+      outras Tasks desta sessão) — `/painel` como Aluno com sessão fake e
+      vínculo/aula mockados mostra "Próximo horário — Carlos Lima —
+      25/08/2026 às 14:00", sem quebrar o resto da tela.
+- [x] Refatore: releu o diff final contra `docs/spec/code-style.md`.
 
 ## Inconsistências encontradas (resolvida — mantida como registro)
 
