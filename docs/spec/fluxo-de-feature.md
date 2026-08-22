@@ -214,7 +214,7 @@ harness sozinho).
 - **Disparo do harness**:
   ```bash
   node scripts/deepseek-agent.mjs --task docs/specs/<n>-<slug>/task.md \
-    --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md
+    --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md,docs/spec/engenharia-de-qualidade.md
   ```
   O harness segue **TDD estrito** por conta própria (mesma ordem do
   `task.md`: teste primeiro, vendo-o falhar, implementação mínima,
@@ -251,10 +251,15 @@ harness sozinho).
 ## Fase 4 — Revisão (até 3 rodadas)
 
 Desde [ADR-0001](decisions/ADR-0001-pipeline-claude-deepseek.md), **só
-`dev-review` roda por padrão** neste fluxo automático — `qa-review`
-(Playwright/UX no navegador) sai do par de agentes paralelos e só entra
-sob pedido explícito do usuário ("testar o PR", "fazer QA do PR #N"),
-fora deste pipeline. Cada rodada:
+`dev-review` roda por padrão** neste fluxo automático — a rodada completa de
+`qa-review` (Playwright/UX no navegador, roteiro Gherkin) sai do par de
+agentes paralelos e só entra sob pedido explícito do usuário ("testar o PR",
+"fazer QA do PR #N"), fora deste pipeline. Isso **não** inclui a verificação
+visual: `dev-review` (Passo 3.5 da própria skill, ver
+`.claude/skills/dev-review/SKILL.md`) tira e avalia screenshots
+mobile+desktop de toda rota tocada sempre que o PR mexe em
+`frontend/src/app/**`/`frontend/src/components/**` — é obrigatória e
+bloqueante, não uma etapa opcional que só `qa-review` cobriria. Cada rodada:
 
 1. Delegue `dev-review` a um `Agent` (`subagent_type: "synclass-worker"`)
    sobre o PR aberto na Fase 3, em vez de chamar `Skill()` direto na

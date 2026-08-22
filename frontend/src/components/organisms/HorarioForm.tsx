@@ -73,7 +73,8 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
         onChange={setDiaSemana}
       />
       <ChipSelector
-        label="Política de marcação"
+        label="Quem marca os Alunos neste horário?"
+        descricao="Livre: qualquer Aluno se inscreve. Fixo: só o Professor atribui. Híbrido: Professor atribui vagas fixas e libera o restante."
         opcoes={OpcoesTipoMarcacao}
         valor={tipoMarcacao}
         onChange={setTipoMarcacao}

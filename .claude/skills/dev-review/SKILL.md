@@ -102,6 +102,39 @@ onde indicado):
      `find frontend/src -name "*.test.ts*"` antes de cobrar, pois isso pode
      mudar. Se não encontrar teste para uma função nova relevante, sinalize.
 
+## Passo 3.5 — Verificação visual obrigatória (PRs que tocam frontend)
+
+Todo PR cuja lista de arquivos (Passo 1) inclui algo em `frontend/src/app/**`
+ou `frontend/src/components/**` passa por este passo — não é opcional, não
+depende de pedido do usuário (diferente de `qa-review`/Playwright, que
+continua sob pedido explícito para o resto). Motivo: os passos 1–3 e 5 desta
+skill leem código e diff — nenhum deles renderiza a tela. Um menu que
+sobrepõe o logo, um botão do tamanho errado, ou um rótulo sem explicação
+passam batido por análise textual mesmo com código "limpo" (foi exatamente
+assim que PRs #77/#107/#111 chegaram a `main` com o menu lateral quebrado e
+um CTA de "Meu perfil" do tamanho de ação primária — nenhum achado de
+`dev-review` cobria isso).
+
+1. Suba o app (`npx expo start --web`) se ainda não estiver rodando.
+2. Para cada rota nova/alterada no diff, tire screenshot via Playwright em
+   **dois viewports**: mobile (390×844) e desktop (1440×900) — os dois, não
+   um só, já que responsividade quebrada num dos dois é o tipo de achado
+   mais comum. Injete uma sessão fake via `localStorage` (`synclass.sessao.token`/
+   `synclass.sessao.papeis`) quando a rota exigir autenticação, igual ao
+   padrão já usado nesta sessão.
+3. Compare cada screenshot contra `docs/spec/ux-heuristics.md`: hierarquia
+   de CTA, alvo de toque, sobreposição/corte de elementos, rótulo sem
+   explicação de jargão, espaço vazio sem propósito, ícone/controle que não
+   segue convenção de plataforma (ex: hamburger deve parecer hamburger, não
+   texto "Abrir menu").
+4. Qualquer defeito visual concreto encontrado aqui é **bloqueante**, mesmo
+   que os passos 2–5 não tenham achado nada — entra na tabela do Passo 6 na
+   mesma prioridade dos checks mecânicos falhados. Anexe o screenshot (ou o
+   caminho do arquivo) como evidência na linha da tabela.
+5. Se o PR não tiver nenhuma rota nova/alterada (só componente interno sem
+   tela própria, ex: um hook), ainda assim renderize a tela mãe mais próxima
+   que o consome — não pule este passo alegando "não é uma tela".
+
 ## Passo 4 — Delegar correção/simplificação/reuso/eficiência para /code-review
 
 Não reimplemente essa análise. Invoke a skill `code-review` (nível `medium`)

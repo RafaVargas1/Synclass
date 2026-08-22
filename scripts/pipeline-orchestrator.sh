@@ -148,7 +148,7 @@ else
     (
       node "$REPO_ROOT/scripts/deepseek-agent.mjs" \
         --task "$task_rel" \
-        --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md \
+        --system docs/spec/code-style.md,docs/spec/business-rules.md,docs/spec/security-rules.md,docs/spec/testing-standards.md,docs/spec/ux-heuristics.md,docs/spec/engenharia-de-qualidade.md \
         --cwd "$worktree"
     ) &
     PIDS+=("$!")

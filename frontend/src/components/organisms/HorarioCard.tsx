@@ -50,6 +50,7 @@ export function HorarioCard({ horario, onRemover, onAlterarPolitica }: HorarioCa
         <View className="mt-two w-full gap-two">
           <ChipSelector
             label="Política de marcação"
+            descricao="Livre: qualquer Aluno se inscreve. Fixo: só o Professor atribui. Híbrido: Professor atribui vagas fixas e libera o restante."
             opcoes={OpcoesTipoMarcacao}
             valor={tipoSelecionado}
             onChange={setTipoSelecionado}
