@@ -30,7 +30,7 @@ public sealed class RegraDeCobrancaServiceTests
         var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
 
         var resultado = await servico.DefinirAsync(
-            matricula.Id, TipoRegraDeCobranca.FixoMensal, 300m, frequenciaSemanalContratada: null, CancellationToken.None);
+            matricula.Id, TipoRegraDeCobranca.FixoMensal, 300m, frequenciaSemanalContratada: null, baseDeContagemAula: null, CancellationToken.None);
 
         resultado.Regra.Should().BeOfType<RegraFixoMensal>();
         resultado.ValorAnterior.Should().BeNull();
@@ -44,10 +44,10 @@ public sealed class RegraDeCobrancaServiceTests
         var matricula = CriarMatriculaExistente(matriculas);
         var regras = new FakeRegraDeCobrancaRepository();
         var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
-        await servico.DefinirAsync(matricula.Id, TipoRegraDeCobranca.FixoMensal, 300m, null, CancellationToken.None);
+        await servico.DefinirAsync(matricula.Id, TipoRegraDeCobranca.FixoMensal, 300m, null, null, CancellationToken.None);
 
         var resultado = await servico.DefinirAsync(
-            matricula.Id, TipoRegraDeCobranca.ValorPorAula, 50m, frequenciaSemanalContratada: 3, CancellationToken.None);
+            matricula.Id, TipoRegraDeCobranca.ValorPorAula, 50m, frequenciaSemanalContratada: 3, baseDeContagemAula: null, CancellationToken.None);
 
         resultado.Regra.Should().BeOfType<RegraValorPorAula>();
         resultado.ValorAnterior.Should().Be(300m);
@@ -74,7 +74,7 @@ public sealed class RegraDeCobrancaServiceTests
         var regras = new FakeRegraDeCobrancaRepository();
         var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
 
-        await servico.DefinirAsync(matriculaComA.Id, TipoRegraDeCobranca.FixoMensal, 300m, null, CancellationToken.None);
+        await servico.DefinirAsync(matriculaComA.Id, TipoRegraDeCobranca.FixoMensal, 300m, null, null, CancellationToken.None);
 
         var regraDeA = await servico.BuscarVigenteAsync(matriculaComA.Id, CancellationToken.None);
         var regraDeB = await servico.BuscarVigenteAsync(matriculaComB.Id, CancellationToken.None);
@@ -92,9 +92,53 @@ public sealed class RegraDeCobrancaServiceTests
         var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
 
         var acao = () => servico.DefinirAsync(
-            Guid.NewGuid(), TipoRegraDeCobranca.FixoMensal, 300m, null, CancellationToken.None);
+            Guid.NewGuid(), TipoRegraDeCobranca.FixoMensal, 300m, null, null, CancellationToken.None);
 
         await acao.Should().ThrowAsync<MatriculaNaoEncontradaException>();
         regras.Regras.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DefinirAsync_FixoMensalComBaseDeContagemInformada_RejeitaComBaseDeContagemAulaNaoEsperadaException()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var matricula = CriarMatriculaExistente(matriculas);
+        var regras = new FakeRegraDeCobrancaRepository();
+        var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
+
+        var acao = () => servico.DefinirAsync(
+            matricula.Id, TipoRegraDeCobranca.FixoMensal, 300m, null, BaseDeContagemAula.PresencaConfirmada, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<BaseDeContagemAulaNaoEsperadaException>();
+        regras.Regras.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DefinirAsync_FixoPorAulaComBaseDeContagemInformada_PersisteABaseInformada()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var matricula = CriarMatriculaExistente(matriculas);
+        var regras = new FakeRegraDeCobrancaRepository();
+        var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
+
+        var resultado = await servico.DefinirAsync(
+            matricula.Id, TipoRegraDeCobranca.FixoPorAula, 50m, null, BaseDeContagemAula.PresencaConfirmada, CancellationToken.None);
+
+        resultado.Regra.Should().BeOfType<RegraFixoPorAula>();
+        ((RegraFixoPorAula)resultado.Regra).BaseDeContagemAula.Should().Be(BaseDeContagemAula.PresencaConfirmada);
+    }
+
+    [Fact]
+    public async Task DefinirAsync_FixoPorAulaSemBaseDeContagem_AplicaDefaultAgendamento()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var matricula = CriarMatriculaExistente(matriculas);
+        var regras = new FakeRegraDeCobrancaRepository();
+        var servico = new RegraDeCobrancaService(regras, matriculas, Clock);
+
+        var resultado = await servico.DefinirAsync(
+            matricula.Id, TipoRegraDeCobranca.FixoPorAula, 50m, null, null, CancellationToken.None);
+
+        ((RegraFixoPorAula)resultado.Regra).BaseDeContagemAula.Should().Be(BaseDeContagemAula.Agendamento);
     }
 }

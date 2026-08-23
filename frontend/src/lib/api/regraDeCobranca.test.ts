@@ -44,6 +44,7 @@ describe('definirRegraDeCobranca', () => {
       tipo: 'ValorPorAula',
       valor: 50,
       frequenciaSemanalContratada: 3,
+      baseDeContagemAula: 'Agendamento',
     });
 
     expect(resultado).toEqual({ sucesso: true, regra });
@@ -56,6 +57,7 @@ describe('definirRegraDeCobranca', () => {
       tipo: 'ValorPorAula',
       valor: 50,
       frequenciaSemanalContratada: 9,
+      baseDeContagemAula: 'Agendamento',
     });
 
     expect(resultado).toEqual({
@@ -71,6 +73,7 @@ describe('definirRegraDeCobranca', () => {
       tipo: 'FixoMensal',
       valor: 300,
       frequenciaSemanalContratada: null,
+      baseDeContagemAula: null,
     });
 
     expect(resultado.sucesso).toBe(false);

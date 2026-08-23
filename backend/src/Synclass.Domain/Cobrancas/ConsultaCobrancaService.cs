@@ -1,4 +1,5 @@
 using Synclass.Domain.Alocacoes;
+using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Usuarios;
@@ -21,19 +22,22 @@ public sealed class ConsultaCobrancaService
     private readonly IAlocacaoHorarioRepository _alocacoes;
     private readonly IHorarioRepository _horarios;
     private readonly IUsuarioRepository _usuarios;
+    private readonly IRegistroFrequenciaRepository _registrosFrequencia;
 
     public ConsultaCobrancaService(
         IMatriculaRepository matriculas,
         IRegraDeCobrancaRepository regras,
         IAlocacaoHorarioRepository alocacoes,
         IHorarioRepository horarios,
-        IUsuarioRepository usuarios)
+        IUsuarioRepository usuarios,
+        IRegistroFrequenciaRepository registrosFrequencia)
     {
         _matriculas = matriculas;
         _regras = regras;
         _alocacoes = alocacoes;
         _horarios = horarios;
         _usuarios = usuarios;
+        _registrosFrequencia = registrosFrequencia;
     }
 
     public async Task<IReadOnlyCollection<ValorDevidoPorMatricula>> ConsultarPorProfessorAsync(
@@ -90,7 +94,7 @@ public sealed class ConsultaCobrancaService
             return new ValorDevidoPorMatricula(matricula.Id, matricula.AlunoUsuarioId, nome, Valor: null, SemRegraDefinida: true);
         }
 
-        var quantidadeDeAulasNoPeriodo = await ContarAulasNoPeriodoAsync(matricula.Id, periodo, cancellationToken);
+        var quantidadeDeAulasNoPeriodo = await ContarAulasNoPeriodoAsync(matricula.Id, regra, periodo, cancellationToken);
         var valor = regra.CalcularValorDevido(quantidadeDeAulasNoPeriodo);
         return new ValorDevidoPorMatricula(matricula.Id, matricula.AlunoUsuarioId, nome, valor, SemRegraDefinida: false);
     }
@@ -114,14 +118,25 @@ public sealed class ConsultaCobrancaService
     }
 
     /// <summary>
-    /// Soma as ocorrências semanais de cada <see cref="Horario"/> alocado à
+    /// Por padrão (<see cref="BaseDeContagemAula.Agendamento"/>), soma as
+    /// ocorrências semanais de cada <see cref="Horario"/> alocado à
     /// matrícula que caem dentro do período — decisão de domínio da issue
     /// #12 (ver implementation.md), não depende de frequência real. N+1 em
     /// <see cref="IHorarioRepository.BuscarPorIdAsync"/>: aceitável na escala
-    /// atual (ver implementation.md#edge-points).
+    /// atual (ver implementation.md#edge-points). Quando <paramref name="regra"/>
+    /// implementa <see cref="IRegraComBaseDeContagemAula"/> com
+    /// <see cref="BaseDeContagemAula.PresencaConfirmada"/> (issue #186),
+    /// conta só aulas com presença confirmada pelo Professor.
     /// </summary>
-    private async Task<int> ContarAulasNoPeriodoAsync(Guid matriculaId, PeriodoConsulta periodo, CancellationToken cancellationToken)
+    private async Task<int> ContarAulasNoPeriodoAsync(
+        Guid matriculaId, RegraDeCobranca regra, PeriodoConsulta periodo, CancellationToken cancellationToken)
     {
+        if (regra is IRegraComBaseDeContagemAula regraPorAula
+            && regraPorAula.BaseDeContagemAula == BaseDeContagemAula.PresencaConfirmada)
+        {
+            return await _registrosFrequencia.ContarPresencasNoPeriodoAsync(matriculaId, periodo, cancellationToken);
+        }
+
         var alocacoes = await _alocacoes.ListarPorMatriculaAsync(matriculaId, cancellationToken);
         var total = 0;
         foreach (var alocacao in alocacoes)

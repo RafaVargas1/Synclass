@@ -29,10 +29,11 @@ describe('RegraDeCobrancaForm', () => {
       tipo: 'ValorPorAula',
       valor: 50,
       frequenciaSemanalContratada: 3,
+      baseDeContagemAula: 'Agendamento',
     });
   });
 
-  it('submits FixoMensal with frequenciaSemanalContratada null', async () => {
+  it('submits FixoMensal with frequenciaSemanalContratada and baseDeContagemAula null', async () => {
     const onSubmit = jest.fn();
     await render(<RegraDeCobrancaForm enviando={false} onSubmit={onSubmit} />);
 
@@ -40,7 +41,12 @@ describe('RegraDeCobrancaForm', () => {
     await fireEvent.changeText(screen.getByPlaceholderText('50.00'), '300');
     await fireEvent.press(screen.getByText('Salvar regra de cobrança'));
 
-    expect(onSubmit).toHaveBeenCalledWith({ tipo: 'FixoMensal', valor: 300, frequenciaSemanalContratada: null });
+    expect(onSubmit).toHaveBeenCalledWith({
+      tipo: 'FixoMensal',
+      valor: 300,
+      frequenciaSemanalContratada: null,
+      baseDeContagemAula: null,
+    });
   });
 
   it('shows a client error and does not submit when valor is invalid', async () => {
@@ -77,7 +83,13 @@ describe('RegraDeCobrancaForm', () => {
       <RegraDeCobrancaForm
         enviando={false}
         onSubmit={onSubmit}
-        regraExistente={{ matriculaId: 'matricula-1', tipo: 'FixoMensal', valor: 300, frequenciaSemanalContratada: null }}
+        regraExistente={{
+          matriculaId: 'matricula-1',
+          tipo: 'FixoMensal',
+          valor: 300,
+          frequenciaSemanalContratada: null,
+          baseDeContagemAula: null,
+        }}
       />,
     );
 
@@ -86,6 +98,54 @@ describe('RegraDeCobrancaForm', () => {
 
     await fireEvent.press(screen.getByText('Salvar regra de cobrança'));
 
-    expect(onSubmit).toHaveBeenCalledWith({ tipo: 'FixoMensal', valor: 300, frequenciaSemanalContratada: null });
+    expect(onSubmit).toHaveBeenCalledWith({
+      tipo: 'FixoMensal',
+      valor: 300,
+      frequenciaSemanalContratada: null,
+      baseDeContagemAula: null,
+    });
+  });
+
+  describe('base de contagem de aula (issue #186)', () => {
+    it('shows the base de contagem selector for ValorPorAula (default tipo), defaulting to Agendamento', async () => {
+      await render(<RegraDeCobrancaForm enviando={false} onSubmit={jest.fn()} />);
+
+      expect(screen.getByText('Como contar as aulas do período?')).toBeTruthy();
+      expect(screen.getByText('Todas as aulas agendadas')).toBeTruthy();
+      expect(screen.getByText('Só aulas com presença confirmada')).toBeTruthy();
+    });
+
+    it('shows the base de contagem selector for FixoPorAula', async () => {
+      await render(<RegraDeCobrancaForm enviando={false} onSubmit={jest.fn()} />);
+
+      await fireEvent.press(screen.getByText('Fixo por aula'));
+
+      expect(screen.getByText('Como contar as aulas do período?')).toBeTruthy();
+    });
+
+    it('hides the base de contagem selector for FixoMensal', async () => {
+      await render(<RegraDeCobrancaForm enviando={false} onSubmit={jest.fn()} />);
+
+      await fireEvent.press(screen.getByText('Fixo mensal'));
+
+      expect(screen.queryByText('Como contar as aulas do período?')).toBeNull();
+    });
+
+    it('submits FixoPorAula with the selected baseDeContagemAula', async () => {
+      const onSubmit = jest.fn();
+      await render(<RegraDeCobrancaForm enviando={false} onSubmit={onSubmit} />);
+
+      await fireEvent.press(screen.getByText('Fixo por aula'));
+      await fireEvent.changeText(screen.getByPlaceholderText('50.00'), '50');
+      await fireEvent.press(screen.getByText('Só aulas com presença confirmada'));
+      await fireEvent.press(screen.getByText('Salvar regra de cobrança'));
+
+      expect(onSubmit).toHaveBeenCalledWith({
+        tipo: 'FixoPorAula',
+        valor: 50,
+        frequenciaSemanalContratada: null,
+        baseDeContagemAula: 'PresencaConfirmada',
+      });
+    });
   });
 });

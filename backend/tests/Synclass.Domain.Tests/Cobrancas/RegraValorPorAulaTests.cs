@@ -48,4 +48,21 @@ public sealed class RegraValorPorAulaTests
 
         acao.Should().Throw<FrequenciaSemanalContratadaInvalidaException>();
     }
+
+    [Fact]
+    public void Criar_SemInformarBaseDeContagem_AplicaDefaultAgendamento()
+    {
+        var regra = RegraValorPorAula.Criar(Guid.NewGuid(), 50m, frequenciaSemanalContratada: 3, Clock);
+
+        regra.BaseDeContagemAula.Should().Be(BaseDeContagemAula.Agendamento);
+    }
+
+    [Fact]
+    public void Criar_ComBaseDeContagemInformada_UsaOValorInformado()
+    {
+        var regra = RegraValorPorAula.Criar(
+            Guid.NewGuid(), 50m, frequenciaSemanalContratada: 3, Clock, BaseDeContagemAula.PresencaConfirmada);
+
+        regra.BaseDeContagemAula.Should().Be(BaseDeContagemAula.PresencaConfirmada);
+    }
 }

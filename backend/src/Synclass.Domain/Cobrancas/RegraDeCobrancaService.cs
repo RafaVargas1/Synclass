@@ -25,13 +25,19 @@ public sealed class RegraDeCobrancaService
     }
 
     public async Task<DefinicaoDeRegraDeCobrancaResultado> DefinirAsync(
-        Guid matriculaId, TipoRegraDeCobranca tipo, decimal valor, int? frequenciaSemanalContratada, CancellationToken cancellationToken)
+        Guid matriculaId,
+        TipoRegraDeCobranca tipo,
+        decimal valor,
+        int? frequenciaSemanalContratada,
+        BaseDeContagemAula? baseDeContagemAula,
+        CancellationToken cancellationToken)
     {
         await GarantirMatriculaExisteAsync(matriculaId, cancellationToken);
         GarantirFrequenciaCoerenteComTipo(tipo, frequenciaSemanalContratada);
+        GarantirBaseDeContagemCoerenteComTipo(tipo, baseDeContagemAula);
 
         var regraAnterior = await _regras.BuscarPorMatriculaAsync(matriculaId, cancellationToken);
-        var novaRegra = ConstruirRegra(matriculaId, tipo, valor, frequenciaSemanalContratada);
+        var novaRegra = ConstruirRegra(matriculaId, tipo, valor, frequenciaSemanalContratada, baseDeContagemAula);
 
         await _regras.SalvarAsync(novaRegra, cancellationToken);
         return new DefinicaoDeRegraDeCobrancaResultado(novaRegra, regraAnterior?.Valor);
@@ -51,14 +57,20 @@ public sealed class RegraDeCobrancaService
         }
     }
 
-    private RegraDeCobranca ConstruirRegra(Guid matriculaId, TipoRegraDeCobranca tipo, decimal valor, int? frequenciaSemanalContratada)
+    private RegraDeCobranca ConstruirRegra(
+        Guid matriculaId, TipoRegraDeCobranca tipo, decimal valor, int? frequenciaSemanalContratada, BaseDeContagemAula? baseDeContagemAula)
     {
+        var baseDeContagemResolvida = baseDeContagemAula ?? BaseDeContagemAula.Agendamento;
         return tipo switch
         {
             TipoRegraDeCobranca.FixoMensal => RegraFixoMensal.Criar(matriculaId, valor, _clock),
-            TipoRegraDeCobranca.FixoPorAula => RegraFixoPorAula.Criar(matriculaId, valor, _clock),
+            TipoRegraDeCobranca.FixoPorAula => RegraFixoPorAula.Criar(matriculaId, valor, _clock, baseDeContagemResolvida),
             TipoRegraDeCobranca.ValorPorAula => RegraValorPorAula.Criar(
-                matriculaId, valor, frequenciaSemanalContratada ?? throw new FrequenciaSemanalContratadaAusenteException(), _clock),
+                matriculaId,
+                valor,
+                frequenciaSemanalContratada ?? throw new FrequenciaSemanalContratadaAusenteException(),
+                _clock,
+                baseDeContagemResolvida),
             _ => throw new ArgumentOutOfRangeException(nameof(tipo), tipo, $"Tipo de regra de cobrança inválido: {tipo}."),
         };
     }
@@ -68,6 +80,14 @@ public sealed class RegraDeCobrancaService
         if (tipo != TipoRegraDeCobranca.ValorPorAula && frequenciaSemanalContratada is not null)
         {
             throw new FrequenciaSemanalContratadaNaoEsperadaException(tipo);
+        }
+    }
+
+    private static void GarantirBaseDeContagemCoerenteComTipo(TipoRegraDeCobranca tipo, BaseDeContagemAula? baseDeContagemAula)
+    {
+        if (tipo == TipoRegraDeCobranca.FixoMensal && baseDeContagemAula is not null)
+        {
+            throw new BaseDeContagemAulaNaoEsperadaException(tipo);
         }
     }
 }

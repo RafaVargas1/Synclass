@@ -6,6 +6,7 @@ import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { ChipSelector, type ChipSelectorOption } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
 import type {
+  BaseDeContagemAula,
   DefinirRegraDeCobrancaInput,
   RegraDeCobranca,
   TipoRegraDeCobranca,
@@ -31,6 +32,12 @@ const OpcoesTipo: readonly ChipSelectorOption<TipoRegraDeCobranca>[] = [
 ];
 const TipoInicial: TipoRegraDeCobranca = 'ValorPorAula';
 
+const OpcoesBaseDeContagem: readonly ChipSelectorOption<BaseDeContagemAula>[] = [
+  { valor: 'Agendamento', rotulo: 'Todas as aulas agendadas' },
+  { valor: 'PresencaConfirmada', rotulo: 'Só aulas com presença confirmada' },
+];
+const BaseDeContagemInicial: BaseDeContagemAula = 'Agendamento';
+
 const MensagemValorInvalido = 'Informe um valor maior que zero.';
 const MensagemFrequenciaInvalida = 'Informe uma frequência semanal entre 1 e 7.';
 
@@ -38,7 +45,10 @@ const MensagemFrequenciaInvalida = 'Informe uma frequência semanal entre 1 e 7.
  * Organismo: formulário de definição da regra de cobrança de uma matrícula
  * (issue #11). O campo `frequenciaSemanalContratada` só aparece quando
  * `tipo === 'ValorPorAula'` — primeiro caso de campo condicional no
- * frontend, sem padrão prévio para copiar (ver implementation.md).
+ * frontend, sem padrão prévio para copiar (ver implementation.md). O
+ * `ChipSelector` "Como contar as aulas do período?" (issue #186) aparece
+ * pra `ValorPorAula`/`FixoPorAula` — as duas regras que efetivamente contam
+ * aula (`FixoMensal` não usa `quantidadeDeAulasNoPeriodo`).
  */
 export function RegraDeCobrancaForm({ enviando, erro, regraExistente, onSubmit }: RegraDeCobrancaFormProps) {
   const [tipo, setTipo] = useState<TipoRegraDeCobranca>(regraExistente?.tipo ?? TipoInicial);
@@ -46,10 +56,13 @@ export function RegraDeCobrancaForm({ enviando, erro, regraExistente, onSubmit }
   const [frequenciaSemanalContratada, setFrequenciaSemanalContratada] = useState(
     regraExistente?.frequenciaSemanalContratada != null ? String(regraExistente.frequenciaSemanalContratada) : '',
   );
+  const [baseDeContagemAula, setBaseDeContagemAula] = useState<BaseDeContagemAula>(
+    regraExistente?.baseDeContagemAula ?? BaseDeContagemInicial,
+  );
   const [erroCliente, setErroCliente] = useState<string | undefined>(undefined);
 
   function handleSubmit() {
-    const resultado = validar(tipo, valor, frequenciaSemanalContratada);
+    const resultado = validar(tipo, valor, frequenciaSemanalContratada, baseDeContagemAula);
     if (!resultado.valido) {
       setErroCliente(resultado.mensagem);
       return;
@@ -58,6 +71,8 @@ export function RegraDeCobrancaForm({ enviando, erro, regraExistente, onSubmit }
     setErroCliente(undefined);
     onSubmit(resultado.input);
   }
+
+  const contaAula = tipo === 'ValorPorAula' || tipo === 'FixoPorAula';
 
   return (
     <View className="w-full gap-four">
@@ -70,6 +85,14 @@ export function RegraDeCobrancaForm({ enviando, erro, regraExistente, onSubmit }
           onChangeText={setFrequenciaSemanalContratada}
           placeholder="3"
           keyboardType="numeric"
+        />
+      ) : null}
+      {contaAula ? (
+        <ChipSelector
+          label="Como contar as aulas do período?"
+          opcoes={OpcoesBaseDeContagem}
+          valor={baseDeContagemAula}
+          onChange={setBaseDeContagemAula}
         />
       ) : null}
       {(erroCliente ?? erro) ? <ErrorMessage>{erroCliente ?? erro}</ErrorMessage> : null}
@@ -89,14 +112,19 @@ function validar(
   tipo: TipoRegraDeCobranca,
   valorTexto: string,
   frequenciaTexto: string,
+  baseDeContagemAula: BaseDeContagemAula,
 ): ResultadoValidacao {
   const valor = Number(valorTexto);
   if (!Number.isFinite(valor) || valor <= 0) {
     return { valido: false, mensagem: MensagemValorInvalido };
   }
 
-  if (tipo !== 'ValorPorAula') {
-    return { valido: true, input: { tipo, valor, frequenciaSemanalContratada: null } };
+  if (tipo === 'FixoMensal') {
+    return { valido: true, input: { tipo, valor, frequenciaSemanalContratada: null, baseDeContagemAula: null } };
+  }
+
+  if (tipo === 'FixoPorAula') {
+    return { valido: true, input: { tipo, valor, frequenciaSemanalContratada: null, baseDeContagemAula } };
   }
 
   const frequenciaSemanalContratada = Number(frequenciaTexto);
@@ -104,5 +132,5 @@ function validar(
     return { valido: false, mensagem: MensagemFrequenciaInvalida };
   }
 
-  return { valido: true, input: { tipo, valor, frequenciaSemanalContratada } };
+  return { valido: true, input: { tipo, valor, frequenciaSemanalContratada, baseDeContagemAula } };
 }
