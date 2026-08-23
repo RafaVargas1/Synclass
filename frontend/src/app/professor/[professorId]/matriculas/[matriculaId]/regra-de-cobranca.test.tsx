@@ -60,6 +60,7 @@ describe('RegraDeCobrancaScreen', () => {
       tipo: 'FixoMensal',
       valor: 300,
       frequenciaSemanalContratada: null,
+      baseDeContagemAula: null,
     });
   });
 

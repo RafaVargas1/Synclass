@@ -9,17 +9,26 @@ import { fetchComTimeout, MensagemErroConexao } from './httpClient';
  */
 export type TipoRegraDeCobranca = 'ValorPorAula' | 'FixoMensal' | 'FixoPorAula';
 
+/**
+ * Espelha `Synclass.Domain.Cobrancas.BaseDeContagemAula` (issue #186) — só
+ * tem efeito para `TipoRegraDeCobranca` de `ValorPorAula`/`FixoPorAula`
+ * (regras que contam aula); `null` para `FixoMensal`.
+ */
+export type BaseDeContagemAula = 'Agendamento' | 'PresencaConfirmada';
+
 export type RegraDeCobranca = {
   matriculaId: string;
   tipo: TipoRegraDeCobranca;
   valor: number;
   frequenciaSemanalContratada: number | null;
+  baseDeContagemAula: BaseDeContagemAula | null;
 };
 
 export type DefinirRegraDeCobrancaInput = {
   tipo: TipoRegraDeCobranca;
   valor: number;
   frequenciaSemanalContratada: number | null;
+  baseDeContagemAula: BaseDeContagemAula | null;
 };
 
 export type ObterRegraDeCobrancaResultado =

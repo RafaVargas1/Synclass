@@ -126,4 +126,47 @@ public sealed class RegraDeCobrancaEndpointTests : IClassFixture<WebApplicationF
         corpo!.Tipo.Should().Be("FixoMensal");
         corpo.Valor.Should().Be(300m);
     }
+
+    [Fact]
+    public async Task Put_RegraDeCobranca_ReturnsOk_ComBaseDeContagemPresencaConfirmada_QuandoFixoPorAula()
+    {
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca",
+            new DefinirRegraDeCobrancaRequest("FixoPorAula", 50m, null, "PresencaConfirmada"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<RegraDeCobrancaResponse>();
+        corpo!.BaseDeContagemAula.Should().Be("PresencaConfirmada");
+    }
+
+    [Fact]
+    public async Task Put_RegraDeCobranca_ReturnsOk_SemBaseDeContagemInformada_AplicaDefaultAgendamento()
+    {
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca",
+            new DefinirRegraDeCobrancaRequest("FixoPorAula", 50m, null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpo = await response.Content.ReadFromJsonAsync<RegraDeCobrancaResponse>();
+        corpo!.BaseDeContagemAula.Should().Be("Agendamento");
+    }
+
+    [Fact]
+    public async Task Put_RegraDeCobranca_ReturnsBadRequest_QuandoBaseDeContagemInformadaParaFixoMensal()
+    {
+        var (client, professorId) = await AutenticacaoTestHelper.ClienteAutenticadoComoProfessorPersistidoAsync(_factory);
+        var matriculaId = await CriarMatriculaAsync(client);
+
+        var response = await client.PutAsJsonAsync(
+            $"/professores/{professorId}/matriculas/{matriculaId}/regra-de-cobranca",
+            new DefinirRegraDeCobrancaRequest("FixoMensal", 300m, null, "PresencaConfirmada"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

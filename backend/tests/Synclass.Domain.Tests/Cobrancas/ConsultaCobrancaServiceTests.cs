@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Synclass.Domain.Alocacoes;
+using Synclass.Domain.Aulas;
 using Synclass.Domain.Cobrancas;
+using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
 using Synclass.Domain.Tests.Fakes;
@@ -29,9 +31,12 @@ public sealed class ConsultaCobrancaServiceTests
         FakeRegraDeCobrancaRepository regras,
         FakeAlocacaoHorarioRepository alocacoes,
         FakeHorarioRepository horarios,
-        FakeUsuarioRepository? usuarios = null)
+        FakeUsuarioRepository? usuarios = null,
+        FakeRegistroFrequenciaRepository? registrosFrequencia = null)
     {
-        return new ConsultaCobrancaService(matriculas, regras, alocacoes, horarios, usuarios ?? new FakeUsuarioRepository());
+        return new ConsultaCobrancaService(
+            matriculas, regras, alocacoes, horarios, usuarios ?? new FakeUsuarioRepository(),
+            registrosFrequencia ?? new FakeRegistroFrequenciaRepository(new FakeAulaRepository()));
     }
 
     private static Matricula CriarMatriculaDoProfessor(FakeMatriculaRepository matriculas, Guid professorId)
@@ -218,6 +223,142 @@ public sealed class ConsultaCobrancaServiceTests
         var resultado = await servico.ConsultarPorAlunoAsync(Guid.NewGuid(), PeriodoAgosto2026, CancellationToken.None);
 
         resultado.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Cenário Gherkin 1 (issue #186) — <see cref="BaseDeContagemAula.Agendamento"/>
+    /// (default) conta toda ocorrência semanal agendada, mesmo com o Aluno
+    /// presente em só 2 das 4 aulas de terça.
+    /// </summary>
+    [Fact]
+    public async Task ConsultarPorProfessorAsync_RegraComBaseAgendamento_ContaOcorrenciasAgendadasIndependenteDePresenca()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var professorId = Guid.NewGuid();
+        var matricula = CriarMatriculaDoProfessor(matriculas, professorId);
+        var regras = new FakeRegraDeCobrancaRepository();
+        await regras.SalvarAsync(
+            RegraFixoPorAula.Criar(matricula.Id, 50m, Clock, BaseDeContagemAula.Agendamento), CancellationToken.None);
+        var horarios = new FakeHorarioRepository();
+        var horarioTerca = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        await horarios.AdicionarAsync(horarioTerca, CancellationToken.None);
+        var alocacoes = new FakeAlocacaoHorarioRepository();
+        await alocacoes.AdicionarAsync(
+            AlocacaoHorario.Criar(horarioTerca.Id, matricula.Id, OrigemAlocacao.Professor, Clock), CancellationToken.None);
+        var aulas = new FakeAulaRepository();
+        var registros = new FakeRegistroFrequenciaRepository(aulas);
+        await MarcarPresencaAsync(aulas, registros, horarioTerca.Id, matricula.Id, new DateOnly(2026, 8, 4), StatusFrequencia.Presente);
+        await MarcarPresencaAsync(aulas, registros, horarioTerca.Id, matricula.Id, new DateOnly(2026, 8, 11), StatusFrequencia.Presente);
+        // 18/08 e 25/08 sem RegistroFrequencia — nunca compareceu nem foi marcado ausente.
+        var servico = CriarServico(matriculas, regras, alocacoes, horarios, registrosFrequencia: registros);
+
+        var resultado = await servico.ConsultarPorProfessorAsync(professorId, PeriodoAgosto2026, CancellationToken.None);
+
+        // 4 terças agendadas * 50 = 200, mesmo só 2 tendo presença registrada.
+        resultado.Should().ContainSingle(v => v.MatriculaId == matricula.Id && v.Valor == 200m);
+    }
+
+    /// <summary>
+    /// Cenário Gherkin 2 — <see cref="BaseDeContagemAula.PresencaConfirmada"/>
+    /// conta só as aulas com presença confirmada pelo Professor.
+    /// </summary>
+    [Fact]
+    public async Task ConsultarPorProfessorAsync_RegraComBasePresencaConfirmada_ContaSoAulasComPresencaConfirmada()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var professorId = Guid.NewGuid();
+        var matricula = CriarMatriculaDoProfessor(matriculas, professorId);
+        var regras = new FakeRegraDeCobrancaRepository();
+        await regras.SalvarAsync(
+            RegraFixoPorAula.Criar(matricula.Id, 50m, Clock, BaseDeContagemAula.PresencaConfirmada), CancellationToken.None);
+        var horarios = new FakeHorarioRepository();
+        var horarioTerca = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        await horarios.AdicionarAsync(horarioTerca, CancellationToken.None);
+        var alocacoes = new FakeAlocacaoHorarioRepository();
+        await alocacoes.AdicionarAsync(
+            AlocacaoHorario.Criar(horarioTerca.Id, matricula.Id, OrigemAlocacao.Professor, Clock), CancellationToken.None);
+        var aulas = new FakeAulaRepository();
+        var registros = new FakeRegistroFrequenciaRepository(aulas);
+        await MarcarPresencaAsync(aulas, registros, horarioTerca.Id, matricula.Id, new DateOnly(2026, 8, 4), StatusFrequencia.Presente);
+        await MarcarPresencaAsync(aulas, registros, horarioTerca.Id, matricula.Id, new DateOnly(2026, 8, 11), StatusFrequencia.Presente);
+        await MarcarPresencaAsync(aulas, registros, horarioTerca.Id, matricula.Id, new DateOnly(2026, 8, 18), StatusFrequencia.Ausente);
+        var servico = CriarServico(matriculas, regras, alocacoes, horarios, registrosFrequencia: registros);
+
+        var resultado = await servico.ConsultarPorProfessorAsync(professorId, PeriodoAgosto2026, CancellationToken.None);
+
+        // Só 2 aulas com presença confirmada (04/08, 11/08) * 50 = 100.
+        resultado.Should().ContainSingle(v => v.MatriculaId == matricula.Id && v.Valor == 100m);
+    }
+
+    /// <summary>
+    /// Cenário Gherkin 3 — aula do período sem <see cref="RegistroFrequencia"/>
+    /// lançado ainda não conta em nenhuma base quando a base é
+    /// <see cref="BaseDeContagemAula.PresencaConfirmada"/> (RN explícita).
+    /// </summary>
+    [Fact]
+    public async Task ConsultarPorProfessorAsync_RegraComBasePresencaConfirmada_AulaSemFrequenciaRegistradaNaoConta()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var professorId = Guid.NewGuid();
+        var matricula = CriarMatriculaDoProfessor(matriculas, professorId);
+        var regras = new FakeRegraDeCobrancaRepository();
+        await regras.SalvarAsync(
+            RegraFixoPorAula.Criar(matricula.Id, 50m, Clock, BaseDeContagemAula.PresencaConfirmada), CancellationToken.None);
+        var horarios = new FakeHorarioRepository();
+        var horarioTerca = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        await horarios.AdicionarAsync(horarioTerca, CancellationToken.None);
+        var alocacoes = new FakeAlocacaoHorarioRepository();
+        await alocacoes.AdicionarAsync(
+            AlocacaoHorario.Criar(horarioTerca.Id, matricula.Id, OrigemAlocacao.Professor, Clock), CancellationToken.None);
+        var aulas = new FakeAulaRepository();
+        var registros = new FakeRegistroFrequenciaRepository(aulas);
+        // Nenhuma chamada feita ainda — nenhum RegistroFrequencia existe.
+        var servico = CriarServico(matriculas, regras, alocacoes, horarios, registrosFrequencia: registros);
+
+        var resultado = await servico.ConsultarPorProfessorAsync(professorId, PeriodoAgosto2026, CancellationToken.None);
+
+        resultado.Should().ContainSingle(v => v.MatriculaId == matricula.Id && v.Valor == 0m);
+    }
+
+    /// <summary>
+    /// Cenário Gherkin 4 — <see cref="RegraFixoMensal"/> ignora
+    /// <see cref="BaseDeContagemAula"/> completamente: valor fixo independente
+    /// de agendamento ou presença (nem implementa <see cref="IRegraComBaseDeContagemAula"/>).
+    /// </summary>
+    [Fact]
+    public async Task ConsultarPorProfessorAsync_RegraFixoMensal_IgnoraBaseDeContagemContinuaFixo()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var professorId = Guid.NewGuid();
+        var matricula = CriarMatriculaDoProfessor(matriculas, professorId);
+        var regras = new FakeRegraDeCobrancaRepository();
+        await regras.SalvarAsync(RegraFixoMensal.Criar(matricula.Id, 300m, Clock), CancellationToken.None);
+        var horarios = new FakeHorarioRepository();
+        var horarioTerca = Horario.Criar(professorId, DiaSemana.Terca, new TimeOnly(10, 0), 60, TipoMarcacao.Livre, Clock);
+        await horarios.AdicionarAsync(horarioTerca, CancellationToken.None);
+        var alocacoes = new FakeAlocacaoHorarioRepository();
+        await alocacoes.AdicionarAsync(
+            AlocacaoHorario.Criar(horarioTerca.Id, matricula.Id, OrigemAlocacao.Professor, Clock), CancellationToken.None);
+        var servico = CriarServico(matriculas, regras, alocacoes, horarios);
+
+        var resultado = await servico.ConsultarPorProfessorAsync(professorId, PeriodoAgosto2026, CancellationToken.None);
+
+        resultado.Should().ContainSingle(v => v.MatriculaId == matricula.Id && v.Valor == 300m);
+    }
+
+    private static async Task MarcarPresencaAsync(
+        FakeAulaRepository aulas,
+        FakeRegistroFrequenciaRepository registros,
+        Guid horarioId,
+        Guid matriculaId,
+        DateOnly data,
+        StatusFrequencia status)
+    {
+        var aula = Aula.Criar(horarioId, data, Clock);
+        await aulas.AdicionarAsync(aula, CancellationToken.None);
+        var registro = RegistroFrequencia.Criar(aula.Id, matriculaId, Clock);
+        registro.RegistrarProfessor(status, Clock);
+        await registros.AdicionarAsync(registro, CancellationToken.None);
     }
 
     private static Usuario CriarProfessor(string nome)

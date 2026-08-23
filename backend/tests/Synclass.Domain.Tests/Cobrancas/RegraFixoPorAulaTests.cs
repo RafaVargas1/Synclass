@@ -26,4 +26,20 @@ public sealed class RegraFixoPorAulaTests
 
         valorDevido.Should().Be(valorEsperado);
     }
+
+    [Fact]
+    public void Criar_SemInformarBaseDeContagem_AplicaDefaultAgendamento()
+    {
+        var regra = RegraFixoPorAula.Criar(Guid.NewGuid(), 50m, Clock);
+
+        regra.BaseDeContagemAula.Should().Be(BaseDeContagemAula.Agendamento);
+    }
+
+    [Fact]
+    public void Criar_ComBaseDeContagemInformada_UsaOValorInformado()
+    {
+        var regra = RegraFixoPorAula.Criar(Guid.NewGuid(), 50m, Clock, BaseDeContagemAula.PresencaConfirmada);
+
+        regra.BaseDeContagemAula.Should().Be(BaseDeContagemAula.PresencaConfirmada);
+    }
 }

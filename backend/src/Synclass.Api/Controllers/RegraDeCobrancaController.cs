@@ -48,14 +48,17 @@ public sealed class RegraDeCobrancaController : ControllerBase
         try
         {
             var tipo = (TipoRegraDeCobranca)Enum.Parse(typeof(TipoRegraDeCobranca), request.Tipo);
+            var baseDeContagemAula = request.BaseDeContagemAula is null
+                ? (BaseDeContagemAula?)null
+                : (BaseDeContagemAula)Enum.Parse(typeof(BaseDeContagemAula), request.BaseDeContagemAula);
             var resultado = await _regraDeCobrancaService.DefinirAsync(
-                matriculaId, tipo, request.Valor, request.FrequenciaSemanalContratada, cancellationToken);
+                matriculaId, tipo, request.Valor, request.FrequenciaSemanalContratada, baseDeContagemAula, cancellationToken);
             LogRegraDefinida(trackId, matriculaId, tipo, resultado.ValorAnterior);
             return Ok(ParaResponse(resultado.Regra));
         }
         catch (Exception ex) when (ex is ArgumentException or FrequenciaSemanalContratadaInvalidaException
             or FrequenciaSemanalContratadaAusenteException or FrequenciaSemanalContratadaNaoEsperadaException
-            or ValorDeRegraDeCobrancaInvalidoException)
+            or BaseDeContagemAulaNaoEsperadaException or ValorDeRegraDeCobrancaInvalidoException)
         {
             return BadRequest(new RegraDeCobrancaErrorResponse(ex.Message));
         }
@@ -95,7 +98,8 @@ public sealed class RegraDeCobrancaController : ControllerBase
     private static RegraDeCobrancaResponse ParaResponse(RegraDeCobranca regra)
     {
         var frequenciaSemanalContratada = regra is RegraValorPorAula regraValorPorAula ? regraValorPorAula.FrequenciaSemanalContratada : (int?)null;
-        return new RegraDeCobrancaResponse(regra.MatriculaId, TipoDaRegra(regra), regra.Valor, frequenciaSemanalContratada);
+        var baseDeContagemAula = regra is IRegraComBaseDeContagemAula regraPorAula ? regraPorAula.BaseDeContagemAula.ToString() : null;
+        return new RegraDeCobrancaResponse(regra.MatriculaId, TipoDaRegra(regra), regra.Valor, frequenciaSemanalContratada, baseDeContagemAula);
     }
 
     private static string TipoDaRegra(RegraDeCobranca regra)
@@ -117,8 +121,10 @@ public sealed class RegraDeCobrancaController : ControllerBase
     }
 }
 
-public sealed record DefinirRegraDeCobrancaRequest(string Tipo, decimal Valor, int? FrequenciaSemanalContratada);
+public sealed record DefinirRegraDeCobrancaRequest(
+    string Tipo, decimal Valor, int? FrequenciaSemanalContratada, string? BaseDeContagemAula = null);
 
-public sealed record RegraDeCobrancaResponse(Guid MatriculaId, string Tipo, decimal Valor, int? FrequenciaSemanalContratada);
+public sealed record RegraDeCobrancaResponse(
+    Guid MatriculaId, string Tipo, decimal Valor, int? FrequenciaSemanalContratada, string? BaseDeContagemAula = null);
 
 public sealed record RegraDeCobrancaErrorResponse(string Mensagem);
