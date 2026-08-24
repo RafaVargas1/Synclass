@@ -6,19 +6,23 @@ import { Heading } from '@/components/atoms/Heading';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { EntrarEmNovaTurmaForm } from '@/components/organisms/EntrarEmNovaTurmaForm';
 import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
+import { aceitarCodigoEntradaTurma } from '@/lib/api/codigosEntradaTurma';
 import { aceitarConvitePorCodigo } from '@/lib/api/convites';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
- * Tela autenticada de entrada em nova turma por código de convite (issue
- * #144) — nome/contato do Aluno já logado (`usePerfilLogado`) são
- * enviados junto do código, sem pedir de novo (a Api casa por contato e
- * cria uma nova Matricula vinculada ao Professor do convite, ver
- * implementation.md desta issue). Diferente de `app/convite/[token].tsx`
- * (issue #2, fluxo público/não-autenticado com CadastroUsuarioForm) — este
- * fluxo é só pro Aluno que já tem conta.
+ * Tela autenticada de entrada em nova turma por código (issue #144) — o
+ * mesmo campo de código tenta dois esquemas diferentes, nesta ordem:
+ * primeiro o código de entrada de turma (novo, curto, multiuso, só exige o
+ * Aluno estar autenticado — `aceitarCodigoEntradaTurma`), e se esse
+ * rejeitar (código não é desse tipo, ou já expirou), cai pro código de
+ * convite direcionado por contato (`aceitarConvitePorCodigo`, existente),
+ * enviando nome/contato do Aluno já logado (`usePerfilLogado`) sem pedir de
+ * novo. Diferente de `app/convite/[token].tsx` (issue #2, fluxo público/
+ * não-autenticado com CadastroUsuarioForm) — este fluxo é só pro Aluno que
+ * já tem conta.
  */
 export default function EntrarEmNovaTurmaScreen() {
   const { token } = useSessao();
@@ -36,11 +40,18 @@ export default function EntrarEmNovaTurmaScreen() {
     setEnviando(true);
     setErro(undefined);
 
-    const resultado = await aceitarConvitePorCodigo({ codigo, nome: perfil.nome, contato: perfil.contato });
+    const resultadoCodigoEntrada = await aceitarCodigoEntradaTurma(codigo);
+    if (resultadoCodigoEntrada.sucesso) {
+      setEnviando(false);
+      setConcluido(true);
+      return;
+    }
+
+    const resultadoConvite = await aceitarConvitePorCodigo({ codigo, nome: perfil.nome, contato: perfil.contato });
 
     setEnviando(false);
-    if (!resultado.sucesso) {
-      setErro(resultado.mensagem);
+    if (!resultadoConvite.sucesso) {
+      setErro(resultadoConvite.mensagem);
       return;
     }
     setConcluido(true);

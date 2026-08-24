@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Aulas;
 using Synclass.Domain.Autenticacao;
+using Synclass.Domain.CodigosEntradaTurma;
 using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Configuracoes;
 using Synclass.Domain.Convites;
@@ -36,6 +37,7 @@ public sealed class SynclassDbContext : DbContext
     public DbSet<Aula> Aulas => Set<Aula>();
     public DbSet<CancelamentoAula> CancelamentosAula => Set<CancelamentoAula>();
     public DbSet<RegistroFrequencia> RegistrosFrequencia => Set<RegistroFrequencia>();
+    public DbSet<CodigoEntradaTurma> CodigosEntradaTurma => Set<CodigoEntradaTurma>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

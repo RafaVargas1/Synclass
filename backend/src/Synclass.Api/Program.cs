@@ -14,6 +14,7 @@ using Synclass.Domain.Alocacoes;
 using Synclass.Domain.Alunos;
 using Synclass.Domain.Aulas;
 using Synclass.Domain.Autenticacao;
+using Synclass.Domain.CodigosEntradaTurma;
 using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Common;
 using Synclass.Domain.Configuracoes;
@@ -150,6 +151,18 @@ builder.Services.AddScoped(sp => new ConviteService(
     sp.GetRequiredService<IClock>(),
     LerDiasValidadeConviteObrigatoria(builder.Configuration),
     sp.GetRequiredService<IdentificadorAlunoService>()));
+
+// Código de entrada de turma: Professor gera, qualquer Aluno autenticado
+// aceita — sem vínculo a contato e sem uso único, diferente de Convite.
+// Reaproveita o mesmo IGeradorDeCodigoConvite já registrado acima (mesmo
+// formato de código, 5 dígitos numéricos).
+builder.Services.AddScoped<ICodigoEntradaTurmaRepository, CodigoEntradaTurmaRepository>();
+builder.Services.AddScoped(sp => new CodigoEntradaTurmaService(
+    sp.GetRequiredService<ICodigoEntradaTurmaRepository>(),
+    sp.GetRequiredService<IMatriculaRepository>(),
+    sp.GetRequiredService<IUsuarioRepository>(),
+    sp.GetRequiredService<IGeradorDeCodigoConvite>(),
+    sp.GetRequiredService<IClock>()));
 
 // Rate limiting dos endpoints anônimos de aceite de convite (issue #89) —
 // ver docs/specs/89-rate-limit-convites/implementation.md. Política
