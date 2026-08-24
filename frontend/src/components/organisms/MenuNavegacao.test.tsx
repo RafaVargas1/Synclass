@@ -48,7 +48,7 @@ describe('MenuNavegacao (issue #77)', () => {
     // A seção de horários do Professor vira `/professor/abc-123/horarios` ao
     // substituir [professorId] pelo usuarioId resolvido de /usuarios/me.
     expect(screen.getByRole('link', { name: 'Gerenciar horários', selected: true })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Cadastrar Aluno', selected: false })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Adicionar Aluno', selected: false })).toBeTruthy();
   });
 
   it('não destaca nenhuma seção quando a rota ativa não casa com nenhuma seção', async () => {
@@ -57,7 +57,7 @@ describe('MenuNavegacao (issue #77)', () => {
     await render(<MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />);
 
     expect(screen.getByRole('link', { name: 'Gerenciar horários', selected: false })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Cadastrar Aluno', selected: false })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Adicionar Aluno', selected: false })).toBeTruthy();
   });
 
   it('destaca "Meu perfil" quando a rota ativa é /perfil (issue #129)', async () => {
@@ -68,15 +68,40 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(screen.getByRole('link', { name: 'Meu perfil', selected: true })).toBeTruthy();
   });
 
-  it('navega direto entre as seções via Link, sem passar por /painel', async () => {
+  it('navega direto entre as seções via Link, cada uma para a própria rota', async () => {
     mockUsePathname.mockReturnValue('/aluno/historico-frequencia');
 
     await render(<MenuNavegacao papeis={['Aluno']} papelAtivo="Aluno" onSelecionarPapel={jest.fn()} />);
 
-    // Cada seção é um Link apontando para a própria rota — não para o Painel.
     expect(screen.getByTestId('secao-link-/aluno/historico-frequencia')).toBeTruthy();
     expect(screen.getByTestId('secao-link-/aluno/valor-devido')).toBeTruthy();
-    expect(screen.queryByTestId('secao-link-/painel')).toBeNull();
+  });
+
+  it('inclui "Painel" como primeiro item fixo do menu, apontando para /painel', async () => {
+    mockUsePathname.mockReturnValue('/aluno/historico-frequencia');
+
+    await render(<MenuNavegacao papeis={['Aluno']} papelAtivo="Aluno" onSelecionarPapel={jest.fn()} />);
+
+    expect(screen.getByTestId('secao-link-/painel')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Painel' })).toBeTruthy();
+  });
+
+  it('destaca "Painel" quando a rota ativa é /painel', async () => {
+    mockUsePathname.mockReturnValue('/painel');
+
+    await render(<MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />);
+
+    expect(screen.getByRole('link', { name: 'Painel', selected: true })).toBeTruthy();
+  });
+
+  it('"Painel" é o primeiro item da lista, antes das seções do papel ativo', async () => {
+    mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
+
+    await render(<MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />);
+
+    const dropdown = screen.getByTestId('dropdown-menu-navegacao');
+    const itens = within(dropdown).getAllByTestId(/^secao-link-/);
+    expect(itens[0].props.testID).toBe('secao-link-/painel');
   });
 
   it('liga seções de Professor ao segmento dinâmico do próprio usuarioId', async () => {
@@ -86,7 +111,6 @@ describe('MenuNavegacao (issue #77)', () => {
 
     expect(screen.getByTestId('secao-link-/professor/abc-123/horarios')).toBeTruthy();
     expect(screen.getByTestId('secao-link-/professor/abc-123/alocacoes')).toBeTruthy();
-    expect(screen.queryByTestId('secao-link-/painel')).toBeNull();
   });
 
   it('em viewport larga, o menu fica sempre visível sem exigir toque para abrir', async () => {
@@ -191,7 +215,7 @@ describe('MenuNavegacao (issue #77)', () => {
     expect(screen.queryByTestId('secao-link-/professor/abc-123/horarios')).toBeNull();
   });
 
-  it('em modo mobile aberto, todos os 6 itens são filhos diretos do dropdown com fundo opaco (issue #129)', async () => {
+  it('em modo mobile aberto, todos os 8 itens são filhos diretos do dropdown com fundo opaco (issue #129)', async () => {
     mockUseIsTelaLarga.mockReturnValue(false);
     mockUsePathname.mockReturnValue('/professor/abc-123/horarios');
 
@@ -203,9 +227,9 @@ describe('MenuNavegacao (issue #77)', () => {
 
     // O container do dropdown é marcado com testID e é o único elemento com
     // a classe de fundo de superfície + sombra. RNTL não mede pixel: este
-    // teste garante que os 6 itens (5 seções de Professor + "Meu perfil")
-    // são descendentes desse mesmo container — nenhum item fica de fora da
-    // caixa com fundo opaco. `within` em vez de andar em `.children`
+    // teste garante que os 8 itens ("Painel" + 6 seções de Professor + "Meu
+    // perfil") são descendentes desse mesmo container — nenhum item fica de
+    // fora da caixa com fundo opaco. `within` em vez de andar em `.children`
     // diretamente: a estrutura interna (Link envolto num View, achado de
     // dev-review do PR #129 — Link sozinho não participava do box model
     // do dropdown no navegador) pode aninhar mais um nível sem quebrar
@@ -216,11 +240,12 @@ describe('MenuNavegacao (issue #77)', () => {
     const etiquetas = itens.map((item) => item.props.testID);
 
     expect(etiquetas).toEqual([
-      'secao-link-/professor/alunos/cadastro',
+      'secao-link-/painel',
+      'secao-link-/professor/abc-123/chamada',
       'secao-link-/professor/abc-123/horarios',
-      'secao-link-/professor/abc-123/alunos',
       'secao-link-/professor/abc-123/alocacoes',
-      'secao-link-/professor/abc-123/convites/novo',
+      'secao-link-/professor/abc-123/alunos',
+      'secao-link-/professor/abc-123/alunos/adicionar',
       'secao-link-/professor/abc-123/valor-devido',
       'secao-link-/perfil',
     ]);
@@ -295,7 +320,22 @@ describe('MenuNavegacao (issue #77)', () => {
     // navegador — legível no claro por acidente, ilegível no escuro (fundo
     // quase preto, texto quase preto). Achado do usuário via screenshot
     // real em modo escuro, ver issue #136.
-    const rotulo = screen.getByText('Cadastrar Aluno');
+    const rotulo = screen.getByText('Adicionar Aluno');
     expect(rotulo.props.className).toContain('dark:text-dark-text');
+  });
+
+  it('cada item fixo do menu tem um ícone, e o rótulo acessível não inclui o glifo do ícone', async () => {
+    mockUsePathname.mockReturnValue('/outra-rota');
+
+    await render(
+      <MenuNavegacao papeis={['Professor']} papelAtivo="Professor" onSelecionarPapel={jest.fn()} />,
+    );
+
+    const dropdown = screen.getByTestId('dropdown-menu-navegacao');
+    expect(within(dropdown).getByTestId('icone-secao-home-outline')).toBeTruthy();
+    expect(within(dropdown).getByTestId('icone-secao-person-outline')).toBeTruthy();
+    expect(within(dropdown).getByTestId('icone-secao-person-add-outline')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Painel' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Meu perfil' })).toBeTruthy();
   });
 });

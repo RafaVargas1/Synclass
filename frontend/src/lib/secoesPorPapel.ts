@@ -1,52 +1,91 @@
 import type { Href } from 'expo-router';
 
-export type Secao = { label: string; href: Href };
+/**
+ * Nomes de ícone do conjunto `Ionicons` (`@expo/vector-icons`) usados no
+ * menu — união fechada em vez de `string` solto, pra pegar erro de
+ * digitação de nome de ícone em tempo de compilação. Mantém este arquivo
+ * (puro, sem JSX) desacoplado do componente que efetivamente desenha o
+ * ícone (`MenuNavegacao`/`IconeSecao`).
+ */
+export type NomeIconeSecao =
+  | 'home-outline'
+  | 'person-outline'
+  | 'person-add-outline'
+  | 'clipboard-outline'
+  | 'time-outline'
+  | 'people-outline'
+  | 'link-outline'
+  | 'cash-outline'
+  | 'enter-outline'
+  | 'calendar-outline'
+  | 'bar-chart-outline';
+
+export type Secao = { label: string; href: Href; icone: NomeIconeSecao };
 
 /**
- * Seções do Aluno (issue #44, #77, #144 e #182): telas do Aluno sem
- * segmento dinâmico na rota — `/aluno/entrar-em-turma`,
- * `/aluno/historico-frequencia` e `/aluno/valor-devido`. "Entrar em nova
- * turma" (issue #144) fica primeiro: é ação de aquisição de vínculo novo,
- * mais próxima do fluxo de "primeira vez" do que as telas de consulta (ver
- * docs/spec/ux-heuristics.md#agrupamento-visual). "Meus Professores"
- * (issue #182) é o ponto de entrada para as telas por Professor da
- * matrícula (`/aluno/professores/[professorId]/...`, ex: minhas aulas,
- * horários disponíveis) — antes dela essas rotas existiam mas eram
- * inalcançáveis por navegação, porque `professorId` nesse caso identifica
- * o Professor da matrícula, não o Aluno logado, e não havia tela que
- * resolvesse esse `professorId` a partir da sessão.
+ * Seções do Aluno (issue #44, #77, #144 e #182). Ordem por frequência de
+ * uso, não por ordem de "primeira vez" (achado de usabilidade do usuário,
+ * revisão do menu): "Minhas aulas" é a ação do dia a dia (marcar, cancelar,
+ * confirmar presença) — muito mais frequente que "Entrar em nova turma",
+ * que só acontece uma vez por Professor novo. Ver
+ * docs/spec/ux-heuristics.md (posicionar ações frequentes primeiro reduz o
+ * custo de navegação médio, mesmo racional de frequência de uso do menu do
+ * Professor logo abaixo). "Ver histórico" e "Ver valor devido" são
+ * consultas periódicas, não o motivo mais comum de abrir o app — ficam por
+ * último.
  */
 export function secoesAluno(): Secao[] {
   return [
-    { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma' },
-    { label: 'Meus Professores', href: '/aluno/professores' },
-    { label: 'Ver histórico de frequência', href: '/aluno/historico-frequencia' },
-    { label: 'Ver valor devido', href: '/aluno/valor-devido' },
+    { label: 'Minhas aulas', href: '/aluno/minhas-aulas', icone: 'calendar-outline' },
+    { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma', icone: 'enter-outline' },
+    {
+      label: 'Ver histórico de frequência',
+      href: '/aluno/historico-frequencia',
+      icone: 'bar-chart-outline',
+    },
+    { label: 'Ver valor devido', href: '/aluno/valor-devido', icone: 'cash-outline' },
   ];
 }
 
 /**
- * Seções do Professor (issue #44 e #77). `Cadastrar Aluno` não depende de
- * `usuarioId` (a Api deriva o Professor autenticado do token, issue #23).
- * As demais usam `/professor/{professorId}/...` — `professorId` é o mesmo
+ * Seções do Professor (issue #44 e #77). Ordem por frequência de uso
+ * (achado de usabilidade do usuário, revisão do menu): "Fazer chamada" é a
+ * ação operacional do dia a dia de dar aula, então abre a lista; "Gerenciar
+ * horários" e "Alocar Aluno em horário" ficam juntos por serem sobre o
+ * mesmo objeto (agenda semanal) e serem consultados/ajustados com
+ * frequência parecida; "Meus Alunos" é consulta de rotina; "Adicionar
+ * Aluno" e "Ver valor devido" são as menos frequentes (onboarding pontual e
+ * checagem financeira periódica, não diária) — foram primeiro e último,
+ * respectivamente, antes desta revisão, e viram os últimos da lista agora.
+ * `Adicionar Aluno` substitui as antigas "Cadastrar Aluno" + "Convidar
+ * Aluno" — porta de entrada única com os três jeitos de trazer um Aluno
+ * (sem contato, por convite, por código de entrada de turma). Todas as
+ * seções usam `/professor/{professorId}/...` — `professorId` é o mesmo
  * `Usuario.Id` do Professor logado (não existe uma entidade `Professor`
  * separada, ver `ProfessoresController.Cadastrar`), por isso só aparecem
  * depois que `usuarioId` resolve via `GET /usuarios/me`.
  */
 export function secoesProfessor(usuarioId: string | undefined): Secao[] {
-  const secoes: Secao[] = [{ label: 'Cadastrar Aluno', href: '/professor/alunos/cadastro' }];
-
-  if (usuarioId) {
-    secoes.push(
-      { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` as Href },
-      { label: 'Meus Alunos', href: `/professor/${usuarioId}/alunos` as Href },
-      { label: 'Alocar Aluno em horário', href: `/professor/${usuarioId}/alocacoes` as Href },
-      { label: 'Convidar Aluno', href: `/professor/${usuarioId}/convites/novo` as Href },
-      { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href },
-    );
+  if (!usuarioId) {
+    return [];
   }
 
-  return secoes;
+  return [
+    { label: 'Fazer chamada', href: `/professor/${usuarioId}/chamada` as Href, icone: 'clipboard-outline' },
+    { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` as Href, icone: 'time-outline' },
+    {
+      label: 'Alocar Aluno em horário',
+      href: `/professor/${usuarioId}/alocacoes` as Href,
+      icone: 'link-outline',
+    },
+    { label: 'Meus Alunos', href: `/professor/${usuarioId}/alunos` as Href, icone: 'people-outline' },
+    {
+      label: 'Adicionar Aluno',
+      href: `/professor/${usuarioId}/alunos/adicionar` as Href,
+      icone: 'person-add-outline',
+    },
+    { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href, icone: 'cash-outline' },
+  ];
 }
 
 /**

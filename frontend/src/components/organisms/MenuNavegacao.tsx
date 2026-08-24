@@ -1,13 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link, usePathname } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, useColorScheme, View } from 'react-native';
 
 import { AlternadorDePapel, type AlternadorDePapelProps } from '@/components/organisms/AlternadorDePapel';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
 import { useIsTelaLarga } from '@/lib/useIsTelaLarga';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
-import { AlvoDeToqueMinimo } from '@/theme/tokens';
+import { AlvoDeToqueMinimo, Colors } from '@/theme/tokens';
 
 /**
  * Devolve a primeira seção cuja rota (já com o segmento dinâmico resolvido
@@ -23,12 +24,21 @@ function encontrarSecaoAtiva(todasSecoes: Secao[], pathname: string): Secao | un
   return todasSecoes.find((secao) => pathname === secao.href);
 }
 
+/** "Painel": item fixo do menu, igual em qualquer papel — atalho pra tela
+ *  inicial (`/painel`) a partir de qualquer seção. Primeiro item da lista
+ *  (achado de usabilidade do usuário): é o ponto de retorno mais comum a
+ *  partir de qualquer tela funda na navegação, faz sentido ser o alvo mais
+ *  fácil de alcançar (Fitts), não um item a mais no fim da lista. */
+const SecaoPainel: Secao = { label: 'Painel', href: '/painel', icone: 'home-outline' };
+
 /** "Meu perfil" (#77 follow-up): item fixo do menu, igual em qualquer papel
  *  — antes vivia como um botão solto no corpo do Painel, sem seguir a
  *  convenção de ficar junto das demais opções de navegação (achado de UX
  *  reportado pelo usuário: um CTA do tamanho de uma ação primária para uma
- *  ação que é, na verdade, secundária/infrequente). */
-const SecaoMeuPerfil: Secao = { label: 'Meu perfil', href: '/perfil' };
+ *  ação que é, na verdade, secundária/infrequente). Fica por último — é a
+ *  ação menos frequente do menu, mesmo racional de ordenação por
+ *  frequência de uso aplicado às seções de `secoesPorPapel.ts`. */
+const SecaoMeuPerfil: Secao = { label: 'Meu perfil', href: '/perfil', icone: 'person-outline' };
 
 /**
  * Organismo: menu de navegação persistente (#77). Resolve `token` via
@@ -54,7 +64,7 @@ export function MenuNavegacao({ papeis, papelAtivo, onSelecionarPapel }: Alterna
   const telaLarga = useIsTelaLarga();
   const [aberto, setAberto] = useState(false);
   const secoes = secoesDoPapel(papelAtivo, usuarioId);
-  const todasSecoes = [...secoes, SecaoMeuPerfil];
+  const todasSecoes = [SecaoPainel, ...secoes, SecaoMeuPerfil];
   const secaoAtiva = encontrarSecaoAtiva(todasSecoes, pathname);
 
   const exibirSeccoes = telaLarga || aberto;
@@ -167,11 +177,30 @@ function ItemDeSecao({ secao, ativo }: { secao: Secao; ativo: boolean }) {
       <Link
         href={secao.href}
         accessibilityRole="link"
+        // Explícito porque, sem isso, o nome acessível do link seria a
+        // concatenação de todo texto descendente (glifo do ícone + rótulo)
+        // — leitor de tela devia só ouvir o rótulo, o ícone é reforço
+        // visual (reconhecimento > recordação), não conteúdo por si.
+        accessibilityLabel={secao.label}
         accessibilityState={{ selected: ativo }}
-        className="px-four py-three"
+        className="flex-row items-center gap-two px-four py-three"
       >
+        <IconeDeSecao nome={secao.icone} ativo={ativo} />
         <Text className="text-text dark:text-dark-text">{secao.label}</Text>
       </Link>
     </View>
   );
+}
+
+/**
+ * `Ionicons` (`@expo/vector-icons`) recebe cor como valor real, não como
+ * classe do NativeWind — resolve o hex certo (claro/escuro, ativo/inativo)
+ * a partir dos mesmos tokens de `theme/palette.js` usados pelas classes
+ * `text-*`/`dark:text-*` do resto do menu, pra ícone e rótulo baterem.
+ */
+function IconeDeSecao({ nome, ativo }: { nome: Secao['icone']; ativo: boolean }) {
+  const escuro = useColorScheme() === 'dark';
+  const paleta = escuro ? Colors.dark : Colors.light;
+  const cor = ativo ? paleta.primary : paleta.text;
+  return <Ionicons testID={`icone-secao-${nome}`} name={nome} size={18} color={cor} />;
 }

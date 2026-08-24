@@ -2,31 +2,41 @@ import { secoesAluno, secoesProfessor, secoesDoPapel } from './secoesPorPapel';
 
 describe('secoesPorPapel (issue #77)', () => {
   describe('secoesAluno', () => {
-    it('expõe as telas do Aluno sem depender de usuarioId, com "Entrar em nova turma" primeiro', () => {
+    it('expõe as telas do Aluno sem depender de usuarioId, ordenadas por frequência de uso ("Minhas aulas" primeiro)', () => {
       expect(secoesAluno()).toEqual([
-        { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma' },
-        { label: 'Meus Professores', href: '/aluno/professores' },
-        { label: 'Ver histórico de frequência', href: '/aluno/historico-frequencia' },
-        { label: 'Ver valor devido', href: '/aluno/valor-devido' },
+        { label: 'Minhas aulas', href: '/aluno/minhas-aulas', icone: 'calendar-outline' },
+        { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma', icone: 'enter-outline' },
+        {
+          label: 'Ver histórico de frequência',
+          href: '/aluno/historico-frequencia',
+          icone: 'bar-chart-outline',
+        },
+        { label: 'Ver valor devido', href: '/aluno/valor-devido', icone: 'cash-outline' },
       ]);
     });
   });
 
   describe('secoesProfessor', () => {
-    it('sempre inclui Cadastrar Aluno, mesmo sem usuarioId resolvido', () => {
-      expect(secoesProfessor(undefined)).toEqual([
-        { label: 'Cadastrar Aluno', href: '/professor/alunos/cadastro' },
-      ]);
+    it('devolve lista vazia sem usuarioId resolvido (todas as seções precisam do professorId na rota)', () => {
+      expect(secoesProfessor(undefined)).toEqual([]);
     });
 
-    it('inclui as seções com segmento dinâmico apenas depois que usuarioId resolve', () => {
+    it('inclui as seções com segmento dinâmico depois que usuarioId resolve, ordenadas por frequência de uso ("Fazer chamada" primeiro)', () => {
       expect(secoesProfessor('prof-1')).toEqual([
-        { label: 'Cadastrar Aluno', href: '/professor/alunos/cadastro' },
-        { label: 'Gerenciar horários', href: '/professor/prof-1/horarios' },
-        { label: 'Meus Alunos', href: '/professor/prof-1/alunos' },
-        { label: 'Alocar Aluno em horário', href: '/professor/prof-1/alocacoes' },
-        { label: 'Convidar Aluno', href: '/professor/prof-1/convites/novo' },
-        { label: 'Ver valor devido', href: '/professor/prof-1/valor-devido' },
+        { label: 'Fazer chamada', href: '/professor/prof-1/chamada', icone: 'clipboard-outline' },
+        { label: 'Gerenciar horários', href: '/professor/prof-1/horarios', icone: 'time-outline' },
+        {
+          label: 'Alocar Aluno em horário',
+          href: '/professor/prof-1/alocacoes',
+          icone: 'link-outline',
+        },
+        { label: 'Meus Alunos', href: '/professor/prof-1/alunos', icone: 'people-outline' },
+        {
+          label: 'Adicionar Aluno',
+          href: '/professor/prof-1/alunos/adicionar',
+          icone: 'person-add-outline',
+        },
+        { label: 'Ver valor devido', href: '/professor/prof-1/valor-devido', icone: 'cash-outline' },
       ]);
     });
   });
