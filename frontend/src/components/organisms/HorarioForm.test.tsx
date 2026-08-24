@@ -17,7 +17,7 @@ async function preencherEEnviar(hora: string, minuto: string, duracaoMinutos: st
 
 describe('HorarioForm', () => {
   it('uses SeletorDeHora as a masked HH:mm text field for the start time', async () => {
-    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={jest.fn()} />);
+    await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={jest.fn()} />);
 
     expect(screen.getByText('Hora de início')).toBeTruthy();
     expect(screen.getByPlaceholderText('HH:mm')).toBeTruthy();
@@ -26,7 +26,7 @@ describe('HorarioForm', () => {
 
   it('calls onSubmit with valid data and no conflict', async () => {
     const onSubmit = jest.fn();
-    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+    await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await preencherEEnviar('10', '00', '60');
 
@@ -41,7 +41,7 @@ describe('HorarioForm', () => {
 
   it('calls onSubmit with the selected tipoMarcacao when a chip other than Livre is chosen', async () => {
     const onSubmit = jest.fn();
-    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+    await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await fireEvent.press(screen.getByText('Híbrido'));
     await selecionarHora('10', '00');
@@ -55,7 +55,7 @@ describe('HorarioForm', () => {
 
   it('shows a client-side error and does not call onSubmit when no política is chosen', async () => {
     const onSubmit = jest.fn();
-    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+    await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await selecionarHora('10', '00');
     await fireEvent.changeText(screen.getByPlaceholderText('60'), '60');
@@ -67,7 +67,7 @@ describe('HorarioForm', () => {
 
   it('calls onSubmit with the informed limiteAlunos when the default is changed', async () => {
     const onSubmit = jest.fn();
-    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+    await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('1'), '4');
     await preencherEEnviar('10', '00', '60');
@@ -83,7 +83,7 @@ describe('HorarioForm', () => {
 
   it('shows a client-side error and does not call onSubmit when limiteAlunos is zero or negative', async () => {
     const onSubmit = jest.fn();
-    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+    await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('1'), '0');
     await preencherEEnviar('10', '00', '60');
@@ -106,7 +106,7 @@ describe('HorarioForm', () => {
       },
     ];
     await render(
-      <HorarioForm horariosExistentes={horariosExistentes} enviando={false} onSubmit={onSubmit} />,
+      <HorarioForm diaSemana={1} horariosExistentes={horariosExistentes} enviando={false} onSubmit={onSubmit} />,
     );
 
     await preencherEEnviar('10', '30', '30');
@@ -117,7 +117,7 @@ describe('HorarioForm', () => {
 
   it('shows a client-side error and does not call onSubmit when duration is invalid', async () => {
     const onSubmit = jest.fn();
-    await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+    await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
     await preencherEEnviar('10', '00', '0');
 
@@ -128,6 +128,7 @@ describe('HorarioForm', () => {
   it('shows the Api error message passed via prop', async () => {
     await render(
       <HorarioForm
+        diaSemana={1}
         horariosExistentes={[]}
         enviando={false}
         erro="Não foi possível concluir a operação."
@@ -140,7 +141,7 @@ describe('HorarioForm', () => {
 
   describe('prazo de cancelamento (issue #187)', () => {
     it('shows the Prazo de cancelamento field after Limite de alunos', async () => {
-      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={jest.fn()} />);
+      await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={jest.fn()} />);
 
       expect(screen.getByText('Prazo de cancelamento (minutos)')).toBeTruthy();
       expect(screen.getByPlaceholderText('0')).toBeTruthy();
@@ -148,7 +149,7 @@ describe('HorarioForm', () => {
 
     it('includes the informed prazoCancelamentoMinutos in onSubmit when filled', async () => {
       const onSubmit = jest.fn();
-      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+      await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
       await fireEvent.changeText(screen.getByPlaceholderText('0'), '120');
       await preencherEEnviar('10', '00', '60');
@@ -160,7 +161,7 @@ describe('HorarioForm', () => {
 
     it('does not include prazoCancelamentoMinutos in onSubmit when left empty', async () => {
       const onSubmit = jest.fn();
-      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+      await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
       await preencherEEnviar('10', '00', '60');
 
@@ -171,7 +172,7 @@ describe('HorarioForm', () => {
 
     it('shows a client-side error and does not call onSubmit when prazo is negative', async () => {
       const onSubmit = jest.fn();
-      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+      await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
       await fireEvent.changeText(screen.getByPlaceholderText('0'), '-1');
       await preencherEEnviar('10', '00', '60');
@@ -184,7 +185,7 @@ describe('HorarioForm', () => {
 
     it('accepts zero as a valid prazo de cancelamento', async () => {
       const onSubmit = jest.fn();
-      await render(<HorarioForm horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
+      await render(<HorarioForm diaSemana={1} horariosExistentes={[]} enviando={false} onSubmit={onSubmit} />);
 
       await fireEvent.changeText(screen.getByPlaceholderText('0'), '0');
       await preencherEEnviar('10', '00', '60');

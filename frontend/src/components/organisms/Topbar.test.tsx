@@ -46,6 +46,16 @@ describe('Topbar', () => {
     expect(screen.queryByText('SYNCLASS')).toBeNull();
   });
 
+  it('shows the Synclass mark (símbolo) when no titulo is given', async () => {
+    await render(<Topbar />);
+    expect(screen.getByTestId('marca')).toBeTruthy();
+  });
+
+  it('shows the Synclass mark (símbolo) even when a titulo is given', async () => {
+    await render(<Topbar titulo="Valor devido por Aluno" />);
+    expect(screen.getByTestId('marca')).toBeTruthy();
+  });
+
   it('shows the "Voltar" label as visible text when a titulo is given (issue #145)', async () => {
     await render(<Topbar titulo="Valor devido por Aluno" />);
 

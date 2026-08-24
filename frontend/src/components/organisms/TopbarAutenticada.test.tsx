@@ -62,6 +62,7 @@ describe('TopbarAutenticada (recebe MenuNavegacao de useSessao)', () => {
       papeis: ['Professor', 'Aluno'],
       papelAtivo: 'Professor',
       definirPapelAtivo,
+      sair: jest.fn(),
     });
 
     await render(<TopbarAutenticada titulo="Meu perfil" />);
@@ -78,17 +79,46 @@ describe('TopbarAutenticada (recebe MenuNavegacao de useSessao)', () => {
       papeis: ['Professor'],
       papelAtivo: 'Professor',
       definirPapelAtivo: jest.fn(),
+      sair: jest.fn(),
     });
 
     await render(
       <TopbarAutenticada titulo="Horários">
-        <Text>Sair</Text>
+        <Text>Ação extra</Text>
       </TopbarAutenticada>,
     );
 
     expect(screen.getByRole('header', { name: 'Horários' })).toBeTruthy();
-    expect(screen.getByText('Sair')).toBeTruthy();
+    expect(screen.getByText('Ação extra')).toBeTruthy();
     expect(screen.getByText('menu-papel-ativo:Professor')).toBeTruthy();
+  });
+
+  it('renderiza o botão Sair em toda tela autenticada, chamando sair() de useSessao ao tocar', async () => {
+    const sair = jest.fn();
+    mockUseSessao.mockReturnValue({
+      papeis: ['Professor'],
+      papelAtivo: 'Professor',
+      definirPapelAtivo: jest.fn(),
+      sair,
+    });
+
+    await render(<TopbarAutenticada titulo="Horários" />);
+
+    await fireEvent.press(screen.getByText('Sair'));
+    expect(sair).toHaveBeenCalled();
+  });
+
+  it('dá ao botão Sair um alvo de toque de ao menos 44x44 (issue #115)', async () => {
+    mockUseSessao.mockReturnValue({
+      papeis: ['Professor'],
+      papelAtivo: 'Professor',
+      definirPapelAtivo: jest.fn(),
+      sair: jest.fn(),
+    });
+
+    await render(<TopbarAutenticada titulo="Horários" />);
+
+    expect(screen.getByRole('button', { name: 'Sair' })).toHaveStyle({ minWidth: 44, minHeight: 44 });
   });
 
   it('repassa tituloDaAba para o Topbar (issue #133)', async () => {
@@ -96,6 +126,7 @@ describe('TopbarAutenticada (recebe MenuNavegacao de useSessao)', () => {
       papeis: ['Professor'],
       papelAtivo: 'Professor',
       definirPapelAtivo: jest.fn(),
+      sair: jest.fn(),
     });
 
     await render(<TopbarAutenticada tituloDaAba="Painel" />);

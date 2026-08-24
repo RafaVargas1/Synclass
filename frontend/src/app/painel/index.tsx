@@ -22,7 +22,7 @@ import { useRedirecionarSemSessao } from '@/lib/auth/useRedirecionarSemSessao';
 import { periodoDoDia, saudacaoPorPeriodo } from '@/lib/periodoDoDia';
 import { secoesDoPapel, type Secao } from '@/lib/secoesPorPapel';
 import { usePerfilLogado } from '@/lib/usePerfilLogado';
-import { AlvoDeToqueMinimo, MaxContentWidthPainel } from '@/theme/tokens';
+import { MaxContentWidthPainel } from '@/theme/tokens';
 
 /**
  * Saudação de topo do Painel (issue #69): `"{Saudação}, {nome}"`, com o
@@ -129,7 +129,7 @@ function agregarProximoHorario(
  * — ver `SecaoMeuPerfil` em `MenuNavegacao.tsx`).
  */
 export default function PainelScreen() {
-  const { carregando, token, papelAtivo, sair } = useSessao();
+  const { carregando, token, papelAtivo } = useSessao();
   useRedirecionarSemSessao(carregando, token);
   const { usuarioId, nome } = usePerfilLogado(token);
   const proximoHorario = useProximoHorario(papelAtivo === 'Aluno', token);
@@ -141,9 +141,7 @@ export default function PainelScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <TopbarAutenticada tituloDaAba="Painel">
-        <BotaoSair onPress={sair} />
-      </TopbarAutenticada>
+      <TopbarAutenticada tituloDaAba="Painel" />
       <View
         className="w-full flex-1 self-center gap-five px-four py-five"
         style={{ maxWidth: MaxContentWidthPainel }}
@@ -209,19 +207,6 @@ function CardDeAcao({ acao }: { acao: Secao }) {
         <Text className="text-base font-semibold text-text dark:text-dark-text">{acao.label}</Text>
       </Pressable>
     </Link>
-  );
-}
-
-function BotaoSair({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      className="items-center justify-center"
-      style={AlvoDeToqueMinimo}
-    >
-      <Text className="text-sm font-semibold text-text dark:text-dark-text">Sair</Text>
-    </Pressable>
   );
 }
 

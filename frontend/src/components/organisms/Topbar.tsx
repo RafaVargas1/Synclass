@@ -73,7 +73,14 @@ export function Topbar({ titulo, tituloDaAba, children, menuNavegacao }: TopbarP
         >
           <View className="flex-row items-center gap-three">
             {!telaLarga && menuNavegacao ? menuNavegacao : null}
-            {titulo ? <Titulo titulo={titulo} /> : <Logotipo />}
+            {titulo ? (
+              <>
+                <Marca escala={0.5} />
+                <Titulo titulo={titulo} />
+              </>
+            ) : (
+              <Logotipo />
+            )}
           </View>
           {children ? <View className="flex-row items-center gap-three">{children}</View> : null}
         </View>

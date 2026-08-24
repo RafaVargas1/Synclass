@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import {
   alterarPrazoCancelamentoHorario,
@@ -31,6 +31,10 @@ jest.mock('expo-router', () => {
       React.cloneElement(children, { accessibilityHint: href }),
   };
 });
+
+jest.mock('@/lib/useIsTelaLarga', () => ({
+  useIsTelaLarga: () => true,
+}));
 
 jest.mock('@/lib/api/horarios', () => ({
   alterarPrazoCancelamentoHorario: jest.fn(),
@@ -68,6 +72,23 @@ async function selecionarPoliticaEEnviar() {
   await fireEvent.press(screen.getByText('Adicionar horário'));
 }
 
+// A visualização por dia (issue de usabilidade, abas 50/50) só mostra o
+// horário de um dia quando a aba correspondente está selecionada — a aba
+// padrão é a de hoje, que varia conforme a data real de execução do teste,
+// então os testes que dependem do `horarioExistente` (Terça, diaSemana 2)
+// selecionam essa aba explicitamente em vez de contar com o default.
+function abasDeDiaSemana() {
+  return within(screen.getByTestId('abas-dia-semana'));
+}
+
+async function selecionarAbaTerca() {
+  await fireEvent.press(abasDeDiaSemana().getByRole('button', { name: 'Ter' }));
+}
+
+async function selecionarAbaQuarta() {
+  await fireEvent.press(abasDeDiaSemana().getByRole('button', { name: 'Qua' }));
+}
+
 describe('HorariosProfessorScreen', () => {
   beforeEach(() => {
     alterarPrazoCancelamentoHorarioMock.mockReset();
@@ -94,11 +115,49 @@ describe('HorariosProfessorScreen', () => {
     await waitFor(() => expect(listarHorariosMock).toHaveBeenCalledWith('professor-1'));
   });
 
-  it('loads and shows the existing horarios on mount', async () => {
+  it('loads and shows the existing horarios on mount, on the horario dia tab', async () => {
+    await render(<HorariosProfessorScreen />);
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+
+    await selecionarAbaTerca();
+
+    expect(screen.getAllByText(/Terça/)[0]).toBeTruthy();
+    expect(listarHorariosMock).toHaveBeenCalledWith('professor-1');
+  });
+
+  it('highlights the tab of a day that already has a horario cadastrado', async () => {
     await render(<HorariosProfessorScreen />);
 
-    await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
-    expect(listarHorariosMock).toHaveBeenCalledWith('professor-1');
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+
+    const abaComHorario = abasDeDiaSemana().getByRole('button', { name: 'Ter' });
+    const abaSemHorario = abasDeDiaSemana().getByRole('button', { name: 'Seg' });
+    expect(abaComHorario.props.className).toContain('border-primary');
+    expect(abaSemHorario.props.className).not.toContain('border-primary');
+  });
+
+  it('has a single dia-da-semana selector shared by cadastro e visualização, not one per side', async () => {
+    await render(<HorariosProfessorScreen />);
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+
+    expect(screen.getAllByRole('button', { name: 'Ter' })).toHaveLength(1);
+    expect(screen.getByText(/Novo horário para/)).toBeTruthy();
+  });
+
+  it('creates the horario for the day currently selected in the shared tab, not a fixed default', async () => {
+    criarHorarioMock.mockResolvedValue({ sucesso: true, horario: horarioExistente });
+    await render(<HorariosProfessorScreen />);
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+
+    await selecionarAbaQuarta();
+    await selecionarHora('09', '00');
+    await fireEvent.changeText(screen.getByPlaceholderText('60'), '30');
+    await selecionarPoliticaEEnviar();
+
+    expect(criarHorarioMock).toHaveBeenCalledWith(
+      'professor-1',
+      expect.objectContaining({ diaSemana: 3 }),
+    );
   });
 
   it('adds the created horario to the list on success', async () => {
@@ -111,13 +170,14 @@ describe('HorariosProfessorScreen', () => {
     };
     criarHorarioMock.mockResolvedValue({ sucesso: true, horario: novoHorario });
     await render(<HorariosProfessorScreen />);
-    await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
 
     await selecionarHora('09', '00');
     await fireEvent.changeText(screen.getByPlaceholderText('60'), '30');
     await selecionarPoliticaEEnviar();
 
-    await waitFor(() => expect(screen.getByText(/Quarta/)).toBeTruthy());
+    await selecionarAbaQuarta();
+    await waitFor(() => expect(screen.getAllByText(/Quarta/)[0]).toBeTruthy());
     expect(criarHorarioMock).toHaveBeenCalledWith(
       'professor-1',
       expect.objectContaining({ tipoMarcacao: TipoMarcacao.Livre }),
@@ -127,7 +187,7 @@ describe('HorariosProfessorScreen', () => {
   it('shows the Api error message when creation fails', async () => {
     criarHorarioMock.mockResolvedValue({ sucesso: false, mensagem: 'Horário conflita.' });
     await render(<HorariosProfessorScreen />);
-    await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
 
     await selecionarHora('14', '00');
     await fireEvent.changeText(screen.getByPlaceholderText('60'), '30');
@@ -139,11 +199,15 @@ describe('HorariosProfessorScreen', () => {
   it('removes the horario from the list when removal succeeds', async () => {
     removerHorarioMock.mockResolvedValue({ sucesso: true });
     await render(<HorariosProfessorScreen />);
-    await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+    await selecionarAbaTerca();
+    await waitFor(() => expect(screen.getAllByText(/Terça/)[0]).toBeTruthy());
 
     await fireEvent.press(screen.getByText('Remover'));
 
-    await waitFor(() => expect(screen.queryByText(/Terça/)).toBeNull());
+    await waitFor(() =>
+      expect(screen.getByText('Nenhum horário cadastrado para este dia.')).toBeTruthy(),
+    );
     expect(removerHorarioMock).toHaveBeenCalledWith('professor-1', 'h1');
   });
 
@@ -153,14 +217,16 @@ describe('HorariosProfessorScreen', () => {
       mensagem: 'Não é possível remover: existem Alunos alocados.',
     });
     await render(<HorariosProfessorScreen />);
-    await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+    await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+    await selecionarAbaTerca();
+    await waitFor(() => expect(screen.getAllByText(/Terça/)[0]).toBeTruthy());
 
     await fireEvent.press(screen.getByText('Remover'));
 
     await waitFor(() =>
       expect(screen.getByText('Não é possível remover: existem Alunos alocados.')).toBeTruthy(),
     );
-    expect(screen.getByText(/Terça/)).toBeTruthy();
+    expect(screen.getAllByText(/Terça/)[0]).toBeTruthy();
   });
 
   describe('handleAlterarPolitica (issue #71)', () => {
@@ -178,7 +244,9 @@ describe('HorariosProfessorScreen', () => {
         horario: horarioComPoliticaAlterada,
       });
       await render(<HorariosProfessorScreen />);
-      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+      await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+      await selecionarAbaTerca();
+      await waitFor(() => expect(screen.getAllByText(/Terça/)[0]).toBeTruthy());
 
       await fireEvent.press(screen.getByText('Editar política'));
       await fireEvent.press(screen.getAllByRole('button', { name: 'Fixo' })[1]);
@@ -200,7 +268,9 @@ describe('HorariosProfessorScreen', () => {
         mensagem: 'Tipo de marcação inválido.',
       });
       await render(<HorariosProfessorScreen />);
-      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+      await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+      await selecionarAbaTerca();
+      await waitFor(() => expect(screen.getAllByText(/Terça/)[0]).toBeTruthy());
 
       await fireEvent.press(screen.getByText('Editar política'));
       await fireEvent.press(screen.getAllByRole('button', { name: 'Fixo' })[1]);
@@ -219,7 +289,9 @@ describe('HorariosProfessorScreen', () => {
         horario: horarioComPrazoAlterado,
       });
       await render(<HorariosProfessorScreen />);
-      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+      await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+      await selecionarAbaTerca();
+      await waitFor(() => expect(screen.getAllByText(/Terça/)[0]).toBeTruthy());
 
       await fireEvent.press(screen.getByText('Editar política'));
       const camposDeZero = screen.getAllByPlaceholderText('0');
@@ -235,7 +307,9 @@ describe('HorariosProfessorScreen', () => {
         mensagem: 'Prazo de cancelamento inválido.',
       });
       await render(<HorariosProfessorScreen />);
-      await waitFor(() => expect(screen.getByText(/Terça/)).toBeTruthy());
+      await waitFor(() => expect(abasDeDiaSemana().getByRole('button', { name: 'Ter' })).toBeTruthy());
+      await selecionarAbaTerca();
+      await waitFor(() => expect(screen.getAllByText(/Terça/)[0]).toBeTruthy());
 
       await fireEvent.press(screen.getByText('Editar política'));
       const camposDeZero = screen.getAllByPlaceholderText('0');

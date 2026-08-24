@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 
 import { calcularPeriodoUltimosNDias, listarHistoricoFrequenciaDoAluno } from '@/lib/api/historicoFrequencia';
 import { listarValorDevido } from '@/lib/api/valorDevido';
@@ -172,34 +172,6 @@ describe('PainelScreen', () => {
     expect(screen.queryByRole('button', { name: 'Meu perfil' })).toBeNull();
   });
 
-  it('calls sair when the Sair button is pressed', async () => {
-    const sair = jest.fn();
-    useSessaoMock.mockReturnValue({
-      carregando: false,
-      token: 'token-jwt',
-      sair,
-    });
-
-    await render(<PainelScreen />);
-    await fireEvent.press(screen.getByText('Sair'));
-
-    expect(sair).toHaveBeenCalled();
-  });
-
-  it('gives the Sair button a touch target of at least 44x44 (issue #115)', async () => {
-    useSessaoMock.mockReturnValue({
-      carregando: false,
-      token: 'token-jwt',
-      sair: jest.fn(),
-    });
-
-    await render(<PainelScreen />);
-
-    expect(screen.getByRole('button', { name: 'Sair' })).toHaveStyle({
-      minWidth: 44,
-      minHeight: 44,
-    });
-  });
 });
 
 describe('PainelScreen saudação', () => {

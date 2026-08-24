@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
-import { ChipSelector, type ChipSelectorOption } from '@/components/molecules/ChipSelector';
+import { ChipSelector } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
 import { SeletorDeHora } from '@/components/molecules/SeletorDeHora';
 import { TipoMarcacao, type CriarHorarioInput, type Horario } from '@/lib/api/horarios';
@@ -12,12 +12,13 @@ import { horariosSeSobrepoe } from '@/lib/horarioConflito';
 import { horaEstaCompleta } from '@/lib/mascararHora';
 import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
 
-const OpcoesDiaSemana: readonly ChipSelectorOption<number>[] = NomesDiaSemana.map((nome, dia) => ({
-  valor: dia,
-  rotulo: nome.slice(0, 3),
-}));
-
 export type HorarioFormProps = {
+  /** Dia da semana do horário sendo cadastrado — controlado pelo mesmo
+   *  seletor de dia da visualização (`AbasDeDiaSemana` em `horarios.tsx`),
+   *  não mais um campo próprio deste formulário: ter dois seletores de dia
+   *  na mesma tela (um pra cadastrar, outro pra ver) confundia sobre qual
+   *  dia estava valendo pra cada ação (achado de usabilidade do usuário). */
+  diaSemana: number;
   horariosExistentes: Horario[];
   enviando: boolean;
   erro?: string;
@@ -40,8 +41,13 @@ const MensagemPrazoCancelamentoInvalido = 'Informe um prazo de cancelamento maio
  * construção, então só resta garantir que ela de fato estava completa na
  * hora de confirmar. A Api continua sendo a fonte de verdade.
  */
-export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: HorarioFormProps) {
-  const [diaSemana, setDiaSemana] = useState(1);
+export function HorarioForm({
+  diaSemana,
+  horariosExistentes,
+  enviando,
+  erro,
+  onSubmit,
+}: HorarioFormProps) {
   const [tipoMarcacao, setTipoMarcacao] = useState<TipoMarcacao | undefined>(undefined);
   const [horaInicio, setHoraInicio] = useState<string | undefined>(undefined);
   const [duracaoMinutos, setDuracaoMinutos] = useState('');
@@ -70,12 +76,9 @@ export function HorarioForm({ horariosExistentes, enviando, erro, onSubmit }: Ho
 
   return (
     <View className="w-full gap-four">
-      <ChipSelector
-        label="Dia da semana"
-        opcoes={OpcoesDiaSemana}
-        valor={diaSemana}
-        onChange={setDiaSemana}
-      />
+      <Text className="text-sm text-text-secondary dark:text-dark-text-secondary">
+        Novo horário para {NomesDiaSemana[diaSemana]}
+      </Text>
       <ChipSelector
         label="Quem marca os Alunos neste horário?"
         descricao="Livre: qualquer Aluno se inscreve. Fixo: só o Professor atribui. Híbrido: Professor atribui vagas fixas e libera o restante."
