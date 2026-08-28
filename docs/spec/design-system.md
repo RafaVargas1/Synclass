@@ -191,15 +191,17 @@ não há sessão para derivar seções.
 
 ## Ícones
 
-Lucide está fora. Recomendo **Phosphor** (`phosphor-react-native`, MIT,
-mantida ativamente) — silhueta visualmente distinta de Lucide, com pesos
-variáveis (regular/bold) que dão uma identidade própria sem precisar de ícone
-customizado do zero. Alternativa se Phosphor não servir: Tabler Icons.
+O menu já usa **Phosphor** (`phosphor-react-native`, MIT, mantida
+ativamente) desde a issue #202 — silhueta visualmente distinta de Lucide,
+com pesos variáveis (regular/bold) que dão uma identidade própria sem
+precisar de ícone customizado do zero. Lucide continua fora.
 
 Regras de uso:
 - Peso `regular` por padrão; `bold` só pra ênfase pontual (ex: ícone de erro).
 - Tamanho fixo em dois passos: 20px (inline com texto) e 24px (ação
-  standalone, como botão de ícone).
+  standalone, como botão de ícone). Hoje só o tamanho 20px está em uso
+  (itens de menu e ações de tela com rótulo ao lado — nenhum botão de
+  ícone standalone de 24px foi criado ainda nesta Task).
 - Ícone sempre acompanha um rótulo acessível (`accessibilityLabel`) — nunca é
   o único portador de significado.
 - Nada de sparkle (✨) em nenhum contexto — não é um produto de "IA em
