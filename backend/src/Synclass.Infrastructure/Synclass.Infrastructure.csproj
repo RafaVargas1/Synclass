@@ -15,6 +15,15 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
   </ItemGroup>
 
+  <!-- Acesso ao IDataProtector do ASP.NET Core (EncryptingValueConverter,
+       issue #203) sem dependência NuGet nova — FrameworkReference não é
+       um pacote, aponta para o shared framework já instalado. Mesmo padrão
+       do serilog em Synclass.Api, mas aqui sem o SDK Web (fica de fora do
+       hosting, só usa a camada de DataProtection). -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

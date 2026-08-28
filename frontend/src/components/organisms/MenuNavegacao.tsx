@@ -6,6 +6,7 @@ import {
   Clock,
   type Icon as PhosphorIcon,
   CurrencyDollar,
+  Gear,
   House,
   LinkSimple,
   SignIn,
@@ -217,6 +218,7 @@ const ComponentesPorIcone: Record<Secao['icone'], PhosphorIcon> = {
   'entrar-turma': SignIn,
   'minhas-aulas': CalendarBlank,
   historico: ChartBar,
+  configuracoes: Gear,
 };
 
 /**

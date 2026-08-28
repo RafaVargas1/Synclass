@@ -37,6 +37,7 @@ describe('secoesPorPapel (issue #77)', () => {
           icone: 'adicionar-aluno',
         },
         { label: 'Ver valor devido', href: '/professor/prof-1/valor-devido', icone: 'valor-devido' },
+        { label: 'Configurações', href: '/professor/prof-1/configuracoes', icone: 'configuracoes' },
       ]);
     });
   });

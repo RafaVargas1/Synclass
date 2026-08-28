@@ -22,11 +22,13 @@ using Synclass.Domain.Convites;
 using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
+using Synclass.Domain.Pagamentos;
 using Synclass.Domain.Usuarios;
 using Synclass.Infrastructure.Alunos;
 using Synclass.Infrastructure.Autenticacao;
 using Synclass.Infrastructure.Common;
 using Synclass.Infrastructure.Convites;
+using Synclass.Infrastructure.Http;
 using Synclass.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -202,6 +204,26 @@ builder.Services.AddScoped(sp => new CodigoEntradaTurmaService(
     sp.GetRequiredService<IGeradorDeCodigoConvite>(),
     sp.GetRequiredService<IClock>()));
 
+// Conectar conta Mercado Pago do Professor (issue #203) — ver
+// docs/specs/203-professor-conecta-mercado-pago/implementation.md.
+// O HttpClient é registrado via AddHttpClient (primeiro no repo, ver
+// implementation.md#integração-http); a redirect_uri é uma constante fixa
+// lida de MercadoPago:RedirectUri (mesmo padrão de falha explícita no
+// startup dos demais segredos do Mercado Pago).
+var redirectUriMercadoPago = LerRedirectUriMercadoPagoObrigatoria(builder.Configuration);
+builder.Services.AddHttpClient<IClienteOAuthMercadoPago, ClienteOAuthMercadoPago>(client =>
+{
+    client.BaseAddress = new Uri("https://api.mercadopago.com");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddScoped<IConexaoMercadoPagoRepository, ConexaoMercadoPagoRepository>();
+builder.Services.AddScoped(sp => new ConexaoMercadoPagoService(
+    sp.GetRequiredService<IConexaoMercadoPagoRepository>(),
+    sp.GetRequiredService<IUsuarioRepository>(),
+    sp.GetRequiredService<IClienteOAuthMercadoPago>(),
+    sp.GetRequiredService<IClock>(),
+    redirectUriMercadoPago));
+
 // Rate limiting dos endpoints anônimos de aceite de convite (issue #89) —
 // ver docs/specs/89-rate-limit-convites/implementation.md. Política
 // "ConvitesAnonimos" fixa janela fixa (fixed window) particionada por IP de
@@ -280,6 +302,21 @@ static int LerDiasValidadeConviteObrigatoria(IConfiguration configuration)
     }
 
     return dias;
+}
+
+// Mesmo padrão (falha explícita no startup) das funções acima — sem isso, a
+// redirect_uri ausente/vazia quebraria só no primeiro usuário a conectar a
+// conta, não no boot da Api. Ver implementation.md#rota-fixa-e-url-de-redirecionamento.
+static string LerRedirectUriMercadoPagoObrigatoria(IConfiguration configuration)
+{
+    var redirectUri = configuration["MercadoPago:RedirectUri"];
+    if (string.IsNullOrWhiteSpace(redirectUri))
+    {
+        throw new InvalidOperationException(
+            "Configuração ausente: MercadoPago:RedirectUri. Esperada a URL do endpoint de callback do Mercado Pago.");
+    }
+
+    return redirectUri;
 }
 
 // Mesmo padrão (falha explícita no startup) das funções acima — sem isso,
