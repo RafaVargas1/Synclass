@@ -127,6 +127,27 @@ public sealed class ConexaoMercadoPagoServiceTests
     }
 
     [Fact]
+    public async Task ProcessarCallbackAsync_StateNaoEncontrado_RejeitaAntesDeTrocarCode()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago();
+
+        // Nenhum registro guarda o state recebido no callback — o fluxo nunca
+        // foi iniciado, ou um state de outro fluxo foi reutilizado. O service
+        // resolve o Professor pelo state (o callback é anônimo, sem claim) e
+        // rejeita antes de qualquer troca de code (implementation.md#edge-points).
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var acao = async () => await servico.ProcessarCallbackAsync("code", "state-inexistente", CancellationToken.None);
+
+        await acao.Should().ThrowAsync<StateInvalidoException>();
+        cliente.UltimoCode.Should().BeNull();
+        repositorio.Conexoes.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ProcessarCallbackAsync_StateValido_PersisteConexaoAposTrocarCode()
     {
         var usuarios = new FakeUsuarioRepository();
