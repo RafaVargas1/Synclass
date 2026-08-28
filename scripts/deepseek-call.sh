@@ -54,7 +54,9 @@ cat > "$USER_PROMPT_FILE"
 
 # --rawfile em vez de --arg: prompts grandes (ex.: diff de PR extenso)
 # excedem ARG_MAX quando passados como argumento de linha de comando.
-BODY="$(jq -n \
+BODY_FILE="$(mktemp)"
+trap 'rm -f "$USER_PROMPT_FILE" "$BODY_FILE"' EXIT
+jq -n \
   --arg model "$MODEL" \
   --arg system "$SYSTEM_PROMPT" \
   --rawfile user "$USER_PROMPT_FILE" \
@@ -65,12 +67,14 @@ BODY="$(jq -n \
       + [{role: "user", content: $user}]
     ),
     stream: false
-  }')"
+  }' > "$BODY_FILE"
 
+# --data-binary "@arquivo" em vez de -d "$BODY": corpos grandes excedem
+# ARG_MAX quando passados como argumento de linha de comando pro curl.
 RESPONSE="$(curl -sS https://api.deepseek.com/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${DEEPSEEK_API_KEY}" \
-  -d "$BODY")"
+  --data-binary "@$BODY_FILE")"
 
 ERROR_MSG="$(echo "$RESPONSE" | jq -r '.error.message? // empty')"
 if [ -n "$ERROR_MSG" ]; then
