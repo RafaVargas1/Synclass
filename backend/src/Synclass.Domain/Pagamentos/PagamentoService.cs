@@ -43,12 +43,13 @@ public sealed class PagamentoService
     /// antes de qualquer integração externa — mesma exceção pros dois casos
     /// (matrícula inexistente e de outro Aluno), mapeada pelo controller como
     /// 404 sem vazar existência do recurso. Professor sem conta conectada
-    /// (passo 4) também para antes de criar qualquer pagamento.
+    /// (passo 4) e sem valor devido no período (passo 5) param antes de
+    /// criar/reaproveitar qualquer pagamento ou gerar checkout.
     /// </summary>
     public async Task<ResultadoInicioPagamento> IniciarAsync(
         Guid matriculaId, Guid alunoUsuarioId, DateOnly inicio, DateOnly fim, CancellationToken ct)
     {
-        PeriodoConsulta.Criar(inicio, fim);
+        var periodo = PeriodoConsulta.Criar(inicio, fim);
 
         var matricula = await _matriculas.BuscarPorIdAsync(matriculaId, ct);
         if (matricula is null)
@@ -67,9 +68,15 @@ public sealed class PagamentoService
             throw new ProfessorSemContaConectadaException(matricula.ProfessorId);
         }
 
-        // As etapas subseqüentes (recalcular valor, reaproveitar pendente ou
-        // criar preferência de checkout) serão implementadas nos itens
-        // seguintes do task.md.
+        var valoresDevidos = await _consultaCobranca.ConsultarPorAlunoAsync(alunoUsuarioId, periodo, ct);
+        var valorDaMatricula = valoresDevidos.FirstOrDefault(v => v.MatriculaId == matriculaId);
+        if (valorDaMatricula is null || valorDaMatricula.Valor is null or <= 0)
+        {
+            throw new SemValorDevidoException(matriculaId);
+        }
+
+        // As etapas subseqüentes (reaproveitar pendente ou criar preferência
+        // de checkout) serão implementadas nos itens seguintes do task.md.
         throw new NotImplementedException();
     }
 }

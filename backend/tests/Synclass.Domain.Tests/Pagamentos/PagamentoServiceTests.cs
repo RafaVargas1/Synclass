@@ -123,4 +123,36 @@ public sealed class PagamentoServiceTests
         pagamentos.Pagamentos.Should().BeEmpty();
         gerador.Chamadas.Should().Be(0);
     }
+
+    /// <summary>
+    /// Valor zero no período: a matrícula pertence ao Aluno, o Professor tem
+    /// conta conectada, mas <see cref="ConsultaCobrancaService.ConsultarPorAlunoAsync"/>
+    /// não devolve valor &gt; 0 pra matrícula (passo 5 do fluxo) — rejeita com
+    /// <see cref="SemValorDevidoException"/> (mapeada a 400) antes de
+    /// criar/reaproveitar pagamento ou gerar checkout.
+    /// </summary>
+    [Fact]
+    public async Task IniciarAsync_SemValorDevidoNoPeriodo_RejeitaComSemValorDevidoExceptionSemCriarPagamento()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var repositorioConexoes = new FakeConexaoMercadoPagoRepository();
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorConectadoAsync(usuarios, repositorioConexoes);
+        var alunoUsuarioId = Guid.NewGuid();
+        // Matrícula plena, mas sem RegraDeCobranca → ConsultaCobrancaService
+        // devolve SemRegraDefinida=true, Valor=null (nunca 0; ver #12).
+        var matricula = Matricula.CriarVinculada(professorId, alunoUsuarioId, Clock);
+        await matriculas.AdicionarAsync(matricula, CancellationToken.None);
+
+        var pagamentos = new FakePagamentoRepository();
+        var gerador = new FakeGeradorDeCheckout();
+        var servico = CriarServico(matriculas, pagamentos, gerador, repositorioConexoes: repositorioConexoes);
+
+        var acao = () => servico.IniciarAsync(
+            matricula.Id, alunoUsuarioId, Periodo.Inicio, Periodo.FimExclusivo, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<SemValorDevidoException>();
+        pagamentos.Pagamentos.Should().BeEmpty();
+        gerador.Chamadas.Should().Be(0);
+    }
 }
