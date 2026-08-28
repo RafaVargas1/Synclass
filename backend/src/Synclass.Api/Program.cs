@@ -74,6 +74,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+// Credenciais do provedor de WhatsApp (Twilio por padrão, issue #193) — falha
+// explícita no startup, mesmo padrão de Jwt:SigningKey acima, para o serviço
+// não arrancar sem as chaves que WhatsAppHttpClient/WhatsAppNotificador leem de
+// IConfiguration. Ponto único de validação (as classes de Infrastructure não
+// revalidam); exigidas sempre, inclusive em ModoDev, para que a troca de DI
+// condicional abaixo nunca dependa de config ausente. Ver
+// docs/specs/193-login-whatsapp-real/implementation.md.
+var whatsAppApiKey = builder.Configuration["WhatsApp:ApiKey"]
+    ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:ApiKey.");
+var whatsAppNumeroRemetente = builder.Configuration["WhatsApp:NumeroRemetente"]
+    ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:NumeroRemetente.");
+
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroUsuarioService>();
@@ -123,7 +135,24 @@ builder.Services.AddScoped<FrequenciaService>();
 // Login por OTP (issue #18) — ver docs/specs/18-login-otp/implementation.md.
 builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();
 builder.Services.AddSingleton<IGeradorDeCodigoOtp, GeradorDeCodigoOtp>();
-builder.Services.AddScoped<INotificador, NotificadorDeLog>();
+// Notificador do login por OTP (issue #193): em produção registra o
+// WhatsAppNotificador real (via IWhatsAppHttpClient, Twilio por padrão);
+// NotificadorDeLog (loga o código em claro) só em ModoDev (DI condicional,
+// comportamento de dev da issue #18) — nunca em produção. A fronteira de troca
+// de provedor é IWhatsAppHttpClient (fábrica aqui), sem tocar INotificador.
+if (builder.Configuration.GetValue<bool>("AssinaturaDigital:ModoDev"))
+{
+    builder.Services.AddScoped<INotificador, NotificadorDeLog>();
+}
+else
+{
+    builder.Services.AddHttpClient<IWhatsAppHttpClient, WhatsAppHttpClient>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["WhatsApp:BaseUrl"]
+            ?? "https://api.twilio.com/2010-04-01/Accounts/ACCOUNT_SID/Messages.json");
+    });
+    builder.Services.AddScoped<INotificador, WhatsAppNotificador>();
+}
 builder.Services.AddSingleton<IGeradorDeTokenSessao>(sp => new GeradorDeTokenSessaoJwt(
     jwtSigningKey,
     LerExpiracaoDiasObrigatoria(builder.Configuration),
