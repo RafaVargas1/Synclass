@@ -47,7 +47,9 @@ public sealed class PagamentoService
     /// pagamento é gerado ANTES da preferência (vira o
     /// <c>external_reference</c> do payload), a preferência é criada e o
     /// <see cref="Pagamento"/> é persistido com o valor congelado da criação
-    /// (passos 7-9).
+    /// (passos 7-9). O retorno carrega <c>ProfessorId</c> e
+    /// <c>ReferenciaExterna</c> pra o controller logar <c>PagamentoIniciado</c>
+    /// (implementation.md#logs-estruturados).
     /// </summary>
     public async Task<ResultadoInicioPagamento> IniciarAsync(
         Guid matriculaId, Guid alunoUsuarioId, DateOnly inicio, DateOnly fim, CancellationToken ct)
@@ -82,7 +84,9 @@ public sealed class PagamentoService
             matriculaId, periodo.Inicio, periodo.FimExclusivo, ct);
         if (pendente is not null)
         {
-            return new ResultadoInicioPagamento(pendente.Id, pendente.UrlCheckout, pendente.Valor);
+            return new ResultadoInicioPagamento(
+                pendente.Id, pendente.UrlCheckout, pendente.Valor,
+                matricula.ProfessorId, pendente.ReferenciaExterna);
         }
 
         var pagamentoId = Guid.NewGuid();
@@ -106,6 +110,8 @@ public sealed class PagamentoService
             resultadoCheckout.ReferenciaExterna);
         await _pagamentos.AdicionarAsync(pagamento, ct);
 
-        return new ResultadoInicioPagamento(pagamento.Id, pagamento.UrlCheckout, pagamento.Valor);
+        return new ResultadoInicioPagamento(
+            pagamento.Id, pagamento.UrlCheckout, pagamento.Valor,
+            pagamento.ProfessorId, pagamento.ReferenciaExterna);
     }
 }

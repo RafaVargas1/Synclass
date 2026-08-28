@@ -164,6 +164,10 @@ public sealed class PagamentoServiceTests
     /// <see cref="Pagamento.UrlCheckout"/> e <see cref="Pagamento.Id"/> sem
     /// gerar nova preferência de checkout no Mercado Pago — a URL é gravada
     /// na criação justamente pra isso (ver implementation.md#entidade-pagamento).
+    /// O resultado carrega o <c>ProfessorId</c> e a
+    /// <see cref="Pagamento.ReferenciaExterna"/> do pendente para o
+    /// controller logar <c>PagamentoIniciado</c> com os campos do
+    /// implementation.md#logs-estruturados.
     /// </summary>
     [Fact]
     public async Task IniciarAsync_PendenteExistente_ReaproveitaMesmaUrlCheckoutSemChamarIGeradorDeCheckout()
@@ -195,6 +199,8 @@ public sealed class PagamentoServiceTests
         resultado.PagamentoId.Should().Be(pagamentoPendente.Id);
         resultado.UrlCheckout.Should().Be("https://checkout.mercadopago.com/pendente");
         resultado.Valor.Should().Be(300m);
+        resultado.ProfessorId.Should().Be(professorId);
+        resultado.ReferenciaExterna.Should().Be("pref-pendente");
         gerador.Chamadas.Should().Be(0);
         pagamentos.Pagamentos.Should().ContainSingle();
     }
@@ -205,6 +211,9 @@ public sealed class PagamentoServiceTests
     /// de checkout com o collector_id do Professor e persiste um novo
     /// <see cref="Pagamento"/> <c>Pendente</c> com o valor congelado da
     /// criação — nunca recalculado ao confirmar (ver implementation.md#entidade-pagamento).
+    /// O resultado carrega o <c>ProfessorId</c> e a
+    /// <see cref="Pagamento.ReferenciaExterna"/> do pagamento criado para o
+    /// controller logar <c>PagamentoIniciado</c> (implementation.md#logs-estruturados).
     /// </summary>
     [Fact]
     public async Task IniciarAsync_SemPendenteExistente_CriaNovoPagamentoComValorCongelado()
@@ -231,6 +240,8 @@ public sealed class PagamentoServiceTests
         resultado.PagamentoId.Should().NotBeEmpty();
         resultado.UrlCheckout.Should().Be("https://checkout.mercadopago.com/pref-teste");
         resultado.Valor.Should().Be(300m);
+        resultado.ProfessorId.Should().Be(professorId);
+        resultado.ReferenciaExterna.Should().Be("pref-teste");
         gerador.Chamadas.Should().Be(1);
         gerador.UltimoProfessorId.Should().Be(professorId);
         gerador.UltimoCollectorId.Should().Be("collector-id");

@@ -41,7 +41,7 @@ public sealed class PagamentosController : ControllerBase
             var alunoUsuarioId = User.GetUsuarioId();
             var resultado = await _pagamentoService.IniciarAsync(
                 matriculaId, alunoUsuarioId, request.Inicio, request.FimExclusivo, cancellationToken);
-            LogarPagamentoIniciado(alunoUsuarioId, matriculaId, resultado);
+            LogarPagamentoIniciado(alunoUsuarioId, matriculaId, request.Inicio, request.FimExclusivo, resultado);
             return Created(string.Empty, new PagamentoIniciadoResponse(
                 resultado.PagamentoId, resultado.UrlCheckout, resultado.Valor));
         }
@@ -61,17 +61,20 @@ public sealed class PagamentosController : ControllerBase
 
     /// <summary>
     /// Log estruturado do evento <c>PagamentoIniciado</c> (issue #199), com o
-    /// <c>TrackId</c> do middleware e os valores do pagamento — nunca dado
-    /// de cartão (o Checkout Pro é redirecionamento hospedado, o Synclass
-    /// nunca vê cartão). <c>PagamentoConfirmado</c>/<c>PagamentoFalhou</c>
-    /// ficam para #200. Ver implementation.md#logs-estruturados.
+    /// <c>TrackId</c> do middleware (architecture.md) e os campos do
+    /// implementation.md#logs-estruturados — nunca dado de cartão (o Checkout
+    /// Pro é redirecionamento hospedado, o Synclass nunca vê cartão) nem
+    /// payload bruto do MP. <c>PagamentoConfirmado</c>/<c>PagamentoFalhou</c>
+    /// ficam para #200.
     /// </summary>
-    private void LogarPagamentoIniciado(Guid alunoUsuarioId, Guid matriculaId, ResultadoInicioPagamento resultado)
+    private void LogarPagamentoIniciado(
+        Guid alunoUsuarioId, Guid matriculaId, DateOnly inicio, DateOnly fimExclusivo, ResultadoInicioPagamento resultado)
     {
         var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
         _logger.LogInformation(
-            "PagamentoIniciado {TrackId} {AlunoUsuarioId} {MatriculaId} {PagamentoId} {UrlCheckout} {Valor}",
-            trackId, alunoUsuarioId, matriculaId, resultado.PagamentoId, resultado.UrlCheckout, resultado.Valor);
+            "PagamentoIniciado {TrackId} {PagamentoId} {MatriculaId} {ProfessorId} {AlunoUsuarioId} {Valor} {PeriodoInicio} {PeriodoFimExclusivo} {ReferenciaExterna}",
+            trackId, resultado.PagamentoId, matriculaId, resultado.ProfessorId, alunoUsuarioId,
+            resultado.Valor, inicio, fimExclusivo, resultado.ReferenciaExterna);
     }
 }
 
