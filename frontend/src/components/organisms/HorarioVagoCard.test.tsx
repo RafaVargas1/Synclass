@@ -27,4 +27,12 @@ describe('HorarioVagoCard', () => {
 
     expect(onMarcar).toHaveBeenCalledWith('h1');
   });
+
+  it('shows the icone-acao-marcar icon on the Marcar button (issue #202)', async () => {
+    await render(<HorarioVagoCard horarioVago={horarioVago} onMarcar={jest.fn()} />);
+
+    expect(
+      screen.getByTestId('icone-acao-marcar', { includeHiddenElements: true }),
+    ).toBeTruthy();
+  });
 });

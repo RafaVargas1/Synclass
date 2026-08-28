@@ -130,14 +130,12 @@ function CancelarEdicaoIcone() {
   const escuro = useColorScheme() === 'dark';
   const paleta = escuro ? Colors.dark : Colors.light;
   return (
-    <X
-      testID="icone-acao-cancelar"
-      size={20}
-      weight="regular"
-      color={paleta['text-secondary']}
-      accessibilityElementsHidden
-      importantForAccessibility="no"
-    />
+    // `IconProps` do phosphor-react-native não declara props de
+    // acessibilidade do RN — a View em volta esconde o ícone da árvore de
+    // acessibilidade, o texto "Cancelar" continua sendo o nome acessível.
+    <View testID="icone-acao-cancelar" accessibilityElementsHidden importantForAccessibility="no">
+      <X size={20} weight="regular" color={paleta.textSecondary} />
+    </View>
   );
 }
 
@@ -182,14 +180,9 @@ function CardCorpo({
             className="flex-row items-center justify-center gap-one"
             style={AlvoDeToqueMinimo}
           >
-            <ClipboardText
-              testID="icone-acao-chamada"
-              size={20}
-              weight="regular"
-              color={corPrimaria}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            />
+            <View testID="icone-acao-chamada" accessibilityElementsHidden importantForAccessibility="no">
+              <ClipboardText size={20} weight="regular" color={corPrimaria} />
+            </View>
             <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
               Chamada
             </Text>
@@ -201,14 +194,9 @@ function CardCorpo({
           className="flex-row items-center justify-center gap-one"
           style={AlvoDeToqueMinimo}
         >
-          <Trash
-            testID="icone-acao-remover"
-            size={20}
-            weight="regular"
-            color={corErro}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          />
+          <View testID="icone-acao-remover" accessibilityElementsHidden importantForAccessibility="no">
+            <Trash size={20} weight="regular" color={corErro} />
+          </View>
           <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
         </Pressable>
       </View>
