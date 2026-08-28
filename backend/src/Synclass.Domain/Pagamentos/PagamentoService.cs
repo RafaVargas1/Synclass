@@ -44,7 +44,10 @@ public sealed class PagamentoService
     /// (matrícula inexistente e de outro Aluno), mapeada pelo controller como
     /// 404 sem vazar existência do recurso. Professor sem conta conectada
     /// (passo 4) e sem valor devido no período (passo 5) param antes de
-    /// criar/reaproveitar qualquer pagamento ou gerar checkout.
+    /// criar/reaproveitar qualquer pagamento ou gerar checkout. Um
+    /// <c>Pendente</c> existente da mesma (MatriculaId, período) é
+    /// reaproveitado devolvendo a URL de checkout já gravada, sem nova
+    /// chamada ao Mercado Pago (passo 6).
     /// </summary>
     public async Task<ResultadoInicioPagamento> IniciarAsync(
         Guid matriculaId, Guid alunoUsuarioId, DateOnly inicio, DateOnly fim, CancellationToken ct)
@@ -75,8 +78,15 @@ public sealed class PagamentoService
             throw new SemValorDevidoException(matriculaId);
         }
 
-        // As etapas subseqüentes (reaproveitar pendente ou criar preferência
-        // de checkout) serão implementadas nos itens seguintes do task.md.
+        var pendente = await _pagamentos.BuscarPendentePorMatriculaEPeriodoAsync(
+            matriculaId, periodo.Inicio, periodo.FimExclusivo, ct);
+        if (pendente is not null)
+        {
+            return new ResultadoInicioPagamento(pendente.Id, pendente.UrlCheckout, pendente.Valor);
+        }
+
+        // A etapa de criação de uma `a nova preferência de checkout (passos
+        // 7-11) será implementada nos itens seguintes do task.md.
         throw new NotImplementedException();
     }
 }

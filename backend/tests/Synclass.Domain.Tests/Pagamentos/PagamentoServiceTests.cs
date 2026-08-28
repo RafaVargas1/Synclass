@@ -32,7 +32,7 @@ public sealed class PagamentoServiceTests
     {
         var usuarios = new FakeUsuarioRepository();
         var conexao = conexoes ?? CriarConexao(repositorioConexoes ?? new FakeConexaoMercadoPagoRepository(), usuarios);
-        var servicoConsulta = consulta ?? CriarConsulta(matriculas, usuarios);
+        var servicoConsulta = consulta ?? CriarConsulta(matriculas, regras: null, usuarios);
         return new PagamentoService(matriculas, conexao, servicoConsulta, pagamentos, gerador, Clock);
     }
 
@@ -44,11 +44,13 @@ public sealed class PagamentoServiceTests
     }
 
     private static ConsultaCobrancaService CriarConsulta(
-        FakeMatriculaRepository matriculas, FakeUsuarioRepository? usuarios = null)
+        FakeMatriculaRepository matriculas,
+        FakeRegraDeCobrancaRepository? regras = null,
+        FakeUsuarioRepository? usuarios = null)
     {
         return new ConsultaCobrancaService(
             matriculas,
-            new FakeRegraDeCobrancaRepository(),
+            regras ?? new FakeRegraDeCobrancaRepository(),
             new FakeAlocacaoHorarioRepository(),
             new FakeHorarioRepository(),
             usuarios ?? new FakeUsuarioRepository(),
@@ -154,5 +156,46 @@ public sealed class PagamentoServiceTests
         await acao.Should().ThrowAsync<SemValorDevidoException>();
         pagamentos.Pagamentos.Should().BeEmpty();
         gerador.Chamadas.Should().Be(0);
+    }
+
+    /// <summary>
+    /// Reaproveitamento de um <c>Pendente</c> existente da mesma
+    /// (MatriculaId, período): o fluxo (passo 6) devolve o mesmo
+    /// <see cref="Pagamento.UrlCheckout"/> e <see cref="Pagamento.Id"/> sem
+    /// gerar nova preferência de checkout no Mercado Pago — a URL é gravada
+    /// na criação justamente pra isso (ver implementation.md#entidade-pagamento).
+    /// </summary>
+    [Fact]
+    public async Task IniciarAsync_PendenteExistente_ReaproveitaMesmaUrlCheckoutSemChamarIGeradorDeCheckout()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var repositorioConexoes = new FakeConexaoMercadoPagoRepository();
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorConectadoAsync(usuarios, repositorioConexoes);
+        var alunoUsuarioId = Guid.NewGuid();
+        var matricula = Matricula.CriarVinculada(professorId, alunoUsuarioId, Clock);
+        await matriculas.AdicionarAsync(matricula, CancellationToken.None);
+
+        var regras = new FakeRegraDeCobrancaRepository();
+        await regras.SalvarAsync(RegraFixoMensal.Criar(matricula.Id, 300m, Clock), CancellationToken.None);
+        var consulta = CriarConsulta(matriculas, regras, usuarios);
+
+        var pagamentoPendente = new Pagamento(
+            Guid.NewGuid(), matricula.Id, alunoUsuarioId, professorId, 300m,
+            Periodo.Inicio, Periodo.FimExclusivo, "https://checkout.mercadopago.com/pendente", "pref-pendente");
+        var pagamentos = new FakePagamentoRepository();
+        await pagamentos.AdicionarAsync(pagamentoPendente, CancellationToken.None);
+
+        var gerador = new FakeGeradorDeCheckout();
+        var servico = CriarServico(matriculas, pagamentos, gerador, consulta: consulta, repositorioConexoes: repositorioConexoes);
+
+        var resultado = await servico.IniciarAsync(
+            matricula.Id, alunoUsuarioId, Periodo.Inicio, Periodo.FimExclusivo, CancellationToken.None);
+
+        resultado.PagamentoId.Should().Be(pagamentoPendente.Id);
+        resultado.UrlCheckout.Should().Be("https://checkout.mercadopago.com/pendente");
+        resultado.Valor.Should().Be(300m);
+        gerador.Chamadas.Should().Be(0);
+        pagamentos.Pagamentos.Should().ContainSingle();
     }
 }
