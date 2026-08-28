@@ -144,6 +144,23 @@ public sealed class WebhookMercadoPagoServiceTests
     }
 
     [Fact]
+    public async Task VerificarAssinaturaAsync_V1NaoEhHexValido_LancaAssinaturaInvalida()
+    {
+        // v1= presente mas com caractere fora de 0-9a-fA-F — Convert.FromHexString
+        // lançaria FormatException sem esse tratamento (dev-review do PR #209).
+        var dataId = "123456789";
+        var payloadJson = MontarPayloadJson(dataId);
+        var xSignatureComHexInvalido = $"ts={Timestamp},v1=zz";
+
+        var servico = CriarServico();
+
+        var acao = async () => await servico.VerificarAssinaturaAsync(
+            payloadJson, xSignatureComHexInvalido, RequestId, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<AssinaturaInvalidaException>();
+    }
+
+    [Fact]
     public async Task ProcessarEventoAsync_Approved_ConfirmaESetaEventoId()
     {
         var pagamentoId = Guid.NewGuid();

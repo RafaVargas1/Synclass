@@ -71,7 +71,21 @@ public sealed class WebhookMercadoPagoService
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_webhookSecret));
         var hashCalculado = hmac.ComputeHash(Encoding.UTF8.GetBytes(manifest));
 
-        var hashRecebido = Convert.FromHexString(hashHex);
+        byte[] hashRecebido;
+        try
+        {
+            hashRecebido = Convert.FromHexString(hashHex);
+        }
+        catch (FormatException)
+        {
+            // v1= não é hex válido (comprimento ímpar ou caractere fora de
+            // 0-9a-fA-F) — payload/header adulterado ou malformado, mesmo
+            // tratamento de qualquer outra assinatura inválida (dev-review
+            // do PR #209: antes propagava sem tratamento e virava 500 em vez
+            // do 400 documentado).
+            throw new AssinaturaInvalidaException();
+        }
+
         // Comparação em tempo constante (slow-equals) — não vaza informação
         // sobre o valor do hash por timing (security-rules.md).
         var confere = hashCalculado.Length == hashRecebido.Length
@@ -97,15 +111,7 @@ public sealed class WebhookMercadoPagoService
     public async Task<ResultadoProcessamentoWebhook> ProcessarEventoAsync(
         PagamentoMercadoPagoDto pagamentoMercadoPago, CancellationToken ct)
     {
-        // Sem external_reference válido não há pagamento local a localizar —
-        // trata como "não encontrado", que o controller responde 200 com aviso.
-        if (!Guid.TryParse(pagamentoMercadoPago.ExternalReference, out var pagamentoId))
-        {
-            return new ResultadoProcessamentoWebhook(
-                TipoProcessamentoWebhook.NaoEncontrado, pagamentoMercadoPago.Id, null, null);
-        }
-
-        var pagamento = await _pagamentos.ObterPorIdAsync(pagamentoId, ct);
+        var pagamento = await LocalizarPagamentoAsync(pagamentoMercadoPago, ct);
         if (pagamento is null)
         {
             return new ResultadoProcessamentoWebhook(
@@ -121,14 +127,42 @@ public sealed class WebhookMercadoPagoService
                 TipoProcessamentoWebhook.Ignorado, pagamentoMercadoPago.Id, pagamento.Id, null);
         }
 
+        return await AplicarTransicaoAsync(pagamento, pagamentoMercadoPago, ct);
+    }
+
+    /// <summary>
+    /// Localiza o <see cref="Pagamento"/> local pelo <c>external_reference</c>
+    /// do evento (issue #200). <see langword="null"/> quando o valor não é
+    /// um <see cref="Guid"/> válido ou quando não existe pagamento com esse
+    /// id — os dois casos são "não encontrado" pro chamador.
+    /// </summary>
+    private async Task<Pagamento?> LocalizarPagamentoAsync(
+        PagamentoMercadoPagoDto pagamentoMercadoPago, CancellationToken ct)
+    {
+        if (!Guid.TryParse(pagamentoMercadoPago.ExternalReference, out var pagamentoId))
+        {
+            return null;
+        }
+
+        return await _pagamentos.ObterPorIdAsync(pagamentoId, ct);
+    }
+
+    /// <summary>
+    /// Aplica a transição de estado correspondente ao <c>status</c> do
+    /// evento (issue #200) — <c>approved</c> confirma, <c>refunded</c>/
+    /// <c>rejected</c> estorna (se estava <c>Confirmado</c>), qualquer outro
+    /// status é no-op. Sempre registra <see cref="Pagamento.EventoId"/> e
+    /// persiste, exceto no caso "outros status" (sem efeito a persistir).
+    /// </summary>
+    private async Task<ResultadoProcessamentoWebhook> AplicarTransicaoAsync(
+        Pagamento pagamento, PagamentoMercadoPagoDto pagamentoMercadoPago, CancellationToken ct)
+    {
         var status = pagamentoMercadoPago.Status;
         if (status == "approved")
         {
             pagamento.Confirmar(_clock);
-            pagamento.RegistrarEventoId(pagamentoMercadoPago.Id);
-            await _pagamentos.AtualizarAsync(pagamento, ct);
-            return new ResultadoProcessamentoWebhook(
-                TipoProcessamentoWebhook.Confirmado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor);
+            return await RegistrarEPersistirAsync(
+                pagamento, pagamentoMercadoPago.Id, TipoProcessamentoWebhook.Confirmado, ct);
         }
 
         if (status is "refunded" or "rejected")
@@ -142,20 +176,31 @@ public sealed class WebhookMercadoPagoService
                 pagamento.Estornar(_clock);
             }
 
-            pagamento.RegistrarEventoId(pagamentoMercadoPago.Id);
-            await _pagamentos.AtualizarAsync(pagamento, ct);
-            return estavaConfirmado
-                ? new ResultadoProcessamentoWebhook(
-                    TipoProcessamentoWebhook.Estornado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor)
-                : new ResultadoProcessamentoWebhook(
-                    TipoProcessamentoWebhook.Ignorado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor);
+            var tipo = estavaConfirmado ? TipoProcessamentoWebhook.Estornado : TipoProcessamentoWebhook.Ignorado;
+            return await RegistrarEPersistirAsync(pagamento, pagamentoMercadoPago.Id, tipo, ct);
         }
 
         // Outros status (pending, in_process, etc.): no-op total — não houve
         // efeito a proteger contra reentrega; o MP reenviará quando o status
-        // mudar de verdade (implementation.md#fluxo, passo 6).
+        // mudar de verdade (implementation.md#fluxo, passo 6). Não registra
+        // EventoId nem persiste: não houve efeito nenhum a proteger.
         return new ResultadoProcessamentoWebhook(
             TipoProcessamentoWebhook.Ignorado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor);
+    }
+
+    /// <summary>
+    /// Sobrescreve <see cref="Pagamento.EventoId"/> com o evento atual,
+    /// persiste via <see cref="IPagamentoRepository.AtualizarAsync"/>, e
+    /// monta o <see cref="ResultadoProcessamentoWebhook"/> do desfecho —
+    /// último passo comum aos ramos <c>approved</c>/<c>refunded</c>/
+    /// <c>rejected</c> de <see cref="AplicarTransicaoAsync"/>.
+    /// </summary>
+    private async Task<ResultadoProcessamentoWebhook> RegistrarEPersistirAsync(
+        Pagamento pagamento, string dataId, TipoProcessamentoWebhook tipo, CancellationToken ct)
+    {
+        pagamento.RegistrarEventoId(dataId);
+        await _pagamentos.AtualizarAsync(pagamento, ct);
+        return new ResultadoProcessamentoWebhook(tipo, dataId, pagamento.Id, pagamento.Valor);
     }
 
     /// <summary>
@@ -171,35 +216,35 @@ public sealed class WebhookMercadoPagoService
             throw new AssinaturaInvalidaException();
         }
 
-        var partes = xSignatureHeader.Split(',', StringSplitOptions.TrimEntries);
-        string? v1 = null;
-        long? ts = null;
-        foreach (var parte in partes)
-        {
-            var separador = parte.IndexOf('=');
-            if (separador <= 0)
-            {
-                continue;
-            }
-
-            var chave = parte[..separador];
-            var valor = parte[(separador + 1)..];
-            if (chave == "ts" && long.TryParse(valor, NumberStyles.None, CultureInfo.InvariantCulture, out var tsParseado))
-            {
-                ts = tsParseado;
-            }
-            else if (chave == "v1")
-            {
-                v1 = valor;
-            }
-        }
-
-        if (ts is null || string.IsNullOrEmpty(v1))
+        var campos = AnalisarCamposDoHeader(xSignatureHeader);
+        if (!campos.TryGetValue("v1", out var v1) || string.IsNullOrEmpty(v1)
+            || !campos.TryGetValue("ts", out var tsTexto)
+            || !long.TryParse(tsTexto, NumberStyles.None, CultureInfo.InvariantCulture, out var ts))
         {
             throw new AssinaturaInvalidaException();
         }
 
-        return (ts.Value, v1);
+        return (ts, v1);
+    }
+
+    /// <summary>
+    /// Separa o header <c>x-signature</c> (<c>chave=valor</c> separados por
+    /// vírgula) em um dicionário — usado por <see cref="ExtrairParametrosDoHeader"/>
+    /// para ler <c>ts</c>/<c>v1</c> sem depender da ordem dos campos.
+    /// </summary>
+    private static Dictionary<string, string> AnalisarCamposDoHeader(string xSignatureHeader)
+    {
+        var campos = new Dictionary<string, string>();
+        foreach (var parte in xSignatureHeader.Split(',', StringSplitOptions.TrimEntries))
+        {
+            var separador = parte.IndexOf('=');
+            if (separador > 0)
+            {
+                campos[parte[..separador]] = parte[(separador + 1)..];
+            }
+        }
+
+        return campos;
     }
 
     /// <summary>
