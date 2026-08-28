@@ -9,7 +9,7 @@ namespace Synclass.Domain.Pagamentos;
 public sealed class SemValorDevidoException : Exception
 {
     public SemValorDevidoException(Guid matriculaId)
-        : base("Não há valor devido para esta matrícula no período selecionado.")
+        : base($"Não há valor devido para a Matrícula {matriculaId} no período selecionado.")
     {
         MatriculaId = matriculaId;
     }

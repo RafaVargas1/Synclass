@@ -10,7 +10,7 @@ namespace Synclass.Domain.Pagamentos;
 public sealed class ProfessorSemContaConectadaException : Exception
 {
     public ProfessorSemContaConectadaException(Guid professorId)
-        : base("Professor ainda não conectou uma conta para receber pagamentos.")
+        : base($"O Professor {professorId} ainda não conectou uma conta para receber pagamentos.")
     {
         ProfessorId = professorId;
     }
