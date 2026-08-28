@@ -14,7 +14,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/200
 - [x] Teste unidade (Domain): `WebhookMercadoPagoService.VerificarAssinaturaAsync` aceita assinatura HMAC-SHA256 válida conforme formato `x-signature` do Mercado Pago (ver `implementation.md#verificação-de-assinatura` — dívida técnica documentada, formato do manifest a confirmar)
 - [x] Implementação mínima do cenário 1: `VerificarAssinaturaAsync` em `WebhookMercadoPagoService`, com `TODO(webhook-signature)` no código apontando a incerteza do formato exato do manifest
 - [x] Teste unidade (Domain): payload adulterado (mudança no `data.id`) tem assinatura rejeitada
-- [ ] Teste unidade (Domain): sem `x-signature` ou com formato malformado (ex: só `ts=`, sem `v1=`) lança `AssinaturaInvalidaException`
+- [x] Teste unidade (Domain): sem `x-signature` ou com formato malformado (ex: só `ts=`, sem `v1=`) lança `AssinaturaInvalidaException`
 - [ ] Implementação: `IPagamentoRepository.ObterPorIdAsync(Guid id, CancellationToken ct)` e `AtualizarAsync(Pagamento pagamento, CancellationToken ct)` — não existem hoje, adicionar na interface e na implementação EF (`PagamentoRepository`)
 - [ ] Implementação: `GeradorDeCheckoutMercadoPago.ObterPagamentoAsync(string paymentId, CancellationToken ct)` — reaproveita o mesmo `HttpClient`/Bearer já configurado (não cria cliente HTTP novo), devolve `PagamentoMercadoPagoDto` (`Id`, `Status`, `ExternalReference`)
 - [ ] Migration: coluna `EventoId` (string?, nullable) em `Pagamentos`

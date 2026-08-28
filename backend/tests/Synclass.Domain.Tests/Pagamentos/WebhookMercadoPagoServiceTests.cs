@@ -17,6 +17,9 @@ public sealed class WebhookMercadoPagoServiceTests
     private const string WebhookSecret = "segredo-de-webhook-teste";
     private static readonly FixedClock Clock = new(new DateTimeOffset(2026, 9, 10, 12, 0, 0, TimeSpan.Zero));
 
+    private const string RequestId = "req-abc-123";
+    private const string Timestamp = "1747353600";
+
     private static WebhookMercadoPagoService CriarServico(
         FakePagamentoRepository? pagamentos = null,
         string webhookSecret = WebhookSecret)
@@ -47,19 +50,20 @@ public sealed class WebhookMercadoPagoServiceTests
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
+    private static string MontarPayloadJson(string dataId) =>
+        $"{{\"type\":\"payment\",\"data\":{{\"id\":\"{dataId}\"}},\"action\":\"payment.created\"}}";
+
     [Fact]
     public async Task VerificarAssinaturaAsync_AssinaturaValida_RetornaTrue()
     {
         var dataId = "123456789";
-        var requestId = "req-abc-123";
-        var timestamp = "1747353600";
-        var payloadJson = $"{{\"type\":\"payment\",\"data\":{{\"id\":\"{dataId}\"}},\"action\":\"payment.created\"}}";
-        var xSignature = MontarXSignature(dataId, requestId, timestamp);
+        var payloadJson = MontarPayloadJson(dataId);
+        var xSignature = MontarXSignature(dataId, RequestId, Timestamp);
 
         var servico = CriarServico();
 
         var aceito = await servico.VerificarAssinaturaAsync(
-            payloadJson, xSignature, requestId, CancellationToken.None);
+            payloadJson, xSignature, RequestId, CancellationToken.None);
 
         aceito.Should().BeTrue();
     }
@@ -72,16 +76,43 @@ public sealed class WebhookMercadoPagoServiceTests
         // HMAC não confere.
         var dataIdAssinado = "123456789";
         var dataIdAdulterado = "987654321";
-        var requestId = "req-abc-123";
-        var timestamp = "1747353600";
-        var payloadJson = $"{{\"type\":\"payment\",\"data\":{{\"id\":\"{dataIdAdulterado}\"}},\"action\":\"payment.created\"}}";
-        var xSignature = MontarXSignature(dataIdAssinado, requestId, timestamp);
+        var payloadJson = MontarPayloadJson(dataIdAdulterado);
+        var xSignature = MontarXSignature(dataIdAssinado, RequestId, Timestamp);
 
         var servico = CriarServico();
 
         var aceito = await servico.VerificarAssinaturaAsync(
-            payloadJson, xSignature, requestId, CancellationToken.None);
+            payloadJson, xSignature, RequestId, CancellationToken.None);
 
         aceito.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task VerificarAssinaturaAsync_SemXSignature_LancaAssinaturaInvalida()
+    {
+        var payloadJson = MontarPayloadJson("123456789");
+
+        var servico = CriarServico();
+
+        var acao = async () => await servico.VerificarAssinaturaAsync(
+            payloadJson, "", RequestId, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<AssinaturaInvalidaException>();
+    }
+
+    [Fact]
+    public async Task VerificarAssinaturaAsync_XSignatureMalformada_SemV1_LancaAssinaturaInvalida()
+    {
+        // Header com apenas ts= (sem o par v1=) — não dá para comparar o hash.
+        var dataId = "123456789";
+        var payloadJson = MontarPayloadJson(dataId);
+        var xSignatureMalformada = $"ts={Timestamp}";
+
+        var servico = CriarServico();
+
+        var acao = async () => await servico.VerificarAssinaturaAsync(
+            payloadJson, xSignatureMalformada, RequestId, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<AssinaturaInvalidaException>();
     }
 }
