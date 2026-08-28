@@ -123,6 +123,21 @@ public sealed class PagamentosWebhookEndpointTests : IClassFixture<WebApplicatio
         return await dbContext.Pagamentos.FirstOrDefaultAsync(p => p.Id == pagamentoId);
     }
 
+    private static HttpRequestMessage MontarRequestDaAssinatura(string dataId, string payloadJson, string? xSignature)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/webhooks/mercado-pago?type=payment&data.id={dataId}")
+        {
+            Content = new StringContent(payloadJson, Encoding.UTF8, "application/json"),
+        };
+        if (xSignature is not null)
+        {
+            request.Headers.Add("x-signature", xSignature);
+        }
+
+        request.Headers.Add("x-request-id", RequestId);
+        return request;
+    }
+
     [Fact]
     public async Task Post_Webhook_ComAssinaturaValidaEApproved_Devolve200EConfirmaPagamento()
     {
@@ -154,21 +169,53 @@ public sealed class PagamentosWebhookEndpointTests : IClassFixture<WebApplicatio
     }
 
     [Fact]
+    public async Task Post_Webhook_MesmoEventoDuasVezes_SegundaVezNaoReprocessaNemLogaDeNovo()
+    {
+        // Reentrega do MESMO data.id: o guard de EventoId (comparado ANTES de
+        // aplicar transição) faz ProcessarEventoAsync retornar Ignorado, que o
+        // controller não loga — o estado do Pagamento (EventoId inalterado)
+        // prova que não houve reprocessamento, logo o log WebhookPagamentoRecebido
+        // só saiu na primeira vez (task.md#inconsistências-encontradas, item 4).
+        var (client, gerador) = CriarClienteEGerador();
+        var pagamentoId = await CriarPagamentoPendenteAsync(_factory);
+        var dataId = "777888999";
+        var payloadJson = MontarPayloadJson(dataId);
+        gerador.PagamentoMercadoPago = new PagamentoMercadoPagoDto
+        {
+            Id = dataId,
+            Status = "approved",
+            ExternalReference = pagamentoId.ToString(),
+        };
+        var xSignature = MontarXSignature(payloadJson, RequestId);
+
+        using (var primeira = MontarRequestDaAssinatura(dataId, payloadJson, xSignature))
+        {
+            var resposta = await client.SendAsync(primeira);
+            resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        using (var segunda = MontarRequestDaAssinatura(dataId, payloadJson, xSignature))
+        {
+            var resposta = await client.SendAsync(segunda);
+            resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        var pagamento = await BuscarPagamentoAsync(_factory, pagamentoId);
+        pagamento!.Status.Should().Be(StatusPagamento.Confirmado);
+        pagamento.EventoId.Should().Be(dataId);
+    }
+
+    [Fact]
     public async Task Post_Webhook_ComAssinaturaInvalida_Devolve400EPagamentoNaoMuda()
     {
         var (client, _) = CriarClienteEGerador();
         var pagamentoId = await CriarPagamentoPendenteAsync(_factory);
         var dataId = "123456789";
         var payloadJson = MontarPayloadJson(dataId);
-
-        using var conteudo = new StringContent(payloadJson, Encoding.UTF8, "application/json");
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/webhooks/mercado-pago?type=payment&data.id={dataId}")
-        {
-            Content = conteudo,
-        };
         // Assinatura calculada com segredo errado → não confere.
-        request.Headers.Add("x-signature", $"ts=1747353600,v1={CalcularHmacSha256Hex("segredo-errado", $"id:{dataId};request-id:{RequestId};ts:1747353600;")}");
-        request.Headers.Add("x-request-id", RequestId);
+        using var request = MontarRequestDaAssinatura(
+            dataId, payloadJson,
+            $"ts=1747353600,v1={CalcularHmacSha256Hex("segredo-errado", $"id:{dataId};request-id:{RequestId};ts:1747353600;")}");
 
         var response = await client.SendAsync(request);
 
@@ -186,13 +233,8 @@ public sealed class PagamentosWebhookEndpointTests : IClassFixture<WebApplicatio
         var dataId = "123456789";
         var payloadJson = MontarPayloadJson(dataId);
 
-        using var conteudo = new StringContent(payloadJson, Encoding.UTF8, "application/json");
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/webhooks/mercado-pago?type=payment&data.id={dataId}")
-        {
-            Content = conteudo,
-        };
         // Sem header x-signature.
-        request.Headers.Add("x-request-id", RequestId);
+        using var request = MontarRequestDaAssinatura(dataId, payloadJson, xSignature: null);
 
         var response = await client.SendAsync(request);
 
