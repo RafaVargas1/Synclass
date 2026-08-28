@@ -306,4 +306,31 @@ public sealed class ConexaoMercadoPagoServiceTests
         // acumularia lixo e confundiria o status "conectado".
         repositorio.Conexoes.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task ObterCollectorIdAsync_CancelamentoDoChamadorNaRenovacao_PropagaSemRemoverRegistro()
+    {
+        // Achado de dev-review do PR #207: catch(Exception) genérico na
+        // renovação tratava até cancelamento do chamador (timeout do
+        // cliente HTTP, desconexão) como token revogado, apagando a
+        // conexão do Professor por um motivo transitório. Cancelamento
+        // deve propagar, não remover o registro.
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new ClienteOAuthQueCancelaNaRenovacao();
+
+        var conexao = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-antigo", Clock);
+        conexao.RegistrarConexao("access-expirado", "refresh-valido", "collector-id", Clock.UtcNow.AddHours(-1), Clock);
+        await repositorio.AdicionarAsync(conexao, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        var chamada = () => servico.ObterCollectorIdAsync(professorId, cts.Token);
+
+        await chamada.Should().ThrowAsync<OperationCanceledException>();
+        repositorio.Conexoes.Should().ContainSingle();
+    }
 }

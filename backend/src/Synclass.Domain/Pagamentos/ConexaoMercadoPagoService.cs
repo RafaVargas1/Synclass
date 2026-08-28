@@ -139,6 +139,13 @@ public sealed class ConexaoMercadoPagoService
         {
             resultado = await _clienteOAuth.RenovarTokenAsync(conexao.RefreshToken, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Cancelamento genuíno do chamador (ex: cliente HTTP
+            // desconectou) — não é falha de renovação, não deve apagar a
+            // conexão do Professor. Deixa propagar como cancelamento normal.
+            throw;
+        }
         catch (Exception)
         {
             await _conexoes.RemoverAsync(conexao, ct);

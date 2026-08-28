@@ -121,10 +121,34 @@ public sealed class ClienteOAuthMercadoPago : IClienteOAuthMercadoPago
         {
             throw;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Cancelamento genuíno do chamador (ex: cliente HTTP desconectou) —
+            // não é falha do Mercado Pago, deixa propagar como cancelamento
+            // normal em vez de virar MercadoPagoApiException.
+            throw;
+        }
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "Falha de rede na chamada ao Mercado Pago para {Endpoint}", EndpointToken);
             throw new MercadoPagoApiException($"Falha na chamada ao Mercado Pago: {EndpointToken}", ex);
+        }
+        catch (OperationCanceledException ex)
+        {
+            // Chegou aqui só quando NÃO foi o ct do chamador que disparou —
+            // é o timeout de 30s do HttpClient (Program.cs), uma falha de
+            // rede com o Mercado Pago, não um cancelamento do cliente.
+            _logger.LogError(ex, "Timeout na chamada ao Mercado Pago para {Endpoint}", EndpointToken);
+            throw new MercadoPagoApiException($"Timeout na chamada ao Mercado Pago: {EndpointToken}", ex);
+        }
+        catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            // Resposta 2xx mas corpo fora do formato esperado (JSON inválido
+            // ou sem os campos access_token/refresh_token/user_id/expires_in)
+            // — contrato quebrado do Mercado Pago, não deve vazar cru pro
+            // cliente (ver implementation.md#erro-cru-do-mercado-pago-não-vaza).
+            _logger.LogError(ex, "Resposta inesperada do Mercado Pago para {Endpoint}", EndpointToken);
+            throw new MercadoPagoApiException($"Resposta inesperada do Mercado Pago: {EndpointToken}", ex);
         }
     }
 }

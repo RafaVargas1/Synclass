@@ -31,11 +31,19 @@ services:
       # origem por padrão, então essa liberação é só para uso local/QA deste
       # container, não para um deploy real futuro (ver appsettings.json).
       Cors__AllowedOrigins__0: "http://localhost:8081"
+      # Sem isso, EncryptingValueConverter (issue #203) persiste as chaves
+      # de criptografia de AccessToken/RefreshToken do Mercado Pago dentro
+      # do container e as perde a cada restart/rebuild — ver
+      # backend/src/Synclass.Infrastructure/Persistence/Configurations/EncryptingValueConverter.cs.
+      MERCADOPAGO_DATAPROTECTION_KEYS_DIR: "/app/data-protection-keys"
     ports:
       - '${API_PORT:-8080}:8080'
+    volumes:
+      - synclass_dataprotection_keys:/app/data-protection-keys
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   synclass_postgres_data:
+  synclass_dataprotection_keys:
