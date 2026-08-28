@@ -37,6 +37,7 @@ describe('secoesPorPapel (issue #77)', () => {
           icone: 'person-add-outline',
         },
         { label: 'Ver valor devido', href: '/professor/prof-1/valor-devido', icone: 'cash-outline' },
+        { label: 'Configurações', href: '/professor/prof-1/configuracoes', icone: 'settings-outline' },
       ]);
     });
   });

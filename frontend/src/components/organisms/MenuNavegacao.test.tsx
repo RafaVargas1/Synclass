@@ -227,7 +227,7 @@ describe('MenuNavegacao (issue #77)', () => {
 
     // O container do dropdown é marcado com testID e é o único elemento com
     // a classe de fundo de superfície + sombra. RNTL não mede pixel: este
-    // teste garante que os 8 itens ("Painel" + 6 seções de Professor + "Meu
+    // teste garante que os 9 itens ("Painel" + 7 seções de Professor + "Meu
     // perfil") são descendentes desse mesmo container — nenhum item fica de
     // fora da caixa com fundo opaco. `within` em vez de andar em `.children`
     // diretamente: a estrutura interna (Link envolto num View, achado de
@@ -247,6 +247,7 @@ describe('MenuNavegacao (issue #77)', () => {
       'secao-link-/professor/abc-123/alunos',
       'secao-link-/professor/abc-123/alunos/adicionar',
       'secao-link-/professor/abc-123/valor-devido',
+      'secao-link-/professor/abc-123/configuracoes',
       'secao-link-/perfil',
     ]);
   });

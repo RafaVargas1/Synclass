@@ -18,7 +18,8 @@ export type NomeIconeSecao =
   | 'cash-outline'
   | 'enter-outline'
   | 'calendar-outline'
-  | 'bar-chart-outline';
+  | 'bar-chart-outline'
+  | 'settings-outline';
 
 export type Secao = { label: string; href: Href; icone: NomeIconeSecao };
 
@@ -63,7 +64,9 @@ export function secoesAluno(): Secao[] {
  * seções usam `/professor/{professorId}/...` — `professorId` é o mesmo
  * `Usuario.Id` do Professor logado (não existe uma entidade `Professor`
  * separada, ver `ProfessoresController.Cadastrar`), por isso só aparecem
- * depois que `usuarioId` resolve via `GET /usuarios/me`.
+ * depois que `usuarioId` resolve via `GET /usuarios/me`. "Configurações"
+ * (issue #203, conexão da conta Mercado Pago) é ação pontual, não do dia a
+ * dia — vai por último, depois de "Ver valor devido".
  */
 export function secoesProfessor(usuarioId: string | undefined): Secao[] {
   if (!usuarioId) {
@@ -85,6 +88,7 @@ export function secoesProfessor(usuarioId: string | undefined): Secao[] {
       icone: 'person-add-outline',
     },
     { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href, icone: 'cash-outline' },
+    { label: 'Configurações', href: `/professor/${usuarioId}/configuracoes` as Href, icone: 'settings-outline' },
   ];
 }
 
