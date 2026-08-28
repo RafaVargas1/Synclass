@@ -80,6 +80,85 @@ public sealed class WebhookMercadoPagoService
     }
 
     /// <summary>
+    /// Aplica as transições de estado no <see cref="Pagamento"/> local a
+    /// partir do evento do Mercado Pago (issue #200), e persiste via
+    /// <see cref="IPagamentoRepository.AtualizarAsync"/>. Recebe o DTO do
+    /// <c>GET /v1/payments/{data.id}</c> (já buscado pelo controller) — o
+    /// <see cref="PagamentoMercadoPagoDto.ExternalReference"/> é o nosso
+    /// <see cref="Pagamento.Id"/>, e só após o GET é que esse valor existe
+    /// (ver implementation.md#fluxo, passos 5-6). Sempre devolve um
+    /// <see cref="ResultadoProcessamentoWebhook"/> (não lança pra pagamento
+    /// inexistente — o controller responde 200 e loga aviso em vez de pedir
+    /// reenvio ao MP, ver implementation.md#edge-points, item 1). A guarda de
+    /// idempotência (<see cref="Pagamento.EventoId"/> == <c>data.id</c>)
+    /// acontece ANTES de qualquer transição, <c>AtualizarAsync</c> ou log do
+    /// controller — um evento já visto não tem efeito nenhum.
+    /// </summary>
+    public async Task<ResultadoProcessamentoWebhook> ProcessarEventoAsync(
+        PagamentoMercadoPagoDto pagamentoMercadoPago, CancellationToken ct)
+    {
+        // Sem external_reference válido não há pagamento local a localizar —
+        // trata como "não encontrado", que o controller responde 200 com aviso.
+        if (!Guid.TryParse(pagamentoMercadoPago.ExternalReference, out var pagamentoId))
+        {
+            return new ResultadoProcessamentoWebhook(
+                TipoProcessamentoWebhook.NaoEncontrado, pagamentoMercadoPago.Id, null, null);
+        }
+
+        var pagamento = await _pagamentos.ObterPorIdAsync(pagamentoId, ct);
+        if (pagamento is null)
+        {
+            return new ResultadoProcessamentoWebhook(
+                TipoProcessamentoWebhook.NaoEncontrado, pagamentoMercadoPago.Id, null, null);
+        }
+
+        // Idempotência: mesmo evento já processado antes — NÃO aplicar
+        // transição, NÃO AtualizarAsync, NÃO logar de novo (guarda ANTES de
+        // qualquer efeito, ver implementation.md#idempotência).
+        if (pagamento.EventoId == pagamentoMercadoPago.Id)
+        {
+            return new ResultadoProcessamentoWebhook(
+                TipoProcessamentoWebhook.Ignorado, pagamentoMercadoPago.Id, pagamento.Id, null);
+        }
+
+        var status = pagamentoMercadoPago.Status;
+        if (status == "approved")
+        {
+            pagamento.Confirmar(_clock);
+            pagamento.RegistrarEventoId(pagamentoMercadoPago.Id);
+            await _pagamentos.AtualizarAsync(pagamento, ct);
+            return new ResultadoProcessamentoWebhook(
+                TipoProcessamentoWebhook.Confirmado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor);
+        }
+
+        if (status is "refunded" or "rejected")
+        {
+            // Só estorna de fato se o pagamento tinha sido Confirmado antes;
+            // nos demais estados é no-op. De qualquer forma EventoId é
+            // sobrescrito, pra reentrega desse MESMO evento não reprocessar.
+            var estavaConfirmado = pagamento.Status == StatusPagamento.Confirmado;
+            if (estavaConfirmado)
+            {
+                pagamento.Estornar(_clock);
+            }
+
+            pagamento.RegistrarEventoId(pagamentoMercadoPago.Id);
+            await _pagamentos.AtualizarAsync(pagamento, ct);
+            return estavaConfirmado
+                ? new ResultadoProcessamentoWebhook(
+                    TipoProcessamentoWebhook.Estornado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor)
+                : new ResultadoProcessamentoWebhook(
+                    TipoProcessamentoWebhook.Ignorado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor);
+        }
+
+        // Outros status (pending, in_process, etc.): no-op total — não houve
+        // efeito a proteger contra reentrega; o MP reenviará quando o status
+        // mudar de verdade (implementation.md#fluxo, passo 6).
+        return new ResultadoProcessamentoWebhook(
+            TipoProcessamentoWebhook.Ignorado, pagamentoMercadoPago.Id, pagamento.Id, pagamento.Valor);
+    }
+
+    /// <summary>
     /// Extrai <c>ts</c> e <c>v1</c> do header <c>x-signature</c> no formato
     /// documentado <c>ts=&lt;timestamp&gt;,v1=&lt;hmac&gt;</c>. Header ausente
     /// ou sem um dos dois campos → <see cref="AssinaturaInvalidaException"/>

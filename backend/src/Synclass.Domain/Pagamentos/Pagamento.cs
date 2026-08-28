@@ -106,6 +106,18 @@ public sealed class Pagamento
     public string? EventoId { get; private set; }
 
     /// <summary>
+    /// Registra que o evento de webhook <paramref name="eventoId"/> (o
+    /// <c>data.id</c> do Mercado Pago, issue #200) foi processado com sucesso
+    /// pra este pagamento, sobrescrevendo <see cref="EventoId"/> — sempre
+    /// reflete o ÚLTIMO evento tratado (ver a doc de <see cref="EventoId"/>
+    /// e implementation.md#entidade-pagamento).
+    /// </summary>
+    public void RegistrarEventoId(string eventoId)
+    {
+        EventoId = eventoId;
+    }
+
+    /// <summary>
     /// Transição <c>Pendente → Confirmado</c> marcando <see cref="ConfirmadoEm"/>.
     /// Idempotente: chamada em estado já <c>Confirmado</c> não muda nada.
     /// </summary>
