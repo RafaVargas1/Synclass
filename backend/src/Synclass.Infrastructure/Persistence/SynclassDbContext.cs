@@ -9,6 +9,7 @@ using Synclass.Domain.Convites;
 using Synclass.Domain.Frequencias;
 using Synclass.Domain.Horarios;
 using Synclass.Domain.Matriculas;
+using Synclass.Domain.Pagamentos;
 using Synclass.Domain.Usuarios;
 
 namespace Synclass.Infrastructure.Persistence;
@@ -38,6 +39,7 @@ public sealed class SynclassDbContext : DbContext
     public DbSet<CancelamentoAula> CancelamentosAula => Set<CancelamentoAula>();
     public DbSet<RegistroFrequencia> RegistrosFrequencia => Set<RegistroFrequencia>();
     public DbSet<CodigoEntradaTurma> CodigosEntradaTurma => Set<CodigoEntradaTurma>();
+    public DbSet<ConexaoMercadoPago> ConexoesMercadoPago => Set<ConexaoMercadoPago>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
