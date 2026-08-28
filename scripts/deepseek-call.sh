@@ -48,12 +48,16 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-USER_PROMPT="$(cat)"
+USER_PROMPT_FILE="$(mktemp)"
+trap 'rm -f "$USER_PROMPT_FILE"' EXIT
+cat > "$USER_PROMPT_FILE"
 
+# --rawfile em vez de --arg: prompts grandes (ex.: diff de PR extenso)
+# excedem ARG_MAX quando passados como argumento de linha de comando.
 BODY="$(jq -n \
   --arg model "$MODEL" \
   --arg system "$SYSTEM_PROMPT" \
-  --arg user "$USER_PROMPT" \
+  --rawfile user "$USER_PROMPT_FILE" \
   '{
     model: $model,
     messages: (
