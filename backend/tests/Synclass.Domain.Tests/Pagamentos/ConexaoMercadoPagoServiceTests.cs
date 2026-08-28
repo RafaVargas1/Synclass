@@ -200,4 +200,82 @@ public sealed class ConexaoMercadoPagoServiceTests
         // Token válido: nenhuma renovação disparada.
         cliente.UltimoRefreshToken.Should().BeNull();
     }
+
+    [Fact]
+    public async Task ObterCollectorIdAsync_ProfessorSemConexao_RetornaNull()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago();
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        // Professor nunca iniciou um fluxo OAuth — nenhum registro de conexão.
+        // O contrato com a Task #199 (implementation.md#contrato-com-a-task-199)
+        // exige null (não exceção) para "Professor não conectado".
+        var collectorId = await servico.ObterCollectorIdAsync(professorId, CancellationToken.None);
+
+        collectorId.Should().BeNull();
+        cliente.UltimoRefreshToken.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ObterCollectorIdAsync_TokenExpirado_RenovaERetornaCollectorId()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago
+        {
+            ResultadoTroca = new TrocaCodePorTokenResultado(
+                "access-renovado", "refresh-renovado", "collector-id", Clock.UtcNow.AddHours(1))
+        };
+
+        // Token a menos de MargemRenovacaoMinutos (5 min) de expirar — a
+        // margem de segurança (implementation.md#edge-points) exige renovar
+        // antes de usar, para evitar corrida de borda.
+        var conexao = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-antigo", Clock);
+        conexao.RegistrarConexao("access-quase-vencido", "refresh-antigo", "collector-id", Clock.UtcNow.AddMinutes(1), Clock);
+        await repositorio.AdicionarAsync(conexao, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var collectorId = await servico.ObterCollectorIdAsync(professorId, CancellationToken.None);
+
+        collectorId.Should().Be("collector-id");
+        // Renovação disparada com o refresh_token antigo; as credenciais
+        // foram substituídas no registro persistido.
+        cliente.UltimoRefreshToken.Should().Be("refresh-antigo");
+        var conexaoPersistida = repositorio.Conexoes.Single();
+        conexaoPersistida.AccessToken.Should().Be("access-renovado");
+        conexaoPersistida.RefreshToken.Should().Be("refresh-renovado");
+        conexaoPersistida.CollectorId.Should().Be("collector-id");
+    }
+
+    [Fact]
+    public async Task ObterCollectorIdAsync_RenovacaoFalha_RetornaNullERemoveRegistro()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new ClienteOAuthQueFalhaNaRenovacao();
+
+        // Token já expirado (passado) — a renovação é obrigatória e, como o
+        // refresh_token foi revogado (refresh também 401), o contrato com a
+        // Task #199 (implementation.md#contrato-com-a-task-199) exige retornar
+        // null e tratar o registro como irrecuperável.
+        var conexao = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-antigo", Clock);
+        conexao.RegistrarConexao("access-expirado", "refresh-revogado", "collector-id", Clock.UtcNow.AddHours(-1), Clock);
+        await repositorio.AdicionarAsync(conexao, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var collectorId = await servico.ObterCollectorIdAsync(professorId, CancellationToken.None);
+
+        collectorId.Should().BeNull();
+        cliente.UltimoRefreshToken.Should().Be("refresh-revogado");
+        // Registro removido: token revogado é irrecuperável, manter só
+        // acumularia lixo e confundiria o status "conectado".
+        repositorio.Conexoes.Should().BeEmpty();
+    }
 }
