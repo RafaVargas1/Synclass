@@ -33,7 +33,7 @@ public sealed class PagamentoServiceTests
         var usuarios = new FakeUsuarioRepository();
         var conexao = conexoes ?? CriarConexao(repositorioConexoes ?? new FakeConexaoMercadoPagoRepository(), usuarios);
         var servicoConsulta = consulta ?? CriarConsulta(matriculas, regras: null, usuarios);
-        return new PagamentoService(matriculas, conexao, servicoConsulta, pagamentos, gerador);
+        return new PagamentoService(matriculas, conexao, servicoConsulta, pagamentos, gerador, Clock);
     }
 
     private static ConexaoMercadoPagoService CriarConexao(
@@ -159,6 +159,48 @@ public sealed class PagamentoServiceTests
     }
 
     /// <summary>
+    /// Já existe um <see cref="Pagamento"/> <c>Confirmado</c> pra mesma
+    /// (MatriculaId, período): <see cref="ConsultaCobrancaService"/> não sabe
+    /// de <see cref="Pagamento"/> (não é alterado por esta Task), então sem
+    /// esta checagem o fluxo criaria uma segunda cobrança pra um período já
+    /// pago. Rejeita com <see cref="SemValorDevidoException"/> (mesma
+    /// exceção de "nada devido" — já pago também é "nada devido") sem gerar
+    /// novo checkout.
+    /// </summary>
+    [Fact]
+    public async Task IniciarAsync_JaConfirmadoNoPeriodo_RejeitaComSemValorDevidoExceptionSemCriarNovoPagamento()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var repositorioConexoes = new FakeConexaoMercadoPagoRepository();
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorConectadoAsync(usuarios, repositorioConexoes);
+        var alunoUsuarioId = Guid.NewGuid();
+        var matricula = Matricula.CriarVinculada(professorId, alunoUsuarioId, Clock);
+        await matriculas.AdicionarAsync(matricula, CancellationToken.None);
+
+        var regras = new FakeRegraDeCobrancaRepository();
+        await regras.SalvarAsync(RegraFixoMensal.Criar(matricula.Id, 300m, Clock), CancellationToken.None);
+        var consulta = CriarConsulta(matriculas, regras, usuarios);
+
+        var pagamentoConfirmado = new Pagamento(
+            Guid.NewGuid(), matricula.Id, alunoUsuarioId, professorId, 300m,
+            Periodo.Inicio, Periodo.FimExclusivo, "https://checkout.mercadopago.com/pago", "pref-pago", Clock);
+        pagamentoConfirmado.Confirmar(Clock);
+        var pagamentos = new FakePagamentoRepository();
+        await pagamentos.AdicionarAsync(pagamentoConfirmado, CancellationToken.None);
+
+        var gerador = new FakeGeradorDeCheckout();
+        var servico = CriarServico(matriculas, pagamentos, gerador, consulta: consulta, repositorioConexoes: repositorioConexoes);
+
+        var acao = () => servico.IniciarAsync(
+            matricula.Id, alunoUsuarioId, Periodo.Inicio, Periodo.FimExclusivo, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<SemValorDevidoException>();
+        gerador.Chamadas.Should().Be(0);
+        pagamentos.Pagamentos.Should().ContainSingle();
+    }
+
+    /// <summary>
     /// Reaproveitamento de um <c>Pendente</c> existente da mesma
     /// (MatriculaId, período): o fluxo (passo 6) devolve o mesmo
     /// <see cref="Pagamento.UrlCheckout"/> e <see cref="Pagamento.Id"/> sem
@@ -186,7 +228,7 @@ public sealed class PagamentoServiceTests
 
         var pagamentoPendente = new Pagamento(
             Guid.NewGuid(), matricula.Id, alunoUsuarioId, professorId, 300m,
-            Periodo.Inicio, Periodo.FimExclusivo, "https://checkout.mercadopago.com/pendente", "pref-pendente");
+            Periodo.Inicio, Periodo.FimExclusivo, "https://checkout.mercadopago.com/pendente", "pref-pendente", Clock);
         var pagamentos = new FakePagamentoRepository();
         await pagamentos.AdicionarAsync(pagamentoPendente, CancellationToken.None);
 

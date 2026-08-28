@@ -1,3 +1,5 @@
+using Synclass.Domain.Common;
+
 namespace Synclass.Domain.Pagamentos;
 
 /// <summary>
@@ -9,7 +11,10 @@ namespace Synclass.Domain.Pagamentos;
 /// implementation.md#entidade-pagamento). O <see cref="Valor"/> é congelado
 /// na criação — nunca recalcular ao confirmar. <see cref="Confirmar"/>/
 /// <see cref="Falhar"/> são idempotentes: o webhook de #200 pode chegar
-/// duplicado sem mudar estado já terminal.
+/// duplicado sem mudar estado já terminal. Todos os timestamps vêm de
+/// <see cref="IClock"/> (nunca <c>DateTime.UtcNow</c> direto — ver
+/// docs/spec/code-style.md#dependências), mesmo padrão de
+/// <see cref="Convites.Convite"/>/<see cref="Alocacoes.AlocacaoHorario"/>.
 /// </summary>
 public sealed class Pagamento
 {
@@ -28,7 +33,8 @@ public sealed class Pagamento
         DateOnly inicio,
         DateOnly fimExclusivo,
         string urlCheckout,
-        string referenciaExterna)
+        string referenciaExterna,
+        IClock clock)
     {
         if (valor <= 0)
         {
@@ -45,7 +51,7 @@ public sealed class Pagamento
         Status = StatusPagamento.Pendente;
         UrlCheckout = urlCheckout;
         ReferenciaExterna = referenciaExterna;
-        CriadoEm = DateTime.UtcNow;
+        CriadoEm = clock.UtcNow.UtcDateTime;
     }
 
     public Guid Id { get; private set; }
@@ -86,7 +92,7 @@ public sealed class Pagamento
     /// Transição <c>Pendente → Confirmado</c> marcando <see cref="ConfirmadoEm"/>.
     /// Idempotente: chamada em estado já <c>Confirmado</c> não muda nada.
     /// </summary>
-    public void Confirmar()
+    public void Confirmar(IClock clock)
     {
         if (Status is StatusPagamento.Confirmado)
         {
@@ -94,14 +100,14 @@ public sealed class Pagamento
         }
 
         Status = StatusPagamento.Confirmado;
-        ConfirmadoEm = DateTime.UtcNow;
+        ConfirmadoEm = clock.UtcNow.UtcDateTime;
     }
 
     /// <summary>
     /// Transição para <c>Falhou</c> marcando <see cref="FalhouEm"/>.
     /// Idempotente: <c>Falhou</c> ou <c>Confirmado</c> já terminal não muda.
     /// </summary>
-    public void Falhar()
+    public void Falhar(IClock clock)
     {
         if (Status is StatusPagamento.Falhou or StatusPagamento.Confirmado)
         {
@@ -109,6 +115,6 @@ public sealed class Pagamento
         }
 
         Status = StatusPagamento.Falhou;
-        FalhouEm = DateTime.UtcNow;
+        FalhouEm = clock.UtcNow.UtcDateTime;
     }
 }

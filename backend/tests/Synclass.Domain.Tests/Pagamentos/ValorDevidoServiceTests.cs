@@ -17,6 +17,7 @@ public sealed class ValorDevidoServiceTests
 {
     private static readonly DateOnly Inicio = new(2026, 8, 1);
     private static readonly DateOnly FimExclusivo = new(2026, 9, 1);
+    private static readonly FixedClock Clock = new(new DateTimeOffset(2026, 8, 25, 12, 0, 0, TimeSpan.Zero));
 
     private static ValorDevidoService CriarServico(FakePagamentoRepository pagamentos)
     {
@@ -32,8 +33,8 @@ public sealed class ValorDevidoServiceTests
     {
         var pagamento = new Pagamento(
             Guid.NewGuid(), matriculaId, Guid.NewGuid(), Guid.NewGuid(), 300m,
-            Inicio, FimExclusivo, "https://checkout.mercadopago.com/x", "pref-x");
-        pagamento.Confirmar();
+            Inicio, FimExclusivo, "https://checkout.mercadopago.com/x", "pref-x", Clock);
+        pagamento.Confirmar(Clock);
         return pagamento;
     }
 
@@ -76,8 +77,8 @@ public sealed class ValorDevidoServiceTests
         var pagamentos = new FakePagamentoRepository();
         var pagamentoDeOutroPeriodo = new Pagamento(
             Guid.NewGuid(), matriculaId, Guid.NewGuid(), Guid.NewGuid(), 300m,
-            new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 1), "https://checkout.mercadopago.com/x", "pref-x");
-        pagamentoDeOutroPeriodo.Confirmar();
+            new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 1), "https://checkout.mercadopago.com/x", "pref-x", Clock);
+        pagamentoDeOutroPeriodo.Confirmar(Clock);
         await pagamentos.AdicionarAsync(pagamentoDeOutroPeriodo, CancellationToken.None);
         var servico = CriarServico(pagamentos);
 
@@ -101,7 +102,7 @@ public sealed class ValorDevidoServiceTests
         var pagamentos = new FakePagamentoRepository();
         var pagamentoPendente = new Pagamento(
             Guid.NewGuid(), matriculaId, Guid.NewGuid(), Guid.NewGuid(), 300m,
-            Inicio, FimExclusivo, "https://checkout.mercadopago.com/x", "pref-x");
+            Inicio, FimExclusivo, "https://checkout.mercadopago.com/x", "pref-x", Clock);
         await pagamentos.AdicionarAsync(pagamentoPendente, CancellationToken.None);
         var servico = CriarServico(pagamentos);
 

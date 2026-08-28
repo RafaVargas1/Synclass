@@ -173,11 +173,12 @@ public sealed class ValorDevidoAlunoEndpointTests : IClassFixture<WebApplication
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
+        IClock clock = new AdvanceableClock();
         var pagamento = new Pagamento(
             Guid.NewGuid(), matriculaId, alunoUsuarioId, professorId, 300m,
             new DateOnly(2026, 8, 1), new DateOnly(2026, 9, 1),
-            "https://checkout.mercadopago.com/pref-pago", "pref-pago");
-        pagamento.Confirmar();
+            "https://checkout.mercadopago.com/pref-pago", "pref-pago", clock);
+        pagamento.Confirmar(clock);
         dbContext.Pagamentos.Add(pagamento);
         await dbContext.SaveChangesAsync();
     }

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Synclass.Domain.Pagamentos;
+using Synclass.Domain.Tests.Fakes;
 
 namespace Synclass.Domain.Tests.Pagamentos;
 
@@ -11,6 +12,8 @@ namespace Synclass.Domain.Tests.Pagamentos;
 /// </summary>
 public sealed class PagamentoTests
 {
+    private static readonly FixedClock Clock = new(new DateTimeOffset(2026, 9, 10, 12, 0, 0, TimeSpan.Zero));
+
     private static Pagamento CriarPagamento(
         decimal valor = 120m,
         DateOnly? inicio = null,
@@ -25,7 +28,8 @@ public sealed class PagamentoTests
             inicio ?? new DateOnly(2026, 9, 1),
             fimExclusivo ?? new DateOnly(2026, 10, 1),
             "https://checkout.mercadopago.com/abc",
-            "pref-id-teste");
+            "pref-id-teste",
+            Clock);
     }
 
     [Fact]
@@ -46,7 +50,7 @@ public sealed class PagamentoTests
     {
         var pagamento = CriarPagamento();
 
-        pagamento.Confirmar();
+        pagamento.Confirmar(Clock);
 
         pagamento.Status.Should().Be(StatusPagamento.Confirmado);
         pagamento.ConfirmadoEm.Should().NotBeNull();
@@ -58,7 +62,7 @@ public sealed class PagamentoTests
     {
         var pagamento = CriarPagamento();
 
-        pagamento.Falhar();
+        pagamento.Falhar(Clock);
 
         pagamento.Status.Should().Be(StatusPagamento.Falhou);
         pagamento.FalhouEm.Should().NotBeNull();
@@ -69,10 +73,10 @@ public sealed class PagamentoTests
     public void Confirmar_JaConfirmado_NoOpNaoMudaTimestamp()
     {
         var pagamento = CriarPagamento();
-        pagamento.Confirmar();
+        pagamento.Confirmar(Clock);
         var confirmadoEmOriginal = pagamento.ConfirmadoEm;
 
-        pagamento.Confirmar();
+        pagamento.Confirmar(Clock);
 
         pagamento.Status.Should().Be(StatusPagamento.Confirmado);
         pagamento.ConfirmadoEm.Should().Be(confirmadoEmOriginal);
@@ -82,9 +86,9 @@ public sealed class PagamentoTests
     public void Falhar_JaConfirmado_NoOpNaoSobrescreveConfirmadoEm()
     {
         var pagamento = CriarPagamento();
-        pagamento.Confirmar();
+        pagamento.Confirmar(Clock);
 
-        pagamento.Falhar();
+        pagamento.Falhar(Clock);
 
         pagamento.Status.Should().Be(StatusPagamento.Confirmado);
         pagamento.ConfirmadoEm.Should().NotBeNull();
@@ -95,10 +99,10 @@ public sealed class PagamentoTests
     public void Falhar_JaFalhou_NoOpNaoMudaTimestamp()
     {
         var pagamento = CriarPagamento();
-        pagamento.Falhar();
+        pagamento.Falhar(Clock);
         var falhouEmOriginal = pagamento.FalhouEm;
 
-        pagamento.Falhar();
+        pagamento.Falhar(Clock);
 
         pagamento.Status.Should().Be(StatusPagamento.Falhou);
         pagamento.FalhouEm.Should().Be(falhouEmOriginal);
