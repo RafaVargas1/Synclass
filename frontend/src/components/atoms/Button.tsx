@@ -1,4 +1,8 @@
-import { Pressable, Text, type PressableProps } from 'react-native';
+import type { Icon as IconeFosforo } from 'phosphor-react-native';
+import { Pressable, Text, useColorScheme, type PressableProps } from 'react-native';
+
+import { IconeAcaoAcessivel } from '@/components/atoms/IconeAcaoAcessivel';
+import { Colors } from '@/theme/tokens';
 
 export type ButtonProps = PressableProps & {
   label: string;
@@ -9,6 +13,19 @@ export type ButtonProps = PressableProps & {
    * `docs/spec/ux-heuristics.md#agrupamento-visual-gestalt`).
    */
   variante?: 'primario' | 'secundario';
+  /**
+   * Ícone opcional (Phosphor), renderizado antes do `label` (issue #202,
+   * ex: `icone={CalendarPlus}` em `HorarioVagoCard`). Sem esta prop, o
+   * botão renderiza exatamente como antes — nenhuma tela existente muda
+   * visualmente. Sempre acompanhado do `label` como texto visível, então
+   * fica oculto da árvore de acessibilidade (`accessibilityElementsHidden`)
+   * — o nome acessível do botão continua vindo só do `label`.
+   */
+  icone?: IconeFosforo;
+  /** `testID` do ícone opcional, seguindo a convenção `icone-acao-<ação>`
+   *  já usada em `HorarioCard`/`MenuNavegacao`. Só tem efeito quando
+   *  `icone` é passado. */
+  testIDIcone?: string;
 };
 
 const ClassesPorVariante = {
@@ -20,16 +37,24 @@ const ClassesPorVariante = {
  * Átomo de botão. Não conhece regra de negócio — apenas recebe um label e
  * repassa os demais props de Pressable (ex: onPress, disabled).
  */
-export function Button({ label, disabled, variante = 'primario', ...pressableProps }: ButtonProps) {
+export function Button({
+  label,
+  disabled,
+  variante = 'primario',
+  icone: Icone,
+  testIDIcone = 'button-icone',
+  ...pressableProps
+}: ButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
-      className={`items-center border-2 px-four py-three active:opacity-80 ${ClassesPorVariante[variante]} ${
+      className={`flex-row items-center justify-center gap-one border-2 px-four py-three active:opacity-80 ${ClassesPorVariante[variante]} ${
         disabled ? 'opacity-40' : ''
       }`}
       {...pressableProps}
     >
+      {Icone ? <IconeDoBotao Icone={Icone} variante={variante} testID={testIDIcone} /> : null}
       <Text
         className={`text-base font-semibold ${
           variante === 'secundario' ? 'text-text dark:text-dark-text' : 'text-white'
@@ -39,4 +64,25 @@ export function Button({ label, disabled, variante = 'primario', ...pressablePro
       </Text>
     </Pressable>
   );
+}
+
+/** Ícone opcional do `Button` (issue #202) — extraído para manter a função
+ *  `Button` dentro do limite de tamanho de `code-style.md` (4-20 linhas).
+ *  Resolve a cor por variante e delega a renderização acessível ao átomo
+ *  compartilhado `IconeAcaoAcessivel` (mesmo usado em `HorarioCard`).
+ */
+function IconeDoBotao({
+  Icone,
+  variante,
+  testID,
+}: {
+  Icone: IconeFosforo;
+  variante: 'primario' | 'secundario';
+  testID: string;
+}) {
+  const escuro = useColorScheme() === 'dark';
+  const paleta = escuro ? Colors.dark : Colors.light;
+  const cor = variante === 'secundario' ? paleta.text : '#FFFFFF';
+
+  return <IconeAcaoAcessivel Icone={Icone} cor={cor} testID={testID} />;
 }

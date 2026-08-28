@@ -1,3 +1,4 @@
+import { CheckCircle, X } from 'phosphor-react-native';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
@@ -58,12 +59,16 @@ export function AulaProximaCard({ aulaProxima, confirmado, onCancelar, onConfirm
         {!confirmado ? (
           <Button
             label="Confirmar presença"
+            icone={CheckCircle}
+            testIDIcone="icone-acao-confirmar-presenca"
             accessibilityLabel={`Confirmar presença na aula de ${descricaoAula}`}
             onPress={() => onConfirmar(aulaProxima.horarioId, aulaProxima.data)}
           />
         ) : null}
         <Button
           label="Cancelar"
+          icone={X}
+          testIDIcone="icone-acao-cancelar"
           disabled={!aulaProxima.podeCancelar}
           accessibilityLabel={`Cancelar aula de ${descricaoAula}`}
           onPress={() => onCancelar(aulaProxima.horarioId, aulaProxima.data)}

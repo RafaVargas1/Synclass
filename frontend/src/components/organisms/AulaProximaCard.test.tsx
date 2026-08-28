@@ -92,4 +92,22 @@ describe('AulaProximaCard', () => {
     expect(screen.getByText(/Presença confirmada/)).toBeTruthy();
     expect(screen.queryByText('Confirmar presença')).toBeNull();
   });
+
+  it('shows the icone-acao-cancelar and icone-acao-confirmar-presenca icons (issue #202)', async () => {
+    await render(
+      <AulaProximaCard
+        aulaProxima={aulaProximaCancelavel}
+        confirmado={false}
+        onCancelar={jest.fn()}
+        onConfirmar={jest.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByTestId('icone-acao-cancelar', { includeHiddenElements: true }),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId('icone-acao-confirmar-presenca', { includeHiddenElements: true }),
+    ).toBeTruthy();
+  });
 });

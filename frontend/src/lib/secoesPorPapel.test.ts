@@ -4,14 +4,14 @@ describe('secoesPorPapel (issue #77)', () => {
   describe('secoesAluno', () => {
     it('expõe as telas do Aluno sem depender de usuarioId, ordenadas por frequência de uso ("Minhas aulas" primeiro)', () => {
       expect(secoesAluno()).toEqual([
-        { label: 'Minhas aulas', href: '/aluno/minhas-aulas', icone: 'calendar-outline' },
-        { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma', icone: 'enter-outline' },
+        { label: 'Minhas aulas', href: '/aluno/minhas-aulas', icone: 'minhas-aulas' },
+        { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma', icone: 'entrar-turma' },
         {
           label: 'Ver histórico de frequência',
           href: '/aluno/historico-frequencia',
-          icone: 'bar-chart-outline',
+          icone: 'historico',
         },
-        { label: 'Ver valor devido', href: '/aluno/valor-devido', icone: 'cash-outline' },
+        { label: 'Ver valor devido', href: '/aluno/valor-devido', icone: 'valor-devido' },
       ]);
     });
   });
@@ -23,21 +23,21 @@ describe('secoesPorPapel (issue #77)', () => {
 
     it('inclui as seções com segmento dinâmico depois que usuarioId resolve, ordenadas por frequência de uso ("Fazer chamada" primeiro)', () => {
       expect(secoesProfessor('prof-1')).toEqual([
-        { label: 'Fazer chamada', href: '/professor/prof-1/chamada', icone: 'clipboard-outline' },
-        { label: 'Gerenciar horários', href: '/professor/prof-1/horarios', icone: 'time-outline' },
+        { label: 'Fazer chamada', href: '/professor/prof-1/chamada', icone: 'chamada' },
+        { label: 'Gerenciar horários', href: '/professor/prof-1/horarios', icone: 'horarios' },
         {
           label: 'Alocar Aluno em horário',
           href: '/professor/prof-1/alocacoes',
-          icone: 'link-outline',
+          icone: 'alocacoes',
         },
-        { label: 'Meus Alunos', href: '/professor/prof-1/alunos', icone: 'people-outline' },
+        { label: 'Meus Alunos', href: '/professor/prof-1/alunos', icone: 'alunos' },
         {
           label: 'Adicionar Aluno',
           href: '/professor/prof-1/alunos/adicionar',
-          icone: 'person-add-outline',
+          icone: 'adicionar-aluno',
         },
-        { label: 'Ver valor devido', href: '/professor/prof-1/valor-devido', icone: 'cash-outline' },
-        { label: 'Configurações', href: '/professor/prof-1/configuracoes', icone: 'settings-outline' },
+        { label: 'Ver valor devido', href: '/professor/prof-1/valor-devido', icone: 'valor-devido' },
+        { label: 'Configurações', href: '/professor/prof-1/configuracoes', icone: 'configuracoes' },
       ]);
     });
   });
