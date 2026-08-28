@@ -8,9 +8,12 @@
     "scheme": "synclass",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "br.com.synclass.app",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "br.com.synclass.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#14161A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
