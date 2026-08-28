@@ -40,6 +40,7 @@ public sealed class SynclassDbContext : DbContext
     public DbSet<RegistroFrequencia> RegistrosFrequencia => Set<RegistroFrequencia>();
     public DbSet<CodigoEntradaTurma> CodigosEntradaTurma => Set<CodigoEntradaTurma>();
     public DbSet<ConexaoMercadoPago> ConexoesMercadoPago => Set<ConexaoMercadoPago>();
+    public DbSet<Pagamento> Pagamentos => Set<Pagamento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

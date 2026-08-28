@@ -26,7 +26,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/199
 - [x] Implementação mínima: `PagamentoService.IniciarAsync` completo + `IPagamentoRepository`
 - [x] Teste unidade (Domain): `ValorDevidoService.DescontarPagamentosConfirmadosAsync` remove Matrículas com `Pagamento` `Confirmado` (match exato `Inicio`/`FimExclusivo`)
 - [x] Implementação mínima: passo de desconto no serviço do valor devido (leitura, não altera `ConsultaCobrancaService`)
-- [ ] Migration: tabela `Pagamentos` (Fluent API, nome timestamp+PascalCase)
+- [x] Migration: tabela `Pagamentos` (Fluent API, nome timestamp+PascalCase)
 - [ ] Teste integração (Infrastructure): `IGeradorDeCheckoutMercadoPago` serializa payload correto e parseia resposta da API real do MP (contra contrato, mock HTTP)
 - [ ] Implementação: `GeradorDeCheckoutMercadoPago` (HttpClient puro, `AddHttpClient` em Program.cs)
 - [ ] Teste integração (Api): `POST /alunos/matriculas/{matriculaId:guid}/pagamentos` 201 → `{ pagamentoId, urlCheckout, valor }`
@@ -37,4 +37,3 @@ Card: https://github.com/RafaVargas1/Synclass/issues/199
 - [ ] Componente frontend: três telas mínimas `frontend/src/app/aluno/pagamento/{confirmado,falhou,pendente}.tsx` (destino das `back_urls` do checkout) — copie exatamente o desenho de `implementation.md#frontend-telas-de-retorno-do-checkout-novas-mínimas` (mesmo padrão de tela simples de `frontend/src/app/professor/[professorId]/configuracoes.tsx`, sem chamada de API, só mensagem fixa + link de volta pra `/aluno/valor-devido`)
 - [ ] Log estruturado: `PagamentoIniciado` (valores, sem dado de cartão) — `PagamentoConfirmado`/`PagamentoFalhou` ficam para #200
 - [ ] Suíte de testes completa (Domain + Infrastructure + Api) verde antes do PR
-
