@@ -34,7 +34,7 @@ public sealed class WhatsAppNotificadorTests
     }
 
     [Fact]
-    public async Task EnviarCodigoOtpAsync_CanalRespode_LogaOtpEnviadoSemCodigoEmTextoPuro()
+    public async Task EnviarCodigoOtpAsync_CanalResponde_LogaOtpEnviadoSemCodigoEmTextoPuro()
     {
         var http = new FakeWhatsAppHttpClientSucesso();
         var logger = new FakeLogger<WhatsAppNotificador>();
@@ -75,6 +75,23 @@ public sealed class WhatsAppNotificadorTests
         var evento = logger.Eventos.Should().ContainSingle(e => e.Linha.StartsWith("OtpEnvioFalhou")).Which;
         evento.Linha.Should().NotContain(Codigo);
         NenhumArgumentoContemOCodigo(evento.Argumentos);
+    }
+
+    [Fact]
+    public async Task EnviarCodigoOtpAsync_ContatoEmail_LancaOtpEnvioExceptionSemChamarProvedor()
+    {
+        var http = new FakeWhatsAppHttpClientSucesso();
+        var logger = new FakeLogger<WhatsAppNotificador>();
+        var notificador = new WhatsAppNotificador(http, logger);
+
+        var acao = () => notificador.EnviarCodigoOtpAsync("maria@exemplo.com", Codigo, CancellationToken.None);
+
+        // Contato válido (e-mail), mas sem canal de envio implementado ainda
+        // (issue #193 cobre só WhatsApp): 502 (OtpEnvioException), nunca 400
+        // (ContatoInvalidoException) — o contato em si não está errado.
+        var excecao = await acao.Should().ThrowAsync<OtpEnvioException>();
+        excecao.Which.Motivo.Should().Contain("não está disponível");
+        http.MensagensEnviadas.Should().BeEmpty();
     }
 
     private static void NenhumArgumentoContemOCodigo(IReadOnlyList<object?> argumentos)

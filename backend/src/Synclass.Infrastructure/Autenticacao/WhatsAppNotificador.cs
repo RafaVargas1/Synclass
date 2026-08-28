@@ -25,6 +25,18 @@ public sealed class WhatsAppNotificador : INotificador
 
     public async Task EnviarCodigoOtpAsync(string contatoNormalizado, string codigo, CancellationToken cancellationToken)
     {
+        if (Contato.IdentificarTipo(contatoNormalizado) != TipoContato.Telefone)
+        {
+            // Contato válido (ex: e-mail), mas o único canal implementado até
+            // aqui é WhatsApp (issue #193) — OtpEnvioException (502), não
+            // ContatoInvalidoException (400): o contato em si está correto,
+            // só não há canal de envio disponível para o tipo dele
+            // (dev-review do PR #206: sem essa distinção, TelefoneUtils
+            // lançava ContatoInvalidoException e o usuário via "contato
+            // inválido" para um contato que na verdade era válido).
+            throw new OtpEnvioException("Login por WhatsApp não está disponível para contas cadastradas com e-mail.");
+        }
+
         var numeroE164 = TelefoneUtils.NormalizarParaE164(contatoNormalizado);
         var mensagem = $"Seu código de acesso ao Synclass é: {codigo}. Ele expira em 10 minutos.";
         var contatoMascarado = MascaradorDeContato.Mascarar(numeroE164);
