@@ -83,9 +83,15 @@ public sealed class MercadoPagoController : ControllerBase
 
         try
         {
-            await _conexaoService.ProcessarCallbackAsync(code, state, cancellationToken);
+            // O controller é quem loga o evento com os dados reais do retorno:
+            // o Domain não injeta ILogger e o endpoint é anônimo (sem claim
+            // pra obter ProfessorId aqui) — o service resolve o Professor
+            // internamente pelo state e devolve ProfessorId/CollectorId (ver
+            // implementation.md#decisão-de-design-logging-de-professorconectoumercadopago-sem-violar-camadas).
+            var (professorId, collectorId) = await _conexaoService.ProcessarCallbackAsync(code, state, cancellationToken);
             _logger.LogInformation(
-                "ProfessorConectouMercadoPago {TrackId} {Fluxo}", trackId, state.Substring(0, Math.Min(8, state.Length)));
+                "ProfessorConectouMercadoPago {TrackId} {ProfessorId} {CollectorId}",
+                trackId, professorId, collectorId);
             return Content(PaginaContaConectada, "text/html");
         }
         catch (StateInvalidoException ex)

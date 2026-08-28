@@ -36,7 +36,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/203
 - [x] Teste de fumaça (Api): `GET /professores/mercado-pago/conectar` retorna `200` com `{ url }` para Professor autenticado
 - [x] Teste de fumaça (Api): `GET /professores/mercado-pago/callback?code=...&state=...` retorna `200` e persiste conexão
 - [x] Teste de fumaça (Api): `GET /professores/mercado-pago/conectar` retorna `404` quando `UsuarioNaoEncontradoException` é lançada para Professor inexistente
-- [ ] Ajustar `ProcessarCallbackAsync` para retornar `(Guid ProfessorId, string CollectorId)` em vez de `void`; teste unidade (Domain) cobrindo o retorno
+- [x] Ajustar `ProcessarCallbackAsync` para retornar `(Guid ProfessorId, string CollectorId)` em vez de `void`; teste unidade (Domain) cobrindo o retorno
 - [ ] Log estruturado: `MercadoPagoController.Callback` loga `ProfessorConectouMercadoPago` com `ProfessorId`/`CollectorId`/`TrackId` do retorno de `ProcessarCallbackAsync` — substitui o log atual do controller (ver `implementation.md#decisão-de-design-logging-de-professorconectoumercadopago-sem-violar-camadas`)
 - [ ] Cliente de API novo: `frontend/src/lib/api/mercadoPago.ts` (`conectarMercadoPago`) — copie exatamente o código de `implementation.md#frontend-tela-de-configurações-do-professor`
 - [ ] Componente frontend: tela nova `frontend/src/app/professor/[professorId]/configuracoes.tsx` com o botão "Conectar conta do Mercado Pago" — copie exatamente o código de `implementation.md#frontend-tela-de-configurações-do-professor` (JSX completo já escrito lá, não redesenhe)
