@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,6 +27,7 @@ using Synclass.Domain.Pagamentos;
 using Synclass.Domain.Usuarios;
 using Synclass.Infrastructure.Alunos;
 using Synclass.Infrastructure.Autenticacao;
+using Synclass.Infrastructure.Checkout;
 using Synclass.Infrastructure.Common;
 using Synclass.Infrastructure.Convites;
 using Synclass.Infrastructure.Http;
@@ -223,6 +225,21 @@ builder.Services.AddScoped(sp => new ConexaoMercadoPagoService(
     sp.GetRequiredService<IClienteOAuthMercadoPago>(),
     sp.GetRequiredService<IClock>(),
     redirectUriMercadoPago));
+
+// Pagamento do valor devido via checkout Mercado Pago (issue #199) — ver
+// docs/specs/199-aluno-paga-valor-devido/implementation.md. O HttpClient do
+// checkout é registrado aqui (mesmo padrão do ClienteOAuthMercadoPago acima):
+// BaseAddress na api do Mercado Pago (com fallback para produção) e header de
+// autenticação com o AccessToken da aplicação MP (diferente do token OAuth do
+// Professor — é o token da própria aplicação que criou o OAuth em #203, usado
+// pra criar a preferência de checkout).
+builder.Services.AddHttpClient<IGeradorDeCheckout, GeradorDeCheckoutMercadoPago>((sp, httpClient) =>
+{
+    httpClient.BaseAddress = new Uri(sp.GetRequiredService<IConfiguration>()["MercadoPago:ApiBaseUrl"] ?? "https://api.mercadopago.com");
+    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+        "Bearer", sp.GetRequiredService<IConfiguration>()["MercadoPago:AccessToken"]);
+    httpClient.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // Rate limiting dos endpoints anônimos de aceite de convite (issue #89) —
 // ver docs/specs/89-rate-limit-convites/implementation.md. Política
