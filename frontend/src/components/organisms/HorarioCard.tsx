@@ -1,13 +1,14 @@
 import { Link } from 'expo-router';
+import { ClipboardText, Trash, X } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useColorScheme, View } from 'react-native';
 
 import { ChipSelector } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
 import { TipoMarcacao, type Horario } from '@/lib/api/horarios';
 import { NomesDiaSemana } from '@/lib/diaSemana';
 import { OpcoesTipoMarcacao } from '@/lib/opcoesTipoMarcacao';
-import { AlvoDeToqueMinimo } from '@/theme/tokens';
+import { AlvoDeToqueMinimo, Colors } from '@/theme/tokens';
 
 export type HorarioCardProps = {
   professorId: string;
@@ -84,9 +85,10 @@ export function HorarioCard({
             <Pressable
               accessibilityRole="button"
               onPress={() => setEditando(false)}
-              className="items-center justify-center"
+              className="flex-row items-center justify-center gap-one"
               style={AlvoDeToqueMinimo}
             >
+              <CancelarEdicaoIcone />
               <Text className="text-sm font-semibold text-text-secondary dark:text-dark-text-secondary">
                 Cancelar
               </Text>
@@ -119,6 +121,26 @@ export function HorarioCard({
   );
 }
 
+/** Ícone "X" do botão "Cancelar" da edição inline (issue #202) — mesmo
+ *  glifo usado em `AulaProximaCard` para a mesma ação (critério de aceite
+ *  3: mesma ação, mesmo glifo em toda tela). Cor `text-secondary`, mesma
+ *  do texto do botão, resolvida do tema como os demais ícones desta Task.
+ */
+function CancelarEdicaoIcone() {
+  const escuro = useColorScheme() === 'dark';
+  const paleta = escuro ? Colors.dark : Colors.light;
+  return (
+    <X
+      testID="icone-acao-cancelar"
+      size={20}
+      weight="regular"
+      color={paleta['text-secondary']}
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+    />
+  );
+}
+
 function CardCorpo({
   professorId,
   horario,
@@ -128,6 +150,10 @@ function CardCorpo({
   horario: Horario;
   onRemover: (id: string) => void;
 }) {
+  const escuro = useColorScheme() === 'dark';
+  const paleta = escuro ? Colors.dark : Colors.light;
+  const corPrimaria = paleta.primary;
+  const corErro = paleta.error;
   const horaFormatada = horario.horaInicio.slice(0, 5);
   const rotuloLimiteAlunos =
     horario.limiteAlunos > 1 ? `Grupo até ${horario.limiteAlunos}` : 'Individual';
@@ -153,9 +179,17 @@ function CardCorpo({
         <Link href={`/professor/${professorId}/horarios/${horario.id}/chamada`} asChild>
           <Pressable
             accessibilityRole="button"
-            className="items-center justify-center"
+            className="flex-row items-center justify-center gap-one"
             style={AlvoDeToqueMinimo}
           >
+            <ClipboardText
+              testID="icone-acao-chamada"
+              size={20}
+              weight="regular"
+              color={corPrimaria}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
             <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
               Chamada
             </Text>
@@ -164,9 +198,17 @@ function CardCorpo({
         <Pressable
           accessibilityRole="button"
           onPress={() => onRemover(horario.id)}
-          className="items-center justify-center"
+          className="flex-row items-center justify-center gap-one"
           style={AlvoDeToqueMinimo}
         >
+          <Trash
+            testID="icone-acao-remover"
+            size={20}
+            weight="regular"
+            color={corErro}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
           <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
         </Pressable>
       </View>

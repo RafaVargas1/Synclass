@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 
 import { TipoMarcacao } from '@/lib/api/horarios';
 
@@ -94,6 +94,26 @@ describe('HorarioCard', () => {
     expect(screen.getByText('Editar política').parent).toHaveStyle({ minWidth: 44, minHeight: 44 });
   });
 
+  it('os botões Chamada e Remover de CardCorpo contêm cada um um ícone próprio (issue #202)', async () => {
+    await renderComCard();
+
+    // Ícone dentro do botão "Chamada" (o `parent` do Text é o Pressable do
+    // botão) e dentro do botão "Remover". `includeHiddenElements: true`
+    // porque o ícone é `accessibilityElementsHidden`/`importantForAccessibility="no"`
+    // de propósito (o texto ao lado já é o nome acessível do botão) — sem
+    // essa opção, RNTL exclui o ícone das queries por padrão.
+    expect(
+      within(screen.getByText('Chamada').parent!).getByTestId('icone-acao-chamada', {
+        includeHiddenElements: true,
+      }),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByText('Remover').parent!).getByTestId('icone-acao-remover', {
+        includeHiddenElements: true,
+      }),
+    ).toBeTruthy();
+  });
+
   describe('modo de edição de política (issue #71)', () => {
     it('switches to edit mode with a ChipSelector when "Editar política" is pressed', async () => {
       await renderComCard();
@@ -134,6 +154,18 @@ describe('HorarioCard', () => {
 
       expect(onAlterarPolitica).not.toHaveBeenCalled();
       expect(screen.queryByText('Salvar')).toBeNull();
+    });
+
+    it('o botão Cancelar do bloco de edição inline contém um ícone X próprio (issue #202)', async () => {
+      await renderComCard();
+
+      await fireEvent.press(screen.getByText('Editar política'));
+
+      expect(
+        within(screen.getByText('Cancelar').parent!).getByTestId('icone-acao-cancelar', {
+          includeHiddenElements: true,
+        }),
+      ).toBeTruthy();
     });
   });
 
