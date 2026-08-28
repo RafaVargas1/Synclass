@@ -74,9 +74,14 @@ public sealed class ConexaoMercadoPagoService
     /// internamente pelo <paramref name="state"/> no registro persistido —
     /// <c>state</c> que não bate (ou expirou) lança
     /// <see cref="StateInvalidoException"/> antes de qualquer troca de
-    /// <c>code</c>.
+    /// <c>code</c>. Devolve o <c>ProfessorId</c> e o <c>CollectorId</c> do
+    /// registro persistido para o controller logar
+    /// <c>ProfessorConectouMercadoPago</c> com dados reais — o Domain não
+    /// injeta <c>ILogger</c> (ver
+    /// implementation.md#decisão-de-design-logging-de-professorconectoumercadopago-sem-violar-camadas).
     /// </summary>
-    public async Task ProcessarCallbackAsync(string code, string state, CancellationToken ct)
+    public async Task<(Guid ProfessorId, string CollectorId)> ProcessarCallbackAsync(
+        string code, string state, CancellationToken ct)
     {
         var conexao = await _conexoes.ObterPorStateAsync(state, ct);
         if (conexao is null)
@@ -90,6 +95,8 @@ public sealed class ConexaoMercadoPagoService
         conexao.RegistrarConexao(
             resultado.AccessToken, resultado.RefreshToken, resultado.CollectorId, resultado.ExpiraEm, _clock);
         await _conexoes.AtualizarAsync(conexao, ct);
+
+        return (conexao.ProfessorId, conexao.CollectorId);
     }
 
     /// <summary>

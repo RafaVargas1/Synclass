@@ -179,6 +179,34 @@ public sealed class ConexaoMercadoPagoServiceTests
     }
 
     [Fact]
+    public async Task ProcessarCallbackAsync_StateValido_RetornaProfessorIdECollectorId()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago
+        {
+            ResultadoTroca = new TrocaCodePorTokenResultado(
+                "access-novo", "refresh-novo", "collector-id", Clock.UtcNow.AddHours(1))
+        };
+
+        // Fluxo em andamento válido (mesmo Professor, dentro da janela). O
+        // endpoint de callback é anônimo (sem claim), então o controller
+        // depende do retorno pra logar ProfessorConectouMercadoPago com
+        // ProfessorId/CollectorId reais (ver implementation.md#decisão-de-design-logging-de-professorconectoumercadopago-sem-violar-camadas).
+        var conexao = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-valido", Clock);
+        await repositorio.AdicionarAsync(conexao, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var (professorIdRetornado, collectorIdRetornado) =
+            await servico.ProcessarCallbackAsync("code-do-mp", "state-valido", CancellationToken.None);
+
+        professorIdRetornado.Should().Be(professorId);
+        collectorIdRetornado.Should().Be("collector-id");
+    }
+
+    [Fact]
     public async Task ObterCollectorIdAsync_ProfessorConectado_RetornaCollectorId()
     {
         var usuarios = new FakeUsuarioRepository();
