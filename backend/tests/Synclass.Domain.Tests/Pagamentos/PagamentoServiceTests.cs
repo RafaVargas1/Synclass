@@ -95,4 +95,32 @@ public sealed class PagamentoServiceTests
         pagamentos.Pagamentos.Should().BeEmpty();
         gerador.Chamadas.Should().Be(0);
     }
+
+    /// <summary>
+    /// Professor sem conta Mercado Pago conectada: o collector_id não é
+    /// resolvido (passo 4 do fluxo de implementation.md — contrato fechado
+    /// com a #203 retorna null) e o fluxo para antes de criar/reaproveitar
+    /// qualquer pagamento ou gerar checkout.
+    /// </summary>
+    [Fact]
+    public async Task IniciarAsync_ProfessorSemContaConectada_RejeitaComProfessorSemContaConectadaExceptionSemCriarPagamento()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var repositorioConexoes = new FakeConexaoMercadoPagoRepository(); // vazio → professor não conectado
+        var alunoUsuarioId = Guid.NewGuid();
+        var professorId = Guid.NewGuid();
+        var matricula = Matricula.CriarVinculada(professorId, alunoUsuarioId, Clock);
+        await matriculas.AdicionarAsync(matricula, CancellationToken.None);
+
+        var pagamentos = new FakePagamentoRepository();
+        var gerador = new FakeGeradorDeCheckout();
+        var servico = CriarServico(matriculas, pagamentos, gerador, repositorioConexoes: repositorioConexoes);
+
+        var acao = () => servico.IniciarAsync(
+            matricula.Id, alunoUsuarioId, Periodo.Inicio, Periodo.FimExclusivo, CancellationToken.None);
+
+        await acao.Should().ThrowAsync<ProfessorSemContaConectadaException>();
+        pagamentos.Pagamentos.Should().BeEmpty();
+        gerador.Chamadas.Should().Be(0);
+    }
 }

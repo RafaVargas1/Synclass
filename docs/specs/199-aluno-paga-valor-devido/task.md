@@ -19,7 +19,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/199
 - [x] Teste unidade (Domain): confirmar/falhar um `Pagamento` já `Confirmado` é no-op (idempotente, sem exceção)
 - [x] Implementação mínima: transições de estado + timestamps de transição
 - [x] Teste unidade (Domain): `PagamentoService.IniciarAsync` rejeita Matrícula de outro Aluno (`MatriculaNaoPertenceAoAlunoException`, mapeada para 404)
-- [ ] Teste unidade (Domain): `IniciarAsync` rejeita Professor sem conta conectada (`ProfessorSemContaConectadaException`), sem criar `Pagamento`
+- [x] Teste unidade (Domain): `IniciarAsync` rejeita Professor sem conta conectada (`ProfessorSemContaConectadaException`), sem criar `Pagamento`
 - [ ] Teste unidade (Domain): `IniciarAsync` rejeita valor zero no período (`SemValorDevidoException` — mapeia pra 400)
 - [ ] Teste unidade (Domain): `IniciarAsync` reaproveita `Pagamento` `Pendente` existente da mesma (MatriculaId, período), devolve a mesma `UrlCheckout`, sem chamar `IGeradorDeCheckout`
 - [ ] Teste unidade (Domain): `IniciarAsync` cria novo `Pagamento` com `Valor` congelado quando não há pendente
