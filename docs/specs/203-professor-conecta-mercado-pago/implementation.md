@@ -51,8 +51,7 @@
 - **Antes** (não existe — sem precedente):
   - (caminho inteiro é novo)
 - **Depois** (desejado):
-  - `MercadoPagoController.Conectar()`: chama `ConexaoMercadoPagoService.ConectarAsync(professorIdParaOperacao, ct)`, retorna `Ok(new { url })`.
-  - **professorId vem da decisão `implementacion.md#autorização-e-vínculo-com-o-usuário-autenticado`** — ver seção dedicada abaixo (depende do desenho escolhido).
+  - `MercadoPagoController.Conectar()`: `professorId = User.GetUsuarioId()` (extension method existente, `backend/src/Synclass.Api/ClaimsPrincipalExtensions.cs`) — chama `ConexaoMercadoPagoService.ConectarAsync(professorId, ct)`, retorna `Ok(new { url })`. Ver "Decisão de design: autorização e vínculo com o usuário autenticado" abaixo para o porquê de não usar parâmetro de rota.
 
 ### `GET /professores/mercado-pago/callback` (auth: `[AllowAnonymous]` — ver justificativa abaixo)
 
