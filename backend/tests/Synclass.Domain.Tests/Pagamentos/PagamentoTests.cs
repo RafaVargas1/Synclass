@@ -40,4 +40,77 @@ public sealed class PagamentoTests
         pagamento.ConfirmadoEm.Should().BeNull();
         pagamento.FalhouEm.Should().BeNull();
     }
+
+    [Fact]
+    public void Confirmar_Pendente_MarcaConfirmadoComConfirmadoEm()
+    {
+        var pagamento = CriarPagamento();
+
+        pagamento.Confirmar();
+
+        pagamento.Status.Should().Be(StatusPagamento.Confirmado);
+        pagamento.ConfirmadoEm.Should().NotBeNull();
+        pagamento.FalhouEm.Should().BeNull();
+    }
+
+    [Fact]
+    public void Falhar_Pendente_MarcaFalhouComFalhouEm()
+    {
+        var pagamento = CriarPagamento();
+
+        pagamento.Falhar();
+
+        pagamento.Status.Should().Be(StatusPagamento.Falhou);
+        pagamento.FalhouEm.Should().NotBeNull();
+        pagamento.ConfirmadoEm.Should().BeNull();
+    }
+
+    [Fact]
+    public void Confirmar_JaConfirmado_NoOpNaoMudaTimestamp()
+    {
+        var pagamento = CriarPagamento();
+        pagamento.Confirmar();
+        var confirmadoEmOriginal = pagamento.ConfirmadoEm;
+
+        pagamento.Confirmar();
+
+        pagamento.Status.Should().Be(StatusPagamento.Confirmado);
+        pagamento.ConfirmadoEm.Should().Be(confirmadoEmOriginal);
+    }
+
+    [Fact]
+    public void Falhar_JaConfirmado_NoOpNaoSobrescreveConfirmadoEm()
+    {
+        var pagamento = CriarPagamento();
+        pagamento.Confirmar();
+
+        pagamento.Falhar();
+
+        pagamento.Status.Should().Be(StatusPagamento.Confirmado);
+        pagamento.ConfirmadoEm.Should().NotBeNull();
+        pagamento.FalhouEm.Should().BeNull();
+    }
+
+    [Fact]
+    public void Falhar_JaFalhou_NoOpNaoMudaTimestamp()
+    {
+        var pagamento = CriarPagamento();
+        pagamento.Falhar();
+        var falhouEmOriginal = pagamento.FalhouEm;
+
+        pagamento.Falhar();
+
+        pagamento.Status.Should().Be(StatusPagamento.Falhou);
+        pagamento.FalhouEm.Should().Be(falhouEmOriginal);
+    }
+
+    [Fact]
+    public void CriarPagamento_ValorZero_RejeitaComArgumentException()
+    {
+        var acao = () => CriarPagamento(valor: 0m);
+
+        acao.Should()
+            .Throw<ArgumentException>()
+            .WithMessage("*Valor deve ser maior que zero*");
+    }
 }
