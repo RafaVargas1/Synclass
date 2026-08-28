@@ -16,7 +16,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/200
 - [x] Teste unidade (Domain): payload adulterado (mudança no `data.id`) tem assinatura rejeitada
 - [x] Teste unidade (Domain): sem `x-signature` ou com formato malformado (ex: só `ts=`, sem `v1=`) lança `AssinaturaInvalidaException`
 - [x] Implementação: `IPagamentoRepository.ObterPorIdAsync(Guid id, CancellationToken ct)` e `AtualizarAsync(Pagamento pagamento, CancellationToken ct)` — adicionados à interface, à implementação EF (`PagamentoRepository` — padrão `ConexaoMercadoPagoRepository`) e ao `FakePagamentoRepository` (compilação dos testes); exercitados pelos testes de integração do webhook (itens mais abaixo)
-- [ ] Implementação: `GeradorDeCheckoutMercadoPago.ObterPagamentoAsync(string paymentId, CancellationToken ct)` — reaproveita o mesmo `HttpClient`/Bearer já configurado (não cria cliente HTTP novo), devolve `PagamentoMercadoPagoDto` (`Id`, `Status`, `ExternalReference`)
+- [x] Implementação: `GeradorDeCheckoutMercadoPago.ObterPagamentoAsync(string paymentId, CancellationToken ct)` — reutiliza o mesmo `HttpClient`/Bearer (GET `/v1/payments/{id}`, sem Authorization manual — token dos DefaultRequestHeaders), devolve `PagamentoMercadoPagoDto` (`Id`, `Status`, `ExternalReference`), `null` em resposta não-2xx; testes em `GeradorDeCheckoutMercadoPagoTests` (sucesso parseia DTO + reusa Bearer, não-2xx → null)
 - [ ] Migration: coluna `EventoId` (string?, nullable) em `Pagamentos`
 - [ ] Teste unidade (Domain): `Pagamento.Estornar(IClock)` só age quando `Status == Confirmado` (vira `Estornado`); nos demais estados é no-op
 - [ ] Implementação: `Estornar(IClock)` na entidade `Pagamento` + valor `Estornado` no enum `StatusPagamento`
