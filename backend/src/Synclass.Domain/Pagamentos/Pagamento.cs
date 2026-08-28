@@ -134,4 +134,28 @@ public sealed class Pagamento
         Status = StatusPagamento.Falhou;
         FalhouEm = clock.UtcNow.UtcDateTime;
     }
+
+    /// <summary>
+    /// Transição <c>Confirmado → Estornado</c> (issue #200): pagamento que
+    /// tinha sido confirmado foi estornado/reembolsado pelo Mercado Pago
+    /// (evento <c>refunded</c>/<c>rejected</c> depois de <c>approved</c>). Só
+    /// age quando <c>Status == Confirmado</c> — a regra "o valor volta a
+    /// aparecer como devido" só faz sentido se o pagamento tinha sido de fato
+    /// confirmado antes; nos demais estados (<c>Pendente</c>, <c>Falhou</c>, já
+    /// <c>Estornado</c>) é no-op. Não toca em <see cref="ConfirmadoEm"/> —
+    /// esse timestamp continua registrando quando o pagamento foi confirmado
+    /// de fato, não o estorno. <c>clock</c> é recebido por consistência de
+    /// assinatura com <see cref="Confirmar"/>/<see cref="Falhar"/> (issue
+    /// #200), mas a transição não registra timestamp próprio (ver
+    /// implementation.md#entidade-pagamento).
+    /// </summary>
+    public void Estornar(IClock clock)
+    {
+        if (Status is not StatusPagamento.Confirmado)
+        {
+            return;
+        }
+
+        Status = StatusPagamento.Estornado;
+    }
 }
