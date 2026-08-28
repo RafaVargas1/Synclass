@@ -3,6 +3,7 @@ import { ClipboardText, Trash, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, Text, useColorScheme, View } from 'react-native';
 
+import { IconeAcaoAcessivel } from '@/components/atoms/IconeAcaoAcessivel';
 import { ChipSelector } from '@/components/molecules/ChipSelector';
 import { FormField } from '@/components/molecules/FormField';
 import { TipoMarcacao, type Horario } from '@/lib/api/horarios';
@@ -129,14 +130,7 @@ export function HorarioCard({
 function CancelarEdicaoIcone() {
   const escuro = useColorScheme() === 'dark';
   const paleta = escuro ? Colors.dark : Colors.light;
-  return (
-    // `IconProps` do phosphor-react-native não declara props de
-    // acessibilidade do RN — a View em volta esconde o ícone da árvore de
-    // acessibilidade, o texto "Cancelar" continua sendo o nome acessível.
-    <View testID="icone-acao-cancelar" accessibilityElementsHidden importantForAccessibility="no">
-      <X size={20} weight="regular" color={paleta.textSecondary} />
-    </View>
-  );
+  return <IconeAcaoAcessivel Icone={X} cor={paleta.textSecondary} testID="icone-acao-cancelar" />;
 }
 
 function CardCorpo({
@@ -180,9 +174,7 @@ function CardCorpo({
             className="flex-row items-center justify-center gap-one"
             style={AlvoDeToqueMinimo}
           >
-            <View testID="icone-acao-chamada" accessibilityElementsHidden importantForAccessibility="no">
-              <ClipboardText size={20} weight="regular" color={corPrimaria} />
-            </View>
+            <IconeAcaoAcessivel Icone={ClipboardText} cor={corPrimaria} testID="icone-acao-chamada" />
             <Text className="text-sm font-semibold text-primary dark:text-dark-primary">
               Chamada
             </Text>
@@ -194,9 +186,7 @@ function CardCorpo({
           className="flex-row items-center justify-center gap-one"
           style={AlvoDeToqueMinimo}
         >
-          <View testID="icone-acao-remover" accessibilityElementsHidden importantForAccessibility="no">
-            <Trash size={20} weight="regular" color={corErro} />
-          </View>
+          <IconeAcaoAcessivel Icone={Trash} cor={corErro} testID="icone-acao-remover" />
           <Text className="text-sm font-semibold text-error dark:text-dark-error">Remover</Text>
         </Pressable>
       </View>

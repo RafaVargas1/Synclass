@@ -1,6 +1,7 @@
 import type { Icon as IconeFosforo } from 'phosphor-react-native';
-import { Pressable, Text, useColorScheme, View, type PressableProps } from 'react-native';
+import { Pressable, Text, useColorScheme, type PressableProps } from 'react-native';
 
+import { IconeAcaoAcessivel } from '@/components/atoms/IconeAcaoAcessivel';
 import { Colors } from '@/theme/tokens';
 
 export type ButtonProps = PressableProps & {
@@ -67,10 +68,8 @@ export function Button({
 
 /** Ícone opcional do `Button` (issue #202) — extraído para manter a função
  *  `Button` dentro do limite de tamanho de `code-style.md` (4-20 linhas).
- *  `IconProps` do phosphor-react-native não declara props de acessibilidade
- *  do RN (`accessibilityElementsHidden`, `importantForAccessibility`) — a
- *  `View` em volta é quem esconde o ícone da árvore de acessibilidade, o
- *  `label` do `Button` continua sendo o único nome acessível.
+ *  Resolve a cor por variante e delega a renderização acessível ao átomo
+ *  compartilhado `IconeAcaoAcessivel` (mesmo usado em `HorarioCard`).
  */
 function IconeDoBotao({
   Icone,
@@ -85,9 +84,5 @@ function IconeDoBotao({
   const paleta = escuro ? Colors.dark : Colors.light;
   const cor = variante === 'secundario' ? paleta.text : '#FFFFFF';
 
-  return (
-    <View testID={testID} accessibilityElementsHidden importantForAccessibility="no">
-      <Icone size={20} weight="regular" color={cor} />
-    </View>
-  );
+  return <IconeAcaoAcessivel Icone={Icone} cor={cor} testID={testID} />;
 }
