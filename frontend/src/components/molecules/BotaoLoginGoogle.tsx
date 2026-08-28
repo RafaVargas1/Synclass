@@ -85,6 +85,12 @@ export function BotaoLoginGoogle({ onAutenticado, onCadastroPendente }: BotaoLog
         accessibilityRole="button"
         onPress={handlePress}
         disabled={carregando}
+        // Exceção documentada ao guardrail "sem fundo branco puro" e à
+        // paleta de `theme/palette.js` (ver docs/spec/design-system.md#cor,
+        // nota sobre BotaoLoginGoogle) — cores exatas (#747775, #8E918F,
+        // #131314, #1E1F20, #1F1F1F, #E3E3E3, bg-white) exigidas pela
+        // diretriz de marca do Google para o botão "Sign in with Google"
+        // (issue #202).
         className={`w-full flex-row items-center justify-center gap-three border border-[#747775] bg-white px-four py-three active:bg-[#F8F9FA] dark:border-[#8E918F] dark:bg-[#131314] dark:active:bg-[#1E1F20] ${
           carregando ? 'opacity-60' : ''
         }`}

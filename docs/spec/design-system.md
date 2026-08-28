@@ -106,6 +106,12 @@ Não adicionar cor de "sucesso" enquanto nenhuma tela precisar dela — hoje
 Quando surgir a necessidade, um verde equivalente em saturação ao `primary`
 atual, nunca pastel.
 
+**Exceção registrada**: `BotaoLoginGoogle.tsx` usa cores hex fixas fora
+desta paleta (incluindo `bg-white`, que violaria o guardrail de fundo
+branco puro) porque replica o botão oficial "Sign in with Google", cuja
+marca exige cores exatas — decisão tomada na issue #202, não repetir esse
+padrão em nenhum outro componente.
+
 ## Tipografia
 
 No nativo (iOS/Android), `theme/tokens.ts` já usa a fonte de sistema
