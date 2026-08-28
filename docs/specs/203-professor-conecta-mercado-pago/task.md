@@ -10,8 +10,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/203
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` retorna URL de autorização quando Professor não possui conexão ativa
-- [ ] Implementação mínima do cenário 1: `ConexaoMercadoPagoService` + `IConexaoMercadoPagoRepository`
+- [x] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` retorna URL de autorização quando Professor não possui conexão ativa
+- [x] Implementação mínima do cenário 1: `ConexaoMercadoPagoService` + `IConexaoMercadoPagoRepository`
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` gera URL de autorização com `state` e `redirect_uri` corretos
 - [ ] Implementação mínima do cenário 2: geração da URL no Service
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` chamado por um Professor que já tem conexão ativa **reaproveita o registro existente** (atualiza `State`/`StateExpiraEm`, não cria segundo registro nem exige desconectar antes) — ver `implementation.md#reconexão`
