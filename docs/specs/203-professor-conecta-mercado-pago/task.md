@@ -6,6 +6,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/203
 
 1. **Assinatura de `IClienteOAuthMercadoPago`**: `implementation.md` tinha duas versões conflitantes. Resolvido para a Versão B (`MontarUrlAutorizacao` **síncrono**, sem `CancellationToken`, sem `ObterRedirectUriAsync`) — `redirectUri` vem de `IConfiguration["MercadoPago:RedirectUri"]` (constante fixa, lida com falha explícita no startup), nunca de forma assíncrona. Use exatamente o bloco de código da seção "Assinatura do `IClienteOAuthMercadoPago` — contrato" como fonte da verdade.
 2. **`IClock`**: já existe no repo (`backend/src/Synclass.Domain/Common/IClock.cs`, `backend/src/Synclass.Infrastructure/Common/SystemClock.cs`, já registrado em `Program.cs`) — não recriar, só injetar no `ConexaoMercadoPagoService`.
+3. **`ProcessarCallbackAsync` não recebe `professorId`**: o endpoint de callback é `[AllowAnonymous]` (redirect vem do navegador do Professor, sem claim de sessão do Synclass disponível) — não há como o controller obter um `professorId` pra passar ao service. Assinatura corrigida para `ProcessarCallbackAsync(string code, string state, CancellationToken ct)`: o Professor é resolvido internamente via `IConexaoMercadoPagoRepository.ObterPorStateAsync(state)`, que já existia no contrato do repositório. `state` que não bate com nenhum registro (ou com `StateExpiraEm` vencido) lança `StateInvalidoException` antes de qualquer troca de `code`.
 
 ## Ordem de execução
 
@@ -17,7 +18,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/203
 - [ ] Implementação mínima do cenário 2b: `ConectarAsync` faz upsert sobre `ObterPorProfessorAsync` em vez de sempre `AdicionarAsync`
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` rejeita `state` expirado (mais de 10 minutos desde `ConectarAsync`) com `StateInvalidoException`
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` persiste conexão quando `code` é trocado com sucesso
-- [ ] Implementação mínima do cenário 3: `ProcessarCallbackAsync` (valida `state`, chama `IClienteOAuthMercadoPago`, persiste via repositório)
+- [ ] Implementação mínima do cenário 3: `ProcessarCallbackAsync(string code, string state, CancellationToken ct)` — resolve o registro via `ObterPorStateAsync(state)`, valida, chama `IClienteOAuthMercadoPago`, persiste via repositório
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` rejeita `state` inválido (`StateInvalidoException`)
 - [ ] Implementação mínima do cenário 4: validação de `state` no `ProcessarCallbackAsync`
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` retorna `collector_id` para Professor conectado

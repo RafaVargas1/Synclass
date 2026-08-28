@@ -27,7 +27,7 @@
 
 - `ConexaoMercadoPagoService` (service novo, orquestra use cases — siga o padrão de `backend/src/Synclass.Domain/Configuracoes/ConfiguracaoProfessorService.cs`):
   - `Task<string> ConectarAsync(Guid professorId, CancellationToken ct)` — gera `state`, cria/reaproveita registro com `State`/`StateExpiraEm` (ver "Reconexão"), chama `IClienteOAuthMercadoPago.MontarUrlAutorizacao(state, redirectUri)` (síncrono — só monta a string da URL), retorna a URL.
-  - `Task ProcessarCallbackAsync(Guid professorId, string code, string state, CancellationToken ct)` — valida `state` (lança `StateInvalidoException`), troca `code` por token, persiste.
+  - `Task ProcessarCallbackAsync(string code, string state, CancellationToken ct)` — **sem `professorId`**: o endpoint de callback é anônimo (ver "Decisão de design: rota fixa e URL de redirecionamento"), não há claim de usuário disponível nesse request. O Professor é resolvido internamente via `IConexaoMercadoPagoRepository.ObterPorStateAsync(state)` — se não encontrar registro com aquele `state` (ou `StateExpiraEm` no passado), lança `StateInvalidoException` antes de qualquer troca de `code`. Só depois de validar o `state` é que troca `code` por token e persiste no mesmo registro encontrado.
   - `Task<string?> ObterCollectorIdAsync(Guid professorId, CancellationToken ct)` — retorna `null` se não conectado/token inválido; renova se expirado.
 
 - `TrocaCodePorTokenResultado` (record novo, no Domain — resultado da troca de `code`): `AccessToken`, `RefreshToken`, `CollectorId` (do `user_id` do payload), `ExpiraEm`.
@@ -54,14 +54,15 @@
   - `MercadoPagoController.Conectar()`: chama `ConexaoMercadoPagoService.ConectarAsync(professorIdParaOperacao, ct)`, retorna `Ok(new { url })`.
   - **professorId vem da decisão `implementacion.md#autorização-e-vínculo-com-o-usuário-autenticado`** — ver seção dedicada abaixo (depende do desenho escolhido).
 
-### `GET /professores/mercado-pago/callback` (auth: `[Authorize(Roles = "Professor")]`)
+### `GET /professores/mercado-pago/callback` (auth: `[AllowAnonymous]` — ver justificativa abaixo)
 
 - **Antes** (não existe — sem precedente):
   - (caminho inteiro é novo)
 - **Depois** (desejado):
   - **Rota fixa para o Mercado Pago redirecionar** — ver decisão em `implementation.md#rota-fixa-e-url-de-redirecionamento`. Não pode exigir o token de autenticação do Synclass, pois o redirect vem do navegador do Professor para dentro do fluxo OAuth.
-  - `MercadoPagoController.Callback([FromQuery] string code, [FromQuery] string state, CancellationToken ct)`: valida `state`, chama `ConexaoMercadoPagoService.ProcessarCallbackAsync`, retorna `Ok` (página simples "conta conectada" em HTML mínimo — sem precedente de renderização de HTML no repo; decisão: retornar `Content("<html>...")` com `text/html` — template literal em C# 12, ver `implementation.md#resposta-do-callback`).
+  - `MercadoPagoController.Callback([FromQuery] string code, [FromQuery] string state, CancellationToken ct)`: chama `ConexaoMercadoPagoService.ProcessarCallbackAsync(code, state, ct)` (sem `professorId` — o service resolve o Professor pelo `state`, ver assinatura acima), retorna `Ok` (página simples "conta conectada" em HTML mínimo — sem precedente de renderização de HTML no repo; decisão: retornar `Content("<html>...")` com `text/html` — template literal em C# 12, ver `implementation.md#resposta-do-callback`).
   - Em caso de `StateInvalidoException`: `BadRequest` com mensagem clara.
+  - **Este endpoint não leva `[Authorize]`** — é `[AllowAnonymous]` explícito (com comentário no código dizendo por quê, para não ser confundido com endpoint desprotegido por descuido), consistente com "Decisão de design: rota fixa e URL de redirecionamento".
 
 ## Modelo de dados
 
