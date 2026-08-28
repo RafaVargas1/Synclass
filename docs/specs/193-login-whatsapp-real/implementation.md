@@ -12,6 +12,28 @@ regra de negócio, critério de aceite ou decisão de produto muda — só a
 localização/nome das classes e o mecanismo de erro HTTP, para bater com o
 código real.
 
+## Correções do dev-review (PR #206, 2026-08-27)
+
+- **`WhatsApp:ApiKey` → `WhatsApp:AccountSid` + `WhatsApp:AuthToken`**: a
+  Basic Auth do Twilio exige os dois valores separados por `:`
+  (`AccountSid:AuthToken`), não um único token — `WhatsAppHttpClient` e a
+  validação de startup em `Program.cs` foram ajustados. `AccountSid` também
+  monta a `BaseAddress` da Messages API
+  (`https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json`),
+  eliminando o placeholder fixo `.../Accounts/ACCOUNT_SID/...` que nunca
+  falhava explicitamente no startup quando a config real estivesse ausente.
+- **`AssinaturaDigital:ModoDev`**: precisa estar `true` em
+  `appsettings.Development.json` (adicionado) para que `dotnet watch run`
+  local continue usando `NotificadorDeLog` sem credenciais reais do Twilio
+  — sem isso, a flag nunca era `true` em lugar nenhum e `WhatsAppNotificador`
+  virava o único caminho possível, quebrando o login local. `docker-compose.yml`
+  continua sem a flag de propósito (simula produção).
+- **Contato tipo e-mail**: `WhatsAppNotificador` agora checa
+  `Contato.IdentificarTipo` antes de normalizar para E.164; contato
+  não-telefone lança `OtpEnvioException` (502, "canal não disponível") em
+  vez de deixar `TelefoneUtils` lançar `ContatoInvalidoException` (400,
+  "contato inválido") para um contato que na verdade é válido.
+
 ## Entidades e classes afetadas
 
 ### Backend — Domain
