@@ -27,7 +27,7 @@
 
 - `ConexaoMercadoPagoService` (service novo, orquestra use cases — siga o padrão de `backend/src/Synclass.Domain/Configuracoes/ConfiguracaoProfessorService.cs`):
   - `Task<string> ConectarAsync(Guid professorId, CancellationToken ct)` — gera `state`, cria/reaproveita registro com `State`/`StateExpiraEm` (ver "Reconexão"), chama `IClienteOAuthMercadoPago.MontarUrlAutorizacao(state, redirectUri)` (síncrono — só monta a string da URL), retorna a URL.
-  - `Task ProcessarCallbackAsync(string code, string state, CancellationToken ct)` — **sem `professorId`**: o endpoint de callback é anônimo (ver "Decisão de design: rota fixa e URL de redirecionamento"), não há claim de usuário disponível nesse request. O Professor é resolvido internamente via `IConexaoMercadoPagoRepository.ObterPorStateAsync(state)` — se não encontrar registro com aquele `state` (ou `StateExpiraEm` no passado), lança `StateInvalidoException` antes de qualquer troca de `code`. Só depois de validar o `state` é que troca `code` por token e persiste no mesmo registro encontrado.
+  - `Task<(Guid ProfessorId, string CollectorId)> ProcessarCallbackAsync(string code, string state, CancellationToken ct)` — **sem `professorId`** como parâmetro de entrada: o endpoint de callback é anônimo (ver "Decisão de design: rota fixa e URL de redirecionamento"), não há claim de usuário disponível nesse request. O Professor é resolvido internamente via `IConexaoMercadoPagoRepository.ObterPorStateAsync(state)` — se não encontrar registro com aquele `state` (ou `StateExpiraEm` no passado), lança `StateInvalidoException` antes de qualquer troca de `code`. Só depois de validar o `state` é que troca `code` por token e persiste no mesmo registro encontrado. **Retorna `(ProfessorId, CollectorId)`** do registro persistido — ver "Decisão de design: logging de `ProfessorConectouMercadoPago` sem violar camadas" para o porquê (controller loga o evento, Domain não injeta `ILogger`).
   - `Task<string?> ObterCollectorIdAsync(Guid professorId, CancellationToken ct)` — retorna `null` se não conectado/token inválido; renova se expirado.
 
 - `TrocaCodePorTokenResultado` (record novo, no Domain — resultado da troca de `code`): `AccessToken`, `RefreshToken`, `CollectorId` (do `user_id` do payload), `ExpiraEm`.
@@ -59,7 +59,7 @@
   - (caminho inteiro é novo)
 - **Depois** (desejado):
   - **Rota fixa para o Mercado Pago redirecionar** — ver decisão em `implementation.md#rota-fixa-e-url-de-redirecionamento`. Não pode exigir o token de autenticação do Synclass, pois o redirect vem do navegador do Professor para dentro do fluxo OAuth.
-  - `MercadoPagoController.Callback([FromQuery] string code, [FromQuery] string state, CancellationToken ct)`: chama `ConexaoMercadoPagoService.ProcessarCallbackAsync(code, state, ct)` (sem `professorId` — o service resolve o Professor pelo `state`, ver assinatura acima), retorna `Ok` (página simples "conta conectada" em HTML mínimo — sem precedente de renderização de HTML no repo; decisão: retornar `Content("<html>...")` com `text/html` — template literal em C# 12, ver `implementation.md#resposta-do-callback`).
+  - `MercadoPagoController.Callback([FromQuery] string code, [FromQuery] string state, CancellationToken ct)`: `var (professorId, collectorId) = await service.ProcessarCallbackAsync(code, state, ct);` (sem `professorId` como parâmetro de entrada — o service resolve o Professor pelo `state`, ver assinatura acima), loga `ProfessorConectouMercadoPago` com o retorno, retorna `Ok` (página simples "conta conectada" em HTML mínimo — sem precedente de renderização de HTML no repo; decisão: retornar `Content("<html>...")` com `text/html` — template literal em C# 12, ver `implementation.md#resposta-do-callback`).
   - Em caso de `StateInvalidoException`: `BadRequest` com mensagem clara.
   - **Este endpoint não leva `[Authorize]`** — é `[AllowAnonymous]` explícito (com comentário no código dizendo por quê, para não ser confundido com endpoint desprotegido por descuido), consistente com "Decisão de design: rota fixa e URL de redirecionamento".
 
@@ -211,8 +211,95 @@ public interface IClienteOAuthMercadoPago
   - Nomenclatura `Metodo_Cenario_ResultadoEsperado`.
   - Factory privado `CriarServico(...)` que monta `ConexaoMercadoPagoService` com `FakeConexaoMercadoPagoRepository` e `FakeClienteOAuthMercadoPago` (fakes manuais, SEM Moq — ver `backend/tests/Synclass.Domain.Tests/Fakes/`).
   - Factory privado `CriarConexao(...)` para instanciar `ConexaoMercadoPago` com valores padrão.
-  - Cobrir: geração de URL (com `state` e `redirect_uri` corretos); persistência no callback; `StateInvalidoException`; retorno `null` sem conexão; renovação com sucesso e com falha (apaga e retorna `null`); registro de evento `ProfessorConectouMercadoPago`.
+  - Cobrir: geração de URL (com `state` e `redirect_uri` corretos); persistência no callback (e retorno de `(ProfessorId, CollectorId)`); `StateInvalidoException`; retorno `null` sem conexão; renovação com sucesso e com falha (apaga e retorna `null`). O log `ProfessorConectouMercadoPago` **não** é testado aqui — é responsabilidade do controller (ver "Decisão de design: logging de `ProfessorConectouMercadoPago` sem violar camadas"), coberto pelo teste de fumaça do endpoint de callback.
 - `MercadoPagoControllerTests.cs` (Api) é **opcional** nesta Task (não existe padrão de teste de controller no repo — conferir `backend/tests/`); se criar, seguir o estilo de teste de controller de `ConfiguracoesController` se houver, senão criar com xUnit + `WebApplicationFactory` — **sem precedente, decisão nova**; se for complexo demais, cobrir no teste de fumaça manual/script de smoke (ver `implementation.md#testes-de-fumaça`).
+
+## Frontend — tela de Configurações do Professor (nova, sem precedente)
+
+**Achado 4 resolvido**: não existe tela de Configurações do Professor no repo. Decisão: criar uma tela nova, mínima (só a seção de integração de pagamento — não é um hub de configurações genérico, YAGNI), seguindo exatamente o padrão de `frontend/src/app/professor/[professorId]/valor-devido.tsx` (`SafeAreaView` + `TopbarAutenticada` + conteúdo centralizado com `MaxContentWidth`).
+
+- **Arquivo novo**: `frontend/src/app/professor/[professorId]/configuracoes.tsx`.
+```tsx
+import { useLocalSearchParams } from 'expo-router';
+import { Linking, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Button } from '@/components/atoms/Button';
+import { ErrorMessage } from '@/components/atoms/ErrorMessage';
+import { Paragraph } from '@/components/atoms/Paragraph';
+import { TopbarAutenticada } from '@/components/organisms/TopbarAutenticada';
+import { conectarMercadoPago } from '@/lib/api/mercadoPago';
+import { MaxContentWidth } from '@/theme/tokens';
+import { useState } from 'react';
+
+export default function ConfiguracoesScreen() {
+  const { professorId } = useLocalSearchParams<{ professorId: string }>();
+  const [erro, setErro] = useState<string | undefined>(undefined);
+  const [conectando, setConectando] = useState(false);
+
+  async function aoConectarMercadoPago() {
+    setErro(undefined);
+    setConectando(true);
+    const resultado = await conectarMercadoPago(professorId);
+    setConectando(false);
+    if (!resultado.sucesso) {
+      setErro(resultado.mensagem);
+      return;
+    }
+    Linking.openURL(resultado.url);
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
+      <TopbarAutenticada titulo="Configurações" />
+      <View className="w-full flex-1 self-center gap-four px-four py-five" style={{ maxWidth: MaxContentWidth }}>
+        <Paragraph>Conecte sua conta do Mercado Pago para receber os pagamentos dos seus Alunos diretamente, sem repasse manual.</Paragraph>
+        <Button
+          label="Conectar conta do Mercado Pago"
+          variante="secundario"
+          disabled={conectando}
+          onPress={aoConectarMercadoPago}
+        />
+        {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
+      </View>
+    </SafeAreaView>
+  );
+}
+```
+- **Botão é `variante="secundario"`** (`frontend/src/components/atoms/Button.tsx:5-11`) — ação disponível mas não é a ação primária de nenhuma tela, mesmo racional do resto do app (ver o próprio comentário do componente).
+- **Sem indicador de "já conectado"**: o backend desta Task não expõe endpoint de status/consulta (só `conectar` e `callback`, ver "Endpoints novos") — a confirmação de sucesso é a página HTML do próprio callback (ver "Resposta do callback"), não um badge nesta tela. Consultar status fica fora de escopo (Task futura, se o produto pedir).
+- **Cliente de API novo**: `frontend/src/lib/api/mercadoPago.ts`, seguindo exatamente o padrão de `frontend/src/lib/api/valorDevido.ts` (wrapper `fetchComTimeout`, tipo de resultado `{ sucesso: true; url: string } | { sucesso: false; mensagem: string }`, mensagem genérica em erro de rede).
+```ts
+import { fetchComTimeout, MensagemErroConexao } from './httpClient';
+
+export type ConectarMercadoPagoResultado =
+  { sucesso: true; url: string } | { sucesso: false; mensagem: string };
+
+const MensagemErroGenerica = 'Não foi possível concluir a operação. Tente novamente.';
+
+export async function conectarMercadoPago(professorId: string): Promise<ConectarMercadoPagoResultado> {
+  try {
+    const resposta = await fetchComTimeout(`/professores/mercado-pago/conectar`, { method: 'GET' });
+    if (!resposta.ok) {
+      return { sucesso: false, mensagem: MensagemErroGenerica };
+    }
+    const dados = (await resposta.json()) as { url: string };
+    return { sucesso: true, url: dados.url };
+  } catch {
+    return { sucesso: false, mensagem: MensagemErroConexao };
+  }
+}
+```
+- **Rota adicionada ao menu**: `frontend/src/lib/secoesPorPapel.ts` — adiciona `'settings-outline'` a `NomeIconeSecao` (mesma família Ionicons já usada no arquivo — issue #202, que troca o ícone por Phosphor, está em paralelo numa worktree separada; rebase resolve o conflito trivial de nome de ícone no merge, não é decisão desta Task) e um item novo em `secoesProfessor`, **por último** na lista (mesmo racional de frequência de uso já documentado no comentário da função — configuração de pagamento é ação pontual, não do dia a dia):
+```ts
+{ label: 'Configurações', href: `/professor/${usuarioId}/configuracoes` as Href, icone: 'settings-outline' },
+```
+
+## Decisão de design: logging de `ProfessorConectouMercadoPago` sem violar camadas
+
+**Achado 5 resolvido**: `ConexaoMercadoPagoService` (Domain) não injeta `ILogger` — Domain não depende de infraestrutura de log (`docs/spec/architecture.md#backend-camadas`). Como o endpoint de callback é anônimo (achado 3), o controller não tem `ProfessorId`/`CollectorId` disponíveis via claim para logar.
+
+- **Decisão**: `ProcessarCallbackAsync` **retorna o `ProfessorId` e o `CollectorId`** (não `void`) — troca a assinatura para `Task<(Guid ProfessorId, string CollectorId)> ProcessarCallbackAsync(string code, string state, CancellationToken ct)`. O `MercadoPagoController.Callback` recebe o retorno e é quem loga `ProfessorConectouMercadoPago` (com `ProfessorId`, `CollectorId`, `TrackId`) — mesmo padrão de outros controllers que logam eventos ligados ao request, não ao Domain puro. Isso não viola a regra de "Service não lança exceção para sem conexão" (`ObterCollectorIdAsync`, inalterada) — é só o retorno de sucesso de `ProcessarCallbackAsync` que ganha dado, sem mudar seu contrato de erro (`StateInvalidoException` continua sendo lançada do mesmo jeito).
 
 ## Testes de fumaça
 
