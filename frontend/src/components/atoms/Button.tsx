@@ -44,10 +44,6 @@ export function Button({
   testIDIcone = 'button-icone',
   ...pressableProps
 }: ButtonProps) {
-  const escuro = useColorScheme() === 'dark';
-  const paleta = escuro ? Colors.dark : Colors.light;
-  const corDoIcone = variante === 'secundario' ? paleta.text : '#FFFFFF';
-
   return (
     <Pressable
       accessibilityRole="button"
@@ -57,16 +53,7 @@ export function Button({
       }`}
       {...pressableProps}
     >
-      {Icone ? (
-        // `IconProps` do phosphor-react-native não declara props de
-        // acessibilidade do RN (`accessibilityElementsHidden`,
-        // `importantForAccessibility`) — a View em volta é quem esconde o
-        // ícone da árvore de acessibilidade, o `label` continua sendo o
-        // único nome acessível do botão.
-        <View testID={testIDIcone} accessibilityElementsHidden importantForAccessibility="no">
-          <Icone size={20} weight="regular" color={corDoIcone} />
-        </View>
-      ) : null}
+      {Icone ? <IconeDoBotao Icone={Icone} variante={variante} testID={testIDIcone} /> : null}
       <Text
         className={`text-base font-semibold ${
           variante === 'secundario' ? 'text-text dark:text-dark-text' : 'text-white'
@@ -75,5 +62,32 @@ export function Button({
         {label}
       </Text>
     </Pressable>
+  );
+}
+
+/** Ícone opcional do `Button` (issue #202) — extraído para manter a função
+ *  `Button` dentro do limite de tamanho de `code-style.md` (4-20 linhas).
+ *  `IconProps` do phosphor-react-native não declara props de acessibilidade
+ *  do RN (`accessibilityElementsHidden`, `importantForAccessibility`) — a
+ *  `View` em volta é quem esconde o ícone da árvore de acessibilidade, o
+ *  `label` do `Button` continua sendo o único nome acessível.
+ */
+function IconeDoBotao({
+  Icone,
+  variante,
+  testID,
+}: {
+  Icone: IconeFosforo;
+  variante: 'primario' | 'secundario';
+  testID: string;
+}) {
+  const escuro = useColorScheme() === 'dark';
+  const paleta = escuro ? Colors.dark : Colors.light;
+  const cor = variante === 'secundario' ? paleta.text : '#FFFFFF';
+
+  return (
+    <View testID={testID} accessibilityElementsHidden importantForAccessibility="no">
+      <Icone size={20} weight="regular" color={cor} />
+    </View>
   );
 }
