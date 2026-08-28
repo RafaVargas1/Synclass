@@ -1,5 +1,4 @@
 using Synclass.Domain.Cobrancas;
-using Synclass.Domain.Common;
 using Synclass.Domain.Matriculas;
 
 namespace Synclass.Domain.Pagamentos;
@@ -18,22 +17,19 @@ public sealed class PagamentoService
     private readonly ConsultaCobrancaService _consultaCobranca;
     private readonly IPagamentoRepository _pagamentos;
     private readonly IGeradorDeCheckout _geradorDeCheckout;
-    private readonly IClock _clock;
 
     public PagamentoService(
         IMatriculaRepository matriculas,
         ConexaoMercadoPagoService conexaoMercadoPago,
         ConsultaCobrancaService consultaCobranca,
         IPagamentoRepository pagamentos,
-        IGeradorDeCheckout geradorDeCheckout,
-        IClock clock)
+        IGeradorDeCheckout geradorDeCheckout)
     {
         _matriculas = matriculas;
         _conexaoMercadoPago = conexaoMercadoPago;
         _consultaCobranca = consultaCobranca;
         _pagamentos = pagamentos;
         _geradorDeCheckout = geradorDeCheckout;
-        _clock = clock;
     }
 
     /// <summary>
@@ -47,7 +43,11 @@ public sealed class PagamentoService
     /// criar/reaproveitar qualquer pagamento ou gerar checkout. Um
     /// <c>Pendente</c> existente da mesma (MatriculaId, período) é
     /// reaproveitado devolvendo a URL de checkout já gravada, sem nova
-    /// chamada ao Mercado Pago (passo 6).
+    /// chamada ao Mercado Pago (passo 6). Quando não há pendente, o id do
+    /// pagamento é gerado ANTES da preferência (vira o
+    /// <c>external_reference</c> do payload), a preferência é criada e o
+    /// <see cref="Pagamento"/> é persistido com o valor congelado da criação
+    /// (passos 7-9).
     /// </summary>
     public async Task<ResultadoInicioPagamento> IniciarAsync(
         Guid matriculaId, Guid alunoUsuarioId, DateOnly inicio, DateOnly fim, CancellationToken ct)
@@ -85,8 +85,27 @@ public sealed class PagamentoService
             return new ResultadoInicioPagamento(pendente.Id, pendente.UrlCheckout, pendente.Valor);
         }
 
-        // A etapa de criação de uma `a nova preferência de checkout (passos
-        // 7-11) será implementada nos itens seguintes do task.md.
-        throw new NotImplementedException();
+        var pagamentoId = Guid.NewGuid();
+        var resultadoCheckout = await _geradorDeCheckout.CriarPreferenciaAsync(
+            matricula.ProfessorId,
+            collectorId,
+            valorDaMatricula.Valor.Value,
+            $"Aula particular — {periodo.Inicio:yyyy-MM-dd} a {periodo.FimExclusivo:yyyy-MM-dd}",
+            pagamentoId.ToString(),
+            ct);
+
+        var pagamento = new Pagamento(
+            pagamentoId,
+            matriculaId,
+            alunoUsuarioId,
+            matricula.ProfessorId,
+            valorDaMatricula.Valor.Value,
+            periodo.Inicio,
+            periodo.FimExclusivo,
+            resultadoCheckout.UrlCheckout,
+            resultadoCheckout.ReferenciaExterna);
+        await _pagamentos.AdicionarAsync(pagamento, ct);
+
+        return new ResultadoInicioPagamento(pagamento.Id, pagamento.UrlCheckout, pagamento.Valor);
     }
 }

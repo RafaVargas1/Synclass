@@ -22,8 +22,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/199
 - [x] Teste unidade (Domain): `IniciarAsync` rejeita Professor sem conta conectada (`ProfessorSemContaConectadaException`), sem criar `Pagamento`
 - [x] Teste unidade (Domain): `IniciarAsync` rejeita valor zero no período (`SemValorDevidoException` — mapeia pra 400)
 - [x] Teste unidade (Domain): `IniciarAsync` reaproveita `Pagamento` `Pendente` existente da mesma (MatriculaId, período), devolve a mesma `UrlCheckout`, sem chamar `IGeradorDeCheckout`
-- [ ] Teste unidade (Domain): `IniciarAsync` cria novo `Pagamento` com `Valor` congelado quando não há pendente
-- [ ] Implementação mínima: `PagamentoService.IniciarAsync` completo + `IPagamentoRepository`
+- [x] Teste unidade (Domain): `IniciarAsync` cria novo `Pagamento` com `Valor` congelado quando não há pendente
+- [x] Implementação mínima: `PagamentoService.IniciarAsync` completo + `IPagamentoRepository`
 - [ ] Teste unidade (Domain): `ValorDevidoService.DescontarPagamentosConfirmadosAsync` remove Matrículas com `Pagamento` `Confirmado` (match exato `Inicio`/`FimExclusivo`)
 - [ ] Implementação mínima: passo de desconto no serviço do valor devido (leitura, não altera `ConsultaCobrancaService`)
 - [ ] Migration: tabela `Pagamentos` (Fluent API, nome timestamp+PascalCase)

@@ -33,7 +33,7 @@ public sealed class PagamentoServiceTests
         var usuarios = new FakeUsuarioRepository();
         var conexao = conexoes ?? CriarConexao(repositorioConexoes ?? new FakeConexaoMercadoPagoRepository(), usuarios);
         var servicoConsulta = consulta ?? CriarConsulta(matriculas, regras: null, usuarios);
-        return new PagamentoService(matriculas, conexao, servicoConsulta, pagamentos, gerador, Clock);
+        return new PagamentoService(matriculas, conexao, servicoConsulta, pagamentos, gerador);
     }
 
     private static ConexaoMercadoPagoService CriarConexao(
@@ -197,5 +197,55 @@ public sealed class PagamentoServiceTests
         resultado.Valor.Should().Be(300m);
         gerador.Chamadas.Should().Be(0);
         pagamentos.Pagamentos.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// Sem pendente existente (passos 7-9 do fluxo): gera o id do pagamento
+    /// ANTES da preferência (vira o external_reference), cria a preferência
+    /// de checkout com o collector_id do Professor e persiste um novo
+    /// <see cref="Pagamento"/> <c>Pendente</c> com o valor congelado da
+    /// criação — nunca recalculado ao confirmar (ver implementation.md#entidade-pagamento).
+    /// </summary>
+    [Fact]
+    public async Task IniciarAsync_SemPendenteExistente_CriaNovoPagamentoComValorCongelado()
+    {
+        var matriculas = new FakeMatriculaRepository();
+        var repositorioConexoes = new FakeConexaoMercadoPagoRepository();
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorConectadoAsync(usuarios, repositorioConexoes);
+        var alunoUsuarioId = Guid.NewGuid();
+        var matricula = Matricula.CriarVinculada(professorId, alunoUsuarioId, Clock);
+        await matriculas.AdicionarAsync(matricula, CancellationToken.None);
+
+        var regras = new FakeRegraDeCobrancaRepository();
+        await regras.SalvarAsync(RegraFixoMensal.Criar(matricula.Id, 300m, Clock), CancellationToken.None);
+        var consulta = CriarConsulta(matriculas, regras, usuarios);
+
+        var pagamentos = new FakePagamentoRepository();
+        var gerador = new FakeGeradorDeCheckout();
+        var servico = CriarServico(matriculas, pagamentos, gerador, consulta: consulta, repositorioConexoes: repositorioConexoes);
+
+        var resultado = await servico.IniciarAsync(
+            matricula.Id, alunoUsuarioId, Periodo.Inicio, Periodo.FimExclusivo, CancellationToken.None);
+
+        resultado.PagamentoId.Should().NotBeEmpty();
+        resultado.UrlCheckout.Should().Be("https://checkout.mercadopago.com/pref-teste");
+        resultado.Valor.Should().Be(300m);
+        gerador.Chamadas.Should().Be(1);
+        gerador.UltimoProfessorId.Should().Be(professorId);
+        gerador.UltimoCollectorId.Should().Be("collector-id");
+        // valor congelado na criação = valor devido calculado no passo 5.
+        gerador.UltimoValor.Should().Be(300m);
+        // external_reference casa com o id do pagamento persistido.
+        gerador.UltimoExternalReference.Should().Be(resultado.PagamentoId.ToString());
+
+        var persistido = pagamentos.Pagamentos.Should().ContainSingle().Subject;
+        persistido.Id.Should().Be(resultado.PagamentoId);
+        persistido.Status.Should().Be(StatusPagamento.Pendente);
+        persistido.Valor.Should().Be(300m);
+        persistido.PeriodoInicio.Should().Be(Periodo.Inicio);
+        persistido.PeriodoFimExclusivo.Should().Be(Periodo.FimExclusivo);
+        persistido.UrlCheckout.Should().Be("https://checkout.mercadopago.com/pref-teste");
+        persistido.ReferenciaExterna.Should().Be("pref-teste");
     }
 }
