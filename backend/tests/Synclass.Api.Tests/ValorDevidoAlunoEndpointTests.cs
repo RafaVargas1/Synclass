@@ -10,6 +10,7 @@ using Synclass.Api.Tests.Fakes;
 using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Common;
 using Synclass.Domain.Matriculas;
+using Synclass.Domain.Pagamentos;
 using Synclass.Domain.Usuarios;
 using Synclass.Infrastructure.Persistence;
 
@@ -142,5 +143,42 @@ public sealed class ValorDevidoAlunoEndpointTests : IClassFixture<WebApplication
         var response = await client.GetAsync("/alunos/valor-devido?inicio=2026-08-01");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// Matrícula com um <see cref="Pagamento"/> <c>Confirmado</c> no período
+    /// consultado sai do valor devido (issue #199) — o desconto é aplicado
+    /// no fluxo do endpoint <c>GET /alunos/valor-devido</c>, não no
+    /// <c>ConsultaCobrancaService</c> (Professor usa o mesmo serviço sem
+    /// desconto nesta Task). Teste na camada de serviço (endpoint real, não
+    /// HTTP puro).
+    /// </summary>
+    [Fact]
+    public async Task Get_ValorDevidoAluno_MatriculaComPagamentoConfirmadoNoPeriodo_DescontaDaLista()
+    {
+        var (client, alunoUsuarioId) = await AutenticacaoTestHelper.ClienteAutenticadoComoAlunoPersistidoAsync(_factory);
+        var clientProfessor = AutenticacaoTestHelper.ClienteAutenticadoComoProfessor(_factory);
+        var professorId = await CriarProfessorPersistidoAsync("Professor Pago");
+        var matriculaId = await VincularMatriculaAsync(professorId, alunoUsuarioId);
+        await DefinirRegraFixoMensalAsync(clientProfessor, professorId, matriculaId, 300m);
+        await PersistirPagamentoConfirmadoAsync(matriculaId, alunoUsuarioId, professorId);
+
+        var response = await client.GetAsync("/alunos/valor-devido?inicio=2026-08-01&fim=2026-09-01");
+
+        var corpo = await response.Content.ReadFromJsonAsync<List<ValorDevidoResponse>>();
+        corpo!.Should().NotContain(v => v.MatriculaId == matriculaId);
+    }
+
+    private async Task PersistirPagamentoConfirmadoAsync(Guid matriculaId, Guid alunoUsuarioId, Guid professorId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SynclassDbContext>();
+        var pagamento = new Pagamento(
+            Guid.NewGuid(), matriculaId, alunoUsuarioId, professorId, 300m,
+            new DateOnly(2026, 8, 1), new DateOnly(2026, 9, 1),
+            "https://checkout.mercadopago.com/pref-pago", "pref-pago");
+        pagamento.Confirmar();
+        dbContext.Pagamentos.Add(pagamento);
+        await dbContext.SaveChangesAsync();
     }
 }
