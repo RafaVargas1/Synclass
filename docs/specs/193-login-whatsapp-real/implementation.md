@@ -1,46 +1,71 @@
 
 # Spec Técnica — #193: Entrega de código OTP por WhatsApp
 
+## Correção de baseline (2026-08-27)
+
+A versão anterior deste spec foi escrita contra um layout de repositório que
+não é o de `main`. Esta revisão substitui todos os caminhos/nomes/rotas
+fictícios pelos reais, confirmados via leitura direta do código
+(`backend/src/Synclass.Domain/Autenticacao/`,
+`backend/src/Synclass.Api/Controllers/AutenticacaoController.cs`). Nenhuma
+regra de negócio, critério de aceite ou decisão de produto muda — só a
+localização/nome das classes e o mecanismo de erro HTTP, para bater com o
+código real.
+
 ## Entidades e classes afetadas
 
 ### Backend — Domain
 
 | Arquivo | Mudança |
 |---|---|
-| `backend/src/Synclass.Domain/Notificacoes/INotificador.cs` | Sem mudança estrutural — contrato já existe (`EnviarCodigoAsync`), usado por `NotificadorDeLog` |
-| `backend/src/Synclass.Domain/Notificacoes/OtpEnvioException.cs` | **Nova** — exceção de domínio para falha de envio, com `Motivo` (mensagem amigável, sem detalhe técnico do provedor) e `CausaOriginal` (exceção interna, nunca serializada em log) |
-| `backend/src/Synclass.Domain/Notificacoes/TelefoneUtils.cs` | **Nova** — normalização E.164 (`+[DDI][DDD][número]`, sem espaços/hífens). Método estático `NormalizarParaE164(string)`, rejeita inválidos com `ContatoInvalidoException` (mesma exceção de `Contato.Normalizar`) |
+| `backend/src/Synclass.Domain/Autenticacao/INotificador.cs` | Sem mudança — contrato já existe: `Task EnviarCodigoOtpAsync(string contatoNormalizado, string codigo, CancellationToken cancellationToken)` |
+| `backend/src/Synclass.Domain/Autenticacao/OtpEnvioException.cs` | **Nova** — exceção de domínio para falha de envio, com `Motivo` (mensagem amigável, sem detalhe técnico do provedor) e `CausaOriginal` (exceção interna, nunca serializada em log) |
+| `backend/src/Synclass.Domain/Autenticacao/TelefoneUtils.cs` | **Nova** — normalização E.164. Método estático `NormalizarParaE164(string)`, rejeita inválidos lançando `Synclass.Domain.Usuarios.ContatoInvalidoException` (reaproveitada, ctor `(string contato, string formatoEsperado)`) |
+| `backend/src/Synclass.Domain/Autenticacao/IWhatsAppHttpClient.cs` | **Nova** — interface do wrapper HTTP (fronteira de transporte, ver abaixo) |
+
+**Local das novas classes**: `Synclass.Domain/Autenticacao/`, a mesma pasta
+onde `INotificador` e `NotificadorDeLog` (via `Synclass.Infrastructure/Autenticacao/`)
+já vivem — **não** `Notificacoes/` nem `Contatos/` (pastas que não existem no
+repositório).
 
 ### Backend — Infrastructure
 
 | Arquivo | Mudança |
 |---|---|
-| `backend/src/Synclass.Infrastructure/Autenticacao/NotificadorDeLog.cs` | **Mantido**, mas condicionado: só é registrado quando `AssinaturaDigital:ModoDev=true` (ver padrão abaixo). Loga `OtpEnviadoParaDesenvolvimento` **apenas** nesse contexto |
-| `backend/src/Synclass.Infrastructure/Notificacoes/WhatsAppHttpClient.cs` | **Nova** — wrapper de `HttpClient`. Interface `IWhatsAppHttpClient` (em Domain, `backend/src/Synclass.Domain/Notificacoes/IWhatsAppHttpClient.cs`), implementação na Infrastructure |
-| `backend/src/Synclass.Infrastructure/Notificacoes/WhatsAppNotificador.cs` | **Nova** — implementa `INotificador`. Envia via `IWhatsAppHttpClient`, loga `OtpEnviado`/`OtpEnvioFalhou`, nunca o código em texto puro |
+| `backend/src/Synclass.Infrastructure/Autenticacao/NotificadorDeLog.cs` | **Mantido**, comentário de classe atualizado (contexto: só roda quando `AssinaturaDigital:ModoDev=true`, ver DI abaixo). Código funcional não muda. |
+| `backend/src/Synclass.Infrastructure/Autenticacao/WhatsAppHttpClient.cs` | **Nova** — wrapper de `HttpClient` (implementa `IWhatsAppHttpClient`) |
+| `backend/src/Synclass.Infrastructure/Autenticacao/WhatsAppNotificador.cs` | **Nova** — implementa `INotificador`. Envia via `IWhatsAppHttpClient`, loga `OtpEnviado`/`OtpEnvioFalhou`, nunca o código em texto puro |
 
 ### Backend — Api
 
 | Arquivo | Mudança |
 |---|---|
-| `backend/src/Synclass.Api/Program.cs` | **Resolve DI**: registra `IWhatsAppHttpClient` (Twilio) e `INotificador` como `WhatsAppNotificador`; valida `WhatsApp:ApiKey` e `WhatsApp:NumeroRemetente` no startup (padrão `Jwt:SigningKey`); registra `NotificadorDeLog` **apenas** se `AssinaturaDigital:ModoDev=true` (usa `IConfiguration`, não `#if DEBUG` — configuração em `.env`, não compilação) |
-| `backend/src/Synclass.Api/Controllers/LoginController.cs` | Sem mudança de código — `INotificador` já é injetado e usado; só muda a **implementação concreta** resolvida pelo DI |
+| `backend/src/Synclass.Api/Program.cs` | Registra `IWhatsAppHttpClient` (Twilio, via `AddHttpClient<>`) e `INotificador` como `WhatsAppNotificador`, exceto quando `AssinaturaDigital:ModoDev=true` (aí registra `NotificadorDeLog`, comportamento atual). Valida `WhatsApp:ApiKey` e `WhatsApp:NumeroRemetente` no startup, mesmo padrão de `Jwt:SigningKey` (linha ~61 do `Program.cs` atual) — `?? throw new InvalidOperationException(...)`, ponto único de validação (não duplicar no ctor das classes de Infrastructure) |
+| `backend/src/Synclass.Api/Controllers/AutenticacaoController.cs` | **Não existe `LoginController`** — o controller real é `AutenticacaoController` (`[Route("auth")]`). Adiciona `catch (OtpEnvioException ex)` no método `SolicitarCodigo` (mesmo padrão de `try/catch` já usado ali para `LoginRejeitadoException`/`ContatoInvalidoException`), retornando `StatusCode(502, new AutenticacaoErrorResponse(ex.Motivo))` — **não** cria filtro/middleware global de exceção (não existe nenhum hoje no repo; seguir o padrão local já estabelecido no controller, não introduzir mecanismo novo) |
 
-**Primeira integração HTTP de saída do repo** — este é o primeiro HttpClient wrapper do Synclass. Não há precedente para seguir; o padrão abaixo é decisão nova deste spec, deve ser validado pelo revisor.
+**Primeira integração HTTP de saída do repo** — este é o primeiro HttpClient
+wrapper do Synclass. Não há precedente para seguir; o padrão abaixo é decisão
+nova deste spec, deve ser validado pelo revisor.
 
 ## Ponto de inserção exato
 
-### `WhatsAppHttpClient.cs` (nova) — contrato
+### `IWhatsAppHttpClient.cs` / `OtpEnvioException.cs` (novos, `Synclass.Domain/Autenticacao/`)
 
 ```csharp
-// backend/src/Synclass.Domain/Notificacoes/IWhatsAppHttpClient.cs
+// backend/src/Synclass.Domain/Autenticacao/IWhatsAppHttpClient.cs
+namespace Synclass.Domain.Autenticacao;
+
 public interface IWhatsAppHttpClient
 {
-    Task EnviarMensagemAsync(string numeroE164, string mensagem, CancellationToken ct);
+    Task EnviarMensagemAsync(string numeroE164, string mensagem, CancellationToken cancellationToken);
 }
+```
 
-// backend/src/Synclass.Domain/Notificacoes/OtpEnvioException.cs
-public class OtpEnvioException : Exception
+```csharp
+// backend/src/Synclass.Domain/Autenticacao/OtpEnvioException.cs
+namespace Synclass.Domain.Autenticacao;
+
+public sealed class OtpEnvioException : Exception
 {
     public string Motivo { get; }
     public Exception? CausaOriginal { get; }
@@ -54,47 +79,49 @@ public class OtpEnvioException : Exception
 }
 ```
 
-### `WhatsAppHttpClient.cs` (nova) — implementação Twilio
+### `WhatsAppHttpClient.cs` (nova, `Synclass.Infrastructure/Autenticacao/`) — implementação Twilio
 
 ```csharp
-// backend/src/Synclass.Infrastructure/Notificacoes/WhatsAppHttpClient.cs
+// backend/src/Synclass.Infrastructure/Autenticacao/WhatsAppHttpClient.cs
+namespace Synclass.Infrastructure.Autenticacao;
+
 public sealed class WhatsAppHttpClient : IWhatsAppHttpClient
 {
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(3); // RN: não prender o usuário
+
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
     private readonly string _numeroRemetente;
-    private readonly ILogger<WhatsAppHttpClient> _logger;
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(3); // RN: não prender o usuário
 
-    public WhatsAppHttpClient(HttpClient httpClient, IConfiguration config, ILogger<WhatsAppHttpClient> logger)
+    public WhatsAppHttpClient(HttpClient httpClient, IConfiguration config)
     {
         _httpClient = httpClient;
-        _apiKey = config["WhatsApp:ApiKey"] ?? throw new InvalidOperationException("WhatsApp:ApiKey é obrigatória. Configure em .env.");
-        _numeroRemetente = config["WhatsApp:NumeroRemetente"] ?? throw new InvalidOperationException("WhatsApp:NumeroRemetente é obrigatório. Configure em .env.");
-        _logger = logger;
+        _httpClient.Timeout = Timeout;
+        _apiKey = config["WhatsApp:ApiKey"]!; // validado no startup (Program.cs)
+        _numeroRemetente = config["WhatsApp:NumeroRemetente"]!; // validado no startup (Program.cs)
     }
 
-    public async Task EnviarMensagemAsync(string numeroE164, string mensagem, CancellationToken ct)
+    public async Task EnviarMensagemAsync(string numeroE164, string mensagem, CancellationToken cancellationToken)
     {
-        // Endpoint Twilio Messages API
-        // https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json
+        // Endpoint Twilio Messages API: POST /2010-04-01/Accounts/{AccountSid}/Messages.json
         var content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["To"] = $"whatsapp:{numeroE164}",
             ["From"] = $"whatsapp:{_numeroRemetente}",
-            ["Body"] = mensagem
+            ["Body"] = mensagem,
         });
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, _httpClient.BaseAddress!.ToString())
+        using var request = new HttpRequestMessage(HttpMethod.Post, _httpClient.BaseAddress)
         {
-            Content = content
+            Content = content,
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes(_apiKey)));
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes(_apiKey)));
 
         try
         {
-            using var response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode(); // lança HttpRequestException em 4xx/5xx
+            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
         {
@@ -104,10 +131,16 @@ public sealed class WhatsAppHttpClient : IWhatsAppHttpClient
 }
 ```
 
-### `WhatsAppNotificador.cs` (nova)
+**Nota**: `_httpClient.BaseAddress` deve ser configurado na fábrica em
+`Program.cs` (`AddHttpClient<>(client => client.BaseAddress = new Uri(...))`),
+não fixado no ctor — mantém `WhatsAppHttpClient` sem hardcode de URL.
+
+### `WhatsAppNotificador.cs` (nova, `Synclass.Infrastructure/Autenticacao/`)
 
 ```csharp
-// backend/src/Synclass.Infrastructure/Notificacoes/WhatsAppNotificador.cs
+// backend/src/Synclass.Infrastructure/Autenticacao/WhatsAppNotificador.cs
+namespace Synclass.Infrastructure.Autenticacao;
+
 public sealed class WhatsAppNotificador : INotificador
 {
     private readonly IWhatsAppHttpClient _httpClient;
@@ -119,144 +152,232 @@ public sealed class WhatsAppNotificador : INotificador
         _logger = logger;
     }
 
-    public async Task EnviarCodigoAsync(string codigo, string contato, CancellationToken ct)
+    public async Task EnviarCodigoOtpAsync(string contatoNormalizado, string codigo, CancellationToken cancellationToken)
     {
-        var numeroE164 = TelefoneUtils.NormalizarParaE164(contato);
+        var numeroE164 = TelefoneUtils.NormalizarParaE164(contatoNormalizado);
         var mensagem = $"Seu código de acesso ao Synclass é: {codigo}. Ele expira em 10 minutos.";
+        var contatoMascarado = MascaradorDeContato.Mascarar(numeroE164);
 
         try
         {
-            await _httpClient.EnviarMensagemAsync(numeroE164, mensagem, ct);
-            _logger.LogInformation("Evento OtpEnviado: Destino={DestinoMascarado}, DuracaoMs={DuracaoMs}, TrackId={TrackId}",
-                TelefoneUtils.Mascarar(numeroE164), /* duração */ 0, /* TrackId do contexto */ string.Empty);
-            // TrackId vem do ILogger<T> já instrumentado — ver architecture.md#logs-estruturados-e-track-id
+            await _httpClient.EnviarMensagemAsync(numeroE164, mensagem, cancellationToken);
+            _logger.LogInformation("OtpEnviado {ContatoMascarado}", contatoMascarado);
         }
         catch (OtpEnvioException ex)
         {
-            _logger.LogError("Evento OtpEnvioFalhou: Destino={DestinoMascarado}, Motivo={Motivo}, TrackId={TrackId}",
-                TelefoneUtils.Mascarar(numeroE164), ex.Motivo, string.Empty);
-            throw; // preserva stack trace original
+            _logger.LogError("OtpEnvioFalhou {ContatoMascarado} {Motivo}", contatoMascarado, ex.Motivo);
+            throw; // preserva stack trace original — capturado pelo controller (502)
         }
     }
 }
 ```
 
-**Nota**: `TrackId={TrackId}` — o `ILogger<T>` já é instrumentado no `Program.cs` com o track id do request (ver `architecture.md`); estes placeholders são preenchidos pelo enricher, não pelo caller. Mantenha no log o placeholder; não invente um novo mecanismo de track id.
+**TrackId**: o padrão de log estruturado do repositório já usa
+`_logger.Log*("Evento {TrackId} {...}", trackId, ...)` só nos pontos onde o
+`trackId` está disponível via `HttpContext`/`Response.Headers` (ver
+`AutenticacaoController`). `WhatsAppNotificador` roda na camada de
+Infrastructure, sem acesso direto ao `HttpContext` — **não** inventar
+mecanismo de propagação de TrackId aqui (fora de escopo desta Task); log sem
+`TrackId` explícito é aceitável neste nível, correlação por contato mascarado
++ timestamp é suficiente para depurar falha de envio.
 
-### `TelefoneUtils.cs` (nova)
+**Mascaramento**: reaproveita `Synclass.Domain.Usuarios.MascaradorDeContato`
+(já existe, mantém 2 primeiros + 2 últimos caracteres) — **não** cria
+`TelefoneUtils.Mascarar` novo (evita duplicar padrão de mascaramento).
+
+### `TelefoneUtils.cs` (nova, `Synclass.Domain/Autenticacao/`)
 
 ```csharp
-// backend/src/Synclass.Domain/Notificacoes/TelefoneUtils.cs
+// backend/src/Synclass.Domain/Autenticacao/TelefoneUtils.cs
+namespace Synclass.Domain.Autenticacao;
+
 public static class TelefoneUtils
 {
+    private const string FormatoEsperado = "telefone em formato E.164 (ex: +5511987654321) ou BR com DDD (10 ou 11 dígitos)";
+
     public static string NormalizarParaE164(string contato)
     {
-        // Remove espaços, hífens, parênteses
-        var limpo = new string(contato.Where(char.IsDigit).ToArray());
+        var digitos = new string(contato.Where(char.IsDigit).ToArray());
 
-        // Se não tem DDI (+55 por ser Brasil), adiciona — edge point do card
-        if (limpo.StartsWith("55") && limpo.Length == 12) // 55 + DDD + 8 dígitos
-            return $"+{limpo}";
-        if (limpo.StartsWith("0")) // 0 + DDD + número
-            limpo = limpo[1..];
-        if (limpo.Length == 10 || limpo.Length == 11) // DDD + 8 ou 9 dígitos
-            return $"+55{limpo}";
-        if (limpo.Length == 12 && limpo.StartsWith("55"))
-            return $"+{limpo}";
+        // Já tem DDI 55 + DDD + número (8 ou 9 dígitos) = 12 ou 13 dígitos
+        if (digitos.StartsWith("55") && digitos.Length is 12 or 13)
+        {
+            return $"+{digitos}";
+        }
 
-        throw new ContatoInvalidoException("Número de WhatsApp deve estar em formato E.164 (ex: +5511999999999).");
-    }
+        if (digitos.StartsWith('0'))
+        {
+            digitos = digitos[1..];
+        }
 
-    public static string Mascarar(string numeroE164)
-    {
-        // +5511999999999 → +55******9999
-        var ultimos4 = numeroE164[^4..];
-        var ddi = numeroE164.StartsWith("+") ? numeroE164[..3] : string.Empty;
-        return $"{ddi}******{ultimos4}";
+        // DDD + número (8 ou 9 dígitos), sem DDI — assume Brasil
+        if (digitos.Length is 10 or 11)
+        {
+            return $"+55{digitos}";
+        }
+
+        throw new Synclass.Domain.Usuarios.ContatoInvalidoException(contato, FormatoEsperado);
     }
 }
 ```
 
-**Flag**: `ContatoInvalidoException` já existe em `backend/src/Synclass.Domain/Contatos/` — reutilize, não crie exceção nova se a semântica for a mesma.
+**Por que ainda é necessária**: `Contato.Normalizar` (chamado por
+`LoginService` antes de invocar `INotificador`) só valida telefone BR de
+10-11 dígitos e retorna **apenas os dígitos, sem DDI/E.164** — não garante o
+formato que o provedor de WhatsApp exige. `TelefoneUtils.NormalizarParaE164`
+faz essa conversão final, específica do canal WhatsApp, e é chamada dentro de
+`WhatsAppNotificador` (não em `LoginService`, que é agnóstico de canal).
 
 ### `Program.cs` (modificação)
 
 ```csharp
-// Após o bloco de validação de Jwt:SigningKey
-var webhookKey = builder.Configuration["WhatsApp:ApiKey"]
-    ?? throw new InvalidOperationException("WhatsApp:ApiKey é obrigatória. Configure em .env (ver .env.example).");
-_ = webhookKey; // usado pela factory do WhatsAppHttpClient
+// Logo após o bloco de validação de Jwt:SigningKey (linha ~61 atual)
+var whatsAppApiKey = builder.Configuration["WhatsApp:ApiKey"]
+    ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:ApiKey.");
+var whatsAppNumeroRemetente = builder.Configuration["WhatsApp:NumeroRemetente"]
+    ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:NumeroRemetente.");
 
-// Registro condicional — só em dev loga o código (comportamento atual)
+// Registro condicional — só em dev loga o código (comportamento atual, issue #18)
 if (builder.Configuration.GetValue<bool>("AssinaturaDigital:ModoDev"))
+{
     builder.Services.AddSingleton<INotificador, NotificadorDeLog>();
+}
 else
-    builder.Services.AddSingleton<INotificador, WhatsAppNotificador>();
-
-// Factory para o HttpClient (timeout curto — RN do card)
-builder.Services.AddHttpClient<IWhatsAppHttpClient, WhatsAppHttpClient>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(3);
-    // BaseAddress configurado na factory ou via IConfiguration no ctor
-});
-```
-
-**Nota**: a validação de `WhatsApp:NumeroRemetente` acontece no ctor do `WhatsAppNotificador` (via `IConfiguration`) — mantém o padrão de falha explícita no startup, mas no ponto de uso, não em `Program.cs` (evita duplicar validação em dois lugares).
-
-### `NotificadorDeLog.cs` (modificação)
-
-```csharp
-// backend/src/Synclass.Infrastructure/Autenticacao/NotificadorDeLog.cs
-// Contexto: implementação de DESENVOLVIMENTO — loga o código DE PROPÓSITO (ver issue #18).
-// NUNCA deve ser registrado em produção: só via AssinaturaDigital:ModoDev=true em Program.cs.
-public sealed class NotificadorDeLog : INotificador
-{
-    // ... código atual mantido (loga OtpEnviadoParaDesenvolvimento com o código)
+    builder.Services.AddHttpClient<IWhatsAppHttpClient, WhatsAppHttpClient>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["WhatsApp:BaseUrl"]
+            ?? "https://api.twilio.com/2010-04-01/Accounts/ACCOUNT_SID/Messages.json");
+    });
+    builder.Services.AddScoped<INotificador, WhatsAppNotificador>();
 }
 ```
 
-**Mudança**: adicionar comentário de classe atualizado (não remover o existente — ver `code-style.md#comentários`); o código em si não muda, o DI de `Program.cs` é que decide onde ele roda.
+**Nota**: `whatsAppApiKey`/`whatsAppNumeroRemetente` são lidos e validados uma
+única vez aqui — `WhatsAppHttpClient`/`WhatsAppNotificador` leem de
+`IConfiguration` diretamente (não recebem como parâmetro de construtor), mas
+a falha explícita já aconteceu no startup antes de qualquer request. Isso
+resolve a contradição da versão anterior do spec (que ora mandava validar em
+`Program.cs`, ora no ctor): **um único ponto de validação, em `Program.cs`**,
+seguindo o precedente real de `Jwt:SigningKey`.
+
+### `.env.example` (modificação)
+
+```
+WhatsApp__ApiKey=
+WhatsApp__NumeroRemetente=
+```
+
+(convenção de env var para configuração aninhada do ASP.NET Core —
+`__` mapeia para `:`; mesmo padrão que permitiria `Jwt__SigningKey`, hoje
+ausente do `.env.example` porque essa chave vive só em `appsettings.json`
+local — não copiar esse padrão específico, só o `__`.)
+
+### `NotificadorDeLog.cs` (modificação — só comentário)
+
+Comentário de classe atualizado para deixar explícito que, a partir desta
+Task, o registro em produção depende de `AssinaturaDigital:ModoDev=false` em
+`Program.cs` (DI condicional), não de compilação (`#if DEBUG`). Corpo do
+método não muda.
 
 ## Padrão de estilo a seguir
 
-- **Sem precedente de HttpClient no repo** — este é o primeiro. O padrão proposto (`IWhatsAppHttpClient` separando transporte de negócio, `Timeout` de 3s, `OtpEnvioException` de domínio) é decisão nova deste spec. Não há arquivo anterior para copiar.
-- **Configuração**: seguir o padrão de `Jwt:SigningKey` em `Program.cs` (validação com `?? throw`, `.env.example` com chave vazia na raiz).
-- **Contato/E.164**: conferir se `Contato.Normalizar` já normaliza para E.164 (edge point do card). Se sim, `TelefoneUtils` pode ser desnecessário ou apenas um adapter — **não duplique lógica existente**; o spec assume que `Contato.Normalizar` NÃO garante E.164 (retorna contato normalizado, mas não valida DDI), então `TelefoneUtils` é necessário — mas confira no código real no primeiro commit.
-- **Logs estruturados**: seguir `code-style.md#logging` — JSON estruturado com `TrackId`, nunca código OTP em texto puro (ver `security-requirements.md#dados-sensíveis-e-pii-em-log`).
-- **Mascaramento**: `TelefoneUtils.Mascarar` — mesmo padrão de mascaramento já usado para e-mail em `Contato.Mascarar` (se existir; senão, é o novo padrão).
+- **Sem precedente de HttpClient no repo** — este é o primeiro. O padrão
+  proposto (`IWhatsAppHttpClient` separando transporte de negócio, `Timeout`
+  de 3s, `OtpEnvioException` de domínio) é decisão nova deste spec.
+- **Configuração**: seguir o padrão real de `Jwt:SigningKey` em `Program.cs`
+  (`?? throw`, único ponto de validação, `.env.example` com chave vazia).
+- **Erro HTTP**: seguir o padrão real do `AutenticacaoController` (try/catch
+  local por exceção de domínio) — **não** introduzir filtro/middleware
+  global novo.
+- **Logs estruturados**: nunca código OTP em texto puro; reaproveitar
+  `MascaradorDeContato` (já existe) em vez de criar mascaramento próprio.
+- **Namespace**: tudo em `Autenticacao` (Domain e Infrastructure), mesma
+  pasta de `INotificador`/`NotificadorDeLog` — não criar `Notificacoes/`.
 
 ## Contrato de API
 
-**Não há mudança de contrato** — `POST /api/login/solicitar-codigo` já existe e já retorna `ContatoInvalidoException` (400) quando o contato é inválido. O que muda:
+**Não há mudança de contrato de request/response** —
+`POST /auth/codigo` (`AutenticacaoController.SolicitarCodigo`) já existe e já
+retorna `ContatoInvalidoException`/`LoginRejeitadoException` como 400. O que
+muda:
 
-- **Novo caso de erro**: `POST /api/login/solicitar-codigo` → se `OtpEnvioException` for lançada do service, o `ExceptionFilter` global retorna `502 Bad Gateway` com `{ "message": "Não foi possível enviar o código. Tente novamente em instantes." }` — **sem** detalhe do provedor (ex: "Twilio retornou 401") no corpo da resposta.
-- **Nenhuma mudança no DTO de entrada/saída** (`SolicitarCodigoRequest`/`SolicitarCodigoResponse`).
+- **Novo caso de erro**: se `OtpEnvioException` for lançada por
+  `LoginService.SolicitarCodigoAsync` (via `INotificador`), o controller
+  captura e retorna **502 Bad Gateway** com
+  `{ "mensagem": "Não foi possível enviar o código. Tente novamente em instantes." }`
+  (`AutenticacaoErrorResponse`, mesmo shape do erro 400 existente) — sem
+  detalhe do provedor.
+- **Nenhuma mudança nos records `SolicitarCodigoRequest`/`SolicitarCodigoResponse`.**
 
 ## Modelo de dados
 
-**Sem migration.** Nenhuma tabela/coluna nova. Dependência de provedor externo (Twilio) é configuração em `.env`, não entidade de banco.
+**Sem migration.** Nenhuma tabela/coluna nova.
 
 ## Edge points
 
-- **E.164 obrigatório**: `TelefoneUtils.NormalizarParaE164` rejeita números sem DDI válido (`ContatoInvalidoException`) — edge point do card, testado.
-- **Timeout de 3s**: se o provedor não responder em 3s, `TaskCanceledException` é capturada e vira `OtpEnvioException` com mensagem amigável — não deixa o usuário esperando. Decisão: síncrono com timeout curto (aceito no card: "síncrono com timeout curto vs. fila assíncrona é decisão de implementação").
-- **Rate limit**: card pede para considerar, não implementar. Decisão desta spec: **não implementar no escopo** — `OtpEnvioException` já cobre o fluxo, e rate limit de reenvio por contato vira Task separada se o produto pedir. O edge point fica documentado aqui.
-- **Provedor escolhido**: Twilio é o padrão desta implementação. `IWhatsAppHttpClient` é a fronteira — trocar para WhatsApp Business Cloud API exige nova implementação da interface e fábrica no DI, sem tocar `INotificador`/domain.
-- **`NotificadorDeLog` jamais em produção**: DI condicional em `Program.cs` (não compilação). Teste de fumaça deve confirmar que a chave `AssinaturaDigital:ModoDev=false` registra `WhatsAppNotificador`.
-- **`OtpEnviadoParaDesenvolvimento`**: continua existindo no `NotificadorDeLog`, mas só logado quando `ModoDev=true` — eventos `OtpEnviado`/`OtpEnvioFalhou` são os novos eventos estruturais para o fluxo real.
+- **E.164 obrigatório**: `TelefoneUtils.NormalizarParaE164` rejeita números
+  sem DDD/DDI válido (`ContatoInvalidoException`) — edge point do card,
+  testado.
+- **Timeout de 3s**: se o provedor não responder em 3s,
+  `TaskCanceledException`/`OperationCanceledException` vira `OtpEnvioException`
+  com mensagem amigável.
+- **Rate limit**: fora de escopo desta Task (card pede só para considerar,
+  não implementar) — vira Task separada se o produto pedir.
+- **Provedor escolhido**: Twilio é o padrão. `IWhatsAppHttpClient` é a
+  fronteira — trocar de provedor exige nova implementação da interface e
+  ajuste na fábrica de `Program.cs`, sem tocar `INotificador`/domain.
+- **`NotificadorDeLog` jamais em produção**: DI condicional em `Program.cs`
+  via `AssinaturaDigital:ModoDev`. Teste de fumaça confirma que
+  `ModoDev=false` resolve `WhatsAppNotificador`.
+- **Contato tipo e-mail**: `INotificador.EnviarCodigoOtpAsync` hoje não
+  discrimina o canal por tipo de contato (mesmo comportamento do
+  `NotificadorDeLog` atual — loga/envia independente do tipo). Se um usuário
+  tiver e-mail como contato em produção (`ModoDev=false`),
+  `TelefoneUtils.NormalizarParaE164` lança `ContatoInvalidoException` para
+  esse valor — gap pré-existente ao design atual de `INotificador` (não
+  introduzido por esta Task), roteamento por canal fica fora de escopo
+  (issue #193 trata só do canal WhatsApp).
 
 ## Dependência de outras Tasks
 
-- **Sem dependência de #203**: #203 (Professor conecta Mercado Pago) está sendo implementada em paralelo, em worktree separada, e cria seu próprio wrapper HTTP (`ClienteOAuthMercadoPago`, domínio de Pagamentos) — decisão deliberada: **não compartilhar abstração HTTP entre #193 e #203**, cada uma cria seu wrapper fino independente (`IWhatsAppHttpClient` aqui, `IClienteOAuthMercadoPago` lá). Coordenar uma abstração comum agora exigiria travar uma das duas Tasks esperando a outra definir o contrato primeiro, o que anula o ganho de rodar as duas em paralelo — se um wrapper HTTP genérico fizer sentido depois que as duas existirem, é uma Task de refatoração futura, fora do escopo daqui. Ambas tocam `Program.cs` (registro de DI) e serão rebaseadas uma contra a outra no merge, não contra código compartilhado.
-- **Sem outras dependências**: geração do OTP (`GeradorDeCodigoOtp`, `ICodigoOtpRepository`) já existe e é imutável; fluxo de login (`LoginController`) já injeta `INotificador`.
+- **Sem dependência de #203**: #203 (Professor conecta Mercado Pago) está
+  sendo implementada em paralelo, em worktree separada, e cria seu próprio
+  wrapper HTTP (`IClienteOAuthMercadoPago`, domínio de Pagamentos) —
+  decisão deliberada: não compartilhar abstração HTTP entre #193 e #203.
+  Ambas tocam `Program.cs` (registro de DI) e serão rebaseadas uma contra a
+  outra no merge.
+- **Sem outras dependências**: geração do OTP (`GeradorDeCodigoOtp`,
+  `ICodigoOtpRepository`) já existe e é imutável; `LoginService` já injeta
+  `INotificador`.
 
 ## Testes
 
-- `backend/tests/Synclass.Domain.Tests/Notificacoes/WhatsAppNotificadorTests.cs` — fakes manuais em `Fakes/` (sem Moq):
-  - `FakeWhatsAppHttpClientSucesso` (implements `IWhatsAppHttpClient`, retorna `Task.CompletedTask`)
-  - `FakeWhatsAppHttpClientFalha` (lança `OtpEnvioException("Não foi possível enviar o código.")`)
-  - Verificar: sucesso → sem exceção, log `OtpEnviado` sem código; falha → `OtpEnvioException` com `Motivo` amigável, log `OtpEnvioFalhou` sem código
-- `backend/tests/Synclass.Domain.Tests/Notificacoes/TelefoneUtilsTests.cs` — cenários: `+5511999999999` (já E.164), `+55 11 99999-9999` (com espaços/hífen), `11999999999` (sem DDI, adiciona +55), `5511999999999` (já com DDI), `123` (inválido → `ContatoInvalidoException`)
-- Testes de fumaça via `LoginControllerTests` (se existirem): mock de `INotificador` falhando → 502 com mensagem amigável, sem detalhe do provedor
+- `backend/tests/Synclass.Domain.Tests/Autenticacao/WhatsAppNotificadorTests.cs`
+  — fakes manuais em `Fakes/` (sem Moq):
+  - `FakeWhatsAppHttpClientSucesso` (implementa `IWhatsAppHttpClient`,
+    retorna `Task.CompletedTask`)
+  - `FakeWhatsAppHttpClientFalha` (lança
+    `new OtpEnvioException("Não foi possível enviar o código.")`)
+  - Verificar: sucesso → sem exceção; falha → `OtpEnvioException`
+    propagada com `Motivo` amigável. Verificação de log sem código em texto
+    puro pode ser feita com um `ILogger<WhatsAppNotificador>` fake que
+    captura as mensagens formatadas (padrão já usado em outros testes do
+    repo — conferir `Fakes/` existentes antes de criar um novo).
+- `backend/tests/Synclass.Domain.Tests/Autenticacao/TelefoneUtilsTests.cs` —
+  cenários: `+5511999999999` (já E.164), `+55 11 99999-9999` (com
+  espaços/hífen), `11999999999` (sem DDI, adiciona +55),
+  `5511999999999` (já com DDI, sem `+`), `123` (inválido →
+  `ContatoInvalidoException`)
+- `backend/tests/Synclass.Api.Tests/AutenticacaoControllerNotificacaoTests.cs`
+  (ou adicionar caso a um arquivo de teste de `AutenticacaoController` já
+  existente, se houver) — mesmo padrão de `UsuariosControllerTests.cs`
+  (`WebApplicationFactory<Program>`, `services.RemoveAll<>()` para
+  substituir `INotificador` por um fake que lança `OtpEnvioException`):
+  `POST /auth/codigo` com contato inválido → 400; com `INotificador`
+  mockado lançando `OtpEnvioException` → 502, corpo sem detalhe técnico.
 
-**Nota**: conferir se `NotificadorDeLog` já é testado — se sim, garantir que os testes ajustados para o registro condicional (`ModoDev=true` vs `false`) continuem passando sem quebrar a suíte existente.
+**Nota**: confirmar se já existem testes de `NotificadorDeLog` — se sim,
+garantir que continuam passando (o registro condicional em `Program.cs` não
+afeta o teste unitário de `NotificadorDeLog` isoladamente, só o DI de
+produção).
