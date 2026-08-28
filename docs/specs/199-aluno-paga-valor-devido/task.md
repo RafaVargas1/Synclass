@@ -30,11 +30,11 @@ Card: https://github.com/RafaVargas1/Synclass/issues/199
 - [x] Migration: tabela `Pagamentos` (Fluent API, nome timestamp+PascalCase)
 - [x] Teste integração (Infrastructure): `IGeradorDeCheckoutMercadoPago` serializa payload correto e parseia resposta da API real do MP (contra contrato, mock HTTP)
 - [x] Implementação: `GeradorDeCheckoutMercadoPago` (HttpClient puro, `AddHttpClient` em Program.cs)
-- [ ] Teste integração (Api): `POST /alunos/matriculas/{matriculaId:guid}/pagamentos` 201 → `{ pagamentoId, urlCheckout, valor }`
-- [ ] Teste integração (Api): 404 Matrícula de outro Aluno (`MatriculaNaoPertenceAoAlunoException`); 400 sem valor devido; 400 Professor sem conta conectada
-- [ ] Implementação: controller + DTOs (validação de entrada antes do Domain)
-- [ ] Teste (Api): `GET /alunos/valor-devido` desconta `Pagamento` `Confirmado` (teste na camada de serviço, não HTTP puro)
-- [ ] Implementação: passo de desconto no endpoint do Aluno (controller/serviço da Aluno)
-- [ ] Componente frontend: três telas mínimas `frontend/src/app/aluno/pagamento/{confirmado,falhou,pendente}.tsx` (destino das `back_urls` do checkout) — copie exatamente o desenho de `implementation.md#frontend-telas-de-retorno-do-checkout-novas-mínimas` (mesmo padrão de tela simples de `frontend/src/app/professor/[professorId]/configuracoes.tsx`, sem chamada de API, só mensagem fixa + link de volta pra `/aluno/valor-devido`)
-- [ ] Log estruturado: `PagamentoIniciado` (valores, sem dado de cartão) — `PagamentoConfirmado`/`PagamentoFalhou` ficam para #200
-- [ ] Suíte de testes completa (Domain + Infrastructure + Api) verde antes do PR
+- [x] Teste integração (Api): `POST /alunos/matriculas/{matriculaId:guid}/pagamentos` 201 → `{ pagamentoId, urlCheckout, valor }`
+- [x] Teste integração (Api): 404 Matrícula de outro Aluno (`MatriculaNaoPertenceAoAlunoException`); 400 sem valor devido; 400 Professor sem conta conectada
+- [x] Implementação: controller + DTOs (validação de entrada antes do Domain) + `PagamentoRepository` (EF Core) + DI em Program.cs
+- [x] Teste (Api): `GET /alunos/valor-devido` desconta `Pagamento` `Confirmado` (teste na camada de serviço, não HTTP puro)
+- [x] Implementação: passo de desconto no endpoint do Aluno (controller/serviço da Aluno)
+- [x] Componente frontend: três telas mínimas `frontend/src/app/aluno/pagamento/{confirmado,falhou,pendente}.tsx` (destino das `back_urls` do checkout) — copie exatamente o desenho de `implementation.md#frontend-telas-de-retorno-do-checkout-novas-mínimas` (mesmo padrão de tela simples de `frontend/src/app/professor/[professorId]/configuracoes.tsx`, sem chamada de API, só mensagem fixa + link de volta pra `/aluno/valor-devido`)
+- [x] Log estruturado: `PagamentoIniciado` (valores, sem dado de cartão) — `PagamentoConfirmado`/`PagamentoFalhou` ficam para #200
+- [x] Suíte de testes completa (Domain + Infrastructure + Api) verde antes do PR
