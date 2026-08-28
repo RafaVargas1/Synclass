@@ -70,4 +70,35 @@ public sealed class ConexaoMercadoPagoServiceTests
         url.Should().Contain(conexao.State);
         cliente.UltimaRedirectUri.Should().Be(RedirectUri);
     }
+
+    [Fact]
+    public async Task ConectarAsync_ProfessorJaConectado_ReaproveitaRegistroAtualizandoStateSemCriarSegundo()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago();
+
+        // Conexão já existente, concluída (credenciais válidas) — reconexão
+        // (implementation.md#reconexão) deve reaproveitar o mesmo registro.
+        var conexaoExistente = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-antigo", Clock);
+        conexaoExistente.RegistrarConexao("access-antigo", "refresh-antigo", "collector", Clock.UtcNow.AddHours(1), Clock);
+        await repositorio.AdicionarAsync(conexaoExistente, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var url = await servico.ConectarAsync(professorId, CancellationToken.None);
+
+        repositorio.Conexoes.Should().ContainSingle();
+        var conexao = repositorio.Conexoes.Single();
+        conexao.Id.Should().Be(conexaoExistente.Id);
+        conexao.State.Should().NotBeNullOrWhiteSpace();
+        conexao.State.Should().NotBe("state-antigo");
+        conexao.StateExpiraEm.Should().Be(Clock.UtcNow.AddMinutes(ConexaoMercadoPago.StateValidadeMinutos));
+        // Credenciais da conexão antiga permanecem válidas até o novo callback
+        // confirmar a troca — só o state foi sobrescrito.
+        conexao.AccessToken.Should().Be("access-antigo");
+        conexao.CollectorId.Should().Be("collector");
+        url.Should().Contain(conexao.State);
+    }
 }
