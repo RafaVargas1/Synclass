@@ -125,4 +125,35 @@ public sealed class ConexaoMercadoPagoServiceTests
         cliente.UltimoCode.Should().BeNull();
         repositorio.Conexoes.Single().AccessToken.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task ProcessarCallbackAsync_StateValido_PersisteConexaoAposTrocarCode()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago
+        {
+            ResultadoTroca = new TrocaCodePorTokenResultado(
+                "access-novo", "refresh-novo", "collector-id", Clock.UtcNow.AddHours(1))
+        };
+
+        // Fluxo em andamento válido (mesmo Professor, dentro da janela).
+        var conexao = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-valido", Clock);
+        await repositorio.AdicionarAsync(conexao, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        await servico.ProcessarCallbackAsync("code-do-mp", "state-valido", CancellationToken.None);
+
+        cliente.UltimoCode.Should().Be("code-do-mp");
+        var conexaoPersistida = repositorio.Conexoes.Single();
+        conexaoPersistida.AccessToken.Should().Be("access-novo");
+        conexaoPersistida.RefreshToken.Should().Be("refresh-novo");
+        conexaoPersistida.CollectorId.Should().Be("collector-id");
+        conexaoPersistida.ExpiraEm.Should().Be(Clock.UtcNow.AddHours(1));
+        // Fluxo pendente encerrado: state limpo, não reutilizável.
+        conexaoPersistida.State.Should().BeNull();
+        conexaoPersistida.StateExpiraEm.Should().BeNull();
+    }
 }
