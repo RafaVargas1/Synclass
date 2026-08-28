@@ -241,6 +241,16 @@ builder.Services.AddHttpClient<IGeradorDeCheckout, GeradorDeCheckoutMercadoPago>
     httpClient.Timeout = TimeSpan.FromSeconds(30);
 });
 
+
+// Domain de pagamento do valor devido (issue #199) — o repositório EF Core
+// e os dois services de domínio (IniciarAsync e o desconto na leitura do
+// valor devido). A unicidade do pendente por (MatriculaId, período) é
+// garantida na lógica de domínio, não por constraint de banco (ver
+// implementation.md#migration).
+builder.Services.AddScoped<IPagamentoRepository, PagamentoRepository>();
+builder.Services.AddScoped<PagamentoService>();
+builder.Services.AddScoped<ValorDevidoService>();
+
 // Rate limiting dos endpoints anônimos de aceite de convite (issue #89) —
 // ver docs/specs/89-rate-limit-convites/implementation.md. Política
 // "ConvitesAnonimos" fixa janela fixa (fixed window) particionada por IP de
