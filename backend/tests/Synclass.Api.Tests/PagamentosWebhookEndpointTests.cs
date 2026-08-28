@@ -244,6 +244,28 @@ public sealed class PagamentosWebhookEndpointTests : IClassFixture<WebApplicatio
     }
 
     [Fact]
+    public async Task Post_Webhook_FalhaDeRedeNoGetPayments_Devolve500EPagamentoNaoMuda()
+    {
+        // Exceção de rede/timeout do GET v1/payments (não resposta não-2xx,
+        // que já vira null dentro do próprio gerador) — dev-review do PR
+        // #209: o controller precisa tratar essa exceção e não propagar sem
+        // logar (implementation.md, edge point 4).
+        var (client, gerador) = CriarClienteEGerador();
+        var pagamentoId = await CriarPagamentoPendenteAsync(_factory);
+        var dataId = "555444333";
+        var payloadJson = MontarPayloadJson(dataId);
+        gerador.ExcecaoAoObterPagamento = new HttpRequestException("Falha simulada de rede.");
+        using var request = MontarRequestDaAssinatura(dataId, payloadJson, MontarXSignature(payloadJson, RequestId));
+
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        var pagamento = await BuscarPagamentoAsync(_factory, pagamentoId);
+        pagamento!.Status.Should().Be(StatusPagamento.Pendente);
+        pagamento.EventoId.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Post_Webhook_ComDataIdAusenteNaQuery_Devolve400()
     {
         var client = _factory.CreateClient();

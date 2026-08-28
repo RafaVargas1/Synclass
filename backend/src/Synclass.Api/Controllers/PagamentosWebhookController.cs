@@ -60,8 +60,6 @@ public sealed class PagamentosWebhookController : ControllerBase
     public async Task<IActionResult> ReceberWebhook(CancellationToken cancellationToken)
     {
         var dataId = Request.Query["data.id"].ToString();
-        var xSignature = Request.Headers["x-signature"].ToString();
-        var xRequestId = Request.Headers["x-request-id"].ToString();
 
         // Payload BRUTO recebido — a assinatura é calculada sobre o texto
         // exato, nunca sobre JSON re-serializado (implementation.md#fluxo,
@@ -77,23 +75,8 @@ public sealed class PagamentosWebhookController : ControllerBase
             return BadRequest();
         }
 
-        bool assinaturaValida;
-        try
+        if (!await AssinaturaValidaAsync(dataId, payloadJson, cancellationToken))
         {
-            assinaturaValida = await _webhookService.VerificarAssinaturaAsync(
-                payloadJson, xSignature, xRequestId, cancellationToken);
-        }
-        catch (AssinaturaInvalidaException)
-        {
-            assinaturaValida = false;
-        }
-
-        if (!assinaturaValida)
-        {
-            // 400 genérico — assinatura não confere, header ausente/malformado
-            // ou payload adulterado. Interrompe ANTES de buscar o pagamento
-            // local (implementation.md, passo 4).
-            LogarRejeitado(dataId, motivo: "assinatura inválida ou ausente");
             return BadRequest();
         }
 
@@ -102,10 +85,9 @@ public sealed class PagamentosWebhookController : ControllerBase
         // (rede/404/401) — não confirmar nem estornar nada; 500 pro MP reenviar
         // (implementation.md, edge point 4). NÃO é o "pagamento local não
         // encontrado" (isso o ProcessarEventoAsync sinaliza e vira 200 + aviso).
-        var pagamentoMercadoPago = await _geradorDeCheckout.ObterPagamentoAsync(dataId, cancellationToken);
+        var pagamentoMercadoPago = await BuscarPagamentoMercadoPagoAsync(dataId, cancellationToken);
         if (pagamentoMercadoPago is null)
         {
-            LogarRejeitado(dataId, motivo: "GET v1/payments falhou");
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
@@ -115,6 +97,73 @@ public sealed class PagamentosWebhookController : ControllerBase
         // ProcessarEventoAsync (confirmado, estornado, ignorado, não encontrado)
         // é 200 (implementation.md#contrato-de-api e edge point 1).
         return Ok();
+    }
+
+    /// <summary>
+    /// Verifica a assinatura via <see cref="WebhookMercadoPagoService"/> a
+    /// partir dos headers da requisição atual, logando
+    /// <c>WebhookPagamentoRejeitado</c> quando inválida (header
+    /// ausente/malformado ou hash divergente — <see cref="AssinaturaInvalidaException"/>
+    /// e <c>false</c> recebem o mesmo tratamento aqui, ver
+    /// implementation.md, passo 4).
+    /// </summary>
+    private async Task<bool> AssinaturaValidaAsync(string dataId, string payloadJson, CancellationToken ct)
+    {
+        var xSignature = Request.Headers["x-signature"].ToString();
+        var xRequestId = Request.Headers["x-request-id"].ToString();
+        bool assinaturaValida;
+        try
+        {
+            assinaturaValida = await _webhookService.VerificarAssinaturaAsync(payloadJson, xSignature, xRequestId, ct);
+        }
+        catch (AssinaturaInvalidaException)
+        {
+            assinaturaValida = false;
+        }
+
+        if (!assinaturaValida)
+        {
+            LogarRejeitado(dataId, motivo: "assinatura inválida ou ausente");
+        }
+
+        return assinaturaValida;
+    }
+
+    /// <summary>
+    /// Chama <see cref="IGeradorDeCheckout.ObterPagamentoAsync"/> e trata
+    /// tanto a resposta não-2xx (já vira <see langword="null"/> dentro do
+    /// próprio gerador) quanto exceção de rede/timeout (dev-review do PR
+    /// #209: antes propagava sem log, pulando o <c>WebhookPagamentoRejeitado</c>
+    /// que o caminho de resposta não-2xx já emitia). Mesmo padrão de
+    /// distinção cancelamento-do-chamador vs. timeout-do-HttpClient de
+    /// <see cref="GeradorDeCheckoutMercadoPago.CriarPreferenciaAsync"/>.
+    /// </summary>
+    private async Task<PagamentoMercadoPagoDto?> BuscarPagamentoMercadoPagoAsync(
+        string dataId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var pagamento = await _geradorDeCheckout.ObterPagamentoAsync(dataId, cancellationToken);
+            if (pagamento is null)
+            {
+                LogarRejeitado(dataId, motivo: "GET v1/payments falhou");
+            }
+
+            return pagamento;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Cancelamento genuíno do chamador — não é falha do Mercado
+            // Pago, propaga como cancelamento normal.
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        {
+            // Falha de rede ou timeout do HttpClient (30s, Program.cs) —
+            // mesmo motivo do caminho de resposta não-2xx, para o MP reenviar.
+            LogarRejeitado(dataId, motivo: $"GET v1/payments falhou (exceção de rede: {ex.GetType().Name})");
+            return null;
+        }
     }
 
     /// <summary>

@@ -31,6 +31,15 @@ public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
     public PagamentoMercadoPagoDto? PagamentoMercadoPago { get; set; }
 
     /// <summary>
+    /// Se setada, <see cref="ObterPagamentoAsync"/> lança esta exceção em vez
+    /// de devolver <see cref="PagamentoMercadoPago"/> — simula falha de
+    /// rede/timeout do <c>GET v1/payments</c> (dev-review do PR #200:
+    /// cobrir o caminho de exceção de rede do controller, não só o de
+    /// resposta não-2xx que já vira <see langword="null"/>).
+    /// </summary>
+    public Exception? ExcecaoAoObterPagamento { get; set; }
+
+    /// <summary>
     /// O id do <see cref="Pagamento"/> passado como <c>externalReference</c>
     /// na última chamada — exposto para o teste confirmar que o pagamento
     /// criado foi o mesmo usado no payload de checkout.
@@ -51,6 +60,11 @@ public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
 
     public Task<PagamentoMercadoPagoDto?> ObterPagamentoAsync(string paymentId, CancellationToken ct)
     {
+        if (ExcecaoAoObterPagamento is not null)
+        {
+            throw ExcecaoAoObterPagamento;
+        }
+
         return Task.FromResult(PagamentoMercadoPago);
     }
 }
