@@ -101,4 +101,28 @@ public sealed class ConexaoMercadoPagoServiceTests
         conexao.CollectorId.Should().Be("collector");
         url.Should().Contain(conexao.State);
     }
+
+    [Fact]
+    public async Task ProcessarCallbackAsync_StateExpirado_RejeitaAntesDeTrocarCode()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago();
+
+        // Fluxo iniciado há mais de StateValidadeMinutos (10 min) — a janela
+        // do state já venceu quando o callback chega (implementation.md#edge-points).
+        var clockDoInicio = new FixedClock(Clock.UtcNow.AddMinutes(-ConexaoMercadoPago.StateValidadeMinutos - 1));
+        var conexao = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-venceu", clockDoInicio);
+        await repositorio.AdicionarAsync(conexao, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var acao = async () => await servico.ProcessarCallbackAsync("code", "state-venceu", CancellationToken.None);
+
+        await acao.Should().ThrowAsync<StateInvalidoException>();
+        // A troca de code nunca acontece para um fluxo expirado.
+        cliente.UltimoCode.Should().BeNull();
+        repositorio.Conexoes.Single().AccessToken.Should().BeEmpty();
+    }
 }
