@@ -172,7 +172,31 @@ public sealed class GeradorDeCheckoutMercadoPago : IGeradorDeCheckout
             return null;
         }
 
+        return await DeserializarPagamentoOuNuloAsync(resposta, paymentId, ct);
+    }
+
+    /// <summary>
+    /// Desserializa o corpo 2xx do <c>GET v1/payments</c> — <see langword="null"/>
+    /// quando o corpo não é o JSON esperado (proxy error page, resposta
+    /// truncada, bug transitório do Mercado Pago), mesmo contrato de
+    /// "sem pagamento utilizável" do caminho não-2xx acima. Sem esse
+    /// tratamento, <see cref="JsonSerializer.Deserialize"/> lançava
+    /// <see cref="JsonException"/> sem tratamento pro chamador (dev-review
+    /// do PR #209, rodada 2 — mesma classe de bug do commit e903ffc, mas
+    /// pra corpo malformado em vez de exceção de rede).
+    /// </summary>
+    private async Task<PagamentoMercadoPagoDto?> DeserializarPagamentoOuNuloAsync(
+        HttpResponseMessage resposta, string paymentId, CancellationToken ct)
+    {
         var corpo = await resposta.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<PagamentoMercadoPagoDto>(corpo);
+        try
+        {
+            return JsonSerializer.Deserialize<PagamentoMercadoPagoDto>(corpo);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Corpo inesperado do GET v1/payments no Mercado Pago para {PaymentId}", paymentId);
+            return null;
+        }
     }
 }

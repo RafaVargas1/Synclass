@@ -157,6 +157,22 @@ public sealed class GeradorDeCheckoutMercadoPagoTests
         dto.Should().BeNull();
     }
 
+    [Fact]
+    public async Task ObterPagamentoAsync_Resposta2xxComCorpoNaoJson_RetornaNull()
+    {
+        // 200 mas corpo não é o JSON esperado (proxy error page, resposta
+        // truncada, bug transitório do MP) — sem esse tratamento,
+        // JsonSerializer.Deserialize lançava JsonException sem tratamento
+        // pro chamador (dev-review do PR #209, rodada 2).
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "<html>502 Bad Gateway</html>");
+        var httpClient = CriarHttpClient(handler);
+        var gerador = new GeradorDeCheckoutMercadoPago(httpClient, CriarConfiguracao(), NullLogger<GeradorDeCheckoutMercadoPago>.Instance);
+
+        var dto = await gerador.ObterPagamentoAsync("123456789", CancellationToken.None);
+
+        dto.Should().BeNull();
+    }
+
     /// <summary>
     /// Monta o <see cref="HttpClient"/> como o <c>AddHttpClient</c> do
     /// Program.cs faz: <c>BaseAddress</c> na api do Mercado Pago e header
