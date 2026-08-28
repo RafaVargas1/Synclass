@@ -13,12 +13,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/199
 
 ## Ordem de execução
 
-- [ ] Teste unidade (Domain): `Pagamento` nasce `Pendente` com valor congelado e período exatos
-- [ ] Implementação mínima: entidade `Pagamento`, enum `StatusPagamento` (Pendente/Confirmado/Falhou)
-- [ ] Teste unidade (Domain): transição Pendente→Confirmado marca `ConfirmadoEm`; Pendente→Falhou marca `FalhouEm`
-- [ ] Teste unidade (Domain): confirmar/falhar um `Pagamento` já `Confirmado` é no-op (idempotente, sem exceção)
-- [ ] Implementação mínima: transições de estado + timestamps de transição
-- [ ] Teste unidade (Domain): `PagamentoService.IniciarAsync` rejeita Matrícula de outro Aluno (`MatriculaNaoPertenceAoAlunoException`, mapeada para 404)
+- [x] Teste unidade (Domain): `Pagamento` nasce `Pendente` com valor congelado e período exatos
+- [x] Implementação mínima: entidade `Pagamento`, enum `StatusPagamento` (Pendente/Confirmado/Falhou)
+- [x] Teste unidade (Domain): transição Pendente→Confirmado marca `ConfirmadoEm`; Pendente→Falhou marca `FalhouEm`
+- [x] Teste unidade (Domain): confirmar/falhar um `Pagamento` já `Confirmado` é no-op (idempotente, sem exceção)
+- [x] Implementação mínima: transições de estado + timestamps de transição
+- [x] Teste unidade (Domain): `PagamentoService.IniciarAsync` rejeita Matrícula de outro Aluno (`MatriculaNaoPertenceAoAlunoException`, mapeada para 404)
 - [ ] Teste unidade (Domain): `IniciarAsync` rejeita Professor sem conta conectada (`ProfessorSemContaConectadaException`), sem criar `Pagamento`
 - [ ] Teste unidade (Domain): `IniciarAsync` rejeita valor zero no período (`SemValorDevidoException` — mapeia pra 400)
 - [ ] Teste unidade (Domain): `IniciarAsync` reaproveita `Pagamento` `Pendente` existente da mesma (MatriculaId, período), devolve a mesma `UrlCheckout`, sem chamar `IGeradorDeCheckout`

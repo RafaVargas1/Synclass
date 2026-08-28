@@ -12,7 +12,7 @@ namespace Synclass.Domain.Pagamentos;
 /// <see cref="ObterCollectorIdAsync"/> (que retorna <see langword="null"/>,
 /// contrato fechado com a Task #199).
 /// </summary>
-public sealed class ConexaoMercadoPagoService
+public class ConexaoMercadoPagoService
 {
     private const int TamanhoStateBytes = 32;
 
@@ -107,7 +107,7 @@ public sealed class ConexaoMercadoPagoService
     /// a Task #199 deve tratar como "Professor não conectado" (ver
     /// implementation.md#contrato-com-a-task-199).
     /// </summary>
-    public async Task<string?> ObterCollectorIdAsync(Guid professorId, CancellationToken ct)
+    public virtual async Task<string?> ObterCollectorIdAsync(Guid professorId, CancellationToken ct)
     {
         var conexao = await _conexoes.ObterPorProfessorAsync(professorId, ct);
         if (conexao is null || !conexao.EstaConectada())
