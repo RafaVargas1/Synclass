@@ -23,14 +23,10 @@
   - `Task AdicionarAsync(ConexaoMercadoPago conexao)`
   - `Task AtualizarAsync(ConexaoMercadoPago conexao)`
 
-- `IClienteOAuthMercadoPago` (interface nova, no Domain — envolve HTTP de saída):
-  - `Task<string> ObterUrlAutorizacaoAsync(string state, string redirectUri, CancellationToken ct)`
-  - `Task<TrocaCodePorTokenResultado> TrocarCodePorTokenAsync(string code, string redirectUri, CancellationToken ct)`
-  - `Task<TrocaCodePorTokenResultado> RenovarTokenAsync(string refreshToken, CancellationToken ct)`
-  - `Task<string?> ObterRedirectUriAsync()` (devido à decisão de roda fixa — ver `implementation.md#rota-fixa-e-url-de-redirecionamento`)
+- `IClienteOAuthMercadoPago` (interface nova, no Domain — envolve HTTP de saída): ver assinatura definitiva na seção dedicada **"Assinatura do `IClienteOAuthMercadoPago` — contrato"** abaixo (`MontarUrlAutorizacao` é **síncrono**, sem `CancellationToken` — monta uma URL a partir de string, não faz chamada de rede; só `TrocarCodePorTokenAsync`/`RenovarTokenAsync` são assíncronos, porque esses sim chamam a API do Mercado Pago). **Não existe `ObterRedirectUriAsync`** — o `redirectUri` é uma constante fixa (ver "Decisão de design: rota fixa e URL de redirecionamento"), lida via `IConfiguration`/constante no próprio `ConexaoMercadoPagoService`, não obtida de forma assíncrona.
 
 - `ConexaoMercadoPagoService` (service novo, orquestra use cases — siga o padrão de `backend/src/Synclass.Domain/Configuracoes/ConfiguracaoProfessorService.cs`):
-  - `Task<string> ConectarAsync(Guid professorId, CancellationToken ct)` — gera `state`, cria registro com `State` se necessário, chama `IClienteOAuthMercadoPago.ObterUrlAutorizacaoAsync`, retorna URL.
+  - `Task<string> ConectarAsync(Guid professorId, CancellationToken ct)` — gera `state`, cria/reaproveita registro com `State`/`StateExpiraEm` (ver "Reconexão"), chama `IClienteOAuthMercadoPago.MontarUrlAutorizacao(state, redirectUri)` (síncrono — só monta a string da URL), retorna a URL.
   - `Task ProcessarCallbackAsync(Guid professorId, string code, string state, CancellationToken ct)` — valida `state` (lança `StateInvalidoException`), troca `code` por token, persiste.
   - `Task<string?> ObterCollectorIdAsync(Guid professorId, CancellationToken ct)` — retorna `null` se não conectado/token inválido; renova se expirado.
 
@@ -146,7 +142,7 @@ public interface IClienteOAuthMercadoPago
 
 ## Decisão de design: rota fixa e URL de redirecionamento
 
-- **Rota do callback é fixa**: para o Mercado Pago redirecionar, a `redirect_uri` é sempre `https://api.synclass.com.br/professores/mercado-pago/callback` (âmbito público — ver `implementation.md#endpoints-novos`).
+- **Rota do callback é fixa**: para o Mercado Pago redirecionar, a `redirect_uri` é sempre `https://api.synclass.com.br/professores/mercado-pago/callback` (âmbito público — ver `implementation.md#endpoints-novos`). Lida via `IConfiguration["MercadoPago:RedirectUri"]` (mesma leitura direta com falha explícita no startup dos demais segredos do Mercado Pago, ver "Integração HTTP" abaixo) — **nunca** obtida de forma assíncrona/dinâmica do `IClienteOAuthMercadoPago` (não existe `ObterRedirectUriAsync`).
 - **Conflito com auth**: essa rota é `[AllowAnonymous]` porque o redirect vem do navegador do Professor, que pode não ter token de sessão do Synclass no momento. Segurança: `state` (valor aleatório) é a prova de que quem chamou o callback é o mesmo Professor que iniciou o fluxo.
 - **Fluxo**: `ConectarAsync` gera `state`, chama `IClienteOAuthMercadoPago.MontarUrlAutorizacao(state, redirectUri)` → retorna URL para o Professor clicar. Mercado Pago redireciona para `redirect_uri?code=...&state=...` → `ProcessarCallbackAsync` valida `state` contra o `State` persistido (registro existe e `State` bate).
 
@@ -232,5 +228,4 @@ public interface IClienteOAuthMercadoPago
 
 ## Registro de dependência: `IClock`
 
-- **Não existe `IClock` no repo hoje** (grep por `IClock` em `backend/src/Synclass.Domain/` retorna vazio — conferir antes de implementar). Criar em `backend/src/Synclass.Domain/Common/IClock.cs` e `SystemClock` em `backend/src/Synclass.Infrastructure/Common/SystemClock.cs` — **sem precedente, decisão nova**. Registro em `Program.cs` (`builder.Services.AddSingleton<IClock, SystemClock>()`). `ConexaoMercadoPagoService` depende de `IClock` (não de `DateTime.UtcNow` direto) para testar renovação com data controlada.
-- Alternativa: `DateTime.UtcNow` direto e testes com `FakeClienteOAuthMercadoPago` controlando `ExpiraEm` no `ConexaoMercadoPago` criado. **Decisão: adotar `IClock`** — o fluxo de renovação precisa de controle fino do tempo, e `IClock` é exatamente o wrapper fino que `code-style.md#dependências` manda criar. Criar o arquivo novo (não é muita cerimônia para o único caso de uso real de data no domínio financeiro).
+- **Correção**: `IClock`/`SystemClock` **já existem no repo** (`backend/src/Synclass.Domain/Common/IClock.cs`, `backend/src/Synclass.Infrastructure/Common/SystemClock.cs`) e já estão registrados em `Program.cs` — **não recrie**. `ConexaoMercadoPagoService` recebe `IClock` no construtor (não `DateTime.UtcNow` direto), do mesmo jeito que qualquer outro Service já existente que precisa de tempo controlável em teste — siga esse padrão já estabelecido, sem criar arquivo novo.

@@ -2,13 +2,18 @@
 
 Card: https://github.com/RafaVargas1/Synclass/issues/203
 
+## Inconsistências encontradas (resolvidas por Claude, ver histórico do PR/commit)
+
+1. **Assinatura de `IClienteOAuthMercadoPago`**: `implementation.md` tinha duas versões conflitantes. Resolvido para a Versão B (`MontarUrlAutorizacao` **síncrono**, sem `CancellationToken`, sem `ObterRedirectUriAsync`) — `redirectUri` vem de `IConfiguration["MercadoPago:RedirectUri"]` (constante fixa, lida com falha explícita no startup), nunca de forma assíncrona. Use exatamente o bloco de código da seção "Assinatura do `IClienteOAuthMercadoPago` — contrato" como fonte da verdade.
+2. **`IClock`**: já existe no repo (`backend/src/Synclass.Domain/Common/IClock.cs`, `backend/src/Synclass.Infrastructure/Common/SystemClock.cs`, já registrado em `Program.cs`) — não recriar, só injetar no `ConexaoMercadoPagoService`.
+
 ## Ordem de execução
 
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` retorna URL de autorização quando Professor não possui conexão ativa
 - [ ] Implementação mínima do cenário 1: `ConexaoMercadoPagoService` + `IConexaoMercadoPagoRepository`
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` gera URL de autorização com `state` e `redirect_uri` corretos
 - [ ] Implementação mínima do cenário 2: geração da URL no Service
-- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` chamado por um Professor que já tem conexão ativa **reaproveita o registro existente** (atualiza `State`/`ExpiraEmState`, não cria segundo registro nem exige desconectar antes) — ver `implementation.md#reconexão`
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` chamado por um Professor que já tem conexão ativa **reaproveita o registro existente** (atualiza `State`/`StateExpiraEm`, não cria segundo registro nem exige desconectar antes) — ver `implementation.md#reconexão`
 - [ ] Implementação mínima do cenário 2b: `ConectarAsync` faz upsert sobre `ObterPorProfessorAsync` em vez de sempre `AdicionarAsync`
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` rejeita `state` expirado (mais de 10 minutos desde `ConectarAsync`) com `StateInvalidoException`
 - [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` persiste conexão quando `code` é trocado com sucesso
@@ -27,4 +32,3 @@ Card: https://github.com/RafaVargas1/Synclass/issues/203
 - [ ] Teste de fumaça (Api): `GET /professores/mercado-pago/conectar` retorna `404` quando `UsuarioNaoEncontradoException` é lançada para Professor inexistente
 - [ ] Log estruturado: evento `ProfessorConectouMercadoPago` (ver architecture.md#logs-estruturados-e-track-id)
 - [ ] Componente frontend: botão "Conectar conta do Mercado Pago" na tela de Configurações do Professor, dentro do slot de integrações — **não** um CTA cheio isolado no corpo da tela; mesmo peso visual dos demais itens de configuração. Rótulo exato: "Conectar conta do Mercado Pago". Ao clicar, redireciona para `URL de autorização` retornada pela API (sem precedente no repo: não existe tela de integração de pagamento — padrão a seguir: botão de ação secundária da tela de configuração, mesmo estilo do botão "Salvar" em `docs/spec/design-system.md#botao-secundario`).
-
