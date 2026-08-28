@@ -17,19 +17,19 @@ Card: https://github.com/RafaVargas1/Synclass/issues/200
 - [x] Teste unidade (Domain): sem `x-signature` ou com formato malformado (ex: só `ts=`, sem `v1=`) lança `AssinaturaInvalidaException`
 - [x] Implementação: `IPagamentoRepository.ObterPorIdAsync(Guid id, CancellationToken ct)` e `AtualizarAsync(Pagamento pagamento, CancellationToken ct)` — adicionados à interface, à implementação EF (`PagamentoRepository` — padrão `ConexaoMercadoPagoRepository`) e ao `FakePagamentoRepository` (compilação dos testes); exercitados pelos testes de integração do webhook (itens mais abaixo)
 - [x] Implementação: `GeradorDeCheckoutMercadoPago.ObterPagamentoAsync(string paymentId, CancellationToken ct)` — reutiliza o mesmo `HttpClient`/Bearer (GET `/v1/payments/{id}`, sem Authorization manual — token dos DefaultRequestHeaders), devolve `PagamentoMercadoPagoDto` (`Id`, `Status`, `ExternalReference`), `null` em resposta não-2xx; testes em `GeradorDeCheckoutMercadoPagoTests` (sucesso parseia DTO + reusa Bearer, não-2xx → null)
-- [ ] Migration: coluna `EventoId` (string?, nullable) em `Pagamentos`
-- [ ] Teste unidade (Domain): `Pagamento.Estornar(IClock)` só age quando `Status == Confirmado` (vira `Estornado`); nos demais estados é no-op
-- [ ] Implementação: `Estornar(IClock)` na entidade `Pagamento` + valor `Estornado` no enum `StatusPagamento`
-- [ ] Teste unidade (Domain): `WebhookMercadoPagoService.ProcessarEventoAsync` — evento `approved` chama `Confirmar` e seta `EventoId = data.id`
-- [ ] Teste unidade (Domain): evento `refunded`/`rejected` num `Pagamento` `Confirmado` chama `Estornar`; no-op se não estava `Confirmado`
-- [ ] Teste unidade (Domain): `Pagamento` inexistente pro `external_reference` recebido — não lança, só sinaliza "não encontrado" pro controller responder 200 e logar aviso
-- [ ] Teste unidade (Domain): mesmo evento (`data.id` igual) processado duas vezes — segunda vez não chama `AtualizarAsync` de novo nem loga `WebhookPagamentoRecebido` de novo (idempotência via `EventoId`, comparado ANTES de aplicar qualquer transição; ver inconsistência 4: a parte "não loga de novo" vai para o teste de integração, o teste de unidade verifica "não chama `AtualizarAsync` de novo nem muda `EventoId`")
-- [ ] Teste unidade (Domain): dois eventos DIFERENTES pro mesmo `Pagamento` (ex: `approved` depois `refunded`) processam os dois normalmente — `EventoId` reflete sempre o último evento processado, não trava no primeiro
-- [ ] Implementação: `WebhookMercadoPagoService.ProcessarEventoAsync` completo, seguindo a ordem corrigida em `implementation.md#fluxo-completo-do-endpoint-sequência`
-- [ ] Implementação: `PagamentosWebhookController` (ou método novo em `PagamentosController`) — `[AllowAnonymous]` com comentário explícito de que é intencional, rota fixa `POST /webhooks/mercado-pago` (já é a `notification_url` em produção desde #199, não pode mudar), lê `data.id` da query string, headers `x-signature`/`x-request-id`
-- [ ] Teste de integração (Api): `POST /webhooks/mercado-pago` com assinatura válida e evento `approved` → 200, `Pagamento` correspondente fica `Confirmado`
-- [ ] Teste de integração (Api): assinatura inválida/ausente → 400, `Pagamento` não muda
-- [ ] Teste de integração (Api): `data.id` ausente na query → 400
-- [ ] `.env.example` (raiz): adicionar `MERCADOPAGO_WEBHOOK_SECRET` (vazio no exemplo) — lido via `IConfiguration["MercadoPago:WebhookSecret"]`, falha explícita no startup
-- [ ] Log estruturado: `WebhookPagamentoRecebido`, `WebhookPagamentoRejeitado`, `PagamentoEstornado`, `PagamentoNaoEncontrado` (aviso) — ver `implementation.md#logs-estruturados` e inconsistência 4 (log no controller, não no Domain)
-- [ ] Suíte de testes completa (Domain + Infrastructure + Api) verde antes do PR
+- [x] Migration: coluna `EventoId` (string?, nullable) em `Pagamentos`
+- [x] Teste unidade (Domain): `Pagamento.Estornar(IClock)` só age quando `Status == Confirmado` (vira `Estornado`); nos demais estados é no-op
+- [x] Implementação: `Estornar(IClock)` na entidade `Pagamento` + valor `Estornado` no enum `StatusPagamento`
+- [x] Teste unidade (Domain): `WebhookMercadoPagoService.ProcessarEventoAsync` — evento `approved` chama `Confirmar` e seta `EventoId = data.id`
+- [x] Teste unidade (Domain): evento `refunded`/`rejected` num `Pagamento` `Confirmado` chama `Estornar`; no-op se não estava `Confirmado`
+- [x] Teste unidade (Domain): `Pagamento` inexistente pro `external_reference` recebido — não lança, só sinaliza "não encontrado" pro controller responder 200 e logar aviso
+- [x] Teste unidade (Domain): mesmo evento (`data.id` igual) processado duas vezes — segunda vez não chama `AtualizarAsync` de novo nem loga `WebhookPagamentoRecebido` de novo (idempotência via `EventoId`, comparado ANTES de aplicar qualquer transição; ver inconsistência 4: a parte "não loga de novo" vai para o teste de integração, o teste de unidade verifica "não chama `AtualizarAsync` de novo nem muda `EventoId`")
+- [x] Teste unidade (Domain): dois eventos DIFERENTES pro mesmo `Pagamento` (ex: `approved` depois `refunded`) processam os dois normalmente — `EventoId` reflete sempre o último evento processado, não trava no primeiro
+- [x] Implementação: `WebhookMercadoPagoService.ProcessarEventoAsync` completo, seguindo a ordem corrigida em `implementation.md#fluxo-completo-do-endpoint-sequência`
+- [x] Implementação: `PagamentosWebhookController` (ou método novo em `PagamentosController`) — `[AllowAnonymous]` com comentário explícito de que é intencional, rota fixa `POST /webhooks/mercado-pago` (já é a `notification_url` em produção desde #199, não pode mudar), lê `data.id` da query string, headers `x-signature`/`x-request-id`
+- [x] Teste de integração (Api): `POST /webhooks/mercado-pago` com assinatura válida e evento `approved` → 200, `Pagamento` correspondente fica `Confirmado`
+- [x] Teste de integração (Api): assinatura inválida/ausente → 400, `Pagamento` não muda
+- [x] Teste de integração (Api): `data.id` ausente na query → 400
+- [x] `.env.example` (raiz): adicionar `MERCADOPAGO_WEBHOOK_SECRET` (vazio no exemplo) — lido via `IConfiguration["MercadoPago:WebhookSecret"]`, falha explícita no startup
+- [x] Log estruturado: `WebhookPagamentoRecebido`, `WebhookPagamentoRejeitado`, `PagamentoEstornado`, `PagamentoNaoEncontrado` (aviso) — ver `implementation.md#logs-estruturados` e inconsistência 4 (log no controller, não no Domain)
+- [x] Suíte de testes completa (Domain + Infrastructure + Api) verde antes do PR
