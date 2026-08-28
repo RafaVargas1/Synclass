@@ -91,7 +91,6 @@ var whatsAppAuthToken = builder.Configuration["WhatsApp:AuthToken"]
     ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:AuthToken.");
 var whatsAppNumeroRemetente = builder.Configuration["WhatsApp:NumeroRemetente"]
     ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:NumeroRemetente.");
-_ = whatsAppAuthToken; // lido por WhatsAppHttpClient via IConfiguration; só validado aqui
 
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
