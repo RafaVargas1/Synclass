@@ -50,4 +50,24 @@ public sealed class ConexaoMercadoPagoServiceTests
         conexao.State.Should().NotBeNullOrWhiteSpace();
         conexao.StateExpiraEm.Should().Be(Clock.UtcNow.AddMinutes(ConexaoMercadoPago.StateValidadeMinutos));
     }
+
+    [Fact]
+    public async Task ConectarAsync_ProfessorSemConexao_GeraUrlComStateERedirectUriCorretos()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago();
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var url = await servico.ConectarAsync(professorId, CancellationToken.None);
+
+        // O state gerado e persistido é o mesmo embutido na URL de autorização,
+        // e a redirect_uri fixa é repassada ao cliente OAuth.
+        var conexao = repositorio.Conexoes.Single();
+        conexao.State.Should().NotBeNullOrWhiteSpace();
+        cliente.UltimoStateNaUrl.Should().Be(conexao.State);
+        url.Should().Contain(conexao.State);
+        cliente.UltimaRedirectUri.Should().Be(RedirectUri);
+    }
 }
