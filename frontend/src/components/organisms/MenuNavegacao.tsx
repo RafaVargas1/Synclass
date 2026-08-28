@@ -1,5 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Link, usePathname } from 'expo-router';
+import {
+  CalendarBlank,
+  ChartBar,
+  ClipboardText,
+  Clock,
+  type Icon as PhosphorIcon,
+  CurrencyDollar,
+  House,
+  LinkSimple,
+  SignIn,
+  User,
+  UserPlus,
+  Users,
+} from 'phosphor-react-native';
 import { useState } from 'react';
 import { Platform, Pressable, Text, useColorScheme, View } from 'react-native';
 
@@ -29,7 +42,7 @@ function encontrarSecaoAtiva(todasSecoes: Secao[], pathname: string): Secao | un
  *  (achado de usabilidade do usuário): é o ponto de retorno mais comum a
  *  partir de qualquer tela funda na navegação, faz sentido ser o alvo mais
  *  fácil de alcançar (Fitts), não um item a mais no fim da lista. */
-const SecaoPainel: Secao = { label: 'Painel', href: '/painel', icone: 'home-outline' };
+const SecaoPainel: Secao = { label: 'Painel', href: '/painel', icone: 'home' };
 
 /** "Meu perfil" (#77 follow-up): item fixo do menu, igual em qualquer papel
  *  — antes vivia como um botão solto no corpo do Painel, sem seguir a
@@ -38,7 +51,7 @@ const SecaoPainel: Secao = { label: 'Painel', href: '/painel', icone: 'home-outl
  *  ação que é, na verdade, secundária/infrequente). Fica por último — é a
  *  ação menos frequente do menu, mesmo racional de ordenação por
  *  frequência de uso aplicado às seções de `secoesPorPapel.ts`. */
-const SecaoMeuPerfil: Secao = { label: 'Meu perfil', href: '/perfil', icone: 'person-outline' };
+const SecaoMeuPerfil: Secao = { label: 'Meu perfil', href: '/perfil', icone: 'perfil' };
 
 /**
  * Organismo: menu de navegação persistente (#77). Resolve `token` via
@@ -192,15 +205,31 @@ function ItemDeSecao({ secao, ativo }: { secao: Secao; ativo: boolean }) {
   );
 }
 
+const ComponentesPorIcone: Record<Secao['icone'], PhosphorIcon> = {
+  home: House,
+  perfil: User,
+  'adicionar-aluno': UserPlus,
+  chamada: ClipboardText,
+  horarios: Clock,
+  alunos: Users,
+  alocacoes: LinkSimple,
+  'valor-devido': CurrencyDollar,
+  'entrar-turma': SignIn,
+  'minhas-aulas': CalendarBlank,
+  historico: ChartBar,
+};
+
 /**
- * `Ionicons` (`@expo/vector-icons`) recebe cor como valor real, não como
- * classe do NativeWind — resolve o hex certo (claro/escuro, ativo/inativo)
- * a partir dos mesmos tokens de `theme/palette.js` usados pelas classes
- * `text-*`/`dark:text-*` do resto do menu, pra ícone e rótulo baterem.
+ * Ícone Phosphor do item de menu (issue #202) — peso `regular`, 20px
+ * (inline com o rótulo do item, ver `docs/spec/design-system.md#ícones`).
+ * `ComponentesPorIcone` mapeia a chave pura de `secoesPorPapel.ts` (sem
+ * JSX, ver comentário daquele arquivo) para o componente que efetivamente
+ * desenha o ícone — mantém `secoesPorPapel.ts` desacoplado de React Native.
  */
 function IconeDeSecao({ nome, ativo }: { nome: Secao['icone']; ativo: boolean }) {
   const escuro = useColorScheme() === 'dark';
   const paleta = escuro ? Colors.dark : Colors.light;
   const cor = ativo ? paleta.primary : paleta.text;
-  return <Ionicons testID={`icone-secao-${nome}`} name={nome} size={18} color={cor} />;
+  const Icone = ComponentesPorIcone[nome];
+  return <Icone testID={`icone-secao-${nome}`} size={20} color={cor} weight="regular" />;
 }
