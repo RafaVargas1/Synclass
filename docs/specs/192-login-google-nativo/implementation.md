@@ -62,6 +62,15 @@ export async function obterIdTokenNativo(): Promise<string | null> {
 
 ### No meio (nada entre o antes e o depois — `obterIdTokenGoogle()` não muda)
 
+## Verificação de compatibilidade Expo (item de execução nº 6)
+
+**Resultado**: `npx expo install @react-native-google-signin/google-signin` (em `frontend/`) **funcionou** e instalou **v16.1.4**, compatível com o Expo SDK 57 do projeto (`expo: ~57.0.12`). Registrado em `frontend/package.json` como `"@react-native-google-signin/google-signin": "^16.1.4"`.
+
+- **Versão instalada resolveu a ressalva do typings**: conferido contra o typings real (`node_modules/.../lib/typescript/src/signIn/GoogleSignin.d.ts`), o `GoogleSignin.signIn()` na v16 **não lança** no cancelamento — devolve união discriminada `{ type: 'success', data } | { type: 'cancelled' }`. O mapeamento de cancelamento no `obterIdTokenNativo()` usa `resposta.type === 'cancelled'` → `null` (não `statusCodes.SIGN_IN_CANCELLED`, que é o padrão de versões antigas).
+- **`androidClientId` confirmado desnecessário**: o typings/`configure()` aceita `androidClientId` como opcional; como a doc da lib e o teste mostram que o Android usa o `webClientId` para o handshake e o `aud` do idToken, **não** foi passado. `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` **não** entrou no `.env.example`.
+- **Necessário limpar `app.json` depois**: o `expo install` adiciona o plugin como string simples (`"@react-native-google-signin/google-signin"`), o que aciona o caminho `withGoogleSignIn` **com Firebase** (exige `GoogleService-Info.plist`/`google-services.json`, ausentes no projeto) — a string foi removida do `app.json` porque o plugin exige `iosUrlScheme` (formato do Client ID iOS real, segredo), item bloqueado (ver `task.md`).
+- **Warnings não bloqueantes**: `npm` reportou `EBADENGINE` para pacotes do React Native 0.86 exigindo Node ≥20.19 (ambiente local está em Node 21.6). São warnings de engine do `react-native`/Metro, não da lib em si, e não impediram o install nem os testes.
+
 ## Contrato de API
 
 **Nenhum contrato novo.** `POST /auth/google` já recebe:
@@ -80,7 +89,7 @@ Frontend já consome (ver `frontend/src/lib/api/auth.ts`, função `loginComGoog
 
 ## Edge points não cobertos por critério de aceite
 
-- **`androidClientId` no `configure()`**: a doc da lib diz que Android usa o `webClientId` para o idToken e o `androidClientId` é opcional (usado quando o backend valida o token do Android de forma específica). Como o backend espera `aud` = `GOOGLE_CLIENT_ID` web, **não passar** `androidClientId` evita risco de token com `aud` errado. Decisão: só `webClientId` + `iosClientId`. **A confirmar na implementação** com o teste real.
+- **`androidClientId` no `configure()`**: a doc da lib diz que Android usa o `webClientId` para o idToken e o `androidClientId` é opcional (usado quando o backend valida o token do Android de forma específica). Como o backend espera `aud` = `GOOGLE_CLIENT_ID` web, **não passar** `androidClientId` evita risco de token com `aud` errado. Decisão: só `webClientId` + `iosClientId`. **A confirmar na implementação** com o teste real — **confirmado**: não necessário.
 - **Acesso à conta EAS**: `eas.json` usa "environment" (contexto #3) — variáveis novas precisam ser adicionadas via EAS dashboard por quem tem acesso, não no `.env` local, para os builds de preview/production funcionarem. Isso é **operação**, não código — menciono aqui para não virar surpresa no deploy.
 - **Expo Go não suporta a lib** (contexto #4): `obterIdTokenNativo()` vai falhar/retornar `null` no Expo Go. Como o contrato do arquivo é "nunca lança", o app continua funcionando sem o botão Google no Expo Go (o botão já não fazia nada antes). Teste em development build (de acordo com #195).
 
@@ -93,7 +102,7 @@ Frontend já consome (ver `frontend/src/lib/api/auth.ts`, função `loginComGoog
     statusCodes: { SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED' },
   }));
   ```
-- **Log estruturado**: nenhum código novo — ver `docs/architecture.md#logs-estruturados-e-track-id` e os eventos existentes no fluxo web (`google.ts`/`useAutenticadoGoogle.ts`) para confirmar que `GoogleLoginSolicitado`/`GoogleLoginSucesso` já cobrem o nativo sem mudança.
+- **Log estruturado**: nenhum código novo — ver `docs/architecture.md#logs-estruturados-e-track-id` e os eventos existentes no fluxo web (`google.ts`/`useAutenticadoGoogle.ts`) para confirmar que `GoogleLoginSolicitado`/`GoogleLoginSucesso` já cobrem o nativo sem mudança. **Confirmado**: esses eventos não existem; o frontend não tem mecanismo de log estruturado (ver `task.md#inconsistências-encontradas`).
 
 ## Dependência de outras Tasks
 
@@ -102,7 +111,7 @@ Frontend já consome (ver `frontend/src/lib/api/auth.ts`, função `loginComGoog
 
 ## Verificações compulsórias antes de terminar
 
-1. **Compatibilidade Expo**: rodar `npx expo install @react-native-google-signin/google-signin` (em `frontend/`) — o `expo install` baixa a versão compatível com o SDK atual (não `npm install` direto). Se falhar ou mudar de versão major, **parar** e consultar `frontend/AGENTS.md` (Expo HAS CHANGED).
-2. **Leitura do arquivo real**: `frontend/src/lib/auth/google.ts` — confirmar que `obterIdTokenGoogle()` realmente chama `obterIdTokenNativo()` e que o stub é como descrito (não inventar o código atual).
-3. **Teste do caminho de cancelamento**: o teste precisa mapear o erro real da lib (`SIGN_IN_CANCELLED`) para `null` — se a lib em versão atual usar código diferente, ajustar.
-4. **`webClientId` no configure**: precisa ser o mesmo `EXPO_PUBLIC_GOOGLE_CLIENT_ID` — se o plugin da lib oferecer "webClientId" como opção de config no `app.json`, definir lá também ou garantir que `configure()` em runtime é suficiente (preferir runtime).
+1. **Compatibilidade Expo**: rodar `npx expo install @react-native-google-signin/google-signin` (em `frontend/`) — o `expo install` baixa a versão compatível com o SDK atual (não `npm install` direto). Se falhar ou mudar de versão major, **parar** e consultar `frontend/AGENTS.md` (Expo HAS CHANGED). **Feito**: v16.1.4 instalado, ver "Verificação de compatibilidade Expo" acima.
+2. **Leitura do arquivo real**: `frontend/src/lib/auth/google.ts` — confirmar que `obterIdTokenGoogle()` realmente chama `obterIdTokenNativo()` e que o stub é como descrito (não inventar o código atual). **Feito**.
+3. **Teste do caminho de cancelamento**: o teste precisa mapear o erro real da lib (`SIGN_IN_CANCELLED`) para `null` — se a lib em versão atual usar código diferente, ajustar. **Feito**: na v16 o cancelamento devolve `{ type: 'cancelled' }` (união discriminada), não lança `SIGN_IN_CANCELLED` — o teste cobre esse formato real.
+4. **`webClientId` no configure**: precisa ser o mesmo `EXPO_PUBLIC_GOOGLE_CLIENT_ID` — se o plugin da lib oferecer "webClientId" como opção de config no `app.json`, definir lá também ou garantir que `configure()` em runtime é suficiente (preferir runtime). **Feito**: `configure()` em runtime com `webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID` é suficiente; o plugin (item bloqueado no `app.json`) não expõe `webClientId` como opção sem o `GoogleService-Info.plist`/`google-services.json` do caminho Firebase, então a configuração runtime é a escolha correta.
