@@ -30,6 +30,33 @@ public sealed class WebhookMercadoPagoServiceTests
             Clock);
     }
 
+    private static Pagamento CriarPagamento(
+        Guid? id = null,
+        decimal valor = 120m,
+        Guid? matriculaId = null)
+    {
+        return new Pagamento(
+            id ?? Guid.NewGuid(),
+            matriculaId ?? Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            valor,
+            new DateOnly(2026, 9, 1),
+            new DateOnly(2026, 10, 1),
+            "https://checkout.mercadopago.com/abc",
+            "pref-id-teste",
+            Clock);
+    }
+
+    private static PagamentoMercadoPagoDto CriarDtoMercadoPago(
+        string dataId, string status, Guid pagamentoId) =>
+        new()
+        {
+            Id = dataId,
+            Status = status,
+            ExternalReference = pagamentoId.ToString(),
+        };
+
     /// <summary>
     /// Monta o header <c>x-signature</c> no formato documentado do Mercado
     /// Pago (<c>ts=&lt;timestamp&gt;,v1=&lt;hmac&gt;</c>), com o HMAC-SHA256
@@ -114,5 +141,138 @@ public sealed class WebhookMercadoPagoServiceTests
             payloadJson, xSignatureMalformada, RequestId, CancellationToken.None);
 
         await acao.Should().ThrowAsync<AssinaturaInvalidaException>();
+    }
+
+    [Fact]
+    public async Task ProcessarEventoAsync_Approved_ConfirmaESetaEventoId()
+    {
+        var pagamentoId = Guid.NewGuid();
+        var pagamento = CriarPagamento(id: pagamentoId);
+        var repo = new FakePagamentoRepository();
+        await repo.AdicionarAsync(pagamento, CancellationToken.None);
+        var servico = CriarServico(repo);
+
+        var dataId = "123456789";
+        var dto = CriarDtoMercadoPago(dataId, "approved", pagamentoId);
+
+        var resultado = await servico.ProcessarEventoAsync(dto, CancellationToken.None);
+
+        resultado.Tipo.Should().Be(TipoProcessamentoWebhook.Confirmado);
+        resultado.PagamentoId.Should().Be(pagamentoId);
+        pagamento.Status.Should().Be(StatusPagamento.Confirmado);
+        pagamento.EventoId.Should().Be(dataId);
+        repo.Atualizado.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ProcessarEventoAsync_RefundedEmConfirmado_Estorna()
+    {
+        var pagamentoId = Guid.NewGuid();
+        var pagamento = CriarPagamento(id: pagamentoId);
+        pagamento.Confirmar(Clock);
+        var repo = new FakePagamentoRepository();
+        await repo.AdicionarAsync(pagamento, CancellationToken.None);
+        var servico = CriarServico(repo);
+
+        var dataId = "987654321";
+        var dto = CriarDtoMercadoPago(dataId, "refunded", pagamentoId);
+
+        var resultado = await servico.ProcessarEventoAsync(dto, CancellationToken.None);
+
+        resultado.Tipo.Should().Be(TipoProcessamentoWebhook.Estornado);
+        pagamento.Status.Should().Be(StatusPagamento.Estornado);
+        pagamento.EventoId.Should().Be(dataId);
+        repo.Atualizado.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ProcessarEventoAsync_RejectedEmNaoConfirmado_NoOpMasAtualizaEventoId()
+    {
+        // Pagamento Pendente recebe rejected — sem transição de estado (não
+        // estava Confirmado), mas EventoId é atualizado pra reentrega desse
+        // mesmo evento não reprocessar (implementation.md#fluxo, passo 6).
+        var pagamentoId = Guid.NewGuid();
+        var pagamento = CriarPagamento(id: pagamentoId);
+        var repo = new FakePagamentoRepository();
+        await repo.AdicionarAsync(pagamento, CancellationToken.None);
+        var servico = CriarServico(repo);
+
+        var dataId = "555666777";
+        var dto = CriarDtoMercadoPago(dataId, "rejected", pagamentoId);
+
+        var resultado = await servico.ProcessarEventoAsync(dto, CancellationToken.None);
+
+        resultado.Tipo.Should().Be(TipoProcessamentoWebhook.Ignorado);
+        pagamento.Status.Should().Be(StatusPagamento.Pendente);
+        pagamento.EventoId.Should().Be(dataId);
+        repo.Atualizado.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ProcessarEventoAsync_PagamentoInexistente_NaoLancaESinalizaNaoEncontrado()
+    {
+        var repo = new FakePagamentoRepository();
+        var servico = CriarServico(repo);
+
+        var dataId = "123456789";
+        var dto = CriarDtoMercadoPago(dataId, "approved", Guid.NewGuid());
+
+        var resultado = await servico.ProcessarEventoAsync(dto, CancellationToken.None);
+
+        resultado.Tipo.Should().Be(TipoProcessamentoWebhook.NaoEncontrado);
+        resultado.PagamentoId.Should().BeNull();
+        repo.Atualizado.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ProcessarEventoAsync_MesmoEventoDuasVezes_SegundaNaoAtualizaNemMudaEventoId()
+    {
+        var pagamentoId = Guid.NewGuid();
+        var pagamento = CriarPagamento(id: pagamentoId);
+        var repo = new FakePagamentoRepository();
+        await repo.AdicionarAsync(pagamento, CancellationToken.None);
+        var servico = CriarServico(repo);
+
+        var dataId = "123456789";
+        var dto = CriarDtoMercadoPago(dataId, "approved", pagamentoId);
+
+        await servico.ProcessarEventoAsync(dto, CancellationToken.None);
+        var eventoIdAposPrimeira = pagamento.EventoId;
+        var atualizadoAposPrimeira = repo.Atualizado;
+
+        // Reentrega do MESMO evento — o guard de EventoId bate antes de
+        // aplicar qualquer transição: nem Confirmar, nem AtualizarAsync, nem
+        // novo log (ver task.md#inconsistências-encontradas, itens 2 e 4).
+        var resultado = await servico.ProcessarEventoAsync(dto, CancellationToken.None);
+
+        resultado.Tipo.Should().Be(TipoProcessamentoWebhook.Ignorado);
+        pagamento.Status.Should().Be(StatusPagamento.Confirmado);
+        pagamento.EventoId.Should().Be(eventoIdAposPrimeira);
+        repo.Atualizado.Should().Be(atualizadoAposPrimeira);
+    }
+
+    [Fact]
+    public async Task ProcessarEventoAsync_DoisEventosDiferentes_SegundoAtualizaEventoIdParaUltimo()
+    {
+        var pagamentoId = Guid.NewGuid();
+        var pagamento = CriarPagamento(id: pagamentoId);
+        var repo = new FakePagamentoRepository();
+        await repo.AdicionarAsync(pagamento, CancellationToken.None);
+        var servico = CriarServico(repo);
+
+        var dataIdApproved = "123456789";
+        var dtoApproved = CriarDtoMercadoPago(dataIdApproved, "approved", pagamentoId);
+        var dataIdRefunded = "987654321";
+
+        await servico.ProcessarEventoAsync(dtoApproved, CancellationToken.None);
+        var dtoRefunded = CriarDtoMercadoPago(dataIdRefunded, "refunded", pagamentoId);
+        var resultado = await servico.ProcessarEventoAsync(dtoRefunded, CancellationToken.None);
+
+        // EventoId reflete o ÚLTIMO evento processado, nunca trava no primeiro
+        // (implementation.md#entidade-pagamento — o guard ??= quebraria isso).
+        resultado.Tipo.Should().Be(TipoProcessamentoWebhook.Estornado);
+        pagamento.Status.Should().Be(StatusPagamento.Estornado);
+        pagamento.EventoId.Should().Be(dataIdRefunded);
+        repo.Atualizado.Should().Be(2);
     }
 }
