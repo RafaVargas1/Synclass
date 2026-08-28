@@ -8,7 +8,12 @@ namespace Synclass.Domain.Tests.Pagamentos;
 /// Cobre a entidade <see cref="Pagamento"/> (issue #199): estado inicial,
 /// transições de estado e idempotência de <see cref="Pagamento.Confirmar"/>/
 /// <see cref="Pagamento.Falhar"/> — ver
-/// implementation.md#entidade-pagamento.
+/// implementation.md#entidade-pagamento. Desde #200, também cobre
+/// <see cref="Pagamento.Estornar"/>: a transição <c>Confirmado → Estornado</c>
+/// (estorno de um pagamento já confirmado pelo webhook), no-op nos demais
+/// estados — a regra é "o valor volta a aparecer como devido", que só faz
+/// sentido se o pagamento tinha sido de fato confirmado antes (ver
+/// implementation.md#entidade-pagamento).
 /// </summary>
 public sealed class PagamentoTests
 {
@@ -106,6 +111,54 @@ public sealed class PagamentoTests
 
         pagamento.Status.Should().Be(StatusPagamento.Falhou);
         pagamento.FalhouEm.Should().Be(falhouEmOriginal);
+    }
+
+    [Fact]
+    public void Estornar_Confirmado_ViraEstornado()
+    {
+        var pagamento = CriarPagamento();
+        pagamento.Confirmar(Clock);
+
+        pagamento.Estornar(Clock);
+
+        pagamento.Status.Should().Be(StatusPagamento.Estornado);
+        pagamento.ConfirmadoEm.Should().NotBeNull();
+        pagamento.FalhouEm.Should().BeNull();
+    }
+
+    [Fact]
+    public void Estornar_Pendente_NoOp()
+    {
+        var pagamento = CriarPagamento();
+
+        pagamento.Estornar(Clock);
+
+        pagamento.Status.Should().Be(StatusPagamento.Pendente);
+        pagamento.ConfirmadoEm.Should().BeNull();
+    }
+
+    [Fact]
+    public void Estornar_Falhou_NoOp()
+    {
+        var pagamento = CriarPagamento();
+        pagamento.Falhar(Clock);
+
+        pagamento.Estornar(Clock);
+
+        pagamento.Status.Should().Be(StatusPagamento.Falhou);
+        pagamento.FalhouEm.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Estornar_JaEstornado_NoOp()
+    {
+        var pagamento = CriarPagamento();
+        pagamento.Confirmar(Clock);
+        pagamento.Estornar(Clock);
+
+        pagamento.Estornar(Clock);
+
+        pagamento.Status.Should().Be(StatusPagamento.Estornado);
     }
 
     [Fact]

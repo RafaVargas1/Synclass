@@ -11,17 +11,19 @@ using Synclass.Infrastructure.Checkout;
 namespace Synclass.Domain.Tests.Pagamentos;
 
 /// <summary>
-/// Cobre <see cref="GeradorDeCheckoutMercadoPago"/> (issue #199) contra um
-/// <see cref="HttpMessageHandler"/> fake — sem rede real. Verifica o
+/// Cobre <see cref="GeradorDeCheckoutMercadoPago"/> (issue #199/#200) contra
+/// um <see cref="HttpMessageHandler"/> fake — sem rede real. Verifica o
 /// payload JSON de criação de preferência (sem o bloco <c>payer</c>, campo
 /// opcional — ver task.md#inconsistências-encontradas, item 7), o header de
 /// autenticação, o parse da resposta (<c>init_point</c> e <c>id</c> da
-/// preferência) e o erro quando a resposta não é parseável ou é não-2xx.
-/// O header <c>Authorization: Bearer</c> e o <c>BaseAddress</c> vêm do
-/// contêiner (Program.cs, <c>AddHttpClient</c>), não da classe — o teste os
-/// configura no <see cref="HttpClient"/> de teste para refletir esse ambiente
-/// (mesmo padrão de teste HTTP fake de WhatsAppHttpClientTests,
-/// docs/spec/code-style.md#dependências).
+/// preferência) e o erro quando a resposta não é parseável ou é não-2xx. A
+/// partir de #200 cobre também <see cref="GeradorDeCheckoutMercadoPago.ObterPagamentoAsync"/>:
+/// GET <c>/v1/payments/{id}</c> no MESMO HttpClient/Bearer, parse do DTO e
+/// <c>null</c> em resposta não-2xx. O header <c>Authorization: Bearer</c> e
+/// o <c>BaseAddress</c> vêm do contêiner (Program.cs, <c>AddHttpClient</c>),
+/// não da classe — o teste os configura no <see cref="HttpClient"/> de teste
+/// para refletir esse ambiente (mesmo padrão de teste HTTP fake de
+/// WhatsAppHttpClientTests, docs/spec/code-style.md#dependências).
 /// </summary>
 public sealed class GeradorDeCheckoutMercadoPagoTests
 {
@@ -115,6 +117,62 @@ public sealed class GeradorDeCheckoutMercadoPagoTests
         excecao.Which.Message.Should().Contain("preferência de checkout");
     }
 
+    [Fact]
+    public async Task ObterPagamentoAsync_Sucesso_ParseiaDtoComIdStatusEExternalReference()
+    {
+        var corpo = "{\"id\":\"123456789\",\"status\":\"approved\",\"external_reference\":\"66a6e4c8-0000-0000-0000-000000000000\"}";
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, corpo);
+        var httpClient = CriarHttpClient(handler);
+        var gerador = new GeradorDeCheckoutMercadoPago(httpClient, CriarConfiguracao(), NullLogger<GeradorDeCheckoutMercadoPago>.Instance);
+
+        var dto = await gerador.ObterPagamentoAsync("123456789", CancellationToken.None);
+
+        dto.Should().NotBeNull();
+        dto!.Id.Should().Be("123456789");
+        dto.Status.Should().Be("approved");
+        dto.ExternalReference.Should().Be("66a6e4c8-0000-0000-0000-000000000000");
+
+        // Reutiliza o MESMO HttpClient/Bearer do checkout: GET para o endpoint
+        // de payment, com o Authorization vindo dos DefaultRequestHeaders do
+        // contêiner (não adicionado manualmente pelo método, mas presente na
+        // requisição enviada — prova que reusa o token já configurado).
+        handler.RequisicaoCapturada!.Method.Should().Be(HttpMethod.Get);
+        handler.RequisicaoCapturada.RequestUri!.ToString().Should().EndWith("/v1/payments/123456789");
+        handler.RequisicaoCapturada.Headers.Authorization!.Scheme.Should().Be("Bearer");
+        handler.RequisicaoCapturada.Headers.Authorization.Parameter.Should().Be(AccessToken);
+    }
+
+    [Fact]
+    public async Task ObterPagamentoAsync_RespostaNao2xx_RetornaNull()
+    {
+        // 401 (token master não autorizado no marketplace mode) ou 404
+        // (pagamento inexistente) — sem pagamento utilizável, o método devolve
+        // null e o chamador do webhook decide como tratar (ver implementation.md).
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.NotFound, "{\"message\":\"Payment not found\"}");
+        var httpClient = CriarHttpClient(handler);
+        var gerador = new GeradorDeCheckoutMercadoPago(httpClient, CriarConfiguracao(), NullLogger<GeradorDeCheckoutMercadoPago>.Instance);
+
+        var dto = await gerador.ObterPagamentoAsync("123456789", CancellationToken.None);
+
+        dto.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ObterPagamentoAsync_Resposta2xxComCorpoNaoJson_RetornaNull()
+    {
+        // 200 mas corpo não é o JSON esperado (proxy error page, resposta
+        // truncada, bug transitório do MP) — sem esse tratamento,
+        // JsonSerializer.Deserialize lançava JsonException sem tratamento
+        // pro chamador (dev-review do PR #209, rodada 2).
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "<html>502 Bad Gateway</html>");
+        var httpClient = CriarHttpClient(handler);
+        var gerador = new GeradorDeCheckoutMercadoPago(httpClient, CriarConfiguracao(), NullLogger<GeradorDeCheckoutMercadoPago>.Instance);
+
+        var dto = await gerador.ObterPagamentoAsync("123456789", CancellationToken.None);
+
+        dto.Should().BeNull();
+    }
+
     /// <summary>
     /// Monta o <see cref="HttpClient"/> como o <c>AddHttpClient</c> do
     /// Program.cs faz: <c>BaseAddress</c> na api do Mercado Pago e header
@@ -174,6 +232,9 @@ public sealed class GeradorDeCheckoutMercadoPagoTests
     /// disposto pelo chamador — ler depois via
     /// <c>RequisicaoCapturada.Content</c> falharia com
     /// <c>ObjectDisposedException</c> (o <c>using</c> no envio já o descartou).
+    /// O <c>Content</c> pode ser nulo (GET sem body, ex:
+    /// <see cref="GeradorDeCheckoutMercadoPago.ObterPagamentoAsync"/>) — nesse
+    /// caso o payload fica nulo.
     /// </summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
@@ -193,7 +254,9 @@ public sealed class GeradorDeCheckoutMercadoPagoTests
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequisicaoCapturada = request;
-            PayloadCapturado = await request.Content!.ReadAsStringAsync(cancellationToken);
+            PayloadCapturado = request.Content is null
+                ? null
+                : await request.Content.ReadAsStringAsync(cancellationToken);
             return new HttpResponseMessage(_statusCode)
             {
                 Content = new StringContent(_corpo, Encoding.UTF8, "application/json"),

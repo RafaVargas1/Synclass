@@ -15,6 +15,9 @@ namespace Synclass.Domain.Pagamentos;
 /// <see cref="IClock"/> (nunca <c>DateTime.UtcNow</c> direto — ver
 /// docs/spec/code-style.md#dependências), mesmo padrão de
 /// <see cref="Convites.Convite"/>/<see cref="Alocacoes.AlocacaoHorario"/>.
+/// <see cref="EventoId"/> é a chave de idempotência do webhook de #200: o
+/// <c>data.id</c> do ÚLTIMO evento do Mercado Pago processado com sucesso
+/// para este pagamento (ver <see cref="WebhookMercadoPagoService"/>).
 /// </summary>
 public sealed class Pagamento
 {
@@ -89,6 +92,32 @@ public sealed class Pagamento
     public DateTime? FalhouEm { get; private set; }
 
     /// <summary>
+    /// O <c>data.id</c> do webhook do Mercado Pago do ÚLTIMO evento
+    /// processado com sucesso pra este pagamento (issue #200). Chave de
+    /// idempotência: se o <see cref="WebhookMercadoPagoService"/> já viu esse
+    /// evento antes (<c>EventoId == data.id</c>), não reprocessa. É
+    /// sobrescrito a cada evento novo processado (nunca <c>??=</c>) — se
+    /// travasse no primeiro, uma reentrega de um evento *seguinte* (ex:
+    /// estorno depois da confirmação) não seria detectada como duplicata (ver
+    /// implementation.md#entidade-pagamento e task.md#inconsistências-encontradas,
+    /// item 2). Nulo enquanto nenhum evento de webhook relacionado a este
+    /// pagamento foi processado.
+    /// </summary>
+    public string? EventoId { get; private set; }
+
+    /// <summary>
+    /// Registra que o evento de webhook <paramref name="eventoId"/> (o
+    /// <c>data.id</c> do Mercado Pago, issue #200) foi processado com sucesso
+    /// pra este pagamento, sobrescrevendo <see cref="EventoId"/> — sempre
+    /// reflete o ÚLTIMO evento tratado (ver a doc de <see cref="EventoId"/>
+    /// e implementation.md#entidade-pagamento).
+    /// </summary>
+    public void RegistrarEventoId(string eventoId)
+    {
+        EventoId = eventoId;
+    }
+
+    /// <summary>
     /// Transição <c>Pendente → Confirmado</c> marcando <see cref="ConfirmadoEm"/>.
     /// Idempotente: chamada em estado já <c>Confirmado</c> não muda nada.
     /// </summary>
@@ -116,5 +145,29 @@ public sealed class Pagamento
 
         Status = StatusPagamento.Falhou;
         FalhouEm = clock.UtcNow.UtcDateTime;
+    }
+
+    /// <summary>
+    /// Transição <c>Confirmado → Estornado</c> (issue #200): pagamento que
+    /// tinha sido confirmado foi estornado/reembolsado pelo Mercado Pago
+    /// (evento <c>refunded</c>/<c>rejected</c> depois de <c>approved</c>). Só
+    /// age quando <c>Status == Confirmado</c> — a regra "o valor volta a
+    /// aparecer como devido" só faz sentido se o pagamento tinha sido de fato
+    /// confirmado antes; nos demais estados (<c>Pendente</c>, <c>Falhou</c>, já
+    /// <c>Estornado</c>) é no-op. Não toca em <see cref="ConfirmadoEm"/> —
+    /// esse timestamp continua registrando quando o pagamento foi confirmado
+    /// de fato, não o estorno. <c>clock</c> é recebido por consistência de
+    /// assinatura com <see cref="Confirmar"/>/<see cref="Falhar"/> (issue
+    /// #200), mas a transição não registra timestamp próprio (ver
+    /// implementation.md#entidade-pagamento).
+    /// </summary>
+    public void Estornar(IClock clock)
+    {
+        if (Status is not StatusPagamento.Confirmado)
+        {
+            return;
+        }
+
+        Status = StatusPagamento.Estornado;
     }
 }

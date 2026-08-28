@@ -16,7 +16,10 @@ namespace Synclass.Infrastructure.Checkout;
 /// do Professor que recebe, nunca à conta fixa do Synclass. Segue o padrão
 /// de erro de <see cref="Synclass.Infrastructure.Http.ClienteOAuthMercadoPago"/>
 /// (log estruturado + exception, sem vazar o corpo cru — o Checkout Pro é
-/// redirecionamento hospedado, o Synclass nunca vê cartão).
+/// redirecionamento hospedado, o Synclass nunca vê cartão). A partir de
+/// #200 também expõe <see cref="ObterPagamentoAsync"/>, que busca o status
+/// de um pagamento via <c>GET /v1/payments/{id}</c> no mesmo
+/// <see cref="HttpClient"/>/Bearer configurado.
 /// </summary>
 public sealed class GeradorDeCheckoutMercadoPago : IGeradorDeCheckout
 {
@@ -140,6 +143,60 @@ public sealed class GeradorDeCheckoutMercadoPago : IGeradorDeCheckout
             // deve vazar cru pro cliente.
             _logger.LogError(ex, "Resposta inesperada do Mercado Pago na criação de preferência para {ProfessorId}", professorId);
             throw new FalhaAoCriarCheckoutException("Resposta inesperada do Mercado Pago na criação da preferência de checkout.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Busca o status de um pagamento no Mercado Pago (<c>GET
+    /// /v1/payments/{paymentId}</c>) — o <c>data.id</c> do webhook de #200 —
+    /// para descobrir o <c>status</c> e o <c>external_reference</c> (nosso
+    /// <see cref="Pagamento.Id"/>). Reutiliza o MESMO <see cref="HttpClient"/>
+    /// (BaseAddress + Bearer token) já configurado em Program.cs para o
+    /// checkout — não cria cliente HTTP novo. Retorna <see langword="null"/>
+    /// quando o Mercado Pago responde erro (404 pagamento inexistente, 401
+    /// sem permissão, etc.) — sem pagamento utilizável, o chamador decide
+    /// (ver implementation.md#fluxo-completo-do-endpoint-sequência, passo 5).
+    /// Exceções de rede (timeout 30s do HttpClient) propagam para o chamador
+    /// tratar como falha transitória (edge point 4).
+    /// </summary>
+    public async Task<PagamentoMercadoPagoDto?> ObterPagamentoAsync(string paymentId, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get, $"/v1/payments/{Uri.EscapeDataString(paymentId)}");
+        using var resposta = await _httpClient.SendAsync(request, ct);
+        if (!resposta.IsSuccessStatusCode)
+        {
+            // 404/401 etc — sem pagamento utilizável; o chamador do webhook
+            // decide como tratar (não encontrado / não autorizado no
+            // marketplace), ver implementation.md.
+            return null;
+        }
+
+        return await DeserializarPagamentoOuNuloAsync(resposta, paymentId, ct);
+    }
+
+    /// <summary>
+    /// Desserializa o corpo 2xx do <c>GET v1/payments</c> — <see langword="null"/>
+    /// quando o corpo não é o JSON esperado (proxy error page, resposta
+    /// truncada, bug transitório do Mercado Pago), mesmo contrato de
+    /// "sem pagamento utilizável" do caminho não-2xx acima. Sem esse
+    /// tratamento, <see cref="JsonSerializer.Deserialize"/> lançava
+    /// <see cref="JsonException"/> sem tratamento pro chamador (dev-review
+    /// do PR #209, rodada 2 — mesma classe de bug do commit e903ffc, mas
+    /// pra corpo malformado em vez de exceção de rede).
+    /// </summary>
+    private async Task<PagamentoMercadoPagoDto?> DeserializarPagamentoOuNuloAsync(
+        HttpResponseMessage resposta, string paymentId, CancellationToken ct)
+    {
+        var corpo = await resposta.Content.ReadAsStringAsync(ct);
+        try
+        {
+            return JsonSerializer.Deserialize<PagamentoMercadoPagoDto>(corpo);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Corpo inesperado do GET v1/payments no Mercado Pago para {PaymentId}", paymentId);
+            return null;
         }
     }
 }

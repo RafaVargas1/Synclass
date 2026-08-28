@@ -13,12 +13,15 @@ namespace Synclass.Infrastructure.Persistence.Configurations;
 /// tentativas falhas + um pagamento pendente novo; a unicidade do pendente
 /// é garantida pela busca em <see cref="IPagamentoRepository"/> na lógica de
 /// domínio, não por constraint de banco (ver
-/// implementation.md#migration).
+/// implementation.md#migration). <see cref="Pagamento.EventoId"/> é nullable
+/// (pagamentos pendentes ainda não têm evento de webhook associado — ver
+/// implementation.md#modelo-de-dados).
 /// </summary>
 public sealed class PagamentoConfiguration : IEntityTypeConfiguration<Pagamento>
 {
     private const int TamanhoUrlCheckout = 500;
     private const int TamanhoReferenciaExterna = 64;
+    private const int TamanhoEventoId = 64;
 
     public void Configure(EntityTypeBuilder<Pagamento> builder)
     {
@@ -44,6 +47,7 @@ public sealed class PagamentoConfiguration : IEntityTypeConfiguration<Pagamento>
         builder.Property(p => p.CriadoEm).IsRequired();
         builder.Property(p => p.ConfirmadoEm).IsRequired(false);
         builder.Property(p => p.FalhouEm).IsRequired(false);
+        builder.Property(p => p.EventoId).IsRequired(false).HasMaxLength(TamanhoEventoId);
 
         builder.HasOne<Matricula>().WithMany().HasForeignKey(p => p.MatriculaId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Usuario>().WithMany().HasForeignKey(p => p.AlunoUsuarioId).OnDelete(DeleteBehavior.Restrict);

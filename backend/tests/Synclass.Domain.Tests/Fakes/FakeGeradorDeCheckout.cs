@@ -7,6 +7,9 @@ namespace Synclass.Domain.Tests.Fakes;
 /// Domain (issue #199) — não faz rede, só registra as chamadas e devolve um
 /// <see cref="ResultadoCheckout"/> controlável (ver
 /// docs/spec/code-style.md#testes — fakes manuais nomeados, sem Moq).
+/// Desde #200 também implementa <see cref="IGeradorDeCheckout.ObterPagamentoAsync"/>,
+/// devolvendo um <see cref="PagamentoMercadoPagoDto"/> configurável por
+/// teste.
 /// </summary>
 public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
 {
@@ -25,6 +28,12 @@ public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
     public ResultadoCheckout Resultado { get; set; } =
         new("https://checkout.mercadopago.com/pref-teste", "pref-teste");
 
+    /// <summary>
+    /// O que <see cref="ObterPagamentoAsync"/> devolve — configurável por
+    /// teste para o webhook de #200.
+    /// </summary>
+    public PagamentoMercadoPagoDto? PagamentoMercadoPago { get; set; }
+
     public Task<ResultadoCheckout> CriarPreferenciaAsync(
         Guid professorId,
         string collectorId,
@@ -39,5 +48,10 @@ public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
         UltimoValor = valor;
         UltimoExternalReference = externalReference;
         return Task.FromResult(Resultado);
+    }
+
+    public Task<PagamentoMercadoPagoDto?> ObterPagamentoAsync(string paymentId, CancellationToken ct)
+    {
+        return Task.FromResult(PagamentoMercadoPago);
     }
 }

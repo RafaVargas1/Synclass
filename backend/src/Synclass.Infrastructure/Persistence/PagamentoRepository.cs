@@ -12,6 +12,8 @@ namespace Synclass.Infrastructure.Persistence;
 /// garantida pela lógica de domínio em <c>PagamentoService.IniciarAsync</c>,
 /// não por constraint de banco (ver implementation.md#migration) — então a
 /// busca aqui devolve o primeiro pendente que casar na janela exata.
+/// <see cref="ObterPorIdAsync"/> e <see cref="AtualizarAsync"/> servem ao
+/// webhook de #200 (confirmação/estorno por <c>external_reference</c>).
 /// </summary>
 public sealed class PagamentoRepository : IPagamentoRepository
 {
@@ -44,9 +46,20 @@ public sealed class PagamentoRepository : IPagamentoRepository
             cancellationToken);
     }
 
+    public Task<Pagamento?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return _dbContext.Pagamentos.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
     public async Task AdicionarAsync(Pagamento pagamento, CancellationToken cancellationToken)
     {
         await _dbContext.Pagamentos.AddAsync(pagamento, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task AtualizarAsync(Pagamento pagamento, CancellationToken cancellationToken)
+    {
+        _dbContext.Pagamentos.Update(pagamento);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 

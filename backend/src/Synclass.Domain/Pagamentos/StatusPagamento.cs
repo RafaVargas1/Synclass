@@ -22,4 +22,16 @@ public enum StatusPagamento
     /// Pagamento falhou/cancelado — o Aluno pode tentar de novo.
     /// </summary>
     Falhou,
+
+    /// <summary>
+    /// Pagamento que foi <c>Confirmado</c> e depois estornado/reembolsado pelo
+    /// Mercado Pago (issue #200, evento <c>refunded</c>/<c>rejected</c>
+    /// depois de <c>approved</c>). Nenhuma query muda por causa deste estado:
+    /// a busca de pendente (só <c>Pendente</c>) e o desconto do valor devido
+    /// (<c>ValorDevidoService.DescontarPagamentosConfirmadosAsync</c>, só
+    /// <c>Confirmado</c>) continuam como estão — assim que o status sai de
+    /// <c>Confirmado</c>, o valor devido volta a aparecer sozinho (ver
+    /// implementation.md#entidade-pagamento).
+    /// </summary>
+    Estornado,
 }

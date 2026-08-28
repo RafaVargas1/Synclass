@@ -8,6 +8,8 @@ namespace Synclass.Api.Tests.Fakes;
 /// resultado fixo configurável por teste — mesmo padrão de
 /// <see cref="FakeClienteOAuthMercadoPago"/>. Sem isso, o endpoint de
 /// pagamento dispararia HTTP real contra a Api do Mercado Pago no teste.
+/// Desde #200 também devolve um <see cref="PagamentoMercadoPagoDto"/>
+/// configurável para o <c>GET /v1/payments/{id}</c> do webhook, sem rede.
 /// </summary>
 public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
 {
@@ -21,6 +23,21 @@ public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
     /// configurável por teste.
     /// </summary>
     public ResultadoCheckout Resultado { get; set; }
+
+    /// <summary>
+    /// O que <see cref="ObterPagamentoAsync"/> devolve — configurável por
+    /// teste para o webhook de #200.
+    /// </summary>
+    public PagamentoMercadoPagoDto? PagamentoMercadoPago { get; set; }
+
+    /// <summary>
+    /// Se setada, <see cref="ObterPagamentoAsync"/> lança esta exceção em vez
+    /// de devolver <see cref="PagamentoMercadoPago"/> — simula falha de
+    /// rede/timeout do <c>GET v1/payments</c> (dev-review do PR #200:
+    /// cobrir o caminho de exceção de rede do controller, não só o de
+    /// resposta não-2xx que já vira <see langword="null"/>).
+    /// </summary>
+    public Exception? ExcecaoAoObterPagamento { get; set; }
 
     /// <summary>
     /// O id do <see cref="Pagamento"/> passado como <c>externalReference</c>
@@ -39,5 +56,15 @@ public sealed class FakeGeradorDeCheckout : IGeradorDeCheckout
     {
         UltimaExternalReference = externalReference;
         return Task.FromResult(Resultado);
+    }
+
+    public Task<PagamentoMercadoPagoDto?> ObterPagamentoAsync(string paymentId, CancellationToken ct)
+    {
+        if (ExcecaoAoObterPagamento is not null)
+        {
+            throw ExcecaoAoObterPagamento;
+        }
+
+        return Task.FromResult(PagamentoMercadoPago);
     }
 }

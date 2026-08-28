@@ -251,6 +251,19 @@ builder.Services.AddScoped<IPagamentoRepository, PagamentoRepository>();
 builder.Services.AddScoped<PagamentoService>();
 builder.Services.AddScoped<ValorDevidoService>();
 
+// Webhook de confirmação de pagamento (issue #200) — ver
+// docs/specs/200-confirmacao-assincrona-pagamento/implementation.md. É o
+// único endpoint público autenticado por assinatura HMAC, não por sessão: o
+// secret é exigido aqui (falha explícita no startup, mesmo padrão de
+// Jwt:SigningKey/WhatsApp acima) para o webhook não arrancar sem a chave que
+// WebhookMercadoPagoService usa na verificação de x-signature.
+var webhookSecretMercadoPago = builder.Configuration["MercadoPago:WebhookSecret"]
+    ?? throw new InvalidOperationException("Configuração ausente: MercadoPago:WebhookSecret.");
+builder.Services.AddScoped(sp => new WebhookMercadoPagoService(
+    webhookSecretMercadoPago,
+    sp.GetRequiredService<IPagamentoRepository>(),
+    sp.GetRequiredService<IClock>()));
+
 // Rate limiting dos endpoints anônimos de aceite de convite (issue #89) —
 // ver docs/specs/89-rate-limit-convites/implementation.md. Política
 // "ConvitesAnonimos" fixa janela fixa (fixed window) particionada por IP de
