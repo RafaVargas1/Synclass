@@ -15,7 +15,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/200
 - [x] Implementação mínima do cenário 1: `VerificarAssinaturaAsync` em `WebhookMercadoPagoService`, com `TODO(webhook-signature)` no código apontando a incerteza do formato exato do manifest
 - [x] Teste unidade (Domain): payload adulterado (mudança no `data.id`) tem assinatura rejeitada
 - [x] Teste unidade (Domain): sem `x-signature` ou com formato malformado (ex: só `ts=`, sem `v1=`) lança `AssinaturaInvalidaException`
-- [ ] Implementação: `IPagamentoRepository.ObterPorIdAsync(Guid id, CancellationToken ct)` e `AtualizarAsync(Pagamento pagamento, CancellationToken ct)` — não existem hoje, adicionar na interface e na implementação EF (`PagamentoRepository`)
+- [x] Implementação: `IPagamentoRepository.ObterPorIdAsync(Guid id, CancellationToken ct)` e `AtualizarAsync(Pagamento pagamento, CancellationToken ct)` — adicionados à interface, à implementação EF (`PagamentoRepository` — padrão `ConexaoMercadoPagoRepository`) e ao `FakePagamentoRepository` (compilação dos testes); exercitados pelos testes de integração do webhook (itens mais abaixo)
 - [ ] Implementação: `GeradorDeCheckoutMercadoPago.ObterPagamentoAsync(string paymentId, CancellationToken ct)` — reaproveita o mesmo `HttpClient`/Bearer já configurado (não cria cliente HTTP novo), devolve `PagamentoMercadoPagoDto` (`Id`, `Status`, `ExternalReference`)
 - [ ] Migration: coluna `EventoId` (string?, nullable) em `Pagamentos`
 - [ ] Teste unidade (Domain): `Pagamento.Estornar(IClock)` só age quando `Status == Confirmado` (vira `Estornado`); nos demais estados é no-op
