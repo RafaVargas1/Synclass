@@ -1,0 +1,30 @@
+# Task: Conectar conta Mercado Pago do Professor (#203)
+
+Card: https://github.com/RafaVargas1/Synclass/issues/203
+
+## Ordem de execução
+
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` retorna URL de autorização quando Professor não possui conexão ativa
+- [ ] Implementação mínima do cenário 1: `ConexaoMercadoPagoService` + `IConexaoMercadoPagoRepository`
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` gera URL de autorização com `state` e `redirect_uri` corretos
+- [ ] Implementação mínima do cenário 2: geração da URL no Service
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ConectarAsync` chamado por um Professor que já tem conexão ativa **reaproveita o registro existente** (atualiza `State`/`ExpiraEmState`, não cria segundo registro nem exige desconectar antes) — ver `implementation.md#reconexão`
+- [ ] Implementação mínima do cenário 2b: `ConectarAsync` faz upsert sobre `ObterPorProfessorAsync` em vez de sempre `AdicionarAsync`
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` rejeita `state` expirado (mais de 10 minutos desde `ConectarAsync`) com `StateInvalidoException`
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` persiste conexão quando `code` é trocado com sucesso
+- [ ] Implementação mínima do cenário 3: `ProcessarCallbackAsync` (valida `state`, chama `IClienteOAuthMercadoPago`, persiste via repositório)
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` rejeita `state` inválido (`StateInvalidoException`)
+- [ ] Implementação mínima do cenário 4: validação de `state` no `ProcessarCallbackAsync`
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` retorna `collector_id` para Professor conectado
+- [ ] Implementação mínima do cenário 5: `ObterCollectorIdAsync`
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` retorna `null` para Professor sem conexão
+- [ ] Implementação mínima do cenário 6: fallback para `null` na `ObterCollectorIdAsync`
+- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` aciona renovação via `RefreshToken` quando `AccessToken` expirado, e retorna `null` se renovação falhar
+- [ ] Implementação mínima do cenário 7: renovação de token no `ConexaoMercadoPagoService`
+- [ ] Migration: `CriarConexaoMercadoPago` (tabela `ConexaoMercadoPago`)
+- [ ] Teste de fumaça (Api): `GET /professores/mercado-pago/conectar` retorna `200` com `{ url }` para Professor autenticado
+- [ ] Teste de fumaça (Api): `GET /professores/mercado-pago/callback?code=...&state=...` retorna `200` e persiste conexão
+- [ ] Teste de fumaça (Api): `GET /professores/mercado-pago/conectar` retorna `404` quando `UsuarioNaoEncontradoException` é lançada para Professor inexistente
+- [ ] Log estruturado: evento `ProfessorConectouMercadoPago` (ver architecture.md#logs-estruturados-e-track-id)
+- [ ] Componente frontend: botão "Conectar conta do Mercado Pago" na tela de Configurações do Professor, dentro do slot de integrações — **não** um CTA cheio isolado no corpo da tela; mesmo peso visual dos demais itens de configuração. Rótulo exato: "Conectar conta do Mercado Pago". Ao clicar, redireciona para `URL de autorização` retornada pela API (sem precedente no repo: não existe tela de integração de pagamento — padrão a seguir: botão de ação secundária da tela de configuração, mesmo estilo do botão "Salvar" em `docs/spec/design-system.md#botao-secundario`).
+
