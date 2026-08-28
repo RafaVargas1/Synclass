@@ -15,6 +15,9 @@ namespace Synclass.Domain.Pagamentos;
 /// <see cref="IClock"/> (nunca <c>DateTime.UtcNow</c> direto — ver
 /// docs/spec/code-style.md#dependências), mesmo padrão de
 /// <see cref="Convites.Convite"/>/<see cref="Alocacoes.AlocacaoHorario"/>.
+/// <see cref="EventoId"/> é a chave de idempotência do webhook de #200: o
+/// <c>data.id</c> do ÚLTIMO evento do Mercado Pago processado com sucesso
+/// para este pagamento (ver <see cref="WebhookMercadoPagoService"/>).
 /// </summary>
 public sealed class Pagamento
 {
@@ -87,6 +90,20 @@ public sealed class Pagamento
     public DateTime? ConfirmadoEm { get; private set; }
 
     public DateTime? FalhouEm { get; private set; }
+
+    /// <summary>
+    /// O <c>data.id</c> do webhook do Mercado Pago do ÚLTIMO evento
+    /// processado com sucesso pra este pagamento (issue #200). Chave de
+    /// idempotência: se o <see cref="WebhookMercadoPagoService"/> já viu esse
+    /// evento antes (<c>EventoId == data.id</c>), não reprocessa. É
+    /// sobrescrito a cada evento novo processado (nunca <c>??=</c>) — se
+    /// travasse no primeiro, uma reentrega de um evento *seguinte* (ex:
+    /// estorno depois da confirmação) não seria detectada como duplicata (ver
+    /// implementation.md#entidade-pagamento e task.md#inconsistências-encontradas,
+    /// item 2). Nulo enquanto nenhum evento de webhook relacionado a este
+    /// pagamento foi processado.
+    /// </summary>
+    public string? EventoId { get; private set; }
 
     /// <summary>
     /// Transição <c>Pendente → Confirmado</c> marcando <see cref="ConfirmadoEm"/>.
