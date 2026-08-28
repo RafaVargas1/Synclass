@@ -24,8 +24,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/199
 - [x] Teste unidade (Domain): `IniciarAsync` reaproveita `Pagamento` `Pendente` existente da mesma (MatriculaId, período), devolve a mesma `UrlCheckout`, sem chamar `IGeradorDeCheckout`
 - [x] Teste unidade (Domain): `IniciarAsync` cria novo `Pagamento` com `Valor` congelado quando não há pendente
 - [x] Implementação mínima: `PagamentoService.IniciarAsync` completo + `IPagamentoRepository`
-- [ ] Teste unidade (Domain): `ValorDevidoService.DescontarPagamentosConfirmadosAsync` remove Matrículas com `Pagamento` `Confirmado` (match exato `Inicio`/`FimExclusivo`)
-- [ ] Implementação mínima: passo de desconto no serviço do valor devido (leitura, não altera `ConsultaCobrancaService`)
+- [x] Teste unidade (Domain): `ValorDevidoService.DescontarPagamentosConfirmadosAsync` remove Matrículas com `Pagamento` `Confirmado` (match exato `Inicio`/`FimExclusivo`)
+- [x] Implementação mínima: passo de desconto no serviço do valor devido (leitura, não altera `ConsultaCobrancaService`)
 - [ ] Migration: tabela `Pagamentos` (Fluent API, nome timestamp+PascalCase)
 - [ ] Teste integração (Infrastructure): `IGeradorDeCheckoutMercadoPago` serializa payload correto e parseia resposta da API real do MP (contra contrato, mock HTTP)
 - [ ] Implementação: `GeradorDeCheckoutMercadoPago` (HttpClient puro, `AddHttpClient` em Program.cs)
