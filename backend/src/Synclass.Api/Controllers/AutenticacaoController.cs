@@ -43,6 +43,13 @@ public sealed class AutenticacaoController : ControllerBase
         {
             return Rejeitar(trackId, request.Contato, ex);
         }
+        catch (OtpEnvioException ex)
+        {
+            // Falha de envio do código pelo provedor de WhatsApp (issue #193):
+            // 502 sem detalhe técnico do provedor — só o motivo amigável, que
+            // já vem sem Twilio/HttpRequest etc (ver OtpEnvioException.Motivo).
+            return StatusCode(StatusCodes.Status502BadGateway, new AutenticacaoErrorResponse(ex.Motivo));
+        }
     }
 
     [HttpPost("confirmacao")]

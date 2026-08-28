@@ -16,7 +16,10 @@ namespace Synclass.Api.Tests;
 /// Teste de fumaça do fluxo completo de login por OTP (issue #18): solicitar
 /// código → confirmar → receber token, e as rejeições previstas nos
 /// Critérios de aceite. Usa EF Core InMemory, mesmo padrão de
-/// <see cref="ProfessorCadastroEndpointTests"/>.
+/// <see cref="ProfessorCadastroEndpointTests"/>. Desde a entrega via
+/// WhatsApp (issue #193), roda com <c>AssinaturaDigital:ModoDev=true</c>
+/// para que <c>NotificadorDeLog</c> seja registrado — o teste não deve
+/// depender de rede real do provedor.
 /// </summary>
 public sealed class AutenticacaoEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -29,6 +32,7 @@ public sealed class AutenticacaoEndpointTests : IClassFixture<WebApplicationFact
         _factory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("RunMigrationsOnStartup", "false");
+            builder.UseSetting("AssinaturaDigital:ModoDev", "true");
             builder.ConfigureServices(services =>
             {
                 UseInMemoryDatabase(services, nomeDoBancoEmMemoria);
@@ -79,6 +83,41 @@ public sealed class AutenticacaoEndpointTests : IClassFixture<WebApplicationFact
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var corpo = await response.Content.ReadFromJsonAsync<AutenticacaoErrorResponse>();
         corpo!.Mensagem.Should().Contain("Nenhuma conta encontrada");
+    }
+
+    [Fact]
+    public async Task Post_Codigo_ContatoInvalido_RetornaBadRequest()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/auth/codigo", new SolicitarCodigoRequest("123"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var corpo = await response.Content.ReadFromJsonAsync<AutenticacaoErrorResponse>();
+        corpo!.Mensagem.Should().Contain("Contato inválido");
+    }
+
+    [Fact]
+    public async Task Post_Codigo_ProvedorFalha_RetornaBadGatewaySemDetalheTecnico()
+    {
+        var factoryComFalha = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<INotificador>();
+                services.AddScoped<INotificador>(_ => new NotificadorQueFalha());
+            });
+        });
+        var client = factoryComFalha.CreateClient();
+        await client.PostAsJsonAsync("/professores/cadastro", new CadastroUsuarioRequest("Maria Silva", "11999999999"));
+
+        var response = await client.PostAsJsonAsync("/auth/codigo", new SolicitarCodigoRequest("11999999999"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        var corpo = await response.Content.ReadFromJsonAsync<AutenticacaoErrorResponse>();
+        corpo!.Mensagem.Should().Contain("Não foi possível enviar o código");
+        corpo!.Mensagem.Should().NotContain("Twilio");
+        corpo!.Mensagem.Should().NotContain("HttpRequest");
     }
 
     [Fact]
@@ -144,5 +183,18 @@ public sealed class AutenticacaoEndpointTests : IClassFixture<WebApplicationFact
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var corpo = await response.Content.ReadFromJsonAsync<AutenticacaoErrorResponse>();
         corpo!.Mensagem.Should().Contain("máximo de tentativas");
+    }
+}
+
+/// <summary>
+/// Implementação de falha de <see cref="INotificador"/> para o teste de
+/// fumaça da issue #193: lança <see cref="OtpEnvioException"/> com motivo
+/// amigável, simulando a rejeição do provedor WhatsApp — sem rede real.
+/// </summary>
+public sealed class NotificadorQueFalha : INotificador
+{
+    public Task EnviarCodigoOtpAsync(string contatoNormalizado, string codigo, CancellationToken cancellationToken)
+    {
+        throw new OtpEnvioException("Não foi possível enviar o código. Tente novamente em instantes.");
     }
 }

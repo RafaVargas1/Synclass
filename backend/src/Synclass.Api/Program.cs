@@ -74,6 +74,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+// Credenciais do provedor de WhatsApp (Twilio por padrão, issue #193) — falha
+// explícita no startup, mesmo padrão de Jwt:SigningKey acima, para o serviço
+// não arrancar sem as chaves que WhatsAppHttpClient/WhatsAppNotificador leem de
+// IConfiguration. Ponto único de validação (as classes de Infrastructure não
+// revalidam); exigidas sempre, inclusive em ModoDev, para que a troca de DI
+// condicional abaixo nunca dependa de config ausente. AccountSid/AuthToken
+// (não um único "ApiKey") porque a Basic Auth do Twilio exige os dois valores
+// separados por ":" (dev-review do PR #206) — AccountSid também compõe a URL
+// da Messages API, eliminando o placeholder "ACCOUNT_SID" fixo que nunca
+// falhava explicitamente no startup. Ver
+// docs/specs/193-login-whatsapp-real/implementation.md.
+var whatsAppAccountSid = builder.Configuration["WhatsApp:AccountSid"]
+    ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:AccountSid.");
+var whatsAppAuthToken = builder.Configuration["WhatsApp:AuthToken"]
+    ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:AuthToken.");
+var whatsAppNumeroRemetente = builder.Configuration["WhatsApp:NumeroRemetente"]
+    ?? throw new InvalidOperationException("Configuração ausente: WhatsApp:NumeroRemetente.");
+
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CadastroUsuarioService>();
@@ -123,7 +141,27 @@ builder.Services.AddScoped<FrequenciaService>();
 // Login por OTP (issue #18) — ver docs/specs/18-login-otp/implementation.md.
 builder.Services.AddScoped<ICodigoOtpRepository, CodigoOtpRepository>();
 builder.Services.AddSingleton<IGeradorDeCodigoOtp, GeradorDeCodigoOtp>();
-builder.Services.AddScoped<INotificador, NotificadorDeLog>();
+// Notificador do login por OTP (issue #193): em produção registra o
+// WhatsAppNotificador real (via IWhatsAppHttpClient, Twilio por padrão);
+// NotificadorDeLog (loga o código em claro) só em ModoDev (DI condicional,
+// comportamento de dev da issue #18) — nunca em produção. A fronteira de troca
+// de provedor é IWhatsAppHttpClient (fábrica aqui), sem tocar INotificador.
+if (builder.Configuration.GetValue<bool>("AssinaturaDigital:ModoDev"))
+{
+    builder.Services.AddScoped<INotificador, NotificadorDeLog>();
+}
+else
+{
+    // BaseAddress montado a partir de WhatsApp:AccountSid (validado acima) —
+    // sem fallback de URL fixa: se a config estiver ausente, a exceção já
+    // aconteceu antes desta linha (dev-review do PR #206: o placeholder
+    // anterior "ACCOUNT_SID" nunca falhava explicitamente no startup).
+    builder.Services.AddHttpClient<IWhatsAppHttpClient, WhatsAppHttpClient>(client =>
+    {
+        client.BaseAddress = new Uri($"https://api.twilio.com/2010-04-01/Accounts/{whatsAppAccountSid}/Messages.json");
+    });
+    builder.Services.AddScoped<INotificador, WhatsAppNotificador>();
+}
 builder.Services.AddSingleton<IGeradorDeTokenSessao>(sp => new GeradorDeTokenSessaoJwt(
     jwtSigningKey,
     LerExpiracaoDiasObrigatoria(builder.Configuration),

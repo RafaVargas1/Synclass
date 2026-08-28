@@ -4,9 +4,11 @@ using Synclass.Domain.Autenticacao;
 namespace Synclass.Infrastructure.Autenticacao;
 
 /// <summary>
-/// Implementação inicial de <see cref="INotificador"/>: loga o código em vez
-/// de integrar WhatsApp/SMS/e-mail real, conforme autorizado explicitamente
-/// pelos Critérios técnicos da issue #18. Evento próprio
+/// Implementação de <see cref="INotificador"/> que loga o código em vez de
+/// integrar WhatsApp/SMS/e-mail real (issue #18). A partir da issue #193 este
+/// registro depende só de <c>AssinaturaDigital:ModoDev=true</c> em
+/// <c>Program.cs</c> (DI condicional) — em produção o <c>WhatsAppNotificador</c>
+/// é o registrado, nunca este. Evento próprio
 /// (<c>OtpEnviadoParaDesenvolvimento</c>), deliberadamente separado do
 /// evento de negócio <c>CodigoOtpSolicitado</c> emitido pela Api — aquele
 /// nunca inclui o código, este é o "canal de envio" substituto de dev.
