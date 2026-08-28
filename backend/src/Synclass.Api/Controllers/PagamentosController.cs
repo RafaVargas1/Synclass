@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synclass.Api.Middleware;
+using Synclass.Domain.Cobrancas;
 using Synclass.Domain.Pagamentos;
+using Synclass.Infrastructure.Checkout;
 
 namespace Synclass.Api.Controllers;
 
@@ -15,9 +17,11 @@ namespace Synclass.Api.Controllers;
 /// <see cref="PagamentoService.IniciarAsync"/> são mapeadas aqui pra 404
 /// (Matrícula de outro Aluno, mesmo padrão de
 /// <see cref="MarcacoesHorarioController"/>: não distingue "não é sua" de
-/// "não existe" pra não vazar existência do recurso) e 400 (sem valor
-/// devido; Professor sem conta conectada), com <c>tipo</c> distintos por
-/// causa (ver implementation.md#contrato-de-api).
+/// "não existe" pra não vazar existência do recurso), 400 (sem valor
+/// devido — inclui já pago; Professor sem conta conectada; período
+/// inválido), com <c>tipo</c> distintos por causa (ver
+/// implementation.md#contrato-de-api), e 502 (<see cref="FalhaAoCriarCheckoutException"/>,
+/// falha do Mercado Pago na criação da preferência de checkout).
 /// </summary>
 [Authorize(Roles = "Aluno")]
 [ApiController]
@@ -56,6 +60,16 @@ public sealed class PagamentosController : ControllerBase
         catch (SemValorDevidoException ex)
         {
             return BadRequest(new PagamentoErrorResponse("sem-valor-devido", ex.Message));
+        }
+        catch (PeriodoConsultaInvalidoException ex)
+        {
+            return BadRequest(new PagamentoErrorResponse("periodo-invalido", ex.Message));
+        }
+        catch (FalhaAoCriarCheckoutException)
+        {
+            // 502 sem vazar o corpo cru do erro do Mercado Pago — mesmo
+            // padrão de MercadoPagoController (Infrastructure.Http.MercadoPagoApiException).
+            return StatusCode(StatusCodes.Status502BadGateway);
         }
     }
 
