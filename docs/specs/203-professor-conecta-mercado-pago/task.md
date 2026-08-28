@@ -21,12 +21,12 @@ Card: https://github.com/RafaVargas1/Synclass/issues/203
 - [x] Implementação mínima do cenário 3: `ProcessarCallbackAsync(string code, string state, CancellationToken ct)` — resolve o registro via `ObterPorStateAsync(state)`, valida, chama `IClienteOAuthMercadoPago`, persiste via repositório
 - [x] Teste unidade (Domain): `ConexaoMercadoPagoService.ProcessarCallbackAsync` rejeita `state` inválido (`StateInvalidoException`)
 - [x] Implementação mínima do cenário 4: validação de `state` no `ProcessarCallbackAsync`
-- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` retorna `collector_id` para Professor conectado
-- [ ] Implementação mínima do cenário 5: `ObterCollectorIdAsync`
-- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` retorna `null` para Professor sem conexão
-- [ ] Implementação mínima do cenário 6: fallback para `null` na `ObterCollectorIdAsync`
-- [ ] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` aciona renovação via `RefreshToken` quando `AccessToken` expirado, e retorna `null` se renovação falhar
-- [ ] Implementação mínima do cenário 7: renovação de token no `ConexaoMercadoPagoService`
+- [x] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` retorna `collector_id` para Professor conectado
+- [x] Implementação mínima do cenário 5: `ObterCollectorIdAsync`
+- [x] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` retorna `null` para Professor sem conexão
+- [x] Implementação mínima do cenário 6: fallback para `null` na `ObterCollectorIdAsync`
+- [x] Teste unidade (Domain): `ConexaoMercadoPagoService.ObterCollectorIdAsync` aciona renovação via `RefreshToken` quando `AccessToken` expirado, e retorna `null` se renovação falhar
+- [x] Implementação mínima do cenário 7: renovação de token no `ConexaoMercadoPagoService`
 - [ ] Migration: `CriarConexaoMercadoPago` (tabela `ConexaoMercadoPago`)
 - [ ] Teste de fumaça (Api): `GET /professores/mercado-pago/conectar` retorna `200` com `{ url }` para Professor autenticado
 - [ ] Teste de fumaça (Api): `GET /professores/mercado-pago/callback?code=...&state=...` retorna `200` e persiste conexão
