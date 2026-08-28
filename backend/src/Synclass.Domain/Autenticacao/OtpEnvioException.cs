@@ -1,10 +1,11 @@
 namespace Synclass.Domain.Autenticacao;
 
 /// <summary>
-/// Falha de envio de código OTP pelo provedor de mensageria (issue #193).
-/// <see cref="Motivo"/> é a mensagem amigável exibida ao usuário/API — sem
-/// detalhe técnico do provedor; <see cref="CausaOriginal"/> é a exceção
-/// interna nunca serializada em log.
+/// Falha no envio do código OTP pelo provedor de WhatsApp (issue #193).
+/// <see cref="Motivo"/> é a mensagem amigável exibida ao usuário, sem detalhe
+/// técnico do provedor; <see cref="CausaOriginal"/> é a exceção interna
+/// (timeout, falha de rede etc), utilizável apenas para diagnóstico e nunca
+/// serializada em log ou resposta HTTP.
 /// </summary>
 public sealed class OtpEnvioException : Exception
 {

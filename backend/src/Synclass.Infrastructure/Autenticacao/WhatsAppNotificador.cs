@@ -5,13 +5,12 @@ using Synclass.Domain.Usuarios;
 namespace Synclass.Infrastructure.Autenticacao;
 
 /// <summary>
-/// Implementação real de <see cref="INotificador"/> (issue #193): normaliza
-/// o contato para E.164 e envia o código via <see cref="IWhatsAppHttpClient"/>
-/// (provedor Twilio por padrão). Eventos de log nunca incluem o código OTP em
-/// texto puro — sempre <see cref="MascaradorDeContato"/> e <see cref="OtpEnvioException.Motivo"/>.
-/// Sem <c>TrackId</c> explícito por rodar na camada de Infrastructure, sem
-/// acesso ao <c>HttpContext</c>; correlação por contato mascarado + timestamp
-/// (ver docs/specs/193-login-whatsapp-real/implementation.md).
+/// Implementação de <see cref="INotificador"/> para o canal WhatsApp (issue
+/// #193): envia o código OTP ao provedor (hoje Twilio, via
+/// <see cref="IWhatsAppHttpClient"/>) e loga o evento de envio com o contato
+/// mascarado — nunca o código em texto puro. Registrado por padrão em
+/// <c>Program.cs</c>; <c>NotificadorDeLog</c> (que loga o código) só quando
+/// <c>AssinaturaDigital:ModoDev=true</c>.
 /// </summary>
 public sealed class WhatsAppNotificador : INotificador
 {
@@ -38,7 +37,7 @@ public sealed class WhatsAppNotificador : INotificador
         catch (OtpEnvioException ex)
         {
             _logger.LogError("OtpEnvioFalhou {ContatoMascarado} {Motivo}", contatoMascarado, ex.Motivo);
-            throw; // preserva a stack trace original — capturado pelo controller (502)
+            throw; // preserva stack trace original — capturado pelo controller (502)
         }
     }
 }

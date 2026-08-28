@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Synclass.Domain.Autenticacao;
 using Synclass.Domain.Tests.Fakes;
 using Synclass.Infrastructure.Autenticacao;
@@ -7,38 +7,84 @@ using Synclass.Infrastructure.Autenticacao;
 namespace Synclass.Domain.Tests.Autenticacao;
 
 /// <summary>
-/// Cobre a entrega de código OTP via WhatsAppNotificador real (issue #193):
-/// o notificador normaliza o contato para E.164, chama o transporte HTTP e
-/// converte falha do provedor em <see cref="OtpEnvioException"/> com motivo
-/// amigável, sem detalhe técnico (ver edge point do card).
+/// Cobre o comportamento de <see cref="WhatsAppNotificador"/>
+/// (INotificador para o canal WhatsApp, issue #193): envia a mensagem ao
+/// provedor via <see cref="IWhatsAppHttpClient"/> e propaga falha de envio
+/// como <see cref="OtpEnvioException"/> — nunca expondo o código OTP em
+/// log estruturado.
 /// </summary>
 public sealed class WhatsAppNotificadorTests
 {
-    [Fact]
-    public async Task EnviarCodigoOtpAsync_ProvedorSucesso_NaoLancaExcecao()
-    {
-        var httpClient = new FakeWhatsAppHttpClientSucesso();
-        var notificador = new WhatsAppNotificador(httpClient, NullLogger<WhatsAppNotificador>.Instance);
+    private const string ContatoE164 = "+5511999999999";
+    private const string Codigo = "123456";
 
-        var acao = () => notificador.EnviarCodigoOtpAsync("+5511987654321", "123456", CancellationToken.None);
+    [Fact]
+    public async Task EnviarCodigoOtpAsync_CanalResponde_EnviaMensagemSemLancarErro()
+    {
+        var http = new FakeWhatsAppHttpClientSucesso();
+        var logger = new FakeLogger<WhatsAppNotificador>();
+        var notificador = new WhatsAppNotificador(http, logger);
+
+        var acao = () => notificador.EnviarCodigoOtpAsync(ContatoE164, Codigo, CancellationToken.None);
 
         await acao.Should().NotThrowAsync();
-        httpClient.MensagensEnviadas.Should().ContainSingle(m => m.NumeroE164 == "+5511987654321");
+        var (numeroE164, mensagem) = http.MensagensEnviadas.Should().ContainSingle().Which;
+        numeroE164.Should().Be(ContatoE164);
+        mensagem.Should().Contain(Codigo);
     }
 
     [Fact]
-    public async Task EnviarCodigoOtpAsync_ProvedorFalha_LancaOtpEnvioExceptionComMotivoAmigavelSemDetalheTecnico()
+    public async Task EnviarCodigoOtpAsync_CanalRespode_LogaOtpEnviadoSemCodigoEmTextoPuro()
     {
-        var notificador = new WhatsAppNotificador(
-            new FakeWhatsAppHttpClientFalha(),
-            NullLogger<WhatsAppNotificador>.Instance);
+        var http = new FakeWhatsAppHttpClientSucesso();
+        var logger = new FakeLogger<WhatsAppNotificador>();
+        var notificador = new WhatsAppNotificador(http, logger);
 
-        var acao = () => notificador.EnviarCodigoOtpAsync("+5511987654321", "123456", CancellationToken.None);
+        await notificador.EnviarCodigoOtpAsync(ContatoE164, Codigo, CancellationToken.None);
+
+        var evento = logger.Eventos.Should().ContainSingle(e => e.Linha.StartsWith("OtpEnviado")).Which;
+        evento.Linha.Should().NotContain(Codigo);
+        NenhumArgumentoContemOCodigo(evento.Argumentos);
+    }
+
+    [Fact]
+    public async Task EnviarCodigoOtpAsync_CanalFalha_PropagaOtpEnvioExceptionComMotivoSemDetalheTecnico()
+    {
+        var http = new FakeWhatsAppHttpClientFalha();
+        var logger = new FakeLogger<WhatsAppNotificador>();
+        var notificador = new WhatsAppNotificador(http, logger);
+
+        var acao = () => notificador.EnviarCodigoOtpAsync(ContatoE164, Codigo, CancellationToken.None);
 
         var excecao = await acao.Should().ThrowAsync<OtpEnvioException>();
-        // Motivo amigável, sem detalhe técnico do provedor; causa original
-        // preservada apenas para diagnóstico interno, não serializada em log.
-        excecao.And.Motivo.Should().Be("Não foi possível enviar o código. Tente novamente em instantes.");
-        excecao.And.CausaOriginal.Should().BeOfType<HttpRequestException>();
+        excecao.Which.Motivo.Should().Contain("Não foi possível enviar o código");
+        excecao.Which.Motivo.Should().NotContain("Twilio");
+        excecao.Which.Motivo.Should().NotContain("HttpRequest");
+    }
+
+    [Fact]
+    public async Task EnviarCodigoOtpAsync_CanalFalha_LogaOtpEnvioFalhouSemCodigo()
+    {
+        var http = new FakeWhatsAppHttpClientFalha();
+        var logger = new FakeLogger<WhatsAppNotificador>();
+        var notificador = new WhatsAppNotificador(http, logger);
+
+        await Assert.ThrowsAsync<OtpEnvioException>(() =>
+            notificador.EnviarCodigoOtpAsync(ContatoE164, Codigo, CancellationToken.None));
+
+        var evento = logger.Eventos.Should().ContainSingle(e => e.Linha.StartsWith("OtpEnvioFalhou")).Which;
+        evento.Linha.Should().NotContain(Codigo);
+        NenhumArgumentoContemOCodigo(evento.Argumentos);
+    }
+
+    private static void NenhumArgumentoContemOCodigo(IReadOnlyList<object?> argumentos)
+    {
+        foreach (var argumento in argumentos)
+        {
+            if (argumento is string texto)
+            {
+                texto.Should().NotContain(Codigo);
+            }
+        }
     }
 }

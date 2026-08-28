@@ -3,8 +3,9 @@ using Synclass.Domain.Autenticacao;
 namespace Synclass.Domain.Tests.Fakes;
 
 /// <summary>
-/// Substitui o transporte HTTP do WhatsApp em testes de unidade: registra o
-/// que teria sido enviado e retorna sucesso, sem rede real (issue #193).
+/// Implementação de sucesso de <see cref="IWhatsAppHttpClient"/> para os
+/// testes de unidade de <c>WhatsAppNotificador</c> (issue #193): registra o
+/// destino e a mensagem enviados e conclui sem erro — sem rede real.
 /// </summary>
 public sealed class FakeWhatsAppHttpClientSucesso : IWhatsAppHttpClient
 {
@@ -18,17 +19,17 @@ public sealed class FakeWhatsAppHttpClientSucesso : IWhatsAppHttpClient
 }
 
 /// <summary>
-/// Substitui o transporte HTTP do WhatsApp em testes de unidade de falha:
-/// lança <see cref="OtpEnvioException"/> com a causa técnica do provedor
-/// preservada (mesmo caminho que o wrapper real <c>WhatsAppHttpClient</c>
-/// converte HttpRequestException/TaskCanceledException), sem rede real.
+/// Implementação de falha de <see cref="IWhatsAppHttpClient"/> para os
+/// testes de unidade de <c>WhatsAppNotificador</c> (issue #193): lança
+/// <see cref="OtpEnvioException"/> com motivo amigável, simulando o timeout
+/// ou a rejeição do provedor.
 /// </summary>
 public sealed class FakeWhatsAppHttpClientFalha : IWhatsAppHttpClient
 {
+    public OtpEnvioException Excecao { get; } = new("Não foi possível enviar o código. Tente novamente em instantes.");
+
     public Task EnviarMensagemAsync(string numeroE164, string mensagem, CancellationToken cancellationToken)
     {
-        throw new OtpEnvioException(
-            "Não foi possível enviar o código. Tente novamente em instantes.",
-            new HttpRequestException("Falha do provedor Twilio"));
+        throw Excecao;
     }
 }

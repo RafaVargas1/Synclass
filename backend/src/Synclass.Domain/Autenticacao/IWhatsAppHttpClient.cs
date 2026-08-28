@@ -1,11 +1,11 @@
 namespace Synclass.Domain.Autenticacao;
 
 /// <summary>
-/// Fronteira do transporte HTTP do WhatsApp (issue #193): separa o envio de
-/// mensagem (provedor escolhido: Twilio por padrão) do negócio de
-/// notificação (<see cref="INotificador"/>). Trocar de provedor exige uma
-/// nova implementação desta interface e ajuste na fábrica de
-/// <c>Program.cs</c>, sem tocar no Domain.
+/// Fronteira de transporte do canal WhatsApp (issue #193): separa a chamada
+/// HTTP ao provedor (hoje Twilio) do negócio de envio de OTP em
+/// <see cref="INotificador"/>. Trocar de provedor exige nova implementação
+/// desta interface e ajuste da fábrica em <c>Program.cs</c>, sem tocar o
+/// Domain.
 /// </summary>
 public interface IWhatsAppHttpClient
 {
