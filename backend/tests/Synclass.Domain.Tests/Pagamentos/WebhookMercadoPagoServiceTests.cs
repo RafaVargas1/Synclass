@@ -63,4 +63,25 @@ public sealed class WebhookMercadoPagoServiceTests
 
         aceito.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task VerificarAssinaturaAsync_PayloadAdulterado_MudaDataId_RetornaFalse()
+    {
+        // Assinatura calculada para dataId original, mas o payload chega com
+        // um data.id diferente (adulteração) — o manifest montado diverge, o
+        // HMAC não confere.
+        var dataIdAssinado = "123456789";
+        var dataIdAdulterado = "987654321";
+        var requestId = "req-abc-123";
+        var timestamp = "1747353600";
+        var payloadJson = $"{{\"type\":\"payment\",\"data\":{{\"id\":\"{dataIdAdulterado}\"}},\"action\":\"payment.created\"}}";
+        var xSignature = MontarXSignature(dataIdAssinado, requestId, timestamp);
+
+        var servico = CriarServico();
+
+        var aceito = await servico.VerificarAssinaturaAsync(
+            payloadJson, xSignature, requestId, CancellationToken.None);
+
+        aceito.Should().BeFalse();
+    }
 }
