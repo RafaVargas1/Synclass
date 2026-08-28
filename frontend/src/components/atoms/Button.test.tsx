@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { CalendarPlus } from 'phosphor-react-native';
 
 import { Button } from '@/components/atoms/Button';
 
@@ -40,5 +41,19 @@ describe('Button', () => {
     const botao = screen.getByRole('button');
     expect(botao.props.className).not.toContain('bg-primary');
     expect(botao.props.className).toContain('border-text');
+  });
+
+  it('renders the optional icone before the label when provided (issue #202)', async () => {
+    await render(<Button label="Marcar" icone={CalendarPlus} onPress={() => {}} />);
+
+    expect(
+      screen.getByTestId('button-icone', { includeHiddenElements: true }),
+    ).toBeTruthy();
+  });
+
+  it('renders no icon when icone is not provided (issue #202)', async () => {
+    await render(<Button label="Continuar" onPress={() => {}} />);
+
+    expect(screen.queryByTestId('button-icone', { includeHiddenElements: true })).toBeNull();
   });
 });

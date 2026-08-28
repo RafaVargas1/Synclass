@@ -1,3 +1,4 @@
+import { CalendarPlus } from 'phosphor-react-native';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/atoms/Button';
@@ -33,7 +34,12 @@ export function HorarioVagoCard({ horarioVago, onMarcar }: HorarioVagoCardProps)
           {rotuloVagas}
         </Text>
       </View>
-      <Button label="Marcar" onPress={() => onMarcar(horarioVago.id)} />
+      <Button
+        label="Marcar"
+        icone={CalendarPlus}
+        testIDIcone="icone-acao-marcar"
+        onPress={() => onMarcar(horarioVago.id)}
+      />
     </View>
   );
 }

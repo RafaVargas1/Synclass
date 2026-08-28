@@ -332,9 +332,9 @@ describe('MenuNavegacao (issue #77)', () => {
     );
 
     const dropdown = screen.getByTestId('dropdown-menu-navegacao');
-    expect(within(dropdown).getByTestId('icone-secao-home-outline')).toBeTruthy();
-    expect(within(dropdown).getByTestId('icone-secao-person-outline')).toBeTruthy();
-    expect(within(dropdown).getByTestId('icone-secao-person-add-outline')).toBeTruthy();
+    expect(within(dropdown).getByTestId('icone-secao-home')).toBeTruthy();
+    expect(within(dropdown).getByTestId('icone-secao-perfil')).toBeTruthy();
+    expect(within(dropdown).getByTestId('icone-secao-adicionar-aluno')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Painel' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Meu perfil' })).toBeTruthy();
   });

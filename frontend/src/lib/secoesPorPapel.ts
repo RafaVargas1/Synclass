@@ -1,24 +1,24 @@
 import type { Href } from 'expo-router';
 
 /**
- * Nomes de ícone do conjunto `Ionicons` (`@expo/vector-icons`) usados no
+ * Nomes de ícone do conjunto Phosphor (`phosphor-react-native`) usados no
  * menu — união fechada em vez de `string` solto, pra pegar erro de
  * digitação de nome de ícone em tempo de compilação. Mantém este arquivo
  * (puro, sem JSX) desacoplado do componente que efetivamente desenha o
  * ícone (`MenuNavegacao`/`IconeSecao`).
  */
 export type NomeIconeSecao =
-  | 'home-outline'
-  | 'person-outline'
-  | 'person-add-outline'
-  | 'clipboard-outline'
-  | 'time-outline'
-  | 'people-outline'
-  | 'link-outline'
-  | 'cash-outline'
-  | 'enter-outline'
-  | 'calendar-outline'
-  | 'bar-chart-outline';
+  | 'home'
+  | 'perfil'
+  | 'adicionar-aluno'
+  | 'chamada'
+  | 'horarios'
+  | 'alunos'
+  | 'alocacoes'
+  | 'valor-devido'
+  | 'entrar-turma'
+  | 'minhas-aulas'
+  | 'historico';
 
 export type Secao = { label: string; href: Href; icone: NomeIconeSecao };
 
@@ -36,14 +36,14 @@ export type Secao = { label: string; href: Href; icone: NomeIconeSecao };
  */
 export function secoesAluno(): Secao[] {
   return [
-    { label: 'Minhas aulas', href: '/aluno/minhas-aulas', icone: 'calendar-outline' },
-    { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma', icone: 'enter-outline' },
+    { label: 'Minhas aulas', href: '/aluno/minhas-aulas', icone: 'minhas-aulas' },
+    { label: 'Entrar em nova turma', href: '/aluno/entrar-em-turma', icone: 'entrar-turma' },
     {
       label: 'Ver histórico de frequência',
       href: '/aluno/historico-frequencia',
-      icone: 'bar-chart-outline',
+      icone: 'historico',
     },
-    { label: 'Ver valor devido', href: '/aluno/valor-devido', icone: 'cash-outline' },
+    { label: 'Ver valor devido', href: '/aluno/valor-devido', icone: 'valor-devido' },
   ];
 }
 
@@ -71,20 +71,20 @@ export function secoesProfessor(usuarioId: string | undefined): Secao[] {
   }
 
   return [
-    { label: 'Fazer chamada', href: `/professor/${usuarioId}/chamada` as Href, icone: 'clipboard-outline' },
-    { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` as Href, icone: 'time-outline' },
+    { label: 'Fazer chamada', href: `/professor/${usuarioId}/chamada` as Href, icone: 'chamada' },
+    { label: 'Gerenciar horários', href: `/professor/${usuarioId}/horarios` as Href, icone: 'horarios' },
     {
       label: 'Alocar Aluno em horário',
       href: `/professor/${usuarioId}/alocacoes` as Href,
-      icone: 'link-outline',
+      icone: 'alocacoes',
     },
-    { label: 'Meus Alunos', href: `/professor/${usuarioId}/alunos` as Href, icone: 'people-outline' },
+    { label: 'Meus Alunos', href: `/professor/${usuarioId}/alunos` as Href, icone: 'alunos' },
     {
       label: 'Adicionar Aluno',
       href: `/professor/${usuarioId}/alunos/adicionar` as Href,
-      icone: 'person-add-outline',
+      icone: 'adicionar-aluno',
     },
-    { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href, icone: 'cash-outline' },
+    { label: 'Ver valor devido', href: `/professor/${usuarioId}/valor-devido` as Href, icone: 'valor-devido' },
   ];
 }
 
