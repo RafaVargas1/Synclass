@@ -59,10 +59,10 @@ public sealed class ValorDevidoAlunoController : ControllerBase
 
         var alunoUsuarioId = User.GetUsuarioId();
         var valoresDevidos = await _consultaCobranca.ConsultarPorAlunoAsync(alunoUsuarioId, periodo!, cancellationToken);
-        var semDescontar = await _valorDevido.DescontarPagamentosConfirmadosAsync(
+        var valoresDevidosDescontados = await _valorDevido.DescontarPagamentosConfirmadosAsync(
             valoresDevidos.ToList(), alunoUsuarioId, periodo!.Inicio, periodo.FimExclusivo, cancellationToken);
         LogConsultaRealizada(alunoUsuarioId, periodo!);
-        return Ok(semDescontar.Select(ParaResponse));
+        return Ok(valoresDevidosDescontados.Select(ParaResponse));
     }
 
     private bool TentarResolverPeriodo(DateOnly? inicio, DateOnly? fim, out PeriodoConsulta? periodo, out string? erro)
