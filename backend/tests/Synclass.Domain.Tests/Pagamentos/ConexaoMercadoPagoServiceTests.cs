@@ -20,7 +20,7 @@ public sealed class ConexaoMercadoPagoServiceTests
     private static ConexaoMercadoPagoService CriarServico(
         FakeConexaoMercadoPagoRepository repositorio,
         FakeUsuarioRepository usuarios,
-        FakeClienteOAuthMercadoPago cliente)
+        IClienteOAuthMercadoPago cliente)
     {
         return new ConexaoMercadoPagoService(repositorio, usuarios, cliente, Clock, RedirectUri);
     }
@@ -176,5 +176,28 @@ public sealed class ConexaoMercadoPagoServiceTests
         // Fluxo pendente encerrado: state limpo, não reutilizável.
         conexaoPersistida.State.Should().BeNull();
         conexaoPersistida.StateExpiraEm.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ObterCollectorIdAsync_ProfessorConectado_RetornaCollectorId()
+    {
+        var usuarios = new FakeUsuarioRepository();
+        var professorId = await CriarProfessorAsync(usuarios);
+        var repositorio = new FakeConexaoMercadoPagoRepository();
+        var cliente = new FakeClienteOAuthMercadoPago();
+
+        // Conexão ativa com token ainda válido (expira em 1h, bem além da
+        // margem de renovação de 5 min) — não precisa renovar.
+        var conexao = ConexaoMercadoPago.IniciarFluxoDeAutorizacao(professorId, "state-antigo", Clock);
+        conexao.RegistrarConexao("access-valido", "refresh-valido", "collector-id", Clock.UtcNow.AddHours(1), Clock);
+        await repositorio.AdicionarAsync(conexao, CancellationToken.None);
+
+        var servico = CriarServico(repositorio, usuarios, cliente);
+
+        var collectorId = await servico.ObterCollectorIdAsync(professorId, CancellationToken.None);
+
+        collectorId.Should().Be("collector-id");
+        // Token válido: nenhuma renovação disparada.
+        cliente.UltimoRefreshToken.Should().BeNull();
     }
 }
