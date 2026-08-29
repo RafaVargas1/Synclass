@@ -37,25 +37,33 @@ export type RespostaIdTokenApple = {
   error?: string;
 };
 
+let jaInicializado = false;
+
 /**
  * Init do Sign in with Apple JS, análogo ao GoogleClientId de google.ts —
- * chamado uma vez por processo do app, no escopo do módulo, e guardado por
- * `Platform.OS === 'web'` (o SDK da Apple só existe pra web; no nativo o
- * login Apple é a task #213). O AppleClientId aqui é o Services ID da Apple
- * (`EXPO_PUBLIC_APPLE_CLIENT_ID`), diferente do AppleClientId do backend —
- * são registros distintos no Apple Developer (mesmo conceito do Google ter
- * Client ID web vs Client ID iOS).
+ * chamado sob demanda (não no escopo do módulo): `expo-router` renderiza
+ * este módulo também durante o SSR do bundle web, onde `window` ainda não
+ * existe — inicializar no top-level (mesmo com a guarda `Platform.OS ===
+ * 'web'`, que não distingue SSR de browser real) derruba a renderização de
+ * toda tela que importa `BotaoLoginApple` com
+ * `Cannot read properties of undefined (reading 'AppleID')`. Adiada para a
+ * primeira chamada de `obterIdTokenApple`, que só acontece a partir de um
+ * toque do usuário no browser real. O AppleClientId aqui é o Services ID da
+ * Apple (`EXPO_PUBLIC_APPLE_CLIENT_ID`), diferente do AppleClientId do
+ * backend — são registros distintos no Apple Developer (mesmo conceito do
+ * Google ter Client ID web vs Client ID iOS).
  */
-if (Platform.OS === 'web') {
-  const janelaComApple = globalThis.window as Window & typeof globalThis & AppleIdWeb;
-  if (janelaComApple.AppleID?.auth && ClientId) {
-    janelaComApple.AppleID.auth.init({
-      clientId: ClientId,
-      scope: 'email name',
-      redirectURI: `${process.env.EXPO_PUBLIC_APP_URL ?? 'http://localhost:8081'}/auth/apple/callback`,
-      usePopup: true,
-    });
+function inicializarSeNecessario(janelaComApple: Window & typeof globalThis & AppleIdWeb): void {
+  if (jaInicializado || !janelaComApple.AppleID?.auth || !ClientId) {
+    return;
   }
+  janelaComApple.AppleID.auth.init({
+    clientId: ClientId,
+    scope: 'email name',
+    redirectURI: `${process.env.EXPO_PUBLIC_APP_URL ?? 'http://localhost:8081'}/auth/apple/callback`,
+    usePopup: true,
+  });
+  jaInicializado = true;
 }
 
 /**
@@ -68,11 +76,12 @@ if (Platform.OS === 'web') {
  * nativo lançaria ReferenceError em qualquer tela que importa este arquivo.
  */
 export async function obterIdTokenApple(): Promise<string | null> {
-  if (Platform.OS !== 'web') {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
     return null;
   }
 
   const janelaComApple = globalThis.window as Window & typeof globalThis & AppleIdWeb;
+  inicializarSeNecessario(janelaComApple);
   const appleAuth = janelaComApple.AppleID?.auth;
   if (!appleAuth) {
     return null; // script do Sign in with Apple ainda não carregado na página
