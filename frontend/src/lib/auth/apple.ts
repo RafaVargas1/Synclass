@@ -6,12 +6,16 @@ const ClientId = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID ?? '';
  * Forma mínima do Sign in with Apple JS injetado no `window` pela página
  * web — declaração local porque a lib de tipos da Apple não faz parte do
  * projeto (ver docs/spec/code-style.md#dependências: API de terceiro é
- * envolvida com uma interface fina própria).
+ * envolvida com uma interface fina própria). O SDK define a propriedade
+ * `AppleID` no `window`, espelhando a forma de `GoogleIdentityServicesWeb`
+ * de `google.ts` (que expõe `google` no `window`).
  */
 type AppleIdWeb = {
-  auth?: {
-    init: (config: Record<string, unknown>) => void;
-    signIn: () => Promise<RespostaIdTokenApple>;
+  AppleID?: {
+    auth?: {
+      init: (config: Record<string, unknown>) => void;
+      signIn: () => Promise<RespostaIdTokenApple>;
+    };
   };
 };
 

@@ -3,11 +3,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeHero } from '@/components/organisms/HomeHero';
 import { type ResultadoAutenticadoGoogle } from '@/components/molecules/BotaoLoginGoogle';
+import { type ResultadoAutenticadoApple } from '@/components/molecules/BotaoLoginApple';
 import { Topbar } from '@/components/organisms/Topbar';
 
 export type HomeTemplateProps = {
   onAutenticadoGoogle: (resultado: ResultadoAutenticadoGoogle) => void;
   onCadastroPendenteGoogle: (email: string) => void;
+  onAutenticadoApple: (resultado: ResultadoAutenticadoApple) => void;
+  onCadastroPendenteApple: (email: string) => void;
   onEntrarComoProfessor: () => void;
   onEntrarComoAluno: () => void;
   onLogin: () => void;
@@ -25,6 +28,8 @@ export type HomeTemplateProps = {
 export function HomeTemplate({
   onAutenticadoGoogle,
   onCadastroPendenteGoogle,
+  onAutenticadoApple,
+  onCadastroPendenteApple,
   onEntrarComoProfessor,
   onEntrarComoAluno,
   onLogin,
@@ -41,6 +46,8 @@ export function HomeTemplate({
         <HomeHero
           onAutenticadoGoogle={onAutenticadoGoogle}
           onCadastroPendenteGoogle={onCadastroPendenteGoogle}
+          onAutenticadoApple={onAutenticadoApple}
+          onCadastroPendenteApple={onCadastroPendenteApple}
           onEntrarComoProfessor={onEntrarComoProfessor}
           onEntrarComoAluno={onEntrarComoAluno}
           onLogin={onLogin}
