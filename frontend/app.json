@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "br.com.synclass.app",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "br.com.synclass.app",
@@ -36,7 +37,8 @@
           "imageWidth": 140
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,
