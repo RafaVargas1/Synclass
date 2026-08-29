@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { botaoProps } from '@/components/molecules/BotaoLoginGoogle.test.helpers';
+import { botaoAppleProps } from '@/components/molecules/BotaoLoginApple.test.helpers';
 import { useSessao } from '@/lib/auth/contexto-sessao';
 import { cadastrarProfessor, verificarContatoProfessor } from '@/lib/api/professores';
 
@@ -27,6 +28,13 @@ jest.mock('@/components/molecules/BotaoLoginGoogle', () => {
     '@/components/molecules/BotaoLoginGoogle.test.helpers',
   );
   return { BotaoLoginGoogle: BotaoLoginGoogleDeTeste };
+});
+
+jest.mock('@/components/molecules/BotaoLoginApple', () => {
+  const { BotaoLoginAppleDeTeste } = jest.requireActual(
+    '@/components/molecules/BotaoLoginApple.test.helpers',
+  );
+  return { BotaoLoginApple: BotaoLoginAppleDeTeste };
 });
 
 jest.mock('@/lib/api/professores', () => ({
@@ -170,5 +178,40 @@ describe('CadastroProfessorScreen', () => {
     });
 
     expect(screen.getByDisplayValue('novo.google@gmail.com')).toBeTruthy();
+  });
+
+  it('persists the session and navigates to /painel when the Apple login succeeds (issue #212)', async () => {
+    await render(<CadastroProfessorScreen />);
+
+    await act(async () => {
+      botaoAppleProps.onAutenticado({ token: 'token-apple', nome: 'Maria Silva', papeis: ['Professor'] });
+    });
+
+    expect(definirSessaoMock).toHaveBeenCalledWith('token-apple', ['Professor']);
+    expect(mockReplace).toHaveBeenCalledWith('/painel');
+  });
+
+  it('shows an inline error and does not navigate when persisting the session fails on the Apple login (issue #212)', async () => {
+    definirSessaoMock.mockRejectedValue(new Error('falha ao gravar no dispositivo'));
+    await render(<CadastroProfessorScreen />);
+
+    await act(async () => {
+      botaoAppleProps.onAutenticado({ token: 'token-apple', nome: 'Maria Silva', papeis: ['Professor'] });
+    });
+
+    expect(
+      screen.getByText('Não foi possível concluir o login neste dispositivo. Tente novamente.'),
+    ).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('pre-fills the contact field with the Apple e-mail when the account has no user yet (issue #212)', async () => {
+    await render(<CadastroProfessorScreen />);
+
+    await act(async () => {
+      botaoAppleProps.onCadastroPendente('novo.apple@gmail.com');
+    });
+
+    expect(screen.getByDisplayValue('novo.apple@gmail.com')).toBeTruthy();
   });
 });
