@@ -8,7 +8,8 @@ namespace Synclass.Api.Controllers;
 /// <summary>
 /// Login por código de uso único (issue #18): solicitar código e confirmar
 /// para obter a sessão (token JWT stateless). Também expõe o login via
-/// idToken do Google (issue #65), fluxo paralelo ao OTP.
+/// idToken do Google (issue #65) e da Apple (issue #212), fluxos paralelos
+/// ao OTP.
 /// </summary>
 [ApiController]
 [Route("auth")]
@@ -16,15 +17,18 @@ public sealed class AutenticacaoController : ControllerBase
 {
     private readonly LoginService _login;
     private readonly LoginComGoogleService _loginGoogle;
+    private readonly LoginComAppleService _loginApple;
     private readonly ILogger<AutenticacaoController> _logger;
 
     public AutenticacaoController(
         LoginService login,
         LoginComGoogleService loginGoogle,
+        LoginComAppleService loginApple,
         ILogger<AutenticacaoController> logger)
     {
         _login = login;
         _loginGoogle = loginGoogle;
+        _loginApple = loginApple;
         _logger = logger;
     }
 
@@ -104,6 +108,41 @@ public sealed class AutenticacaoController : ControllerBase
         }
     }
 
+    [HttpPost("apple")]
+    public async Task<IActionResult> EntrarComApple([FromBody] LoginAppleRequest request, CancellationToken cancellationToken)
+    {
+        var trackId = Response.Headers[TrackIdMiddleware.HeaderName].ToString();
+
+        try
+        {
+            var resultado = await _loginApple.AutenticarAsync(request.IdToken, cancellationToken);
+            if (resultado.CadastroPendente)
+            {
+                LogCadastroPendenteApple(trackId, resultado.EmailNormalizado);
+                return Ok(new LoginAppleResponse(
+                    Token: null,
+                    UsuarioId: null,
+                    Nome: null,
+                    Papeis: null,
+                    CadastroPendente: true,
+                    Email: resultado.EmailNormalizado));
+            }
+
+            LogLoginAppleConfirmado(trackId, resultado.Login!.Usuario);
+            return Ok(new LoginAppleResponse(
+                Token: resultado.Login.Token,
+                UsuarioId: resultado.Login.Usuario.Id,
+                Nome: resultado.Login.Usuario.Nome,
+                Papeis: resultado.Login.Usuario.Papeis.Select(p => p.Papel.ToString()).ToArray(),
+                CadastroPendente: false,
+                Email: resultado.EmailNormalizado));
+        }
+        catch (LoginRejeitadoException ex)
+        {
+            return RejeitarLoginApple(trackId, ex);
+        }
+    }
+
     private static ConfirmarCodigoResponse ParaResponse(ResultadoLogin resultado)
     {
         var papeis = resultado.Usuario.Papeis.Select(p => p.Papel.ToString()).ToArray();
@@ -128,10 +167,22 @@ public sealed class AutenticacaoController : ControllerBase
         _logger.LogInformation("LoginGoogleConfirmado {TrackId} {UsuarioId} {Papeis}", trackId, usuario.Id, papeis);
     }
 
+    private void LogLoginAppleConfirmado(string trackId, Usuario usuario)
+    {
+        var papeis = string.Join(",", usuario.Papeis.Select(p => p.Papel));
+        _logger.LogInformation("LoginAppleConfirmado {TrackId} {UsuarioId} {Papeis}", trackId, usuario.Id, papeis);
+    }
+
     private void LogCadastroPendente(string trackId, string emailNormalizado)
     {
         var emailMascarado = MascaradorDeContato.Mascarar(emailNormalizado);
         _logger.LogInformation("LoginGoogleCadastroPendente {TrackId} {EmailMascarado}", trackId, emailMascarado);
+    }
+
+    private void LogCadastroPendenteApple(string trackId, string emailNormalizado)
+    {
+        var emailMascarado = MascaradorDeContato.Mascarar(emailNormalizado);
+        _logger.LogInformation("LoginAppleCadastroPendente {TrackId} {EmailMascarado}", trackId, emailMascarado);
     }
 
     private IActionResult Rejeitar(string trackId, string contatoBruto, Exception ex)
@@ -153,6 +204,19 @@ public sealed class AutenticacaoController : ControllerBase
         _logger.LogWarning("LoginGoogleRejeitado {TrackId} {Motivo} {ContatoMascarado}", trackId, ex.GetType().Name, contatoMascarado);
         return BadRequest(new AutenticacaoErrorResponse(ex.Message));
     }
+
+    private IActionResult RejeitarLoginApple(string trackId, LoginRejeitadoException ex)
+    {
+        // Contato mascarado no log de rejeição (mesmo padrão de Rejeitar):
+        // e-mail normalizado quando a exceção carrega um (e-mail não
+        // verificado), vazio para token inválido (sem contato conhecido).
+        var contatoMascarado = MascaradorDeContato.Mascarar(
+            ex is EmailAppleNaoVerificadoException emailNaoVerificado
+                ? emailNaoVerificado.EmailNormalizado
+                : string.Empty);
+        _logger.LogWarning("LoginAppleRejeitado {TrackId} {Motivo} {ContatoMascarado}", trackId, ex.GetType().Name, contatoMascarado);
+        return BadRequest(new AutenticacaoErrorResponse(ex.Message));
+    }
 }
 
 public sealed record SolicitarCodigoRequest(string Contato);
@@ -166,6 +230,16 @@ public sealed record ConfirmarCodigoResponse(string Token, Guid UsuarioId, strin
 public sealed record LoginGoogleRequest(string IdToken);
 
 public sealed record LoginGoogleResponse(
+    string? Token,
+    Guid? UsuarioId,
+    string? Nome,
+    string[]? Papeis,
+    bool CadastroPendente,
+    string? Email);
+
+public sealed record LoginAppleRequest(string IdToken);
+
+public sealed record LoginAppleResponse(
     string? Token,
     Guid? UsuarioId,
     string? Nome,

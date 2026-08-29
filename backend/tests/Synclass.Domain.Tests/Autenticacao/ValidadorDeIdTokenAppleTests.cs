@@ -27,7 +27,8 @@ public sealed class ValidadorDeIdTokenAppleTests
         var idToken = CriarIdToken(
             chave,
             AudienceValida,
-            DateTime.UtcNow.AddHours(1),
+            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
             email: "maria@exemplo.com",
             emailVerificado: "true");
 
@@ -47,13 +48,92 @@ public sealed class ValidadorDeIdTokenAppleTests
         var idToken = CriarIdToken(
             chaveForaDoJwks,
             AudienceValida,
-            DateTime.UtcNow.AddHours(1),
+            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
             email: "maria@exemplo.com",
             emailVerificado: "true");
 
         var informacoes = await validador.ValidarAsync(idToken, CancellationToken.None);
 
         informacoes.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ValidarAsync_IssuerDiferenteDoEsperado_RetornaNull()
+    {
+        var chave = CriarChaveRsa();
+        var validador = CriarValidador(chave, AudienceValida);
+        var idToken = CriarIdToken(
+            chave,
+            AudienceValida,
+            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
+            email: "maria@exemplo.com",
+            emailVerificado: "true",
+            issuer: "https://outro-emissor.example.com");
+
+        var informacoes = await validador.ValidarAsync(idToken, CancellationToken.None);
+
+        informacoes.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ValidarAsync_AudienceDiferenteDaConfigurada_RetornaNull()
+    {
+        var chave = CriarChaveRsa();
+        var validador = CriarValidador(chave, AudienceValida);
+        var idToken = CriarIdToken(
+            chave,
+            audience: "outra-audience",
+            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
+            email: "maria@exemplo.com",
+            emailVerificado: "true");
+
+        var informacoes = await validador.ValidarAsync(idToken, CancellationToken.None);
+
+        informacoes.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ValidarAsync_TokenExpirado_RetornaNull()
+    {
+        var chave = CriarChaveRsa();
+        var validador = CriarValidador(chave, AudienceValida);
+        var idToken = CriarIdToken(
+            chave,
+            AudienceValida,
+            expires: DateTime.UtcNow.AddMinutes(-5),
+            notBefore: DateTime.UtcNow.AddMinutes(-10),
+            email: "maria@exemplo.com",
+            emailVerificado: "true");
+
+        var informacoes = await validador.ValidarAsync(idToken, CancellationToken.None);
+
+        informacoes.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ValidarAsync_EmailVerifiedComoStringTrue_InterpretaComoVerificado()
+    {
+        // Edge point do implementation.md#edge-points: o token da Apple traz
+        // `email_verified` como STRING ("true"/"false"), não booleano JSON —
+        // o parsing por comparação de string precisa reconhecer "true"
+        // (case-insensitive) e ignorar "false"/outros valores.
+        var chave = CriarChaveRsa();
+        var validador = CriarValidador(chave, AudienceValida);
+        var idToken = CriarIdToken(
+            chave,
+            AudienceValida,
+            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
+            email: "maria@exemplo.com",
+            emailVerificado: "true");
+
+        var informacoes = await validador.ValidarAsync(idToken, CancellationToken.None);
+
+        informacoes.Should().NotBeNull();
+        informacoes!.EmailVerificado.Should().BeTrue();
     }
 
     private static ValidadorDeIdTokenApple CriarValidador(RsaSecurityKey chaveNoJwks, string audience)
@@ -70,8 +150,10 @@ public sealed class ValidadorDeIdTokenAppleTests
         RsaSecurityKey chaveDeAssinatura,
         string audience,
         DateTime expires,
+        DateTime notBefore,
         string email,
-        string emailVerificado)
+        string emailVerificado,
+        string issuer = IssuerValido)
     {
         var claims = new List<Claim>
         {
@@ -79,10 +161,10 @@ public sealed class ValidadorDeIdTokenAppleTests
             new("email_verified", emailVerificado),
         };
         var token = new JwtSecurityToken(
-            issuer: IssuerValido,
+            issuer: issuer,
             audience: audience,
             claims: claims,
-            notBefore: DateTime.UtcNow.AddMinutes(-1),
+            notBefore: notBefore,
             expires: expires,
             signingCredentials: new SigningCredentials(chaveDeAssinatura, SecurityAlgorithms.RsaSha256));
         return new JwtSecurityTokenHandler().WriteToken(token);
