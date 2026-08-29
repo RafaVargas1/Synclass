@@ -37,7 +37,18 @@ AppleID.auth.init({
 });
 ```
 
-**ATENÇÃO — forma exata de obter o `id_token` NÃO confirmada com certeza** (pesquisa nas docs oficiais da Apple não trouxe o snippet definitivo): pode ser via `AppleID.auth.signIn()` retornando uma `Promise` com o resultado, OU via `document.addEventListener('AppleIDSignInOnSuccess', (event) => ...)`/`AppleIDSignInOnFailure` (padrão de evento DOM, mais comum em versões antigas da doc da Apple). **Antes de implementar**: carregue o script real num browser de teste e inspecione `window.AppleID.auth` (`Object.keys`/`console.log`) pra confirmar qual API a versão atual expõe, em vez de assumir uma das duas. Estruture `obterIdTokenApple()` (novo arquivo `frontend/src/lib/auth/apple.ts`, mesmo contrato de `obterIdTokenGoogle()`: nunca lança, devolve `string | null`) em torno da que for confirmada.
+**Forma de obter o `id_token` — CONFIRMADA por inspeção do SDK real** (baixado diretamente de `https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js` e desminificado para leitura da lógica interna, já que a documentação oficial não traz o snippet definitivo): com `usePopup: true` (configuração já usada no `init` acima) e `window.Promise` disponível, `AppleID.auth.signIn()` **retorna uma `Promise`** — internamente o SDK cria a Promise (`new Promise(function(resolve, reject) {...})`), resolve com o payload do OAuth vindo do popup (`{ authorization: { code, id_token, state }, user?: { email, name } }`) em caso de sucesso, e rejeita com `{ error }` em caso de falha/cancelamento. O SDK **também** dispara os eventos DOM `AppleIDSignInOnSuccess`/`AppleIDSignInOnFailure` em paralelo (compatibilidade retroativa com integrações antigas que não usam popup/Promise), mas com `usePopup: true` o caminho direto e correto é `await`/`.then()` na Promise de `signIn()`, não o listener de evento. Implementar `obterIdTokenApple()` (novo arquivo `frontend/src/lib/auth/apple.ts`, mesmo contrato de `obterIdTokenGoogle()`: nunca lança, devolve `string | null`) assim:
+
+```typescript
+async function obterIdTokenApple(): Promise<string | null> {
+  try {
+    const resposta = await window.AppleID.auth.signIn();
+    return resposta.authorization.id_token ?? null;
+  } catch {
+    return null; // usuário cancelou o popup ou falha do provedor — mesmo padrão de obterIdTokenGoogle()
+  }
+}
+```
 
 ## Contrato de API
 
