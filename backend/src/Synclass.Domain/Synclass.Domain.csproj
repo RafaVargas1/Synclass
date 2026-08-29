@@ -1,10 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SecurityKey para IClienteJwksApple (validação de idToken da Apple,
+         issue #212) — mesma dependência já usada pela autenticação JWT do
+         projeto (Program.cs/GeradorDeTokenSessaoJwt), apenas agora também no
+         Domain porque a interface de busca de chaves JWKS expõe o tipo. -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Permite que os testes de unidade seedem estado interno (ex:
