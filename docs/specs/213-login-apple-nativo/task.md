@@ -11,7 +11,7 @@ Card: https://github.com/RafaVargas1/Synclass/issues/213
 - [x] Configuração: `app.json` — plugin `expo-apple-authentication` + `ios.usesAppleSignIn: true`
 - [x] Componente frontend: botão nativo usa `AppleAuthentication.AppleAuthenticationButton` (componente pronto do SDK, não o `Button` genérico nem o `BotaoLoginApple.tsx` da web) — só renderiza quando `Platform.OS === 'ios'` (nunca no Android, ver RN do card). Ver `implementation.md#componente-de-botão-nativo` pro ponto de inserção exato
 - [x] Teste: componente do botão nativo só renderiza em iOS (mock de `Platform.OS`)
-- [ ] Suíte de testes completa (frontend) verde antes do PR
+- [x] Suíte de testes completa (frontend) verde antes do PR
 
 ## Fora do escopo de código (ação manual, não travar a Task por causa disso)
 
