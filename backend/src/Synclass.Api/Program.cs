@@ -179,14 +179,19 @@ builder.Services.AddScoped<LoginComGoogleService>();
 
 // Login via idToken da Apple (issue #212) — fluxo paralelo ao OTP/Google.
 // O ClienteJwksApple busca as chaves JWKS da Apple via HttpClient (sem
-// BaseAddress fixo porque o ClienteJwksApple constroi a URL inteira) e o
-// AppleClientId (Services ID da Apple) é lido de IConfiguration["AppleClientId"]
-// (mesmo padrão de leitura de GoogleClientId) e injetado no Validador.
-// Ver docs/specs/212-login-apple-web/implementation.md.
+// BaseAddress fixo porque o ClienteJwksApple constroi a URL inteira) e as duas
+// audiences do Validador são lidas de IConfiguration: AppleClientId (Services
+// ID da web, mesmo padrão de leitura de GoogleClientId, issue #212) e
+// AppleBundleId (App ID do bundle nativo, issue #213 — o `aud` do
+// identityToken nativo vem com o bundle identifier, não o Services ID; sem
+// aceitar os dois, todo login nativo falharia a validação de audience).
+// Ver docs/specs/212-login-apple-web/implementation.md e
+// docs/specs/213-login-apple-nativo/implementation.md#edge-points.
 builder.Services.AddHttpClient<IClienteJwksApple, ClienteJwksApple>();
 builder.Services.AddScoped<IValidadorDeIdTokenApple>(sp => new ValidadorDeIdTokenApple(
     sp.GetRequiredService<IClienteJwksApple>(),
-    sp.GetRequiredService<IConfiguration>()["AppleClientId"] ?? string.Empty));
+    sp.GetRequiredService<IConfiguration>()["AppleClientId"] ?? string.Empty,
+    sp.GetRequiredService<IConfiguration>()["AppleBundleId"] ?? string.Empty));
 builder.Services.AddScoped<LoginComAppleService>();
 
 // Convite de Aluno via WhatsApp (issue #2) — ver

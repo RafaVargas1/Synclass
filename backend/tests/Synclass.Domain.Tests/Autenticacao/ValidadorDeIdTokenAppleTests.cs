@@ -8,22 +8,25 @@ using Synclass.Infrastructure.Autenticacao;
 namespace Synclass.Domain.Tests.Autenticacao;
 
 /// <summary>
-/// Cobre a validação criptográfica do idToken da Apple (issue #212):
-/// assinatura válida, assinatura inválida, issuer/audience/lifetime fora do
-/// esperado e o edge point do <c>email_verified</c> como string — usando um
+/// Cobre a validação criptográfica do idToken da Apple (issue #212): assinatura
+/// válida, assinatura inválida, issuer/audience/lifetime fora do esperado e o
+/// edge point do <c>email_verified</c> como string — usando um
 /// <see cref="FakeClienteJwksApple"/> com chave RSA de teste e um JWT real
-/// assinado com <see cref="JwtSecurityTokenHandler"/>, sem I/O.
+/// assinado com <see cref="JwtSecurityTokenHandler"/>, sem I/O. Desde #213 o
+/// validador aceita duas audiences (Services ID da web + Bundle ID do app
+/// nativo), então os testes cobrem as duas.
 /// </summary>
 public sealed class ValidadorDeIdTokenAppleTests
 {
     private const string IssuerValido = "https://appleid.apple.com";
     private const string AudienceValida = "com.synclass.services";
+    private const string AudienceNativa = "br.com.synclass.app";
 
     [Fact]
     public async Task ValidarAsync_TokenAssinadoComChaveDoJwks_RetornaInformacoesDoToken()
     {
         var chave = CriarChaveRsa();
-        var validador = CriarValidador(chave, AudienceValida);
+        var validador = CriarValidador(chave, AudienceValida, AudienceNativa);
         var idToken = CriarIdToken(
             chave,
             AudienceValida,
@@ -40,11 +43,35 @@ public sealed class ValidadorDeIdTokenAppleTests
     }
 
     [Fact]
+    public async Task ValidarAsync_TokenComAudDoBundleIdNativo_Aceita()
+    {
+        // Issue #213: o identityToken do signInAsync nativo vem com `aud` =
+        // bundle identifier do app (`br.com.synclass.app`), um valor diferente
+        // do Services ID da web (`com.synclass.services`). Antes desta mudança
+        // (ValidAudience singular), um token nativo genuíno falhava a
+        // validação de audience — mesmo contrato, o que destrava o login nativo.
+        var chave = CriarChaveRsa();
+        var validador = CriarValidador(chave, AudienceValida, AudienceNativa);
+        var idToken = CriarIdToken(
+            chave,
+            AudienceNativa,
+            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
+            email: "maria@exemplo.com",
+            emailVerificado: "true");
+
+        var informacoes = await validador.ValidarAsync(idToken, CancellationToken.None);
+
+        informacoes.Should().NotBeNull();
+        informacoes!.Email.Should().Be("maria@exemplo.com");
+    }
+
+    [Fact]
     public async Task ValidarAsync_TokenAssinadoComChaveForaDoJwks_RetornaNull()
     {
         var chaveNoJwks = CriarChaveRsa();
         var chaveForaDoJwks = CriarChaveRsa();
-        var validador = CriarValidador(chaveNoJwks, AudienceValida);
+        var validador = CriarValidador(chaveNoJwks, AudienceValida, AudienceNativa);
         var idToken = CriarIdToken(
             chaveForaDoJwks,
             AudienceValida,
@@ -62,7 +89,7 @@ public sealed class ValidadorDeIdTokenAppleTests
     public async Task ValidarAsync_IssuerDiferenteDoEsperado_RetornaNull()
     {
         var chave = CriarChaveRsa();
-        var validador = CriarValidador(chave, AudienceValida);
+        var validador = CriarValidador(chave, AudienceValida, AudienceNativa);
         var idToken = CriarIdToken(
             chave,
             AudienceValida,
@@ -78,10 +105,10 @@ public sealed class ValidadorDeIdTokenAppleTests
     }
 
     [Fact]
-    public async Task ValidarAsync_AudienceDiferenteDaConfigurada_RetornaNull()
+    public async Task ValidarAsync_AudienceDiferenteDasConfiguradas_RetornaNull()
     {
         var chave = CriarChaveRsa();
-        var validador = CriarValidador(chave, AudienceValida);
+        var validador = CriarValidador(chave, AudienceValida, AudienceNativa);
         var idToken = CriarIdToken(
             chave,
             audience: "outra-audience",
@@ -99,7 +126,7 @@ public sealed class ValidadorDeIdTokenAppleTests
     public async Task ValidarAsync_TokenExpirado_RetornaNull()
     {
         var chave = CriarChaveRsa();
-        var validador = CriarValidador(chave, AudienceValida);
+        var validador = CriarValidador(chave, AudienceValida, AudienceNativa);
         var idToken = CriarIdToken(
             chave,
             AudienceValida,
@@ -121,7 +148,7 @@ public sealed class ValidadorDeIdTokenAppleTests
         // o parsing por comparação de string precisa reconhecer "true"
         // (case-insensitive) e ignorar "false"/outros valores.
         var chave = CriarChaveRsa();
-        var validador = CriarValidador(chave, AudienceValida);
+        var validador = CriarValidador(chave, AudienceValida, AudienceNativa);
         var idToken = CriarIdToken(
             chave,
             AudienceValida,
@@ -136,9 +163,9 @@ public sealed class ValidadorDeIdTokenAppleTests
         informacoes!.EmailVerificado.Should().BeTrue();
     }
 
-    private static ValidadorDeIdTokenApple CriarValidador(RsaSecurityKey chaveNoJwks, string audience)
+    private static ValidadorDeIdTokenApple CriarValidador(RsaSecurityKey chaveNoJwks, params string[] audiences)
     {
-        return new ValidadorDeIdTokenApple(new FakeClienteJwksApple(chaveNoJwks), audience);
+        return new ValidadorDeIdTokenApple(new FakeClienteJwksApple(chaveNoJwks), audiences);
     }
 
     private static RsaSecurityKey CriarChaveRsa()
