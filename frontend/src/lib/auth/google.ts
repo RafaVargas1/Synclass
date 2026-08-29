@@ -1,6 +1,8 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Platform } from 'react-native';
 
+const GoogleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+
 /**
  * Google Sign-In nativo (issue #192) — SDK configurado uma única vez por
  * processo do app, no escopo do módulo, como a própria lib recomenda. O
@@ -9,11 +11,19 @@ import { Platform } from 'react-native';
  * `ValidadorDeIdTokenGoogle`; só o `iosClientId` nativo é adicional, e o
  * `androidClientId` não é passado porque o Android usa o `webClientId`
  * para o handshake e o `aud` do idToken (ver implementation.md).
+ *
+ * Guardado por `Platform.OS !== 'web'`: `@react-native-google-signin` é um
+ * TurboModule nativo sem implementação web — chamar `configure()` sem essa
+ * guarda quebraria toda tela que importa este arquivo no bundle web (ex:
+ * `BotaoLoginGoogle.tsx`, usado em Home/login/cadastro), mesmo essas telas
+ * nunca chamando `obterIdTokenNativo()`.
  */
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '',
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '',
-});
+if (Platform.OS !== 'web') {
+  GoogleSignin.configure({
+    webClientId: GoogleClientId,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '',
+  });
+}
 
 /**
  * idToken do Google obtido via Google Identity Services (web). O formato é
@@ -54,8 +64,6 @@ export function extrairIdTokenWeb(resposta: RespostaIdTokenWeb): string | null {
   }
   return resposta.credential;
 }
-
-const GoogleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 /**
  * Wrapper único de obtenção do idToken do Google (issue #65), com
