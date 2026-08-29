@@ -8,13 +8,21 @@ namespace Synclass.Infrastructure.Autenticacao;
 /// Implementação de <see cref="IValidadorDeIdTokenApple"/> (issue #212):
 /// valida a assinatura do idToken contra as chaves JWKS da Apple (via
 /// <see cref="IClienteJwksApple"/>), o issuer fixo
-/// <c>https://appleid.apple.com</c>, a audience contra o
-/// <c>AppleClientId</c> configurado e o lifetime do token. Captura
+/// <c>https://appleid.apple.com</c>, a audience contra as audiences
+/// configuradas (<c>AppleClientId</c> do Services ID da web e
+/// <c>AppleBundleId</c> do App ID, desde #213) e o lifetime do token. Captura
 /// <see cref="SecurityTokenException"/> (classe base de toda exceção de
 /// validação do pacote — assinatura inválida, issuer errado, audience errada,
 /// token expirado) e devolve <c>null</c>, para a exceção não cruzar a
 /// fronteira Domain/Infrastructure (ver
 /// docs/spec/security-rules.md#validação-de-entrada).
+///
+/// Usa <c>ValidAudiences</c> (coleção) porque o identityToken do fluxo nativo
+/// (#213) vem com <c>aud</c> = bundle identifier do app
+/// (<c>br.com.synclass.app</c>), diferente do Services ID usado no fluxo web —
+/// sem aceitar os dois, todo login nativo falharia a validação de audience
+/// mesmo com token genuíno (ver
+/// docs/specs/213-login-apple-nativo/implementation.md#edge-points).
 ///
 /// Usa <c>MapInboundClaims = false</c> no handler para os claims do token
 /// manterem os nomes curtos do JWT original ("email", "email_verified") — sem
@@ -31,12 +39,12 @@ namespace Synclass.Infrastructure.Autenticacao;
 public sealed class ValidadorDeIdTokenApple : IValidadorDeIdTokenApple
 {
     private readonly IClienteJwksApple _clienteJwks;
-    private readonly string _appleClientId;
+    private readonly string[] _audiences;
 
-    public ValidadorDeIdTokenApple(IClienteJwksApple clienteJwks, string appleClientId)
+    public ValidadorDeIdTokenApple(IClienteJwksApple clienteJwks, params string[] audiences)
     {
         _clienteJwks = clienteJwks;
-        _appleClientId = appleClientId;
+        _audiences = audiences;
     }
 
     public async Task<InformacoesIdTokenApple?> ValidarAsync(string idToken, CancellationToken cancellationToken)
@@ -47,7 +55,7 @@ public sealed class ValidadorDeIdTokenApple : IValidadorDeIdTokenApple
             var parametros = new TokenValidationParameters
             {
                 ValidIssuer = "https://appleid.apple.com",
-                ValidAudience = _appleClientId,
+                ValidAudiences = _audiences,
                 IssuerSigningKeys = chaves,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.FromSeconds(30),

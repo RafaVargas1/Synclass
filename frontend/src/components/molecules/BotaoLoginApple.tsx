@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { useRef, useState } from 'react';
+import { Platform, Pressable, Text, useColorScheme } from 'react-native';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
 import { IconeApple } from '@/components/atoms/IconeApple';
@@ -27,18 +28,24 @@ export type BotaoLoginAppleProps = {
 };
 
 /**
- * Molécula: botão único de entrada com conta Apple (issue #212),
+ * Molécula: botão único de entrada com conta Apple (issues #212 e #213),
  * reaproveitado nas mesmas telas que o `BotaoLoginGoogle` (Home, login,
  * cadastro Professor e cadastro Aluno). É a única que conhece o fluxo
  * completo da Apple (`obterIdTokenApple` → `loginComApple`), assim as telas
  * não duplicam a orquestração — a tela só decide o que fazer com o desfecho
  * via callback.
  *
- * Estilo próprio (diretriz de marca da Apple): botão preto com logo branco
- * e texto branco, na cor #000000 padrão "Sign in with Apple" — um botão de
- * terceiro que usa o estilo genérico do app quebra reconhecimento de marca
- * (mesma exceção documentada de `BotaoLoginGoogle.tsx`, ver
- * `docs/spec/ux-heuristics.md#reconhecimento-em-vez-de-recordação`).
+ * Ramifica por plataforma, mesmo padrão de `obterIdTokenGoogle`/`google.ts`:
+ * em iOS usa o `AppleAuthenticationButton` oficial do SDK
+ * `expo-apple-authentication` (a Apple exige o componente oficial em apps
+ * nativos, não um botão customizado — ver implementation.md#componente-de-botão-nativo),
+ * em Android não renderiza nada (Sign in with Apple não é exigência de
+ * política no Android, e o SDK nativo da Apple só funciona em iOS), e em web
+ * mantém o botão preto customizado do fluxo #212.
+ *
+ * O estilo do botão nativo segue o mesmo racional de tema claro/escuro usado
+ * no resto do app (ex: `Button`, `HorarioCard`): `BLACK` no tema claro e
+ * `WHITE` no escuro — cada cor visível sobre o fundo do tema correspondente.
  *
  * O cancelamento do fluxo pelo usuário (`idToken === null`) não é erro nem
  * desfecho informado à tela: apenas não dispara nada, já que o Sign in with
@@ -49,18 +56,33 @@ export type BotaoLoginAppleProps = {
 export function BotaoLoginApple({ onAutenticado, onCadastroPendente }: BotaoLoginAppleProps) {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | undefined>(undefined);
+  const escuro = useColorScheme() === 'dark';
+  // Ref (não state) porque `setCarregando` é assíncrono/batched: um segundo
+  // toque síncrono, antes do primeiro `handlePress` re-renderizar, ainda leria
+  // `carregando === false`. `AppleAuthenticationButton` (ramo iOS, #213) não
+  // tem prop `disabled` como o `Pressable` do ramo web, então esta é a única
+  // guarda contra duas chamadas concorrentes a
+  // `obterIdTokenApple`/`loginComApple` disparando `onAutenticado`/
+  // `onCadastroPendente` duas vezes.
+  const emVooRef = useRef(false);
 
   async function handlePress() {
+    if (emVooRef.current) {
+      return;
+    }
+    emVooRef.current = true;
     setCarregando(true);
     setErro(undefined);
 
     const idToken = await obterIdTokenApple();
     if (!idToken) {
+      emVooRef.current = false;
       setCarregando(false);
       return;
     }
 
     const resultado = await loginComApple(idToken);
+    emVooRef.current = false;
     setCarregando(false);
 
     if (resultado.sucesso) {
@@ -77,6 +99,35 @@ export function BotaoLoginApple({ onAutenticado, onCadastroPendente }: BotaoLogi
       return;
     }
     setErro(resultado.mensagem);
+  }
+
+  // Botão oficial do SDK da Apple — a diretriz da Apple exige o componente
+  // próprio em apps nativos, não um botão customizado (diferente da web, onde
+  // o HTML customizado seguindo a diretriz visual é aceito). Reutiliza o mesmo
+  // `handlePress` do ramo web, que dispara `obterIdTokenApple` → `loginComApple`.
+  if (Platform.OS === 'ios') {
+    return (
+      <>
+        <AppleAuthentication.AppleAuthenticationButton
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+          buttonStyle={
+            escuro
+              ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+          }
+          onPress={handlePress}
+          // Largura total como o botão web e altura mínima 44 (alvo de toque,
+          // ver docs/spec/ux-heuristics.md#alvos-de-toque).
+          style={{ width: '100%', minHeight: 44 }}
+        />
+        {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
+      </>
+    );
+  }
+
+  // Android: sem Sign in with Apple — o componente não renderiza nada.
+  if (Platform.OS === 'android') {
+    return null;
   }
 
   return (
