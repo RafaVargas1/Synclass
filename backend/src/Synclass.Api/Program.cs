@@ -184,7 +184,7 @@ builder.Services.AddScoped<LoginComGoogleService>();
 // (mesmo padrão de leitura de GoogleClientId) e injetado no Validador.
 // Ver docs/specs/212-login-apple-web/implementation.md.
 builder.Services.AddHttpClient<IClienteJwksApple, ClienteJwksApple>();
-builder.Services.AddScoped(sp => new ValidadorDeIdTokenApple(
+builder.Services.AddScoped<IValidadorDeIdTokenApple>(sp => new ValidadorDeIdTokenApple(
     sp.GetRequiredService<IClienteJwksApple>(),
     sp.GetRequiredService<IConfiguration>()["AppleClientId"] ?? string.Empty));
 builder.Services.AddScoped<LoginComAppleService>();
