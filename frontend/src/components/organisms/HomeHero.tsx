@@ -9,15 +9,21 @@ import {
   BotaoLoginGoogle,
   type ResultadoAutenticadoGoogle,
 } from '@/components/molecules/BotaoLoginGoogle';
+import {
+  BotaoLoginApple,
+  type ResultadoAutenticadoApple,
+} from '@/components/molecules/BotaoLoginApple';
 import { Fonts } from '@/theme/tokens';
 
 export type HomeHeroProps = {
   onAutenticadoGoogle: (resultado: ResultadoAutenticadoGoogle) => void;
   onCadastroPendenteGoogle: (email: string) => void;
+  onAutenticadoApple: (resultado: ResultadoAutenticadoApple) => void;
+  onCadastroPendenteApple: (email: string) => void;
   onEntrarComoProfessor: () => void;
   onEntrarComoAluno: () => void;
   onLogin: () => void;
-  /** Erro ao concluir o login Google já autenticado (ex: falha ao persistir a sessão no dispositivo). */
+  /** Erro ao concluir o login Google/Apple já autenticado (ex: falha ao persistir a sessão no dispositivo). */
   erro?: string;
 };
 
@@ -28,9 +34,9 @@ export type HomeHeroProps = {
  * destaque `Fonts.deco`).
  *
  * Hierarquia de entrada (issues #111/#112/#114, achados de UX): "Entrar
- * com Google" é o CTA de maior destaque — autenticação de um toque, o
- * caminho mais frequente pra quem já tem conta, direto na Home sem
- * navegar antes pra `/login` (Hick's Law,
+ * com Google" e "Continuar com Apple" são os CTAs de maior destaque —
+ * autenticação de um toque, o caminho mais frequente pra quem já tem conta,
+ * direto na Home sem navegar antes pra `/login` (Hick's Law,
  * `docs/spec/ux-heuristics.md#número-de-opções-simultâneas`). "Entrar com
  * código" é o link secundário pra quem prefere OTP. Os CTAs de cadastro
  * ("Cadastrar como Professor"/"Cadastrar como Aluno", nomeados pela ação —
@@ -42,6 +48,8 @@ export type HomeHeroProps = {
 export function HomeHero({
   onAutenticadoGoogle,
   onCadastroPendenteGoogle,
+  onAutenticadoApple,
+  onCadastroPendenteApple,
   onEntrarComoProfessor,
   onEntrarComoAluno,
   onLogin,
@@ -56,6 +64,7 @@ export function HomeHero({
       </Paragraph>
       <View className="w-full gap-three">
         <BotaoLoginGoogle onAutenticado={onAutenticadoGoogle} onCadastroPendente={onCadastroPendenteGoogle} />
+        <BotaoLoginApple onAutenticado={onAutenticadoApple} onCadastroPendente={onCadastroPendenteApple} />
         {erro ? <ErrorMessage>{erro}</ErrorMessage> : null}
         <Pressable accessibilityRole="button" onPress={onLogin} className="items-center py-two">
           <Text className="text-sm font-semibold text-primary dark:text-dark-primary">

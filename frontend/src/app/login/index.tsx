@@ -7,10 +7,12 @@ import { Button } from '@/components/atoms/Button';
 import { Divisor } from '@/components/atoms/Divisor';
 import { Paragraph } from '@/components/atoms/Paragraph';
 import { BotaoLoginGoogle } from '@/components/molecules/BotaoLoginGoogle';
+import { BotaoLoginApple } from '@/components/molecules/BotaoLoginApple';
 import { SolicitarCodigoForm } from '@/components/organisms/SolicitarCodigoForm';
 import { Topbar } from '@/components/organisms/Topbar';
 import { solicitarCodigo } from '@/lib/api/auth';
 import { useAutenticadoGoogle } from '@/lib/auth/useAutenticadoGoogle';
+import { useAutenticadoApple } from '@/lib/auth/useAutenticadoApple';
 import { MaxContentWidth } from '@/theme/tokens';
 
 /**
@@ -18,18 +20,20 @@ import { MaxContentWidth } from '@/theme/tokens';
  * caso de sucesso, navega para a tela de verificação (app/login/verificar.tsx)
  * levando o contato — só ela sabe para quem o código foi enviado.
  *
- * Também é a tela de entrada com conta Google (issue #65): o fluxo de
- * negócio fica no `BotaoLoginGoogle`, que devolve via callback o desfecho.
- * No sucesso persiste a sessão via `useSessao().definirSessao` e navega para
- * `/painel` (mesmo destino do OTP). Como o login não sabe o papel do
- * usuário, quando o e-mail ainda não tem conta o cadastro pendente mostra as
- * duas opções (Professor ou Aluno) — a mesma escolha que a Home já oferece —
- * levando o e-mail via `?email=` para pré-preenchimento do contato.
+ * Também é a tela de entrada com conta Google (issue #65) e Apple (issue #212):
+ * o fluxo de negócio fica no `BotaoLoginGoogle`/`BotaoLoginApple`, que devolvem
+ * via callback o desfecho. No sucesso persiste a sessão via
+ * `useSessao().definirSessao` e navega para `/painel` (mesmo destino do OTP).
+ * Como o login não sabe o papel do usuário, quando o e-mail ainda não tem
+ * conta o cadastro pendente mostra as duas opções (Professor ou Aluno) — a
+ * mesma escolha que a Home já oferece — levando o e-mail via `?email=` para
+ * pré-preenchimento do contato.
  */
 export default function LoginScreen() {
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email?: string }>();
   const { handleAutenticadoGoogle, erroGoogle } = useAutenticadoGoogle();
+  const { handleAutenticadoApple, erroApple } = useAutenticadoApple();
   const [contato, setContato] = useState('');
   const [erro, setErro] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
@@ -96,7 +100,7 @@ export default function LoginScreen() {
           <View className="w-full gap-four">
             <SolicitarCodigoForm
               contato={contato}
-              erro={erro ?? erroGoogle}
+              erro={erro ?? erroGoogle ?? erroApple}
               enviando={enviando}
               onChangeContato={setContato}
               onSubmit={handleSubmit}
@@ -104,6 +108,10 @@ export default function LoginScreen() {
             <Divisor texto="ou" />
             <BotaoLoginGoogle
               onAutenticado={handleAutenticadoGoogle}
+              onCadastroPendente={handleCadastroPendente}
+            />
+            <BotaoLoginApple
+              onAutenticado={handleAutenticadoApple}
               onCadastroPendente={handleCadastroPendente}
             />
           </View>

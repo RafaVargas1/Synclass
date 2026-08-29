@@ -177,6 +177,18 @@ builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<IValidadorDeIdTokenGoogle, ValidadorDeIdTokenGoogle>();
 builder.Services.AddScoped<LoginComGoogleService>();
 
+// Login via idToken da Apple (issue #212) — fluxo paralelo ao OTP/Google.
+// O ClienteJwksApple busca as chaves JWKS da Apple via HttpClient (sem
+// BaseAddress fixo porque o ClienteJwksApple constroi a URL inteira) e o
+// AppleClientId (Services ID da Apple) é lido de IConfiguration["AppleClientId"]
+// (mesmo padrão de leitura de GoogleClientId) e injetado no Validador.
+// Ver docs/specs/212-login-apple-web/implementation.md.
+builder.Services.AddHttpClient<IClienteJwksApple, ClienteJwksApple>();
+builder.Services.AddScoped<IValidadorDeIdTokenApple>(sp => new ValidadorDeIdTokenApple(
+    sp.GetRequiredService<IClienteJwksApple>(),
+    sp.GetRequiredService<IConfiguration>()["AppleClientId"] ?? string.Empty));
+builder.Services.AddScoped<LoginComAppleService>();
+
 // Convite de Aluno via WhatsApp (issue #2) — ver
 // docs/specs/2-convite-whatsapp/implementation.md.
 builder.Services.AddScoped<IConviteRepository, ConviteRepository>();

@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BotaoLoginGoogle } from '@/components/molecules/BotaoLoginGoogle';
+import { BotaoLoginApple } from '@/components/molecules/BotaoLoginApple';
 import { AceiteConviteConfirmado } from '@/components/molecules/AceiteConviteConfirmado';
 import { CadastroConfirmado } from '@/components/molecules/CadastroConfirmado';
 import { ConviteExpirado } from '@/components/molecules/ConviteExpirado';
@@ -13,6 +14,7 @@ import { CadastroUsuarioForm } from '@/components/organisms/CadastroUsuarioForm'
 import { Topbar } from '@/components/organisms/Topbar';
 import { cadastrarAluno, verificarContatoAluno } from '@/lib/api/alunos';
 import { aceitarConvitePorCodigo } from '@/lib/api/convites';
+import { useAutenticadoApple } from '@/lib/auth/useAutenticadoApple';
 import { useAutenticadoGoogle } from '@/lib/auth/useAutenticadoGoogle';
 import { normalizarCodigoConvite } from '@/lib/normalizarCodigoConvite';
 
@@ -37,19 +39,21 @@ function ehConviteExpirado(mensagem: string): boolean {
  * `CadastroUsuarioForm`, os estados de confirmação/expiração e a
  * normalização de código — sem duplicar formulário nem lógica.
  *
- * Também aceita a entrada com conta Google (issue #65): o `?email=` da rota
- * (vindo do login quando o cadastro está pendente) pré-preenche o campo de
- * contato — sem sobrescrever o que o usuário digitar depois. Quando o
- * `BotaoLoginGoogle` bem-sucedido encontra um usuário já existente,
- * `useAutenticadoGoogle` (compartilhado com Home/Login, issue #121)
- * persiste a sessão e navega pra `/painel`, com o mesmo tratamento de falha
- * ao gravar no dispositivo; quando o e-mail ainda não tem conta, o próprio
- * cadastro é o destino, então só pré-preenche o contato com o e-mail do
- * Google.
+ * Também aceita a entrada com conta Google (issue #65) e Apple (issue
+ * #212): o `?email=` da rota (vindo do login quando o cadastro está
+ * pendente) pré-preenche o campo de contato — sem sobrescrever o que o
+ * usuário digitar depois. Quando o `BotaoLoginGoogle`/`BotaoLoginApple`
+ * bem-sucedido encontra um usuário já existente,
+ * `useAutenticadoGoogle`/`useAutenticadoApple` (compartilhados com
+ * Home/Login, issues #121/#212) persistem a sessão e navegam pra `/painel`,
+ * com o mesmo tratamento de falha ao gravar no dispositivo; quando o e-mail
+ * ainda não tem conta, o próprio cadastro é o destino, então só
+ * pré-preenche o contato com o e-mail do Google/Apple.
  */
 export default function AlunoScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
   const { handleAutenticadoGoogle, erroGoogle } = useAutenticadoGoogle();
+  const { handleAutenticadoApple, erroApple } = useAutenticadoApple();
   const [codigo, setCodigo] = useState('');
   const [nome, setNome] = useState('');
   const [contato, setContato] = useState(email ?? '');
@@ -124,7 +128,7 @@ export default function AlunoScreen() {
             <CadastroUsuarioForm
               nome={nome}
               contato={contato}
-              erro={erro ?? erroGoogle}
+              erro={erro ?? erroGoogle ?? erroApple}
               enviando={enviando}
               nomeReadonly={nomeReadonly}
               onChangeNome={setNome}
@@ -134,6 +138,10 @@ export default function AlunoScreen() {
             />
             <BotaoLoginGoogle
               onAutenticado={handleAutenticadoGoogle}
+              onCadastroPendente={setContato}
+            />
+            <BotaoLoginApple
+              onAutenticado={handleAutenticadoApple}
               onCadastroPendente={setContato}
             />
           </View>

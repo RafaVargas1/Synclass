@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { botaoProps } from '@/components/molecules/BotaoLoginGoogle.test.helpers';
+import { botaoAppleProps } from '@/components/molecules/BotaoLoginApple.test.helpers';
 import { aceitarConvitePorCodigo } from '@/lib/api/convites';
 import { cadastrarAluno, verificarContatoAluno } from '@/lib/api/alunos';
 import { useSessao } from '@/lib/auth/contexto-sessao';
@@ -25,6 +26,13 @@ jest.mock('@/components/molecules/BotaoLoginGoogle', () => {
     '@/components/molecules/BotaoLoginGoogle.test.helpers',
   );
   return { BotaoLoginGoogle: BotaoLoginGoogleDeTeste };
+});
+
+jest.mock('@/components/molecules/BotaoLoginApple', () => {
+  const { BotaoLoginAppleDeTeste } = jest.requireActual(
+    '@/components/molecules/BotaoLoginApple.test.helpers',
+  );
+  return { BotaoLoginApple: BotaoLoginAppleDeTeste };
 });
 
 const mockReplace = jest.fn();
@@ -254,5 +262,40 @@ describe('AlunoScreen', () => {
     });
 
     expect(screen.getByDisplayValue('novo.google@gmail.com')).toBeTruthy();
+  });
+
+  it('persiste a sessão e navega para /painel quando o login da Apple encontra usuário existente (issue #212)', async () => {
+    await render(<AlunoScreen />);
+
+    await act(async () => {
+      botaoAppleProps.onAutenticado({ token: 'token-apple', nome: 'João Souza', papeis: ['Aluno'] });
+    });
+
+    expect(definirSessaoMock).toHaveBeenCalledWith('token-apple', ['Aluno']);
+    expect(mockReplace).toHaveBeenCalledWith('/painel');
+  });
+
+  it('mostra um erro inline e não navega quando falha ao persistir a sessão da Apple (issue #212)', async () => {
+    definirSessaoMock.mockRejectedValue(new Error('falha ao gravar no dispositivo'));
+    await render(<AlunoScreen />);
+
+    await act(async () => {
+      botaoAppleProps.onAutenticado({ token: 'token-apple', nome: 'João Souza', papeis: ['Aluno'] });
+    });
+
+    expect(
+      screen.getByText('Não foi possível concluir o login neste dispositivo. Tente novamente.'),
+    ).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('pré-preenche o contato com o e-mail da Apple quando a conta ainda é nova (issue #212)', async () => {
+    await render(<AlunoScreen />);
+
+    await act(async () => {
+      botaoAppleProps.onCadastroPendente('novo.apple@gmail.com');
+    });
+
+    expect(screen.getByDisplayValue('novo.apple@gmail.com')).toBeTruthy();
   });
 });

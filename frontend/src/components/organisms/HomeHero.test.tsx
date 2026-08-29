@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { botaoProps } from '@/components/molecules/BotaoLoginGoogle.test.helpers';
+import { botaoAppleProps } from '@/components/molecules/BotaoLoginApple.test.helpers';
 
 import { HomeHero } from './HomeHero';
 
@@ -11,11 +12,20 @@ jest.mock('@/components/molecules/BotaoLoginGoogle', () => {
   return { BotaoLoginGoogle: BotaoLoginGoogleDeTeste };
 });
 
+jest.mock('@/components/molecules/BotaoLoginApple', () => {
+  const { BotaoLoginAppleDeTeste } = jest.requireActual(
+    '@/components/molecules/BotaoLoginApple.test.helpers',
+  );
+  return { BotaoLoginApple: BotaoLoginAppleDeTeste };
+});
+
 function renderHero(overrides: Partial<Parameters<typeof HomeHero>[0]> = {}) {
   return render(
     <HomeHero
       onAutenticadoGoogle={jest.fn()}
       onCadastroPendenteGoogle={jest.fn()}
+      onAutenticadoApple={jest.fn()}
+      onCadastroPendenteApple={jest.fn()}
       onEntrarComoProfessor={jest.fn()}
       onEntrarComoAluno={jest.fn()}
       onLogin={jest.fn()}
@@ -62,6 +72,18 @@ describe('HomeHero', () => {
 
     botaoProps.onCadastroPendente('novo@exemplo.com');
     expect(onCadastroPendenteGoogle).toHaveBeenCalledWith('novo@exemplo.com');
+  });
+
+  it('repassa onAutenticadoApple/onCadastroPendenteApple para o BotaoLoginApple (issue #212)', async () => {
+    const onAutenticadoApple = jest.fn();
+    const onCadastroPendenteApple = jest.fn();
+    await renderHero({ onAutenticadoApple, onCadastroPendenteApple });
+
+    botaoAppleProps.onAutenticado({ token: 't-apple', nome: 'Ana', papeis: ['Professor'] });
+    expect(onAutenticadoApple).toHaveBeenCalledWith({ token: 't-apple', nome: 'Ana', papeis: ['Professor'] });
+
+    botaoAppleProps.onCadastroPendente('novo.apple@gmail.com');
+    expect(onCadastroPendenteApple).toHaveBeenCalledWith('novo.apple@gmail.com');
   });
 
   it('usa rótulos que comunicam a ação de cadastro, não "sou X" (issue #112)', async () => {

@@ -18,6 +18,8 @@ export type LoginGoogleResultado =
   | { sucesso: false; cadastroPendente: true; email: string }
   | { sucesso: false; mensagem: string };
 
+export type LoginAppleResultado = LoginGoogleResultado;
+
 type CorpoResposta = Record<string, unknown> | null;
 
 type RespostaComando = { ok: true; corpo: CorpoResposta } | { ok: false; mensagem: string };
@@ -76,7 +78,28 @@ export async function confirmarCodigo(input: ConfirmarCodigoInput): Promise<Conf
  * docs/spec/business-rules.md#identidade-de-usuário).
  */
 export async function loginComGoogle(idToken: string): Promise<LoginGoogleResultado> {
-  const resposta = await enviarComando('/auth/google', { idToken });
+  return enviarLogin('/auth/google', idToken);
+}
+
+/**
+ * Envolve o `fetch` de POST /auth/apple (issue #212): idToken da Apple já
+ * validado na Api. Mesmo shape de response e mesma regra de negócio do
+ * Google (a Apple não emite conta nova — a Api devolve cadastro pendente
+ * quando o e-mail não tem usuário correspondente, sem criar conta).
+ */
+export async function loginComApple(idToken: string): Promise<LoginAppleResultado> {
+  return enviarLogin('/auth/apple', idToken);
+}
+
+/**
+ * Implementação compartilhada do POST de login por idToken (Google e Apple):
+ * os dois provedores repetem exatamente o mesmo shape de request
+ * ({ idToken }) e response (token/usuarioId/nome/papeis/cadastroPendente/email),
+ * então o parsing — incluindo o desfecho de cadastro pendente — fica num só
+ * lugar (ver docs/spec/code-style.md#sem-duplicação-de-código).
+ */
+async function enviarLogin(caminho: string, idToken: string): Promise<LoginAppleResultado> {
+  const resposta = await enviarComando(caminho, { idToken });
   if (!resposta.ok) {
     return { sucesso: false, mensagem: resposta.mensagem };
   }
