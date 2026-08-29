@@ -192,4 +192,33 @@ describe('BotaoLoginApple — ramo nativo e Android', () => {
     expect(screen.queryByTestId('botao-apple-nativo')).toBeNull();
     expect(screen.queryByText('Continuar com Apple')).toBeNull();
   });
+
+  it('ignora um segundo toque em iOS enquanto o primeiro login ainda está em voo', async () => {
+    // AppleAuthenticationButton (diferente do Pressable web) não tem prop
+    // `disabled` — a guarda contra duplo toque vive dentro de `handlePress`,
+    // então este teste dispara `press` duas vezes antes do primeiro resolver.
+    Platform.OS = 'ios';
+    let resolverIdToken!: (valor: string | null) => void;
+    obterIdTokenMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolverIdToken = resolve;
+      }),
+    );
+    loginComAppleMock.mockResolvedValue({
+      sucesso: true,
+      token: 'token-jwt',
+      nome: 'Maria Silva',
+      papeis: ['Professor'],
+    });
+
+    await render(<BotaoLoginApple onAutenticado={onAutenticado} onCadastroPendente={onCadastroPendente} />);
+
+    const botao = screen.getByTestId('botao-apple-nativo');
+    fireEvent.press(botao);
+    fireEvent.press(botao);
+    resolverIdToken('idToken-valido');
+
+    await waitFor(() => expect(onAutenticado).toHaveBeenCalledTimes(1));
+    expect(obterIdTokenMock).toHaveBeenCalledTimes(1);
+  });
 });

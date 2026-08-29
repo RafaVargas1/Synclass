@@ -1,5 +1,5 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, Pressable, Text, useColorScheme } from 'react-native';
 
 import { ErrorMessage } from '@/components/atoms/ErrorMessage';
@@ -57,18 +57,32 @@ export function BotaoLoginApple({ onAutenticado, onCadastroPendente }: BotaoLogi
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | undefined>(undefined);
   const escuro = useColorScheme() === 'dark';
+  // Ref (não state) porque `setCarregando` é assíncrono/batched: um segundo
+  // toque síncrono, antes do primeiro `handlePress` re-renderizar, ainda leria
+  // `carregando === false`. `AppleAuthenticationButton` (ramo iOS, #213) não
+  // tem prop `disabled` como o `Pressable` do ramo web, então esta é a única
+  // guarda contra duas chamadas concorrentes a
+  // `obterIdTokenApple`/`loginComApple` disparando `onAutenticado`/
+  // `onCadastroPendente` duas vezes.
+  const emVooRef = useRef(false);
 
   async function handlePress() {
+    if (emVooRef.current) {
+      return;
+    }
+    emVooRef.current = true;
     setCarregando(true);
     setErro(undefined);
 
     const idToken = await obterIdTokenApple();
     if (!idToken) {
+      emVooRef.current = false;
       setCarregando(false);
       return;
     }
 
     const resultado = await loginComApple(idToken);
+    emVooRef.current = false;
     setCarregando(false);
 
     if (resultado.sucesso) {
