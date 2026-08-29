@@ -9,8 +9,8 @@ Card: https://github.com/RafaVargas1/Synclass/issues/213
 - [x] Teste unidade: mock de `expo-apple-authentication`, cobrindo `obterIdTokenNativoApple()` com sucesso (retorna `identityToken`), cancelamento (`error.code === 'ERR_REQUEST_CANCELED'` mapeado para `null`) e e-mail ausente (login que não é o primeiro — ver `implementation.md#edge-points`)
 - [x] Implementação: `frontend/src/lib/auth/apple.ts` — `obterIdTokenApple()` ganha ramo nativo (hoje só cobre web, `Platform.OS !== 'web'` sempre devolve `null`), espelhando exatamente como `google.ts` ramifica `obterIdTokenNativo()` vs a versão web
 - [x] Configuração: `app.json` — plugin `expo-apple-authentication` + `ios.usesAppleSignIn: true`
-- [ ] Componente frontend: botão nativo usa `AppleAuthentication.AppleAuthenticationButton` (componente pronto do SDK, não o `Button` genérico nem o `BotaoLoginApple.tsx` da web) — só renderiza quando `Platform.OS === 'ios'` (nunca no Android, ver RN do card). Ver `implementation.md#componente-de-botão-nativo` pro ponto de inserção exato
-- [ ] Teste: componente do botão nativo só renderiza em iOS (mock de `Platform.OS`)
+- [x] Componente frontend: botão nativo usa `AppleAuthentication.AppleAuthenticationButton` (componente pronto do SDK, não o `Button` genérico nem o `BotaoLoginApple.tsx` da web) — só renderiza quando `Platform.OS === 'ios'` (nunca no Android, ver RN do card). Ver `implementation.md#componente-de-botão-nativo` pro ponto de inserção exato
+- [x] Teste: componente do botão nativo só renderiza em iOS (mock de `Platform.OS`)
 - [ ] Suíte de testes completa (frontend) verde antes do PR
 
 ## Fora do escopo de código (ação manual, não travar a Task por causa disso)

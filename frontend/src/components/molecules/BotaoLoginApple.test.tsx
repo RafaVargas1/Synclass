@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { BotaoLoginApple } from '@/components/molecules/BotaoLoginApple';
@@ -12,18 +13,43 @@ jest.mock('@/lib/api/auth', () => ({
   loginComApple: jest.fn(),
 }));
 
+jest.mock('expo-apple-authentication', () => {
+  // Componente fake do botão oficial do SDK — renderizado como uma View com
+  // testID fixo para o teste do ramo nativo asserir presença/ausência por
+  // plataforma. View é obtido via require('react-native') DENTRO do factory
+  // porque o babel-plugin-jest-hoist não permite referenciar variáveis
+  // out-of-scope que não comecem com "mock" (ver
+  // testing-standards.md#mocks-e-fakes). Nomes em PascalCase para o JSX
+  // tratá-los como componentes, não como elementos intrínsecos.
+  const MockView = require('react-native').View;
+  const MockBotaoAppleNativo = ({ ...rest }: { testID?: string }) => (
+    <MockView {...rest} testID="botao-apple-nativo" />
+  );
+  return {
+    AppleAuthenticationButton: MockBotaoAppleNativo,
+    AppleAuthenticationButtonType: { SIGN_IN: 'SIGN_IN' },
+    AppleAuthenticationButtonStyle: { BLACK: 'BLACK', WHITE: 'WHITE' },
+  };
+});
+
 const obterIdTokenMock = obterIdTokenApple as jest.Mock;
 const loginComAppleMock = loginComApple as jest.Mock;
 
-describe('BotaoLoginApple', () => {
+describe('BotaoLoginApple — ramo web', () => {
+  const osOriginal = Platform.OS;
   const onAutenticado = jest.fn();
   const onCadastroPendente = jest.fn();
 
   beforeEach(() => {
+    Platform.OS = 'web';
     obterIdTokenMock.mockReset();
     loginComAppleMock.mockReset();
     onAutenticado.mockReset();
     onCadastroPendente.mockReset();
+  });
+
+  afterEach(() => {
+    Platform.OS = osOriginal;
   });
 
   it('chama onAutenticado quando o login Apple tem usuário existente', async () => {
@@ -130,5 +156,40 @@ describe('BotaoLoginApple', () => {
     });
 
     await waitFor(() => expect(screen.queryByText('Entrando...')).toBeNull());
+  });
+});
+
+describe('BotaoLoginApple — ramo nativo e Android', () => {
+  const osOriginal = Platform.OS;
+  const onAutenticado = jest.fn();
+  const onCadastroPendente = jest.fn();
+
+  beforeEach(() => {
+    obterIdTokenMock.mockReset();
+    loginComAppleMock.mockReset();
+    onAutenticado.mockReset();
+    onCadastroPendente.mockReset();
+  });
+
+  afterEach(() => {
+    Platform.OS = osOriginal;
+  });
+
+  it('renderiza o AppleAuthenticationButton do SDK e não o botão web em iOS', async () => {
+    Platform.OS = 'ios';
+
+    await render(<BotaoLoginApple onAutenticado={onAutenticado} onCadastroPendente={onCadastroPendente} />);
+
+    expect(screen.getByTestId('botao-apple-nativo')).toBeTruthy();
+    expect(screen.queryByText('Continuar com Apple')).toBeNull();
+  });
+
+  it('não renderiza nada em Android (sem Sign in with Apple)', async () => {
+    Platform.OS = 'android';
+
+    await render(<BotaoLoginApple onAutenticado={onAutenticado} onCadastroPendente={onCadastroPendente} />);
+
+    expect(screen.queryByTestId('botao-apple-nativo')).toBeNull();
+    expect(screen.queryByText('Continuar com Apple')).toBeNull();
   });
 });
