@@ -1,4 +1,29 @@
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Platform } from 'react-native';
+
+const GoogleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+
+/**
+ * Google Sign-In nativo (issue #192) — SDK configurado uma única vez por
+ * processo do app, no escopo do módulo, como a própria lib recomenda. O
+ * `webClientId` precisa ser o MESMO Client ID "Web application" do backend
+ * (`GOOGLE_CLIENT_ID`) para o `aud` do idToken bater com
+ * `ValidadorDeIdTokenGoogle`; só o `iosClientId` nativo é adicional, e o
+ * `androidClientId` não é passado porque o Android usa o `webClientId`
+ * para o handshake e o `aud` do idToken (ver implementation.md).
+ *
+ * Guardado por `Platform.OS !== 'web'`: `@react-native-google-signin` é um
+ * TurboModule nativo sem implementação web — chamar `configure()` sem essa
+ * guarda quebraria toda tela que importa este arquivo no bundle web (ex:
+ * `BotaoLoginGoogle.tsx`, usado em Home/login/cadastro), mesmo essas telas
+ * nunca chamando `obterIdTokenNativo()`.
+ */
+if (Platform.OS !== 'web') {
+  GoogleSignin.configure({
+    webClientId: GoogleClientId,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '',
+  });
+}
 
 /**
  * idToken do Google obtido via Google Identity Services (web). O formato é
@@ -40,8 +65,6 @@ export function extrairIdTokenWeb(resposta: RespostaIdTokenWeb): string | null {
   return resposta.credential;
 }
 
-const GoogleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
-
 /**
  * Wrapper único de obtenção do idToken do Google (issue #65), com
  * ramificação por plataforma — mesmo padrão de
@@ -80,11 +103,23 @@ async function obterIdTokenNoBrowserWeb(): Promise<string | null> {
   });
 }
 
+/**
+ * Obtém o idToken via Google Sign-In nativo (`@react-native-google-signin`,
+ * issue #192). Na versão instalada (v16) o `signIn()` NÃO lança no
+ * cancelamento — devolve a união discriminada `{ type: 'success' }` ou
+ * `{ type: 'cancelled' }`, então o mapeamento de cancelamento para `null`
+ * é feito pelo `type`, e QUALQUER erro de SDK (ex: Google Play Services
+ * ausente) também vira `null`, preservando o contrato do arquivo de "nunca
+ * lança".
+ */
 async function obterIdTokenNativo(): Promise<string | null> {
-  // Google Sign-In nativo (`expo-auth-session` / `@react-native-google-signin`) ainda
-  // não está instalado nesta versão — o fluxo nativo fica propositalmente
-  // desligado (devolve `null`, nunca lança) até a integração real entrar na
-  // issue #65. O contrato de retorno já fica fixado agora para a tela
-  // tratar o cancelamento como `null`, não como exceção.
-  return null;
+  try {
+    const resposta = await GoogleSignin.signIn();
+    if (resposta.type === 'cancelled') {
+      return null;
+    }
+    return resposta.data.idToken ?? null;
+  } catch {
+    return null;
+  }
 }
